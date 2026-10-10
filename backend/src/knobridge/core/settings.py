@@ -42,7 +42,8 @@ class Settings(BaseSettings):
     temporal_address: str = "localhost:7233"
     temporal_namespace: str = "default"
     temporal_task_queue: str = "knobridge"
-    # Signs CSRF tokens; at least 32 characters. Secret: read it with get_secret_value().
+    # Signs CSRF tokens and is the HKDF root of the data keys in core/crypto.py; at least 32
+    # characters. Secret: read it with get_secret_value().
     secret_key: SecretStr = Field(default=SecretStr(DEV_SECRET_KEY), min_length=32)
     # Idle lifetime of a login session: each validated request pushes expiry this far ahead.
     session_ttl: timedelta = Field(default=timedelta(days=7), gt=timedelta(0))

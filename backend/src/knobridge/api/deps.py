@@ -20,11 +20,13 @@ from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from knobridge.core.clock import Clock
+from knobridge.core.crypto import SecretBox
 from knobridge.core.db import scoped_session, system_session
 from knobridge.core.errors import ForbiddenError, NotFoundError, UnauthenticatedError
 from knobridge.core.settings import Settings
 from knobridge.email.rendering import EmailComposer
 from knobridge.email.sender import EmailSender
+from knobridge.llm.credentials import CREDENTIALS_KEY_INFO, ProviderCredentialService
 from knobridge.security.passwords import PasswordHasher
 from knobridge.security.sessions import InvalidSessionError
 from knobridge.tenancy.acceptance import InvitationAcceptance
@@ -112,6 +114,15 @@ def get_admin_user_service(request: Request) -> AdminUserService:
     return AdminUserService(request.app.state.clock, settings.session_ttl)
 
 
+def get_provider_credential_service(request: Request) -> ProviderCredentialService:
+    settings = get_settings_from_app(request)
+    # HKDF is cheap, so the data key is derived per request instead of kept in app state.
+    box = SecretBox.derive(settings.secret_key.get_secret_value(), info=CREDENTIALS_KEY_INFO)
+    return ProviderCredentialService(
+        request.app.state.clock, box, allow_fake=settings.env != "production"
+    )
+
+
 def get_email_sender(request: Request) -> EmailSender:
     sender: EmailSender = request.app.state.email_sender
     return sender
@@ -138,6 +149,9 @@ InvitationAcceptanceDep = Annotated[InvitationAcceptance, Depends(get_invitation
 MemberServiceDep = Annotated[MemberService, Depends(get_member_service)]
 AdminWorkspaceServiceDep = Annotated[AdminWorkspaceService, Depends(get_admin_workspace_service)]
 AdminUserServiceDep = Annotated[AdminUserService, Depends(get_admin_user_service)]
+ProviderCredentialServiceDep = Annotated[
+    ProviderCredentialService, Depends(get_provider_credential_service)
+]
 EmailSenderDep = Annotated[EmailSender, Depends(get_email_sender)]
 EmailComposerDep = Annotated[EmailComposer, Depends(get_email_composer)]
 ClientIpDep = Annotated[str | None, Depends(client_ip)]

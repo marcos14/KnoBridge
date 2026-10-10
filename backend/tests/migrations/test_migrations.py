@@ -17,11 +17,12 @@ from sqlalchemy.pool import NullPool
 from knobridge.audit import models as audit_models
 from knobridge.core.models import Base
 from knobridge.core.settings import get_settings
+from knobridge.llm import models as llm_models
 from knobridge.security import models as security_models
 from knobridge.tenancy import models as tenancy_models
 
 # Imported so their tables are in Base.metadata.
-_MODEL_MODULES = (tenancy_models, security_models, audit_models)
+_MODEL_MODULES = (tenancy_models, security_models, audit_models, llm_models)
 _TENANCY_TABLES = (
     "memberships",
     "users",
@@ -31,6 +32,7 @@ _TENANCY_TABLES = (
     "audit_events",
     "login_attempts",
     "invitations",
+    "provider_credentials",
 )
 
 ALEMBIC_INI = Path(__file__).resolve().parents[2] / "alembic.ini"
@@ -113,6 +115,7 @@ def test_migration_upgrade_downgrade_tenancy(postgres_url: str) -> None:
         "audit_events": (True, True, 3),
         "login_attempts": (True, True, 1),
         "invitations": (True, True, 1),
+        "provider_credentials": (True, True, 1),
     }
     assert after_downgrade == {}
 
@@ -206,6 +209,21 @@ def test_migration_upgrade_downgrade_invitations(postgres_url: str) -> None:
     assert after_downgrade["user_tokens"] == (True, True, 1)
     assert tokens_after_downgrade[0] is False
     assert "app.workspace_id" not in tokens_after_downgrade[1]
+
+
+@pytest.mark.integration
+def test_migration_upgrade_downgrade_provider_credentials(postgres_url: str) -> None:
+    config, _ = _alembic_config(postgres_url)
+
+    command.upgrade(config, "head")
+    after_upgrade = _tenancy_catalog(postgres_url)
+    command.downgrade(config, "0006")
+    after_downgrade = _tenancy_catalog(postgres_url)
+    command.downgrade(config, "base")
+
+    assert after_upgrade["provider_credentials"] == (True, True, 1)
+    assert "provider_credentials" not in after_downgrade
+    assert after_downgrade["invitations"] == (True, True, 1)
 
 
 def _schema_diff(connection: Connection) -> list[object]:

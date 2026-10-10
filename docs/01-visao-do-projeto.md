@@ -297,6 +297,7 @@ Quando entrar (fase 3): OpenTelemetry + Langfuse para traces; conjunto de avalia
 | D12 | Autenticação inicial | E-mail/senha / OIDC desde o início | **E-mail/senha** por ora; OIDC depois; sessão server-side com cookie httpOnly e CSRF double-submit ([ADR 0002](adr/0002-sessao-server-side.md)) | Médio (prever `provider` no modelo) |
 | D13 | Observabilidade e avaliação | Agora / depois | **Depois** (fase 3); agora só log estruturado e feedback | Fácil |
 | D14 | Canal no "padrão OpenAI" | Só REST própria / também Chat Completions | **Também Chat Completions** (`/v1/chat/completions`) | Fácil |
+| D15 | Segredos em repouso (chaves de provedores, depois tokens de conectores e canais) | Fernet / pgcrypto / AES-GCM na aplicação / KMS externo | **AES-256-GCM na aplicação**, chave por finalidade derivada de `KNOBRIDGE_SECRET_KEY` (HKDF), versão no texto cifrado e AAD com workspace e linha ([ADR 0003](adr/0003-segredos-cifrados.md)) | Médio (recifrar) |
 
 ## 10. Fluxos de exemplo
 

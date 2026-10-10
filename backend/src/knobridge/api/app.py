@@ -20,6 +20,7 @@ from knobridge.api import (
     invites,
     me,
     members,
+    providers,
     recovery,
     setup,
 )
@@ -87,7 +88,20 @@ def create_app(
     register_error_handlers(app)
 
     v1 = APIRouter(prefix=API_PREFIX)
-    for module in (health, setup, auth, recovery, me, account, audit, members, invites, admin):
+    routers = (
+        health,
+        setup,
+        auth,
+        recovery,
+        me,
+        account,
+        audit,
+        members,
+        invites,
+        providers,
+        admin,
+    )
+    for module in routers:
         v1.include_router(module.router)
     app.include_router(v1)
     return app

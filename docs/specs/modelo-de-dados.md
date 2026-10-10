@@ -36,6 +36,16 @@ erDiagram
     users |o--o{ invitations : "convidou"
     workspaces |o--o{ audit_events : "registra"
     users |o--o{ audit_events : "age"
+    workspaces ||--o{ provider_credentials : "guarda"
+    provider_credentials {
+        uuid id PK
+        uuid workspace_id FK
+        varchar name "único por workspace"
+        varchar kind "openai | anthropic | openrouter | fake"
+        varchar base_url "opcional"
+        text key_ciphertext "AES-GCM; v1.base64url"
+        varchar key_last4 "exibição ****1234"
+    }
     login_attempts {
         uuid id PK
         varchar key_hash "único; SHA-256 de e-mail + IP"
@@ -226,3 +236,18 @@ A mesma tabela guarda o limite de e-mails de conta por endereço (plano 0002, F2
 | `key_hash` | `varchar(64)` | SHA-256 em hex da chave; único (`uq_login_attempts_key_hash`). |
 | `failures` | `integer` | Falhas na janela atual. |
 | `window_started_at` | `timestamptz` | Primeira falha da janela atual; janela vencida recomeça em 1 na próxima falha. |
+
+### `provider_credentials`
+
+Chave de API de um provedor de LLM, por workspace (plano 0002, F4.1), em [`backend/src/knobridge/llm/`](../../backend/src/knobridge/llm/AGENTS.md). Dado de workspace com RLS forçada: política `provider_credentials_workspace` (`workspace_id = app.workspace_id` ou sistema). A chave é gravada só cifrada com AES-256-GCM ([ADR 0003](../adr/0003-segredos-cifrados.md)), com chave de dados derivada de `KNOBRIDGE_SECRET_KEY` (HKDF, `info` `knobridge/provider-credentials/v1`) e dados associados `provider_credential:<workspace_id>:<id>`, de modo que o texto cifrado não decifra em outra linha nem em outro workspace. A API nunca devolve a chave, só `****` + `key_last4`. Owner, admin e editor gerenciam; viewer não. Criar, alterar e excluir auditam `provider.created`, `provider.updated` (`fields`: `name`, `base_url`, `key`) e `provider.deleted`, sem a chave.
+
+| Coluna | Tipo | Regras |
+|---|---|---|
+| `workspace_id` | `uuid` | FK `workspaces.id`, `ON DELETE CASCADE`. |
+| `name` | `varchar(200)` | Obrigatório; único por workspace (`uq_provider_credentials_workspace_id_name`; 409 `provider_name_taken`). |
+| `kind` | `varchar(32)` | `openai`, `anthropic`, `openrouter` ou `fake`. `fake` é recusado em produção (422 `provider_kind_not_allowed`). Não muda depois de criado. |
+| `base_url` | `varchar(500)` | Opcional; endpoint alternativo (`http(s)://`), ex.: gateway ou servidor compatível. |
+| `key_ciphertext` | `text` | `v<versão da chave>.<base64url(nonce ‖ cifrado ‖ tag)>`. Recifrado a cada troca de chave. |
+| `key_last4` | `varchar(4)` | Últimos 4 caracteres da chave (que tem no mínimo 8), para exibição. |
+
+Assistentes (F4.3) vão referenciar `provider_credentials.id` com `ON DELETE RESTRICT`: credencial em uso não pode ser excluída.

@@ -1,8 +1,8 @@
 # backend/tests/core/
 
-**Função**: testes de `src/knobridge/core/` (settings, logging, erros e banco).
+**Função**: testes de `src/knobridge/core/` (settings, logging, erros, banco, relógio e cifra de segredos).
 
-**Entra aqui**: um `test_<módulo>.py` por módulo de `core/` (`test_settings.py`, `test_logging.py`, `test_errors.py`, `test_db.py`, `test_models.py`, `test_clock.py`). Em `test_db.py`, os testes de `ping`, `get_session`, `scoped_session` e `system_session` contra banco real levam `@pytest.mark.integration`. O efeito das políticas de RLS é testado em `tests/tenancy/`.
+**Entra aqui**: um `test_<módulo>.py` por módulo de `core/` (`test_settings.py`, `test_logging.py`, `test_errors.py`, `test_db.py`, `test_models.py`, `test_clock.py`, `test_crypto.py`). Em `test_db.py`, os testes de `ping`, `get_session`, `scoped_session` e `system_session` contra banco real levam `@pytest.mark.integration`. O efeito das políticas de RLS é testado em `tests/tenancy/`.
 **Não entra aqui**: testes de routers do produto (vão para `tests/api/`), testes de migrações (`tests/migrations/`).
 
 **Convenções locais**:

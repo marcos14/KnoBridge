@@ -39,3 +39,7 @@ class AuditAction(StrEnum):
     MEMBERSHIP_INVITATION_REVOKED = "membership.invitation.revoked"
     MEMBERSHIP_ROLE_CHANGED = "membership.role.changed"
     MEMBERSHIP_REMOVED = "membership.removed"
+    # LLM provider credentials (the key itself never goes into metadata).
+    PROVIDER_CREATED = "provider.created"
+    PROVIDER_UPDATED = "provider.updated"
+    PROVIDER_DELETED = "provider.deleted"
