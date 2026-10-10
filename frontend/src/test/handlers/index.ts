@@ -10,6 +10,7 @@ import { membersHandlers } from "./members";
 import { providersHandlers } from "./providers";
 import { recoveryHandlers } from "./recovery";
 import { setupHandlers } from "./setup";
+import { workspaceConversationsHandlers } from "./workspaceConversations";
 
 export * from "./account";
 export * from "./admin";
@@ -26,6 +27,7 @@ export * from "./providers";
 export * from "./record";
 export * from "./recovery";
 export * from "./setup";
+export * from "./workspaceConversations";
 
 /**
  * Default handlers: the happy path of a set-up instance with a logged-in user. Override per test
@@ -44,4 +46,5 @@ export const handlers = [
   ...providersHandlers,
   ...assistantsHandlers,
   ...conversationsHandlers,
+  ...workspaceConversationsHandlers,
 ];

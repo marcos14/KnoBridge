@@ -1,11 +1,11 @@
 import { useLayoutEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
+import { AssistantMessage } from "@/components/AssistantMessage";
 import type { PendingAnswer } from "@/lib/api/chatStream";
 import type { Citation, Message } from "@/lib/api/conversations";
 
-import { AssistantMessage } from "./AssistantMessage";
-import { isAtEnd, questionBefore } from "./chatForm";
+import { isAtEnd, questionBefore, visibleMessages } from "./chatForm";
 import { FeedbackControls } from "./FeedbackControls";
 
 interface MessageListProps {
@@ -46,10 +46,7 @@ export function MessageList({
   const { t } = useTranslation();
   const boxRef = useRef<HTMLDivElement | null>(null);
   const atEndRef = useRef(true);
-  // Saved messages already being shown by the pending exchange (between reload and its end).
-  const visible = messages.filter(
-    (message) => message.id !== pending?.messageId && message.id !== pending?.userMessageId,
-  );
+  const visible = visibleMessages(messages, pending);
 
   useLayoutEffect(() => {
     const box = boxRef.current;

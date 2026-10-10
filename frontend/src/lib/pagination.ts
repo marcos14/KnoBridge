@@ -30,3 +30,9 @@ export function clampOffset(offset: number, limit: number, total: number): numbe
 export function pageOf<Row>(rows: readonly Row[], offset: number, limit: number): Row[] {
   return rows.slice(offset, offset + limit);
 }
+
+/** Offset read from a URL query value: a positive integer, otherwise the first page (0). */
+export function parseOffset(value: string | null): number {
+  const offset = Number(value ?? "0");
+  return Number.isInteger(offset) && offset > 0 ? offset : 0;
+}

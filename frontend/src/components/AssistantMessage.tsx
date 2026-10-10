@@ -16,11 +16,16 @@ interface AssistantMessageProps {
   onCitation: (citation: Citation) => void;
   /** Sends the question again (failed or interrupted answers); absent when it cannot be resent. */
   onResend?: () => void;
-  /** Rating controls, for finished answers. */
+  /** Rating controls (chat) or the ratings received (conversations), for finished answers. */
   feedback?: ReactNode;
+  /** Someone else's answer seen by an administrator: no ticket offer, the status said in words. */
+  readOnly?: boolean;
 }
 
-/** One answer of the assistant: Markdown with its sources, what happened to it and its actions. */
+/**
+ * One answer of the assistant: Markdown with its sources, what happened to it and its actions.
+ * Shared by the chat and the read-only view of the conversations screen.
+ */
 export function AssistantMessage({
   content,
   citations,
@@ -29,6 +34,7 @@ export function AssistantMessage({
   onCitation,
   onResend,
   feedback,
+  readOnly = false,
 }: AssistantMessageProps) {
   const { t } = useTranslation();
   const ticketHintId = useId();
@@ -69,7 +75,10 @@ export function AssistantMessage({
           </ul>
         </div>
       )}
-      {status === "no_source" && (
+      {status === "no_source" && readOnly && (
+        <p className="text-muted-foreground text-xs">{t("chat.message.noSource")}</p>
+      )}
+      {status === "no_source" && !readOnly && (
         <div className="flex flex-col items-start gap-1">
           <Button
             type="button"

@@ -80,3 +80,8 @@ export function remarkCitationMarkers(indexes: ReadonlySet<number>) {
     transform(tree, indexes);
   };
 }
+
+/** Whether a source URI can be opened as a web link (other URIs, such as file paths, are shown). */
+export function isWebUri(uri: string): boolean {
+  return /^https?:\/\//i.test(uri);
+}

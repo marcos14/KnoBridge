@@ -1,6 +1,7 @@
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
 
+import { FilterSelect } from "@/components/FilterSelect";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,7 +10,6 @@ import { AUDIT_ACTIONS, isAuditAction } from "@/lib/auditActions";
 import { type AuditFilters, hasAuditFilters } from "@/lib/auditFilters";
 
 import type { AuditActor } from "./actors";
-import { FilterSelect } from "./FilterSelect";
 
 /** Value of the "no filter" item: Radix Select items cannot have an empty value. */
 const ALL = "all";

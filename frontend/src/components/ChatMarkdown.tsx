@@ -4,7 +4,7 @@ import Markdown, { type Components } from "react-markdown";
 
 import type { Citation } from "@/lib/api/conversations";
 
-import { citationIndexFromHref, remarkCitationMarkers } from "./citationMarkers";
+import { citationIndexFromHref, remarkCitationMarkers } from "@/lib/citationMarkers";
 
 interface ChatMarkdownProps {
   content: string;

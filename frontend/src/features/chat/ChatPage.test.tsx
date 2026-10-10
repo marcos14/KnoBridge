@@ -130,6 +130,30 @@ describe("ChatPage", () => {
     expect(screen.getByText("Fechar").closest("[aria-live='polite']")).toBeNull();
   });
 
+  it("test_chat_new_conversation_reload_before_citations_shows_question_once", async () => {
+    const source = controlledStream();
+    // The server saves the question and the start of the answer before the first byte.
+    useStore({ reply: () => ({ body: source.stream, saved: savedAnswer("streaming", "") }) });
+    const { user } = await openChat();
+    await screen.findByRole("combobox", { name: "Assistente" });
+
+    await user.type(composer(), "Como fecho o caixa?{Enter}");
+
+    // The new conversation is read (title included) while no event has arrived yet.
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "Como fecho o caixa?" }),
+    ).toBeVisible();
+    const thread = screen.getByRole("list", { name: "Mensagens da conversa" });
+    expect(within(thread).getAllByText("Como fecho o caixa?")).toHaveLength(1);
+    expect(screen.getAllByText("O assistente está respondendo…")).toHaveLength(1);
+    act(() => {
+      source.push(answerFrames({ ...exchangeIds(1) })[0] ?? "");
+    });
+    await waitFor(() => {
+      expect(within(thread).getAllByText("Como fecho o caixa?")).toHaveLength(1);
+    });
+  });
+
   it("test_chat_starts_with_the_chosen_assistant", async () => {
     asRole("editor");
     const store = useStore();
@@ -324,6 +348,22 @@ describe("ChatPage", () => {
       "Você não tem permissão para fazer isso.",
     );
     expect(composer()).toHaveValue("Posso?");
+  });
+
+  it("test_chat_send_error_clears_when_leaving_the_conversation", async () => {
+    useStore();
+    server.use(messagesRespond(() => apiErrorResponse(403, "forbidden")));
+    const { user } = await openChat(`${CHAT}/${CONVERSATION_ID}`);
+    await screen.findByText(/Confira os lançamentos/);
+    await user.type(composer(), "Posso?{Enter}");
+    expect(await screen.findByRole("alert")).toBeVisible();
+
+    await user.click(screen.getByRole("link", { name: "Emissão de nota fiscal" }));
+    await screen.findByRole("heading", { level: 2, name: "Emissão de nota fiscal" });
+    await user.click(screen.getByRole("link", { name: "Como fecho o caixa?" }));
+
+    expect(await screen.findByText(/Confira os lançamentos/)).toBeVisible();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
 
   it("test_chat_feedback_rates_and_comments", async () => {

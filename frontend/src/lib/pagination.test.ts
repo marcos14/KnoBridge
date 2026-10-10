@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { clampOffset, pageOf, pageRange } from "./pagination";
+import { clampOffset, pageOf, pageRange, parseOffset } from "./pagination";
 
 describe("pageRange", () => {
   it("test_page_range_first_page", () => {
@@ -34,5 +34,15 @@ describe("clampOffset", () => {
 describe("pageOf", () => {
   it("test_page_of_slices_rows", () => {
     expect(pageOf([1, 2, 3, 4, 5], 2, 2)).toEqual([3, 4]);
+  });
+});
+
+describe("parseOffset", () => {
+  it("test_parse_offset_accepts_only_positive_integers", () => {
+    expect(parseOffset("40")).toBe(40);
+    expect(parseOffset(null)).toBe(0);
+    expect(parseOffset("-20")).toBe(0);
+    expect(parseOffset("2.5")).toBe(0);
+    expect(parseOffset("abc")).toBe(0);
   });
 });

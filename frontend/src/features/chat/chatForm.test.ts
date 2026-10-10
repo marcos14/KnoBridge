@@ -7,10 +7,10 @@ import {
   feedbackCommentSchema,
   isAtEnd,
   isSendKey,
-  isWebUri,
   QUESTION_MAX_LENGTH,
   questionBefore,
   questionSchema,
+  visibleMessages,
 } from "./chatForm";
 
 const t = i18n.t.bind(i18n);
@@ -52,11 +52,38 @@ describe("chatForm", () => {
     expect(questionBefore(messages, "missing")).toBeNull();
   });
 
-  it("test_is_web_uri_accepts_only_http_links", () => {
-    expect(isWebUri("https://docs.example.test")).toBe(true);
-    expect(isWebUri("HTTP://docs.example.test")).toBe(true);
-    expect(isWebUri("src/caixa.py")).toBe(false);
-    expect(isWebUri("javascript:alert(1)")).toBe(false);
+  describe("visibleMessages", () => {
+    const earlier = [makeQuestion("Antes", messageId(1)), makeMessage({ id: messageId(2) })];
+    const question = makeQuestion("Como fecho o caixa?", messageId(3));
+    const answer = makeMessage({ id: messageId(4), content: "", status: "streaming" });
+    const waiting = { question: "Como fecho o caixa?", userMessageId: null, messageId: null };
+
+    it("test_visible_messages_without_pending_keeps_everything", () => {
+      expect(visibleMessages([...earlier, question], null)).toEqual([...earlier, question]);
+    });
+
+    it("test_visible_messages_hides_the_pending_exchange_by_id", () => {
+      const named = { ...waiting, userMessageId: messageId(3), messageId: messageId(4) };
+
+      expect(visibleMessages([...earlier, question, answer], named)).toEqual(earlier);
+    });
+
+    it("test_visible_messages_hides_the_saved_tail_before_ids_arrive", () => {
+      expect(visibleMessages([...earlier, question, answer], waiting)).toEqual(earlier);
+      expect(visibleMessages([...earlier, question], waiting)).toEqual(earlier);
+    });
+
+    it("test_visible_messages_keeps_a_finished_answer_to_the_same_question", () => {
+      // Resending a failed answer asks the same question again.
+      const failed = makeMessage({ id: messageId(4), status: "failed" });
+
+      expect(visibleMessages([...earlier, question, failed], waiting)).toEqual([
+        ...earlier,
+        question,
+        failed,
+      ]);
+      expect(visibleMessages([], waiting)).toEqual([]);
+    });
   });
 
   it("test_is_send_key_is_plain_enter", () => {

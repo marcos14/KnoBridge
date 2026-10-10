@@ -14,7 +14,7 @@
 - `WorkspaceLayout.tsx` + `useWorkspaceSuspended.ts`: guarda o último workspace e mostra "workspace suspenso" quando o `me` diz `suspended` ou quando qualquer query/mutação recebe 403 `workspace_suspended`.
 - `AreaSkeletonPage.tsx`: título e estado vazio explicativo de Fontes, Pipelines, Coleções e Canais.
 
-**Não entra aqui**: telas de produto (vão para `features/<area>/` e substituem o esqueleto ou o `PlaceholderPage` no `router.tsx`), guardas de rota (`features/auth/`), componentes shadcn (`components/ui/`), chamadas de API (`lib/api/`), textos (`i18n/locales/`).
+**Não entra aqui**: telas de produto (vão para `features/<area>/` e substituem o esqueleto no `router.tsx`), guardas de rota (`features/auth/`), componentes shadcn (`components/ui/`), chamadas de API (`lib/api/`), textos (`i18n/locales/`).
 
 **Convenções locais**:
 

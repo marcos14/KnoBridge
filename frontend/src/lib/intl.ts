@@ -43,6 +43,11 @@ export function formatDateTime(date: Date, locale: string, timeZone?: string): s
   }).format(date);
 }
 
+/** Date only, for reading ("10 de out. de 2026"); `timeZone` as in `formatDateTime`. */
+export function formatDate(date: Date, locale: string, timeZone?: string): string {
+  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone }).format(date);
+}
+
 /** Name of a language in the interface language ("português (Brasil)"), or the tag itself. */
 export function languageName(tag: string, locale: string): string {
   return new Intl.DisplayNames([locale], { type: "language", fallback: "none" }).of(tag) ?? tag;

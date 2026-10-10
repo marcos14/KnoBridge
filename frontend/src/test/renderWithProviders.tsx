@@ -4,9 +4,14 @@ import type { ReactNode } from "react";
 import { createMemoryRouter, type RouteObject } from "react-router";
 
 import { AppProviders, type AppRouter } from "@/app/AppProviders";
+import { preloadLazyPages } from "@/app/lazyPage";
 import { createQueryClient } from "@/app/queryClient";
 import { routes as appRoutes } from "@/app/router";
 import { i18n } from "@/i18n";
+
+// The pages are split into chunks loaded on demand. Loading them all once here keeps that cost
+// (transforming each feature's modules) out of the first `findBy*` of every test file.
+await preloadLazyPages();
 
 interface RenderWithProvidersOptions {
   /** Initial URL of the in-memory router. Defaults to "/". */

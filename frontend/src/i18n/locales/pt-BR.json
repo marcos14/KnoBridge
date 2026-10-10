@@ -1,6 +1,7 @@
 {
   "app": {
-    "title": "KnoBridge"
+    "title": "KnoBridge",
+    "loadingPage": "Carregando a página…"
   },
   "nav": {
     "label": "Navegação principal",
@@ -499,7 +500,8 @@
       "interrupted": "A resposta foi interrompida antes do fim.",
       "resend": "Reenviar pergunta",
       "openTicket": "Abrir chamado",
-      "openTicketHint": "Disponível quando houver integração de chamados."
+      "openTicketHint": "Disponível quando houver integração de chamados.",
+      "noSource": "Respondida sem fonte: o assistente ofereceu abrir chamado."
     },
     "citations": {
       "title": "Fontes",
@@ -529,8 +531,71 @@
       "cancel": "Cancelar"
     }
   },
-  "pages": {
-    "conversations": "Conversas"
+  "conversations": {
+    "title": "Conversas",
+    "description": "Uso do chat por todos os membros do workspace: totais do período, conversas e avaliações.",
+    "stats": {
+      "label": "Totais do período",
+      "period": "De {{start}} a {{end}}",
+      "loading": "Carregando totais…",
+      "loadFailed": "Não foi possível carregar os totais.",
+      "conversations": "Conversas",
+      "messages": "Mensagens",
+      "thumbsUp": "Avaliações 👍",
+      "thumbsDown": "Avaliações 👎",
+      "noSource": "Respostas sem fonte",
+      "failed": "Respostas com falha",
+      "interrupted": "Respostas interrompidas"
+    },
+    "filters": {
+      "label": "Filtros das conversas",
+      "assistant": "Assistente",
+      "allAssistants": "Todos os assistentes",
+      "user": "Usuário",
+      "allUsers": "Todos os usuários",
+      "from": "De",
+      "to": "Até",
+      "negative": "Só com 👎",
+      "clear": "Limpar filtros"
+    },
+    "tableLabel": "Conversas do workspace",
+    "columns": {
+      "title": "Conversa",
+      "user": "Usuário",
+      "assistant": "Assistente",
+      "messages": "Mensagens",
+      "feedback": "Avaliações",
+      "lastActivity": "Última atividade"
+    },
+    "untitled": "Conversa sem título",
+    "feedbackSummary": "{{up}} 👍 · {{down}} 👎",
+    "feedbackLabel": "{{up}} positivas, {{down}} negativas",
+    "noActivity": "Sem mensagens",
+    "unknownUser": "Usuário {{id}}",
+    "unknownAssistant": "Assistente {{id}}",
+    "empty": "Nenhuma conversa ainda.",
+    "emptyFiltered": "Nenhuma conversa corresponde aos filtros.",
+    "loading": "Carregando conversas…",
+    "loadFailed": "Não foi possível carregar as conversas.",
+    "retry": "Tentar novamente",
+    "detail": {
+      "back": "Voltar para as conversas",
+      "loading": "Carregando conversa…",
+      "loadFailed": "Não foi possível carregar a conversa.",
+      "notFound": "Conversa não encontrada",
+      "who": "{{user}} ({{email}}) com {{assistant}}",
+      "startedAt": "Iniciada em {{when}}",
+      "readOnly": "Somente leitura. As avaliações são dos membros.",
+      "threadLabel": "Mensagens da conversa",
+      "empty": "Esta conversa ainda não tem mensagens.",
+      "question": "Pergunta de {{name}}",
+      "answer": "Resposta do assistente",
+      "model": "Modelo {{model}}",
+      "latency": "{{latency}} ms",
+      "feedbackLabel": "Avaliações da resposta",
+      "ratedUp": "👍 {{name}}",
+      "ratedDown": "👎 {{name}}"
+    }
   },
   "audit": {
     "title": "Auditoria",

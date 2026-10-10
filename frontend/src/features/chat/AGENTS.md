@@ -7,13 +7,12 @@
 - `ChatPage.tsx`: layout das duas rotas (lê o `:conversationId` com `useMatch`, porque é o elemento da rota-pai e continua montado quando a primeira pergunta move a URL para a conversa nova); dono do `useChatStream`, para a resposta da conversa que se deixa e abre o painel de citação.
 - `ConversationList.tsx`: "Nova conversa", conversas pelo título (a primeira pergunta; sem título, "Conversa sem título"), "Carregar mais" e exclusão com `ConfirmDialog` (excluir a aberta volta para `/chat`).
 - `NewConversation.tsx`: seletor de assistente (só os ativos; a API já filtra para viewer) e o composer; sem assistente ativo, estado vazio com link para `/assistants` só para editor ou acima.
-- `ConversationView.tsx`: cabeçalho, `MessageList`, erro de envio (JSON antes do stream, pelo `code`) e `Composer`.
-- `MessageList.tsx`: thread em `ol`; a resposta em andamento num `aria-live="polite"`; acompanha o fim só se o leitor já estiver no fim.
-- `AssistantMessage.tsx`: Markdown, lista de fontes, `no_source` com "Abrir chamado" desabilitado e a dica, `failed`/`interrupted` com aviso e "Reenviar pergunta".
-- `ChatMarkdown.tsx` + `citationMarkers.ts`: `react-markdown` sem HTML cru (`skipHtml`, sem `rehype-raw`), links em nova aba com `rel="noopener noreferrer"`, e o plugin que troca `[n]` de uma citação existente por botão.
-- `CitationSheet.tsx` (painel lateral da fonte), `FeedbackControls.tsx` (👍/👎 com comentário opcional), `Composer.tsx` (Enter envia, Shift+Enter quebra linha, "Parar" durante o stream, foco devolvido), `chatForm.ts` (schemas zod e funções puras).
+- `ConversationView.tsx`: cabeçalho, `MessageList`, erro de envio (JSON antes do stream, pelo `code`; some ao trocar de conversa, via `clearFailure` chamado pelo `ChatPage`) e `Composer`.
+- `MessageList.tsx`: thread em `ol`; a resposta em andamento num `aria-live="polite"`; acompanha o fim só se o leitor já estiver no fim. As mensagens gravadas que já aparecem como a troca em andamento saem por `visibleMessages` (`chatForm.ts`): pelos ids do evento `citations` ou, antes dele (a conversa nova recarregada logo ao abrir), pela cauda com a mesma pergunta e a resposta `streaming`.
+- A resposta (`AssistantMessage`, `ChatMarkdown`) e o painel da fonte (`CitationSheet`) vêm de `components/`, compartilhados com a tela de conversas; o plugin dos marcadores `[n]` fica em `lib/citationMarkers.ts`.
+- `FeedbackControls.tsx` (👍/👎 com comentário opcional), `Composer.tsx` (Enter envia, Shift+Enter quebra linha, "Parar" durante o stream, foco devolvido), `chatForm.ts` (schemas zod e funções puras, incluindo `visibleMessages`).
 
-**Não entra aqui**: SSE, `fetch` e hooks de API (`lib/api/chatStream.ts`, `lib/api/conversations.ts`), visualização administrativa de conversas (área `conversations`), textos (`i18n/locales/`, chaves `chat.*`).
+**Não entra aqui**: SSE, `fetch` e hooks de API (`lib/api/chatStream.ts`, `lib/api/conversations.ts`), visualização administrativa de conversas (`features/conversations/`), renderização de respostas compartilhada (`components/`), textos (`i18n/locales/`, chaves `chat.*`).
 
 **Convenções locais**:
 

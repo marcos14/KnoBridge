@@ -5,6 +5,9 @@
 
 import type { AuditAction, AuditQuery } from "@/lib/api/audit";
 import { isAuditAction } from "@/lib/auditActions";
+import { dayPeriod, validDay } from "@/lib/days";
+import { parseOffset } from "@/lib/pagination";
+import { isUuid } from "@/lib/uuid";
 
 export interface AuditFilters {
   action?: AuditAction;
@@ -20,27 +23,6 @@ export interface AuditSearch {
   offset: number;
 }
 
-const DAY = /^(\d{4})-(\d{2})-(\d{2})$/;
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-/** Parts of a real calendar day written as `YYYY-MM-DD`, or `undefined`. */
-function dayParts(value: string): [number, number, number] | undefined {
-  const match = DAY.exec(value);
-  if (match === null) {
-    return undefined;
-  }
-  const [year, month, day] = [Number(match[1]), Number(match[2]), Number(match[3])];
-  const date = new Date(year, month - 1, day);
-  if (date.getMonth() !== month - 1 || date.getDate() !== day) {
-    return undefined;
-  }
-  return [year, month, day];
-}
-
-function validDay(value: string | null): string | undefined {
-  return value !== null && dayParts(value) !== undefined ? value : undefined;
-}
-
 /**
  * Filters and offset read from the URL. Values the API would refuse (unknown action, malformed
  * id or day, negative offset) are dropped, so a hand-edited link still opens a listing.
@@ -48,15 +30,14 @@ function validDay(value: string | null): string | undefined {
 export function parseAuditSearch(params: URLSearchParams): AuditSearch {
   const action = params.get("action");
   const actor = params.get("actor");
-  const offset = Number(params.get("offset") ?? "0");
   return {
     filters: {
       action: action !== null && isAuditAction(action) ? action : undefined,
-      actor: actor !== null && UUID.test(actor) ? actor : undefined,
+      actor: isUuid(actor) ? actor : undefined,
       from: validDay(params.get("from")),
       to: validDay(params.get("to")),
     },
-    offset: Number.isInteger(offset) && offset > 0 ? offset : 0,
+    offset: parseOffset(params.get("offset")),
   };
 }
 
@@ -80,26 +61,17 @@ export function auditSearchParams({ filters, offset }: AuditSearch): URLSearchPa
   return params;
 }
 
-/** Start of the local day `day` (`YYYY-MM-DD`) plus `shift` days, as an ISO instant. */
-function dayStart(day: string, shift = 0): string | undefined {
-  const parts = dayParts(day);
-  if (parts === undefined) {
-    return undefined;
-  }
-  const [year, month, date] = parts;
-  return new Date(year, month - 1, date + shift).toISOString();
-}
-
 /**
  * Query sent to the API for the filters: the inclusive day range becomes the half-open interval
  * `[start of "from", start of the day after "to")` of the browser's time zone.
  */
 export function toAuditQuery({ filters, offset }: AuditSearch, limit: number): AuditQuery {
+  const period = dayPeriod(filters.from, filters.to);
   return {
     action: filters.action,
     actorUserId: filters.actor,
-    occurredFrom: filters.from === undefined ? undefined : dayStart(filters.from),
-    occurredTo: filters.to === undefined ? undefined : dayStart(filters.to, 1),
+    occurredFrom: period.start,
+    occurredTo: period.end,
     limit,
     offset,
   };

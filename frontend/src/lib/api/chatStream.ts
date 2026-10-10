@@ -41,6 +41,8 @@ export interface ChatStream {
   send: (conversationId: string, content: string) => Promise<boolean>;
   /** Stops the answer in progress; the server keeps what was generated as `interrupted`. */
   stop: () => void;
+  /** Forgets `failure`: it belongs to the conversation the member just left. */
+  clearFailure: () => void;
 }
 
 function applyEvent(pending: PendingAnswer, event: ChatEvent): PendingAnswer {
@@ -159,5 +161,9 @@ export function useChatStream(workspaceId: string): ChatStream {
     controllerRef.current?.abort();
   }, []);
 
-  return { pending, failure, send, stop };
+  const clearFailure = useCallback(() => {
+    setFailure(null);
+  }, []);
+
+  return { pending, failure, send, stop, clearFailure };
 }

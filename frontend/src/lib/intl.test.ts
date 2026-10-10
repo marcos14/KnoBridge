@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatDateTime, formatRelativeTime, languageName } from "./intl";
+import { formatDate, formatDateTime, formatRelativeTime, languageName } from "./intl";
 
 const NOW = new Date("2026-10-10T12:00:00Z");
 
@@ -31,6 +31,12 @@ describe("formatDateTime", () => {
     expect(formatDateTime(new Date("2026-10-01T09:00:00Z"), "pt-BR", "UTC")).toBe(
       "1 de out. de 2026, 09:00",
     );
+  });
+});
+
+describe("formatDate", () => {
+  it("test_format_date_shows_only_the_day", () => {
+    expect(formatDate(new Date("2026-10-01T23:30:00Z"), "pt-BR", "UTC")).toBe("1 de out. de 2026");
   });
 });
 

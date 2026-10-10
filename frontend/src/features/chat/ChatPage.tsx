@@ -2,13 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMatch, useNavigate } from "react-router";
 
+import { CitationSheet } from "@/components/CitationSheet";
 import { useCurrentWorkspace } from "@/hooks/use-current-workspace";
 import type { Role } from "@/lib/api/auth";
 import { useChatStream } from "@/lib/api/chatStream";
 import { type Citation, useCreateConversation } from "@/lib/api/conversations";
 import { hasRole } from "@/lib/roles";
 
-import { CitationSheet } from "./CitationSheet";
 import { ConversationList } from "./ConversationList";
 import { ConversationView } from "./ConversationView";
 import { NewConversation } from "./NewConversation";
@@ -50,19 +50,24 @@ function ChatWorkspace({ workspaceId, role, conversationId }: ChatWorkspaceProps
   const stream = useChatStream(workspaceId);
   const create = useCreateConversation(workspaceId);
   const [citation, setCitation] = useState<Citation | null>(null);
-  const { pending, stop } = stream;
+  const { pending, stop, clearFailure } = stream;
   const openRef = useRef(conversationId);
   const streamingId = pending?.conversationId;
 
-  // Leaving a conversation ends the answer streaming in it. Only leaving counts: the first
-  // question of a new conversation starts streaming just before the URL reaches it.
+  // Leaving a conversation ends the answer streaming in it and forgets a question that did not
+  // go there. Only leaving counts: the first question of a new conversation starts streaming just
+  // before the URL reaches it.
   useEffect(() => {
     const left = openRef.current;
     openRef.current = conversationId;
-    if (left !== conversationId && streamingId === left) {
+    if (left === conversationId) {
+      return;
+    }
+    clearFailure();
+    if (streamingId === left) {
       stop();
     }
-  }, [conversationId, streamingId, stop]);
+  }, [conversationId, streamingId, stop, clearFailure]);
 
   /** Creates the conversation (an API error rejects) and sends the first question to it. */
   async function start(assistantId: string, content: string) {

@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/sheet";
 import type { Citation } from "@/lib/api/conversations";
 
-import { isWebUri } from "./chatForm";
+import { isWebUri } from "@/lib/citationMarkers";
 
 interface CitationSheetProps {
   /** The source to show; `null` keeps the panel closed. */

@@ -158,6 +158,20 @@ describe("useChatStream", () => {
     expect(refresh.spy).not.toHaveBeenCalled();
   });
 
+  it("test_use_chat_stream_clear_failure_forgets_the_error", async () => {
+    server.use(messagesRespond(() => apiErrorResponse(409, "assistant_inactive")));
+    const { result } = renderStream();
+    await act(async () => {
+      await result.current.send(CONVERSATION_ID, "Pergunta");
+    });
+
+    act(() => {
+      result.current.clearFailure();
+    });
+
+    expect(result.current.failure).toBeNull();
+  });
+
   it("test_use_chat_stream_reports_network_failure_before_the_stream", async () => {
     server.use(messagesRespond(() => HttpResponse.error()));
     const { result } = renderStream();

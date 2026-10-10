@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { citationIndexFromHref, remarkCitationMarkers } from "./citationMarkers";
+import { citationIndexFromHref, isWebUri, remarkCitationMarkers } from "./citationMarkers";
 
 interface Node {
   type: string;
@@ -64,5 +64,14 @@ describe("remarkCitationMarkers", () => {
     expect(citationIndexFromHref("#citation-x")).toBeNull();
     expect(citationIndexFromHref("https://x.test")).toBeNull();
     expect(citationIndexFromHref(undefined)).toBeNull();
+  });
+});
+
+describe("isWebUri", () => {
+  it("test_is_web_uri_accepts_only_http_links", () => {
+    expect(isWebUri("https://docs.example.test")).toBe(true);
+    expect(isWebUri("HTTP://docs.example.test")).toBe(true);
+    expect(isWebUri("src/caixa.py")).toBe(false);
+    expect(isWebUri("javascript:alert(1)")).toBe(false);
   });
 });

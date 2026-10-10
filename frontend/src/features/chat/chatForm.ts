@@ -1,6 +1,7 @@
 import type { TFunction } from "i18next";
 import { z } from "zod";
 
+import type { PendingAnswer } from "@/lib/api/chatStream";
 import type { Message } from "@/lib/api/conversations";
 
 /** Limits of the contract (`MessageCreate.content`, `FeedbackIn.comment`). */
@@ -53,9 +54,30 @@ export function questionBefore(messages: readonly Message[], answerId: string): 
   return null;
 }
 
-/** Whether a source URI can be opened as a web link (other URIs, such as file paths, are shown). */
-export function isWebUri(uri: string): boolean {
-  return /^https?:\/\//i.test(uri);
+/**
+ * Saved messages not already on screen as the exchange being streamed. Once the `citations` event
+ * names them, the saved question and answer are hidden by id. Before it, a reload (the new
+ * conversation opening) can already bring them, since the server saves both before streaming: a
+ * tail made of that question, alone or followed by a `streaming` answer, is the same exchange.
+ */
+export function visibleMessages(
+  messages: readonly Message[],
+  pending: Pick<PendingAnswer, "question" | "userMessageId" | "messageId"> | null,
+): readonly Message[] {
+  if (pending === null) {
+    return messages;
+  }
+  if (pending.userMessageId !== null) {
+    return messages.filter(
+      (message) => message.id !== pending.messageId && message.id !== pending.userMessageId,
+    );
+  }
+  const last = messages.at(-1);
+  const tail = last?.role === "assistant" && last.status === "streaming" ? 2 : 1;
+  const question = messages.at(-tail);
+  return question?.role === "user" && question.content === pending.question
+    ? messages.slice(0, -tail)
+    : messages;
 }
 
 /** Whether Enter in the composer sends: plain Enter, not Shift+Enter nor while composing (IME). */

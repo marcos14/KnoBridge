@@ -7,6 +7,13 @@ import type { Citation, Conversation, ConversationDetail, Message } from "@/lib/
 import type { Invitation, InvitationPreview } from "@/lib/api/invites";
 import type { Member } from "@/lib/api/members";
 import type { Provider } from "@/lib/api/providers";
+import type {
+  ConversationStats,
+  WorkspaceConversation,
+  WorkspaceConversationDetail,
+  WorkspaceFeedback,
+  WorkspaceMessage,
+} from "@/lib/api/workspaceConversations";
 
 /** Synthetic ids, fixed so tests can build URLs such as `/w/${WORKSPACE_ID}`. */
 export const USER_ID = "00000000-0000-4000-8000-000000000001";
@@ -465,5 +472,127 @@ export function makeConversationDetail(
   return {
     ...conversation,
     messages: { items: messages, total: messages.length, limit: 500, offset: 0 },
+  };
+}
+
+/** One row of `GET .../admin/conversations`: by default Ana's "Como fecho o caixa?". */
+export function makeWorkspaceConversation(
+  overrides: Partial<WorkspaceConversation> = {},
+): WorkspaceConversation {
+  return {
+    id: CONVERSATION_ID,
+    assistant_id: ASSISTANT_ID,
+    assistant_name: "Suporte ERP",
+    user_id: USER_ID,
+    user_name: "Ana Teste",
+    user_email: "ana@example.test",
+    channel: "panel",
+    title: "Como fecho o caixa?",
+    message_count: 4,
+    thumbs_up: 1,
+    thumbs_down: 1,
+    created_at: "2026-10-09T10:00:00Z",
+    updated_at: "2026-10-09T10:06:00Z",
+    last_message_at: "2026-10-09T10:06:00Z",
+    ...overrides,
+  };
+}
+
+/** The default workspace conversations: Ana's cash question and Bruno's untitled one. */
+export function makeWorkspaceConversations(): WorkspaceConversation[] {
+  return [
+    makeWorkspaceConversation(),
+    makeWorkspaceConversation({
+      id: OTHER_CONVERSATION_ID,
+      user_id: memberId(1),
+      user_name: "Bruno Lima",
+      user_email: "bruno@example.test",
+      title: null,
+      message_count: 0,
+      thumbs_up: 0,
+      thumbs_down: 0,
+      created_at: "2026-10-01T09:00:00Z",
+      updated_at: "2026-10-01T09:00:00Z",
+      last_message_at: null,
+    }),
+  ];
+}
+
+/** One rating of an answer, as admins see it: by default Ana's 👍 without comment. */
+export function makeWorkspaceFeedback(
+  overrides: Partial<WorkspaceFeedback> = {},
+): WorkspaceFeedback {
+  return {
+    rating: "up",
+    comment: "",
+    user_id: USER_ID,
+    user_name: "Ana Teste",
+    user_email: "ana@example.test",
+    updated_at: "2026-10-09T10:07:00Z",
+    ...overrides,
+  };
+}
+
+/** A message as admins see it (everyone's feedback): by default a completed answer. */
+export function makeWorkspaceMessage(overrides: Partial<WorkspaceMessage> = {}): WorkspaceMessage {
+  return { ...makeMessage(), feedback: [], ...overrides };
+}
+
+/** The default admin thread: a cited answer rated 👍 and a "no source" answer rated 👎. */
+export function makeWorkspaceThread(): WorkspaceMessage[] {
+  return [
+    { ...makeQuestion("Como fecho o caixa?", messageId(1)), feedback: [] },
+    makeWorkspaceMessage({
+      id: messageId(2),
+      content: "Confira os lançamentos e clique em **Fechar** [1].",
+      citations: [makeCitation()],
+      feedback: [makeWorkspaceFeedback({ comment: "Resolveu." })],
+    }),
+    { ...makeQuestion("E a sangria?", messageId(3)), feedback: [] },
+    makeWorkspaceMessage({
+      id: messageId(4),
+      content: "Não encontrei isso nas fontes.",
+      status: "no_source",
+      model: null,
+      latency_ms: 300,
+      feedback: [
+        makeWorkspaceFeedback({
+          rating: "down",
+          comment: "Faltou o manual.",
+          user_id: memberId(1),
+          user_name: "Bruno Lima",
+          user_email: "bruno@example.test",
+        }),
+      ],
+    }),
+  ];
+}
+
+/** Body of `GET .../admin/conversations/{id}`: `conversation` with `messages` in one page. */
+export function makeWorkspaceConversationDetail(
+  conversation: WorkspaceConversation = makeWorkspaceConversation(),
+  messages: WorkspaceMessage[] = makeWorkspaceThread(),
+): WorkspaceConversationDetail {
+  return {
+    ...conversation,
+    messages: { items: messages, total: messages.length, limit: 500, offset: 0 },
+  };
+}
+
+/** Body of `GET .../admin/conversations/stats`: the 30 days before `TEST_NOW`. */
+export function makeConversationStats(
+  overrides: Partial<ConversationStats> = {},
+): ConversationStats {
+  return {
+    conversations: 12,
+    messages: 48,
+    thumbs_up: 9,
+    thumbs_down: 3,
+    no_source_answers: 2,
+    failed_answers: 1,
+    interrupted_answers: 4,
+    period_start: "2026-09-10T12:00:00Z",
+    period_end: "2026-10-10T12:00:00Z",
+    ...overrides,
   };
 }
