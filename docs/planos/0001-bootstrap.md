@@ -64,17 +64,17 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: 0793492
   - id: F4
     titulo: Infra local e CI
-    status: pendente
+    status: em_execucao
     subfases:
       - id: F4.1
         titulo: Docker Compose e guia de subida
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-10
+        concluida_em: 2026-10-10
         commit: null
       - id: F4.2
         titulo: CI no GitHub Actions, pre-commit e docs finais
@@ -174,6 +174,13 @@ decisoes:
     decisao: "Contrato: knobridge-openapi gera docs/specs/openapi.json determinístico; frontend usa openapi-typescript (--check na CI) + openapi-fetch; API na mesma origem sob /v1 (proxy no Vite e no nginx); Tailwind v4 + shadcn; MSW 2.x (peer do Vitest); openapi-typescript liberado para TS 6 em peerDependencyRules."
     motivo: "Mantém o frontend preso ao contrato gerado, sem CORS em produção e com peers limpos."
     alternativas: "orval; MSW 3; chamar a API em outra origem com CORS."
+    adr: null
+  - id: D14
+    data: 2026-10-10
+    por: agente
+    decisao: "MinIO no compose usa a build comunitária pgsty/minio com tag de release fixa, trocável por MINIO_IMAGE; Temporal via auto-setup 1.29.7 (só dev) com bancos temporal e temporal_visibility no mesmo Postgres; extensão vector criada no init do Postgres; portas em 127.0.0.1 e configuráveis."
+    motivo: "A imagem oficial minio/minio saiu do Docker Hub e quay.io exige autenticação; o componente (MinIO, S3-compatível) não muda, só a origem da imagem."
+    alternativas: "Filesystem no lugar do MinIO; outra implementação S3 (ex. SeaweedFS, Garage)."
     adr: null
 pendencias_usuario: []
 ---
@@ -318,6 +325,8 @@ Nenhuma no momento. A CI só roda de fato quando o repositório estiver no GitHu
 - 2026-10-10 — F3.1 concluída: 11 testes, cobertura 100%; lint, typecheck e build ok (D12).
 - 2026-10-10 — F3.2 iniciada.
 - 2026-10-10 — F3.2 concluída: backend 68 testes 100%; frontend 27 testes 100%, e2e 1 ok, check:api ok, docker build ok (D13). Fora do escopo, para plano futuro: schema ErrorResponse no OpenAPI para tipar o formato de erro no frontend.
+- 2026-10-10 — F4.1 iniciada.
+- 2026-10-10 — F4.1 concluída: compose verificado pelo agente e pelo orquestrador (todos os serviços saudáveis, ready 200 direto e via proxy do frontend, migrate exit 0) (D14).
 
 ## 8. Encerramento
 

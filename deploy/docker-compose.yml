@@ -1,0 +1,171 @@
+# KnoBridge development environment: everything the product needs, nothing of its features yet.
+#
+#   cp deploy/.env.example deploy/.env      # optional: every variable has a dev default below
+#   docker compose -f deploy/docker-compose.yml up --build
+#
+# Variables are interpolated from deploy/.env (compose reads the .env next to this file).
+# Defaults are DEVELOPMENT-ONLY credentials; never reuse them anywhere else.
+# Host ports bind to ${BIND_ADDRESS} (127.0.0.1 by default), so nothing is exposed to the network.
+# Guide: docs/guias/subir-ambiente.md
+
+name: knobridge
+
+x-backend: &backend
+  build: ../backend
+  image: knobridge-backend:dev
+  environment: &backend-env
+    KNOBRIDGE_ENV: local
+    KNOBRIDGE_LOG_LEVEL: ${KNOBRIDGE_LOG_LEVEL:-INFO}
+    KNOBRIDGE_DATABASE_URL: postgresql+asyncpg://${KNOBRIDGE_DB_USER:-knobridge}:${KNOBRIDGE_DB_PASSWORD:-knobridge-dev}@postgres:5432/${KNOBRIDGE_DB_NAME:-knobridge}
+    KNOBRIDGE_TEMPORAL_ADDRESS: temporal:7233
+    KNOBRIDGE_TEMPORAL_NAMESPACE: ${TEMPORAL_NAMESPACE:-default}
+    KNOBRIDGE_TEMPORAL_TASK_QUEUE: ${KNOBRIDGE_TEMPORAL_TASK_QUEUE:-knobridge}
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_SUPERUSER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD:-postgres-dev}
+      POSTGRES_DB: postgres
+      # Read by postgres/init-databases.sh on the first start (empty volume).
+      KNOBRIDGE_DB_NAME: ${KNOBRIDGE_DB_NAME:-knobridge}
+      KNOBRIDGE_DB_USER: ${KNOBRIDGE_DB_USER:-knobridge}
+      KNOBRIDGE_DB_PASSWORD: ${KNOBRIDGE_DB_PASSWORD:-knobridge-dev}
+      TEMPORAL_DB_USER: ${TEMPORAL_DB_USER:-temporal}
+      TEMPORAL_DB_PASSWORD: ${TEMPORAL_DB_PASSWORD:-temporal-dev}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init-databases.sh:/docker-entrypoint-initdb.d/10-init-databases.sh:ro
+    ports:
+      - ${BIND_ADDRESS:-127.0.0.1}:${POSTGRES_PORT:-5432}:5432
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U "$${POSTGRES_USER}" -d postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  temporal:
+    image: temporalio/auto-setup:1.29.7
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB: postgres12
+      DB_PORT: 5432
+      POSTGRES_SEEDS: postgres
+      POSTGRES_USER: ${TEMPORAL_DB_USER:-temporal}
+      POSTGRES_PWD: ${TEMPORAL_DB_PASSWORD:-temporal-dev}
+      DBNAME: temporal
+      VISIBILITY_DBNAME: temporal_visibility
+      # The databases are created by postgres/init-databases.sh; auto-setup only applies schemas.
+      SKIP_DB_CREATE: "true"
+      DEFAULT_NAMESPACE: ${TEMPORAL_NAMESPACE:-default}
+    ports:
+      - ${BIND_ADDRESS:-127.0.0.1}:${TEMPORAL_PORT:-7233}:7233
+    healthcheck:
+      # Healthy only once the namespace exists, so the worker never starts against a half-ready server.
+      test:
+        - CMD-SHELL
+        - temporal operator namespace describe --address temporal:7233 -n "${TEMPORAL_NAMESPACE:-default}" >/dev/null
+      interval: 5s
+      timeout: 10s
+      retries: 30
+      start_period: 20s
+
+  temporal-ui:
+    image: temporalio/ui:2.55.0
+    restart: unless-stopped
+    depends_on:
+      temporal:
+        condition: service_healthy
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+      TEMPORAL_CORS_ORIGINS: http://localhost:${TEMPORAL_UI_PORT:-8080}
+    ports:
+      - ${BIND_ADDRESS:-127.0.0.1}:${TEMPORAL_UI_PORT:-8080}:8080
+
+  minio:
+    # The official minio/minio images stopped being published publicly; pgsty/minio is a
+    # community build of the same AGPL server (with the console) under release tags.
+    image: ${MINIO_IMAGE:-pgsty/minio:RELEASE.2026-08-04T00-00-00Z}
+    restart: unless-stopped
+    command: [server, /data, --console-address, ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-knobridge}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-knobridge-dev}
+    volumes:
+      - minio-data:/data
+    ports:
+      - ${BIND_ADDRESS:-127.0.0.1}:${MINIO_API_PORT:-9000}:9000
+      - ${BIND_ADDRESS:-127.0.0.1}:${MINIO_CONSOLE_PORT:-9001}:9001
+    healthcheck:
+      test: [CMD, curl, -fsS, http://127.0.0.1:9000/minio/health/live]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  migrate:
+    <<: *backend
+    command: [alembic, upgrade, head]
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    <<: *backend
+    command: [knobridge-api]
+    restart: unless-stopped
+    environment:
+      <<: *backend-env
+      KNOBRIDGE_API_HOST: 0.0.0.0
+      KNOBRIDGE_API_PORT: 8000
+      KNOBRIDGE_CORS_ORIGINS: '["http://localhost:${FRONTEND_PORT:-5173}"]'
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - ${BIND_ADDRESS:-127.0.0.1}:${API_PORT:-8000}:8000
+    healthcheck:
+      # The image has no curl: probe readiness (database included) with the bundled Python.
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/v1/health/ready', timeout=3)
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 5s
+
+  worker:
+    <<: *backend
+    command: [knobridge-worker]
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      temporal:
+        condition: service_healthy
+
+  frontend:
+    build: ../frontend
+    image: knobridge-frontend:dev
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - ${BIND_ADDRESS:-127.0.0.1}:${FRONTEND_PORT:-5173}:80
+    healthcheck:
+      test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1/]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  postgres-data:
+  minio-data:
