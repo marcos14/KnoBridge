@@ -13,7 +13,7 @@
 - Nome `test_<unidade>_<comportamento>`, arrange / act / assert, um comportamento por teste.
 - Sem rede, sem `sleep`, sem hora real, sem aleatoriedade sem seed. LLM e APIs externas só por fakes.
 - A fixture automática muda o cwd para `tmp_path`: crie ali o `.env` quando o teste precisar de um.
-- Testes que precisam de Postgres ou Temporal reais levam `@pytest.mark.integration` e rodam por padrão (exigem Docker). Postgres: use a fixture `postgres_url`; crie o engine dentro do loop do teste (`asyncio.run` ou `TestClient`) com `NullPool` ou descarte-o no fim. Quem altera o schema devolve o banco a `base`, porque o container é compartilhado.
+- Testes que precisam de Postgres ou Temporal reais levam `@pytest.mark.integration` e rodam por padrão (Postgres exige Docker; Temporal usa o servidor de teste do SDK, baixado na primeira execução; ver `workers/AGENTS.md`). Postgres: use a fixture `postgres_url`; crie o engine dentro do loop do teste (`asyncio.run` ou `TestClient`) com `NullPool` ou descarte-o no fim. Quem altera o schema devolve o banco a `base`, porque o container é compartilhado.
 
 **Como testar**: de `backend/`, `uv run pytest` (cobertura de linhas e branches com `--cov-fail-under=95`); só unitários: `uv run pytest -m "not integration"`.
 

@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     database_max_overflow: int = Field(default=10, ge=0)
     # Seconds to wait for a new connection, so readiness probes fail fast instead of hanging.
     database_connect_timeout: float = Field(default=5.0, gt=0)
+    temporal_address: str = "localhost:7233"
+    temporal_namespace: str = "default"
+    temporal_task_queue: str = "knobridge"
 
 
 @lru_cache(maxsize=1)

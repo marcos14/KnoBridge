@@ -14,10 +14,12 @@ dependencies = [
     "sqlalchemy[asyncio]>=2.0.36",
     "asyncpg>=0.30",
     "alembic>=1.14",
+    "temporalio>=1.34.0",
 ]
 
 [project.scripts]
 knobridge-api = "knobridge.api.app:serve"
+knobridge-worker = "knobridge.workers.worker:main"
 
 [dependency-groups]
 dev = [

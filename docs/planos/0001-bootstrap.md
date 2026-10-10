@@ -24,7 +24,7 @@ fases:
         commit: 9e82685
   - id: F2
     titulo: Backend base
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F2.1
         titulo: Pacote Python, core e API com health
@@ -39,13 +39,13 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: 40118b3
       - id: F2.3
         titulo: Worker Temporal e imagem Docker do backend
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-10
+        concluida_em: 2026-10-10
         commit: null
   - id: F3
     titulo: Frontend base
@@ -153,6 +153,13 @@ decisoes:
     decisao: "Engine async no app.state via lifespan (injetável em teste); testes async via asyncio.run sem pytest-asyncio; migrations/env.py fora da medição de cobertura (fora de src/) mas exercitado pelos testes de migração; o gate de 95% vale para a suíte completa, com integração."
     motivo: "Mantém o pacote medido 100% sem pragma e evita dependência extra; a CI roda integração sempre."
     alternativas: "pytest-asyncio; mover env.py para src/."
+    adr: null
+  - id: D11
+    data: 2026-10-10
+    por: agente
+    decisao: "Worker com HealthWorkflow knobridge.health.v1 e activity knobridge.health.ping.v1 (timeout 10s, 3 tentativas); imagem única do backend (uv 0.11.11, python:3.12-slim, uid 10001); encerramento gracioso por SIGTERM fica para quando houver workflows de domínio."
+    motivo: "Prova o caminho completo de registro e execução sem antecipar domínio; activities idempotentes toleram o encerramento abrupto por ora."
+    alternativas: "Tratar SIGTERM já no bootstrap."
     adr: null
 pendencias_usuario: []
 ---
@@ -291,6 +298,8 @@ Nenhuma no momento. A CI só roda de fato quando o repositório estiver no GitHu
 - 2026-10-10 — F2.1 concluída: 31 testes, cobertura 100%; ruff e pyright strict limpos (D9).
 - 2026-10-10 — F2.2 iniciada.
 - 2026-10-10 — F2.2 concluída: 48 testes (5 de integração com pgvector/pg17), cobertura 100% (D10).
+- 2026-10-10 — F2.3 iniciada.
+- 2026-10-10 — F2.3 concluída: 62 testes, cobertura 100%; docker build ok e entry points presentes na imagem (D11).
 
 ## 8. Encerramento
 

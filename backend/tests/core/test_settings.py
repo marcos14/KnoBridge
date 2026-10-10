@@ -83,3 +83,27 @@ def test_settings_rejects_non_positive_connect_timeout(monkeypatch: pytest.Monke
 
     with pytest.raises(ValidationError):
         Settings()
+
+
+def test_settings_temporal_defaults_point_to_local_server() -> None:
+    settings = Settings()
+
+    assert (
+        settings.temporal_address,
+        settings.temporal_namespace,
+        settings.temporal_task_queue,
+    ) == ("localhost:7233", "default", "knobridge")
+
+
+def test_settings_reads_temporal_variables(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("KNOBRIDGE_TEMPORAL_ADDRESS", "temporal:7233")
+    monkeypatch.setenv("KNOBRIDGE_TEMPORAL_NAMESPACE", "knobridge")
+    monkeypatch.setenv("KNOBRIDGE_TEMPORAL_TASK_QUEUE", "pipelines")
+
+    settings = Settings()
+
+    assert (
+        settings.temporal_address,
+        settings.temporal_namespace,
+        settings.temporal_task_queue,
+    ) == ("temporal:7233", "knobridge", "pipelines")

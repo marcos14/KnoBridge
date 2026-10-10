@@ -43,6 +43,30 @@ uv run alembic revision -m "add sources table"   # nova revisão em migrations/v
 
 Regras das migrações em [`migrations/AGENTS.md`](migrations/AGENTS.md).
 
+## Worker Temporal
+
+O worker conecta em `KNOBRIDGE_TEMPORAL_ADDRESS` (padrão `localhost:7233`), no namespace `KNOBRIDGE_TEMPORAL_NAMESPACE` (padrão `default`), e consome a task queue `KNOBRIDGE_TEMPORAL_TASK_QUEUE` (padrão `knobridge`). Para um Temporal local descartável, com a UI em `http://localhost:8233`:
+
+```sh
+temporal server start-dev            # com a CLI do Temporal instalada
+uv run knobridge-worker              # logs JSON em stderr; Ctrl+C encerra
+```
+
+Teste rápido, com a CLI: `temporal workflow execute --type knobridge.health.v1 --task-queue knobridge` deve devolver `"ok"`.
+
+## Imagem Docker
+
+Uma única imagem serve api, worker e migrações (o comando padrão é `knobridge-api`, escutando em `0.0.0.0:8000`):
+
+```sh
+docker build -t knobridge-backend backend                    # da raiz do repositório
+docker run --rm -p 8000:8000 knobridge-backend               # API
+docker run --rm knobridge-backend knobridge-worker           # worker
+docker run --rm knobridge-backend alembic upgrade head       # migrações
+```
+
+Passe a configuração por variáveis `KNOBRIDGE_*` (`-e` ou `--env-file`); o `.env` não entra na imagem.
+
 ## Testar
 
 ```sh
@@ -50,4 +74,4 @@ uv run ruff check . && uv run ruff format --check . && uv run pyright
 uv run pytest   # inclui cobertura de linhas e branches com gate de 95%
 ```
 
-Os testes de integração (`@pytest.mark.integration`) sobem Postgres 17 + pgvector via testcontainers e exigem Docker rodando. Só unitários: `uv run pytest -m "not integration"` (o gate de cobertura pode falhar nesse modo).
+Os testes de integração (`@pytest.mark.integration`) sobem Postgres 17 + pgvector via testcontainers (exigem Docker rodando) e o servidor de teste do Temporal (o SDK baixa o binário na primeira execução). Só unitários: `uv run pytest -m "not integration"` (o gate de cobertura pode falhar nesse modo).
