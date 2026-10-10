@@ -291,7 +291,7 @@ Quando entrar (fase 3): OpenTelemetry + Langfuse para traces; conjunto de avalia
 | D6 | Framework de LLM | Nenhum / LangChain / LlamaIndex | Nenhum (SDKs + abstração própria) | Médio |
 | D7 | Canais de mensageria | WhatsApp e Telegram / Slack e Google Chat | **Slack e Google Chat**; WhatsApp e Telegram fora do escopo | Fácil (adaptador) |
 | D8 | Handoff humano | Próprio / Chatwoot | **Próprio**: abrir chamado + notificar Slack ou Google Chat | Fácil |
-| D9 | Multi-tenant | Desde o início / depois | Desde o início (modelo de dados) | Muito difícil depois |
+| D9 | Multi-tenant | Desde o início / depois | Desde o início (modelo de dados); RLS forçada por `SET LOCAL`, usuários com N workspaces ([ADR 0001](adr/0001-tenancy-e-rls.md)) | Muito difícil depois |
 | D10 | Mapeamento de código | Harness de agente / tree-sitter / ambos | **Harness** (Claude Code ou Codex) como principal; tree-sitter como fallback obrigatório | Fácil (são dois nós do canvas) |
 | D11 | Provedores de LLM | — | APIs **OpenAI, Anthropic, OpenRouter**; **assinatura OpenAI** (Codex CLI) para harness e desenvolvimento | Fácil |
 | D12 | Autenticação inicial | E-mail/senha / OIDC desde o início | **E-mail/senha** por ora; OIDC depois | Médio (prever `provider` no modelo) |

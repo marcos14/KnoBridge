@@ -2,7 +2,7 @@
 
 **Função**: testes da cadeia de migrações Alembic de `backend/migrations/`.
 
-**Entra aqui**: `test_migrations.py`, que roda `alembic upgrade` e `downgrade` programaticamente (`alembic.command`) contra o Postgres 17 + pgvector da fixture `postgres_url`, e confere o efeito no catálogo do banco (`pg_extension`, `pg_tables`, políticas de RLS).
+**Entra aqui**: `test_migrations.py`, que roda `alembic upgrade` e `downgrade` programaticamente (`alembic.command`) contra o Postgres 17 + pgvector da fixture `postgres_url`, e confere o efeito no catálogo do banco (`pg_extension`, `pg_class.relrowsecurity`/`relforcerowsecurity`, `pg_policies`), além de `test_migrations_match_orm_models`, que compara o schema em `head` com `Base.metadata` (autogenerate sem diferenças).
 **Não entra aqui**: testes de consultas e repositórios de domínio (ficam na pasta do módulo), testes de `core/db.py` (`tests/core/test_db.py`).
 
 **Convenções locais**:

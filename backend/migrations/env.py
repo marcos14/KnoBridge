@@ -14,7 +14,9 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
+from knobridge.core.models import Base
 from knobridge.core.settings import get_settings
+from knobridge.tenancy import models as tenancy_models
 
 config = context.config
 
@@ -22,8 +24,9 @@ config = context.config
 if config.config_file_name is not None and config.attributes.get("configure_logger", True):
     fileConfig(config.config_file_name, disable_existing_loggers=False)
 
-# No ORM models yet; autogenerate gets the metadata once the first domain table exists.
-target_metadata = None
+# Every module with ORM models is imported here so autogenerate sees its tables.
+_MODEL_MODULES = (tenancy_models,)  # imported for their side effect: tables join Base.metadata
+target_metadata = Base.metadata
 
 
 def _database_url() -> str:

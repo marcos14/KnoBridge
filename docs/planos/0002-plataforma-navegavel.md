@@ -13,14 +13,14 @@ branch: plano/0002-plataforma-navegavel
 fases:
   - id: F1
     titulo: "Fundação de dados, segurança e e-mail (backend)"
-    status: pendente
+    status: em_execucao
     subfases:
       - id: F1.1
         titulo: "Modelos de tenancy e RLS"
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-10
+        concluida_em: 2026-10-10
         commit: null
       - id: F1.2
         titulo: "Primitivas de segurança: senha, tokens, sessões e CSRF"
@@ -259,6 +259,13 @@ decisoes:
     decisao: "Branch plano/0002-plataforma-navegavel criada a partir de plano/0001-bootstrap, que ainda não foi integrada à main."
     motivo: "O plano depende do bootstrap."
     alternativas: "Esperar o merge do bootstrap na main."
+    adr: null
+  - id: D9
+    data: 2026-10-10
+    por: agente
+    decisao: "RLS: escopo por set_config transacional (app.workspace_id, app.user_id) e modo de sistema por app.system=on aceito pelas políticas; políticas separadas de leitura e escrita; workspaces com RLS forçada; users sem RLS (identidade da instância); enums como VARCHAR+CHECK."
+    motivo: "Uma credencial e um pool só; parâmetros ligados sem SQL dinâmico; escrita restrita ao workspace selecionado impede autopromoção."
+    alternativas: "Papel separado com BYPASSRLS para tarefas de sistema (registrado no ADR 0001 como evolução)."
     adr: null
 pendencias_usuario: []
 ---
@@ -529,6 +536,8 @@ Nenhuma aberta.
 
 - 2026-10-10 — entendimento concluído (9 respostas); plano criado; aguardando aprovação.
 - 2026-10-10 — plano aprovado pelo usuário; início da execução.
+- 2026-10-10 — F1.1 iniciada.
+- 2026-10-10 — F1.1 concluída: 90 testes, cobertura 100%; RLS provada com papel dono e papel não dono; ADR 0001 (D9).
 
 ## 8. Encerramento
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import uuid
 
 import pytest
 from fastapi import FastAPI, Request
@@ -9,7 +10,15 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool, QueuePool
 
-from knobridge.core.db import create_engine, create_session_factory, get_engine, get_session, ping
+from knobridge.core.db import (
+    create_engine,
+    create_session_factory,
+    get_engine,
+    get_session,
+    ping,
+    scoped_session,
+    system_session,
+)
 from knobridge.core.settings import Settings
 
 _UNREACHABLE_URL = "postgresql+asyncpg://user:pass@db.invalid:5432/knobridge"
@@ -108,3 +117,44 @@ def test_get_session_runs_queries_against_real_database(postgres_url: str) -> No
             await engine.dispose()
 
     assert asyncio.run(run()) == 42
+
+
+_READ_SCOPE = text(
+    "SELECT current_setting('app.workspace_id', true), current_setting('app.user_id', true),"
+    " current_setting('app.system', true)"
+)
+
+
+async def _read_scope(session: AsyncSession) -> tuple[str, str, str]:
+    row = (await session.execute(_READ_SCOPE)).one()
+    return (row[0], row[1], row[2])
+
+
+@pytest.mark.integration
+def test_scoped_session_sets_transaction_local_scope(postgres_url: str) -> None:
+    workspace_id = uuid.UUID("00000000-0000-4000-8000-00000000000a")
+
+    async def run() -> tuple[str, str, str]:
+        engine = create_async_engine(postgres_url, poolclass=NullPool)
+        try:
+            async with scoped_session(
+                create_session_factory(engine), workspace_id=workspace_id, user_id=None
+            ) as session:
+                return await _read_scope(session)
+        finally:
+            await engine.dispose()
+
+    assert asyncio.run(run()) == (str(workspace_id), "", "off")
+
+
+@pytest.mark.integration
+def test_system_session_enables_system_scope(postgres_url: str) -> None:
+    async def run() -> tuple[str, str, str]:
+        engine = create_async_engine(postgres_url, poolclass=NullPool)
+        try:
+            async with system_session(create_session_factory(engine)) as session:
+                return await _read_scope(session)
+        finally:
+            await engine.dispose()
+
+    assert asyncio.run(run()) == ("", "", "on")

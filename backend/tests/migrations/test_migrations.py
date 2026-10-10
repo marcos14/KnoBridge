@@ -6,12 +6,20 @@ from pathlib import Path
 
 import pytest
 from alembic import command
+from alembic.autogenerate import compare_metadata
 from alembic.config import Config
+from alembic.migration import MigrationContext
 from sqlalchemy import text
+from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.pool import NullPool
 
+from knobridge.core.models import Base
 from knobridge.core.settings import get_settings
+from knobridge.tenancy import models as tenancy_models
+
+_MODEL_MODULES = (tenancy_models,)  # imported so their tables are in Base.metadata
+_TENANCY_TABLES = ("memberships", "users", "workspaces")
 
 ALEMBIC_INI = Path(__file__).resolve().parents[2] / "alembic.ini"
 
@@ -47,6 +55,75 @@ def test_migrations_offline_mode_emits_sql_without_database() -> None:
     command.upgrade(config, "head", sql=True)
 
     assert "CREATE EXTENSION IF NOT EXISTS vector" in output.getvalue()
+    assert "ALTER TABLE memberships FORCE ROW LEVEL SECURITY" in output.getvalue()
+
+
+def _tenancy_catalog(database_url: str) -> dict[str, tuple[bool, bool, int]]:
+    """Map each existing tenancy table to (RLS enabled, RLS forced, number of policies)."""
+
+    async def query() -> dict[str, tuple[bool, bool, int]]:
+        engine = create_async_engine(database_url, poolclass=NullPool)
+        try:
+            async with engine.connect() as connection:
+                result = await connection.execute(
+                    text(
+                        "SELECT c.relname, c.relrowsecurity, c.relforcerowsecurity,"
+                        " (SELECT count(*) FROM pg_policies p WHERE p.tablename = c.relname)"
+                        " FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace"
+                        " WHERE n.nspname = 'public' AND c.relkind = 'r'"
+                        " AND c.relname = ANY(:tables)"
+                    ),
+                    {"tables": list(_TENANCY_TABLES)},
+                )
+                return {row[0]: (row[1], row[2], row[3]) for row in result}
+        finally:
+            await engine.dispose()
+
+    return asyncio.run(query())
+
+
+@pytest.mark.integration
+def test_migration_upgrade_downgrade_tenancy(postgres_url: str) -> None:
+    config, _ = _alembic_config(postgres_url)
+
+    command.upgrade(config, "head")
+    after_upgrade = _tenancy_catalog(postgres_url)
+    command.downgrade(config, "0001")
+    after_downgrade = _tenancy_catalog(postgres_url)
+    command.downgrade(config, "base")
+
+    assert after_upgrade == {
+        "users": (False, False, 0),
+        "workspaces": (True, True, 2),
+        "memberships": (True, True, 2),
+    }
+    assert after_downgrade == {}
+
+
+def _schema_diff(connection: Connection) -> list[object]:
+    diff: list[object] = compare_metadata(MigrationContext.configure(connection), Base.metadata)
+    return diff
+
+
+@pytest.mark.integration
+def test_migrations_match_orm_models(postgres_url: str) -> None:
+    config, _ = _alembic_config(postgres_url)
+
+    async def diff() -> list[object]:
+        engine = create_async_engine(postgres_url, poolclass=NullPool)
+        try:
+            async with engine.connect() as connection:
+                return await connection.run_sync(_schema_diff)
+        finally:
+            await engine.dispose()
+
+    command.upgrade(config, "head")
+    try:
+        differences = asyncio.run(diff())
+    finally:
+        command.downgrade(config, "base")
+
+    assert differences == []
 
 
 @pytest.mark.integration

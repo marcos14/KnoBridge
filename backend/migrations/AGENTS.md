@@ -3,16 +3,19 @@
 **Função**: migrações do banco (Alembic, modo async com `asyncpg`). É a única forma de mudar o schema do Postgres do KnoBridge.
 
 **Entra aqui**:
-- `env.py`: ambiente do Alembic; lê a URL de `KNOBRIDGE_DATABASE_URL` via `knobridge.core.settings` (ou de `config.attributes["database_url"]`, usado pelos testes) e roda as migrações com engine async e `NullPool`.
+- `env.py`: ambiente do Alembic; lê a URL de `KNOBRIDGE_DATABASE_URL` via `knobridge.core.settings` (ou de `config.attributes["database_url"]`, usado pelos testes) e roda as migrações com engine async e `NullPool`. `target_metadata` é `Base.metadata`; todo módulo com modelos ORM é importado ali (e em `tests/migrations/test_migrations.py`) para o autogenerate e o teste de divergência enxergarem as tabelas.
 - `script.py.mako`: modelo das revisões novas.
-- `versions/`: uma revisão por arquivo, gerada por `uv run alembic revision -m "..."` (pasta gerada, sem `AGENTS.md`). Hoje: `0001` habilita a extensão `vector` (pgvector).
+- `versions/`: uma revisão por arquivo, gerada por `uv run alembic revision -m "..."` (pasta gerada, sem `AGENTS.md`). Hoje: `0001` habilita a extensão `vector` (pgvector); `0002` cria `users`, `workspaces` e `memberships` com RLS forçada e as políticas do [ADR 0001](../../docs/adr/0001-tenancy-e-rls.md).
 
 **Não entra aqui**: modelos ORM (vão para o módulo de domínio em `src/knobridge/`), dados de seed ou de clientes, SQL solto fora de revisão, configuração (fica em `core/settings.py`; `alembic.ini` fica em `backend/`).
 
 **Convenções locais**:
 - Uma migração por mudança de modelo, na mesma entrega do código que a usa.
 - Toda migração é reversível: `downgrade()` desfaz exatamente o `upgrade()`. Nada de `pass` no downgrade.
-- Toda tabela de dados tem `workspace_id NOT NULL` e **RLS ativada** com política por workspace (`ALTER TABLE ... ENABLE ROW LEVEL SECURITY` + `CREATE POLICY`), na mesma migração que cria a tabela.
+- Toda tabela de dados tem `workspace_id NOT NULL` e **RLS ativada e forçada** (`ALTER TABLE ... ENABLE ROW LEVEL SECURITY` + `FORCE ROW LEVEL SECURITY` + `CREATE POLICY`), na mesma migração que cria a tabela. Sem `FORCE`, o papel da aplicação, dono das tabelas, ignora as políticas. Política padrão: `workspace_id = NULLIF(current_setting('app.workspace_id', true), '')::uuid OR coalesce(current_setting('app.system', true), '') = 'on'` (ver [ADR 0001](../../docs/adr/0001-tenancy-e-rls.md)).
+- Nomes de restrição seguem `NAMING_CONVENTION` de `core/models.py`; o teste `test_migrations_match_orm_models` compara a migração com os modelos.
+- No `downgrade`, remova as políticas que consultam outras tabelas antes de dropar as tabelas.
+- Migração que muda tabela atualiza `docs/specs/modelo-de-dados.md` na mesma entrega.
 - Nunca edite uma revisão já commitada em `main`; crie outra.
 - Nome do arquivo: `AAAAMMDD_<rev>_<slug>.py` (definido em `alembic.ini`).
 

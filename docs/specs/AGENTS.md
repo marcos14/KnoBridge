@@ -4,7 +4,8 @@
 
 **Entra aqui**
 - `openapi.json`: documento OpenAPI da API `/v1`, **gerado** a partir de `create_app` pelo comando `knobridge-openapi` do backend. É a fonte dos tipos do cliente do frontend (`frontend/src/lib/api/schema.gen.ts`).
-- Futuramente: modelo de dados, formato do `.md` de conhecimento e seu frontmatter, protocolo dos conectores, schema JSON do harness, formato do grafo do canvas. Um arquivo por contrato, em Markdown (pt-BR) ou no formato nativo do contrato (JSON Schema, OpenAPI).
+- `modelo-de-dados.md`: tabelas do Postgres, convenções de nomes, escopo de RLS e diagrama Mermaid. Atualizado na mesma entrega de toda migração que muda tabela.
+- Futuramente: formato do `.md` de conhecimento e seu frontmatter, protocolo dos conectores, schema JSON do harness, formato do grafo do canvas. Um arquivo por contrato, em Markdown (pt-BR) ou no formato nativo do contrato (JSON Schema, OpenAPI).
 
 **Não entra aqui**
 - Código, geradores ou scripts (ficam em `backend/`, `frontend/` ou `scripts/`).
