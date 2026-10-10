@@ -20,6 +20,7 @@
 | `auth.password.changed`, `auth.password_reset.requested`, `auth.password_reset.completed`, `auth.email.verified`, `auth.email_verification.requested` | instância |
 | `membership.invited`, `membership.invitation.accepted`, `membership.invitation.resent`, `membership.invitation.revoked`, `membership.role.changed`, `membership.removed` | workspace |
 | `provider.created`, `provider.updated`, `provider.deleted`, `provider.tested` (credenciais de provedor de LLM; nome, tipo, campos alterados e, no teste de conexão, `ok` e `error_code`; nunca a chave) | workspace |
+| `assistant.created`, `assistant.updated`, `assistant.deleted` (nome; na criação, `model` e `provider_id`; na alteração, `fields` com os nomes da API; nunca prompt nem mensagens) | workspace |
 
 **Convenções locais**:
 - **Nunca grave segredo** (senha, token, cookie, chave, cabeçalho `Authorization`) nem dado pessoal além do necessário em `metadata`. Prefira ids a e-mails e nomes. Chaves que contêm `password`, `secret`, `token`, `cookie`, `authorization` ou `api_key` são recusadas por `record`.

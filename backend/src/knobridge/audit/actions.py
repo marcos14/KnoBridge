@@ -44,3 +44,7 @@ class AuditAction(StrEnum):
     PROVIDER_UPDATED = "provider.updated"
     PROVIDER_DELETED = "provider.deleted"
     PROVIDER_TESTED = "provider.tested"
+    # Assistants (prompts and messages stay out of metadata: names, models and fields only).
+    ASSISTANT_CREATED = "assistant.created"
+    ASSISTANT_UPDATED = "assistant.updated"
+    ASSISTANT_DELETED = "assistant.deleted"

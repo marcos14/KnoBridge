@@ -138,13 +138,13 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: cdabc9d
       - id: F4.3
         titulo: "Assistentes"
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-10
+        concluida_em: 2026-10-10
         commit: null
       - id: F4.4
         titulo: "Conversas, mensagens em streaming e feedback"
@@ -598,6 +598,8 @@ Nenhuma aberta.
 - 2026-10-10 — Correção dos testes de auditoria intermitentes (7635b22): causa medida e corrigida sem mexer em timeout; 8 execuções seguidas verdes. Efeito colateral: busca por letra com o filtro fechado deixou de existir (abre com Enter/setas).
 - 2026-10-10 — F4.2 iniciada.
 - 2026-10-10 — F4.2 concluída: LLMProvider, adaptadores OpenAI/OpenRouter/Anthropic com SDKs oficiais, FakeLLMProvider, erros de domínio e teste de conexão auditado; backend 499 testes, 100%.
+- 2026-10-10 — F4.3 iniciada.
+- 2026-10-10 — F4.3 concluída: Assistant com RLS (migração 0008), CRUD com RBAC, FK composta de credencial, 409 provider_in_use, auditoria; backend 544 testes, 100%.
 
 ## 8. Encerramento
 

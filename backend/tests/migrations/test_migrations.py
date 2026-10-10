@@ -14,6 +14,7 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.pool import NullPool
 
+from knobridge.assistants import models as assistants_models
 from knobridge.audit import models as audit_models
 from knobridge.core.models import Base
 from knobridge.core.settings import get_settings
@@ -22,7 +23,7 @@ from knobridge.security import models as security_models
 from knobridge.tenancy import models as tenancy_models
 
 # Imported so their tables are in Base.metadata.
-_MODEL_MODULES = (tenancy_models, security_models, audit_models, llm_models)
+_MODEL_MODULES = (tenancy_models, security_models, audit_models, llm_models, assistants_models)
 _TENANCY_TABLES = (
     "memberships",
     "users",
@@ -33,6 +34,7 @@ _TENANCY_TABLES = (
     "login_attempts",
     "invitations",
     "provider_credentials",
+    "assistants",
 )
 
 ALEMBIC_INI = Path(__file__).resolve().parents[2] / "alembic.ini"
@@ -116,6 +118,7 @@ def test_migration_upgrade_downgrade_tenancy(postgres_url: str) -> None:
         "login_attempts": (True, True, 1),
         "invitations": (True, True, 1),
         "provider_credentials": (True, True, 1),
+        "assistants": (True, True, 4),
     }
     assert after_downgrade == {}
 
@@ -224,6 +227,42 @@ def test_migration_upgrade_downgrade_provider_credentials(postgres_url: str) -> 
     assert after_upgrade["provider_credentials"] == (True, True, 1)
     assert "provider_credentials" not in after_downgrade
     assert after_downgrade["invitations"] == (True, True, 1)
+
+
+def _constraint_exists(database_url: str, name: str) -> bool:
+    async def query() -> bool:
+        engine = create_async_engine(database_url, poolclass=NullPool)
+        try:
+            async with engine.connect() as connection:
+                found = await connection.scalar(
+                    text("SELECT count(*) = 1 FROM pg_constraint WHERE conname = :name"),
+                    {"name": name},
+                )
+                return bool(found)
+        finally:
+            await engine.dispose()
+
+    return asyncio.run(query())
+
+
+@pytest.mark.integration
+def test_migration_upgrade_downgrade_assistants(postgres_url: str) -> None:
+    config, _ = _alembic_config(postgres_url)
+    composite_key = "uq_provider_credentials_workspace_id_id"
+
+    command.upgrade(config, "head")
+    after_upgrade = _tenancy_catalog(postgres_url)
+    key_after_upgrade = _constraint_exists(postgres_url, composite_key)
+    command.downgrade(config, "0007")
+    after_downgrade = _tenancy_catalog(postgres_url)
+    key_after_downgrade = _constraint_exists(postgres_url, composite_key)
+    command.downgrade(config, "base")
+
+    assert after_upgrade["assistants"] == (True, True, 4)
+    assert key_after_upgrade is True
+    assert "assistants" not in after_downgrade
+    assert after_downgrade["provider_credentials"] == (True, True, 1)
+    assert key_after_downgrade is False
 
 
 def _schema_diff(connection: Connection) -> list[object]:

@@ -45,4 +45,15 @@ describe("translateApiError", () => {
       "Não foi possível falar com o servidor. Verifique a conexão.",
     );
   });
+
+  it("test_translate_api_error_explains_provider_in_use", () => {
+    const t = i18n.t.bind(i18n);
+
+    expect(translateApiError(new ApiError(409, "provider_in_use"), t)).toBe(
+      "Este provedor é usado por um assistente. Troque o provedor do assistente ou exclua-o antes.",
+    );
+    expect(translateApiError(new ApiError(422, "assistant_provider_invalid"), t)).toBe(
+      "Escolha um provedor de LLM cadastrado neste workspace.",
+    );
+  });
 });

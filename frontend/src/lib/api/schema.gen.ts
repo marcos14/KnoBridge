@@ -494,6 +494,58 @@ export interface paths {
         patch: operations["update_workspace_v1_workspaces__workspace_id__patch"];
         trace?: never;
     };
+    "/v1/workspaces/{workspace_id}/assistants": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Assistants
+         * @description Assistants ordered by name (only the active ones for viewers).
+         */
+        get: operations["list_assistants_v1_workspaces__workspace_id__assistants_get"];
+        put?: never;
+        /**
+         * Create Assistant
+         * @description Create an assistant bound to a provider credential of the workspace.
+         */
+        post: operations["create_assistant_v1_workspaces__workspace_id__assistants_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/assistants/{assistant_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Assistant
+         * @description One assistant (404 for viewers when it is inactive).
+         */
+        get: operations["get_assistant_v1_workspaces__workspace_id__assistants__assistant_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Assistant
+         * @description Delete an assistant.
+         */
+        delete: operations["delete_assistant_v1_workspaces__workspace_id__assistants__assistant_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Assistant
+         * @description Change any field; ``no_source_message`` empty or null restores the default.
+         */
+        patch: operations["update_assistant_v1_workspaces__workspace_id__assistants__assistant_id__patch"];
+        trace?: never;
+    };
     "/v1/workspaces/{workspace_id}/audit": {
         parameters: {
             query?: never;
@@ -658,7 +710,7 @@ export interface paths {
         post?: never;
         /**
          * Delete Provider
-         * @description Delete a credential.
+         * @description Delete a credential; refused (409 ``provider_in_use``) while an assistant uses it.
          */
         delete: operations["delete_provider_v1_workspaces__workspace_id__providers__provider_id__delete"];
         options?: never;
@@ -773,11 +825,134 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** AssistantCreate */
+        AssistantCreate: {
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Language
+             * @default pt-BR
+             */
+            language: string;
+            /** Model */
+            model: string;
+            /** Name */
+            name: string;
+            /** No Source Message */
+            no_source_message?: string | null;
+            /**
+             * Provider Id
+             * Format: uuid
+             */
+            provider_id: string;
+            /**
+             * System Prompt
+             * @default
+             */
+            system_prompt: string;
+            /**
+             * Temperature
+             * @default 0.2
+             */
+            temperature: number;
+            /** @default neutral */
+            tone: components["schemas"]["AssistantTone"];
+        };
+        /** AssistantOut */
+        AssistantOut: {
+            /** Active */
+            active: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Description */
+            description: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Language */
+            language: string;
+            /** Model */
+            model: string;
+            /** Name */
+            name: string;
+            /** No Source Message */
+            no_source_message: string;
+            /**
+             * Provider Id
+             * Format: uuid
+             */
+            provider_id: string;
+            /** System Prompt */
+            system_prompt: string;
+            /** Temperature */
+            temperature: number;
+            tone: components["schemas"]["AssistantTone"];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** AssistantPage */
+        AssistantPage: {
+            /** Items */
+            items: components["schemas"]["AssistantOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Total */
+            total: number;
+        };
+        /**
+         * AssistantTone
+         * @enum {string}
+         */
+        AssistantTone: "neutral" | "formal" | "friendly";
+        /**
+         * AssistantUpdate
+         * @description Fields to change; omitted (or null) fields stay. ``no_source_message`` empty or null
+         *     restores the default message.
+         */
+        AssistantUpdate: {
+            /** Active */
+            active?: boolean | null;
+            /** Description */
+            description?: string | null;
+            /** Language */
+            language?: string | null;
+            /** Model */
+            model?: string | null;
+            /** Name */
+            name?: string | null;
+            /** No Source Message */
+            no_source_message?: string | null;
+            /** Provider Id */
+            provider_id?: string | null;
+            /** System Prompt */
+            system_prompt?: string | null;
+            /** Temperature */
+            temperature?: number | null;
+            tone?: components["schemas"]["AssistantTone"] | null;
+        };
         /**
          * AuditAction
          * @enum {string}
          */
-        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted" | "provider.tested";
+        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted" | "provider.tested" | "assistant.created" | "assistant.updated" | "assistant.deleted";
         /** AuditEventOut */
         AuditEventOut: {
             /** Action */
@@ -2323,6 +2498,288 @@ export interface operations {
             };
         };
     };
+    list_assistants_v1_workspaces__workspace_id__assistants_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantPage"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace suspended. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or assistant not found, or caller is not a member. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_assistant_v1_workspaces__workspace_id__assistants_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssistantCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or assistant not found, or caller is not a member. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Name already used in the workspace (`assistant_name_taken`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid body, or provider not in the workspace (`assistant_provider_invalid`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_assistant_v1_workspaces__workspace_id__assistants__assistant_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assistant_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace suspended. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or assistant not found, or caller is not a member. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_assistant_v1_workspaces__workspace_id__assistants__assistant_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assistant_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or assistant not found, or caller is not a member. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_assistant_v1_workspaces__workspace_id__assistants__assistant_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assistant_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssistantUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or assistant not found, or caller is not a member. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Name already used in the workspace (`assistant_name_taken`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid body, or provider not in the workspace (`assistant_provider_invalid`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     list_workspace_audit_v1_workspaces__workspace_id__audit_get: {
         parameters: {
             query?: {
@@ -2932,6 +3389,13 @@ export interface operations {
             };
             /** @description Workspace or provider not found, or caller is not a member. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description An assistant still uses the provider (`provider_in_use`). */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

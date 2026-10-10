@@ -46,6 +46,21 @@ erDiagram
         text key_ciphertext "AES-GCM; v1.base64url"
         varchar key_last4 "exibição ****1234"
     }
+    workspaces ||--o{ assistants : "configura"
+    provider_credentials ||--o{ assistants : "usada por"
+    assistants {
+        uuid id PK
+        uuid workspace_id FK
+        varchar name "único por workspace"
+        text system_prompt
+        uuid credential_id FK "mesmo workspace"
+        varchar model
+        float temperature "0 a 2"
+        varchar language "pt-BR"
+        varchar tone "neutral | formal | friendly"
+        text no_source_message "nunca vazia"
+        boolean active
+    }
     login_attempts {
         uuid id PK
         varchar key_hash "único; SHA-256 de e-mail + IP"
@@ -250,4 +265,22 @@ Chave de API de um provedor de LLM, por workspace (plano 0002, F4.1), em [`backe
 | `key_ciphertext` | `text` | `v<versão da chave>.<base64url(nonce ‖ cifrado ‖ tag)>`. Recifrado a cada troca de chave. |
 | `key_last4` | `varchar(4)` | Últimos 4 caracteres da chave (que tem no mínimo 8), para exibição. |
 
-Assistentes (F4.3) vão referenciar `provider_credentials.id` com `ON DELETE RESTRICT`: credencial em uso não pode ser excluída.
+Único extra `uq_provider_credentials_workspace_id_id` (`workspace_id`, `id`), alvo da FK composta de `assistants`. Credencial usada por assistente não pode ser excluída (409 `provider_in_use`).
+
+### `assistants`
+
+Configuração de um assistente do workspace (plano 0002, F4.3), em [`backend/src/knobridge/assistants/`](../../backend/src/knobridge/assistants/AGENTS.md). Dado de workspace com RLS forçada, com o predicado padrão (`workspace_id = app.workspace_id` ou sistema) em políticas separadas: `assistants_select`, `assistants_insert`, `assistants_update` e `assistants_delete`. Todo membro lê; viewer só vê os ativos (filtro da aplicação); owner, admin e editor gerenciam. Criar, alterar e excluir auditam `assistant.created` (`name`, `model`, `provider_id`), `assistant.updated` (`name`, `fields`) e `assistant.deleted` (`name`), sem prompt nem mensagens.
+
+| Coluna | Tipo | Regras |
+|---|---|---|
+| `workspace_id` | `uuid` | FK `workspaces.id`, `ON DELETE CASCADE`. |
+| `name` | `varchar(200)` | Obrigatório; único por workspace (`uq_assistants_workspace_id_name`; 409 `assistant_name_taken`). |
+| `description` | `text` | Até 1000 caracteres (validado na API); vazio permitido. |
+| `system_prompt` | `text` | Até 20000 caracteres (validado na API); vazio permitido. |
+| `credential_id` | `uuid` | FK composta `(workspace_id, credential_id)` → `provider_credentials (workspace_id, id)` (`fk_assistants_workspace_id_provider_credentials`), `NO ACTION` na exclusão: a credencial é sempre do mesmo workspace (422 `assistant_provider_invalid` na API) e não se exclui em uso; excluir o workspace cascateia para as duas tabelas. Na API, `provider_id`. |
+| `model` | `varchar(200)` | Identificador do modelo no provedor (ex.: `gpt-4.1-mini`), sem espaços. |
+| `temperature` | `double precision` | De 0 a 2 (`ck_assistants_temperature_range`); padrão da API 0,2. |
+| `language` | `varchar(35)` | Tag BCP 47 das respostas; padrão da API `pt-BR`. |
+| `tone` | `varchar(32)` | `neutral`, `formal` ou `friendly`. |
+| `no_source_message` | `text` | Resposta quando não há fonte (regra 8 do AGENTS.md). Nunca vazia (`ck_assistants_no_source_message_not_empty`): vazio ou nulo na API grava a mensagem padrão em pt-BR, que diz que não sabe e oferece abrir chamado. |
+| `active` | `boolean` | Padrão `true`. Inativo some para viewer. |

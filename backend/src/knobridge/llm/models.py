@@ -2,9 +2,9 @@
 
 Workspace data with forced row-level security (``docs/adr/0001-tenancy-e-rls.md``). The key
 is only stored as AES-GCM ciphertext bound to its row (``docs/adr/0003-segredos-cifrados.md``);
-``key_last4`` keeps its last characters for display (``****1234``). Assistants (plan 0002,
-F4.3) will reference credentials with ``ON DELETE RESTRICT``, so a credential in use cannot
-be deleted.
+``key_last4`` keeps its last characters for display (``****1234``). Assistants reference a
+credential by ``(workspace_id, id)`` with ``NO ACTION`` on delete, so a credential in use
+cannot be deleted (409 ``provider_in_use``).
 """
 
 from __future__ import annotations
@@ -28,7 +28,11 @@ class ProviderKind(StrEnum):
 
 class ProviderCredential(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "provider_credentials"
-    __table_args__ = (UniqueConstraint("workspace_id", "name"),)
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "name"),
+        # Target of the composite foreign key of assistants (same-workspace credential).
+        UniqueConstraint("workspace_id", "id"),
+    )
 
     workspace_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False

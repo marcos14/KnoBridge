@@ -41,6 +41,10 @@ class ProviderKindNotAllowedError(ValidationError):
     code = "provider_kind_not_allowed"
 
 
+class ProviderInUseError(ConflictError):
+    code = "provider_in_use"
+
+
 def masked_key(credential: ProviderCredential) -> str:
     """What the API shows instead of the key: ``****`` plus its last four characters."""
     return MASK + credential.key_last4
@@ -170,7 +174,14 @@ class ProviderCredentialService:
     ) -> None:
         credential = await self._get(db, workspace_id, credential_id)
         await db.delete(credential)
-        await db.flush()
+        try:
+            await db.flush()
+        except IntegrityError as exc:
+            # Only a foreign key can stop the delete: an assistant still uses the credential.
+            # The caller's transaction is now failed and rolls back when this propagates.
+            raise ProviderInUseError(
+                "The provider is used by an assistant; change or delete the assistant first."
+            ) from exc
         await self._audit.record(
             db,
             action=AuditAction.PROVIDER_DELETED,

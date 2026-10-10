@@ -4,7 +4,8 @@ Owners, admins and editors list, create, update and delete them; viewers get 403
 key is write-only: it is accepted on create and update and never returned, only its masked
 form (``key_hint``, e.g. ``****1234``). The ``fake`` kind is refused in production (422
 ``provider_kind_not_allowed``); names are unique per workspace (409 ``provider_name_taken``).
-``POST .../{provider_id}/test`` checks the stored key against the provider.
+``POST .../{provider_id}/test`` checks the stored key against the provider. A credential used
+by an assistant cannot be deleted (409 ``provider_in_use``).
 """
 
 from __future__ import annotations
@@ -244,7 +245,10 @@ async def test_provider(
     "/{provider_id}",
     status_code=HTTPStatus.NO_CONTENT,
     dependencies=[Depends(require_csrf)],
-    responses=_WRITE_ERRORS,
+    responses={
+        **_WRITE_ERRORS,
+        409: {"description": "An assistant still uses the provider (`provider_in_use`)."},
+    },
 )
 async def delete_provider(
     provider_id: uuid.UUID,
@@ -252,7 +256,7 @@ async def delete_provider(
     providers: ProviderCredentialServiceDep,
     ip: ClientIpDep,
 ) -> None:
-    """Delete a credential."""
+    """Delete a credential; refused (409 ``provider_in_use``) while an assistant uses it."""
     await providers.delete(
         context.db,
         workspace_id=context.workspace_id,
