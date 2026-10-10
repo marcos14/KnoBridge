@@ -7,8 +7,10 @@ import {
   emailField,
   nameField,
   newPasswordFields,
+  optionalSlugField,
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
+  SLUG_MAX_LENGTH,
   withMatchingPasswords,
   workspaceNameField,
 } from "./schemas";
@@ -71,6 +73,27 @@ describe("workspace schemas", () => {
     expect(firstMessage(workspaceNameField(t).safeParse(" "))).toBe("Informe o nome do workspace.");
     expect(firstMessage(workspaceNameField(t).safeParse("a".repeat(201)))).toBe(
       "Use no máximo 200 caracteres.",
+    );
+  });
+});
+
+describe("optionalSlugField", () => {
+  it("test_optional_slug_field_accepts_blank_and_valid_slugs", () => {
+    expect(optionalSlugField(t).parse("  ")).toBe("");
+    expect(optionalSlugField(t).parse(" acme-suporte-2 ")).toBe("acme-suporte-2");
+  });
+
+  it("test_optional_slug_field_rejects_invalid_shapes", () => {
+    for (const slug of ["Acme", "-acme", "acme-", "acme--x", "acme x"]) {
+      expect(firstMessage(optionalSlugField(t).safeParse(slug))).toBe(
+        "Use só letras minúsculas, números e hífens, sem hífen no início nem no fim.",
+      );
+    }
+  });
+
+  it("test_optional_slug_field_limits_length", () => {
+    expect(firstMessage(optionalSlugField(t).safeParse("a".repeat(SLUG_MAX_LENGTH + 1)))).toBe(
+      "Use no máximo 64 caracteres.",
     );
   });
 });

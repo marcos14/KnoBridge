@@ -3,6 +3,10 @@ import { createBrowserRouter, Navigate, type RouteObject } from "react-router";
 
 import { ProfilePage } from "@/features/account/ProfilePage";
 import { SecurityPage } from "@/features/account/SecurityPage";
+import { AdminUsersPage } from "@/features/admin/AdminUsersPage";
+import { AdminWorkspacesPage } from "@/features/admin/AdminWorkspacesPage";
+import { InstanceAuditPage } from "@/features/audit/InstanceAuditPage";
+import { WorkspaceAuditPage } from "@/features/audit/WorkspaceAuditPage";
 import { AcceptInvitationPage } from "@/features/auth/AcceptInvitationPage";
 import { ForgotPasswordPage } from "@/features/auth/ForgotPasswordPage";
 import { LoginPage } from "@/features/auth/LoginPage";
@@ -90,9 +94,9 @@ export const routes: RouteObject[] = [
                     element: <RequireSuperadmin />,
                     children: [
                       { index: true, element: <Navigate to="workspaces" replace /> },
-                      { path: "workspaces", element: <PlaceholderPage page="adminWorkspaces" /> },
-                      { path: "users", element: <PlaceholderPage page="adminUsers" /> },
-                      { path: "audit", element: <PlaceholderPage page="adminAudit" /> },
+                      { path: "workspaces", element: <AdminWorkspacesPage /> },
+                      { path: "users", element: <AdminUsersPage /> },
+                      { path: "audit", element: <InstanceAuditPage /> },
                     ],
                   },
                   {
@@ -113,7 +117,7 @@ export const routes: RouteObject[] = [
                           workspaceArea("channels", <AreaSkeletonPage area="channels" />),
                           workspaceArea("members", <MembersPage />),
                           workspaceArea("settings", <WorkspaceSettingsPage />),
-                          workspaceArea("audit", <PlaceholderPage page="audit" />),
+                          workspaceArea("audit", <WorkspaceAuditPage />),
                           { path: "*", element: <NotFoundPage /> },
                         ],
                       },

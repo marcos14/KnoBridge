@@ -36,6 +36,21 @@ export function emailField(t: TFunction) {
     .pipe(z.email({ error: t("auth.validation.emailInvalid") }));
 }
 
+/** Slug rules of the backend (`tenancy/admin_workspaces.py`). */
+export const SLUG_MAX_LENGTH = 64;
+export const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+/** Optional workspace slug: blank means "generate it from the name". */
+export function optionalSlugField(t: TFunction) {
+  return z
+    .string()
+    .trim()
+    .max(SLUG_MAX_LENGTH, { error: t("auth.validation.tooLong", { max: SLUG_MAX_LENGTH }) })
+    .refine((value) => value === "" || SLUG_PATTERN.test(value), {
+      error: t("admin.workspaces.create.slugInvalid"),
+    });
+}
+
 /** Fields of a new password and its confirmation; pair them with `withMatchingPasswords`. */
 export function newPasswordFields(t: TFunction) {
   return {

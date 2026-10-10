@@ -1,4 +1,6 @@
 import { accountHandlers } from "./account";
+import { adminHandlers } from "./admin";
+import { auditHandlers } from "./audit";
 import { authHandlers } from "./auth";
 import { healthReadyOk } from "./health";
 import { invitesHandlers } from "./invites";
@@ -7,11 +9,14 @@ import { recoveryHandlers } from "./recovery";
 import { setupHandlers } from "./setup";
 
 export * from "./account";
+export * from "./admin";
+export * from "./audit";
 export * from "./auth";
 export * from "./errors";
 export * from "./health";
 export * from "./invites";
 export * from "./members";
+export * from "./page";
 export * from "./record";
 export * from "./recovery";
 export * from "./setup";
@@ -28,4 +33,6 @@ export const handlers = [
   ...invitesHandlers,
   ...accountHandlers,
   ...membersHandlers,
+  ...auditHandlers,
+  ...adminHandlers,
 ];

@@ -1,4 +1,6 @@
 import type { Session } from "@/lib/api/account";
+import type { AdminUser, AdminWorkspace } from "@/lib/api/admin";
+import type { AuditEvent } from "@/lib/api/audit";
 import type { Me, UserWorkspace } from "@/lib/api/auth";
 import type { Invitation, InvitationPreview } from "@/lib/api/invites";
 import type { Member } from "@/lib/api/members";
@@ -162,4 +164,133 @@ export function makeInvitationPreview(
     expires_at: "2026-01-08T00:00:00Z",
     ...overrides,
   };
+}
+
+/** Synthetic audit event ids, `00000000-0000-4000-8000-0000000003NN`. */
+export function auditEventId(index: number): string {
+  return `00000000-0000-4000-8000-${String(300 + index).padStart(12, "0")}`;
+}
+
+/** One audit event: by default Ana changed Carla's role to admin, with details. */
+export function makeAuditEvent(overrides: Partial<AuditEvent> = {}): AuditEvent {
+  return {
+    id: auditEventId(0),
+    action: "membership.role.changed",
+    actor_user_id: USER_ID,
+    target_type: "user",
+    target_id: memberId(2),
+    details: { from_role: "editor", to_role: "admin" },
+    ip_address: "203.0.113.7",
+    occurred_at: "2026-10-09T15:30:00Z",
+    ...overrides,
+  };
+}
+
+/**
+ * The default audit trail, newest first: the role change by Ana, a login by Bruno, an event
+ * without actor and one by someone no longer listed, with an action this build does not know
+ * (shown by its raw code).
+ */
+export function makeAuditEvents(): AuditEvent[] {
+  return [
+    makeAuditEvent(),
+    makeAuditEvent({
+      id: auditEventId(1),
+      action: "auth.login.succeeded",
+      actor_user_id: memberId(1),
+      target_type: null,
+      target_id: null,
+      details: {},
+      occurred_at: "2026-10-08T09:00:00Z",
+    }),
+    makeAuditEvent({
+      id: auditEventId(2),
+      action: "setup.completed",
+      actor_user_id: null,
+      target_type: "workspace",
+      target_id: null,
+      details: { workspace: { name: "Acme Suporte", slug: "acme-suporte" } },
+      ip_address: null,
+      occurred_at: "2026-01-01T00:00:00Z",
+    }),
+    makeAuditEvent({
+      id: auditEventId(3),
+      action: "connector.synced",
+      actor_user_id: memberId(9),
+      target_type: null,
+      target_id: null,
+      details: {},
+      occurred_at: "2025-12-31T23:00:00Z",
+    }),
+  ];
+}
+
+/** Synthetic ids of rows created by the admin fakes, `00000000-0000-4000-8000-0000000004NN`. */
+export function adminId(index: number): string {
+  return `00000000-0000-4000-8000-${String(400 + index).padStart(12, "0")}`;
+}
+
+/** One row of `GET /v1/admin/workspaces`: by default the active "Acme Suporte" with 4 members. */
+export function makeAdminWorkspace(overrides: Partial<AdminWorkspace> = {}): AdminWorkspace {
+  return {
+    id: WORKSPACE_ID,
+    name: "Acme Suporte",
+    slug: "acme-suporte",
+    status: "active",
+    member_count: 4,
+    created_at: "2026-01-01T00:00:00Z",
+    ...overrides,
+  };
+}
+
+/** The default workspaces: Acme Suporte (active, Ana is a member) and Beta Help (suspended). */
+export function makeAdminWorkspaces(): AdminWorkspace[] {
+  return [
+    makeAdminWorkspace(),
+    makeAdminWorkspace({
+      id: OTHER_WORKSPACE_ID,
+      name: "Beta Help",
+      slug: "beta-help",
+      status: "suspended",
+      member_count: 1,
+      created_at: "2026-03-01T00:00:00Z",
+    }),
+  ];
+}
+
+/** One row of `GET /v1/admin/users`: by default Ana, the logged-in superadmin. */
+export function makeAdminUser(overrides: Partial<AdminUser> = {}): AdminUser {
+  return {
+    id: USER_ID,
+    email: "ana@example.test",
+    name: "Ana Teste",
+    status: "active",
+    is_superadmin: true,
+    email_verified_at: "2026-01-01T00:00:00Z",
+    created_at: "2026-01-01T00:00:00Z",
+    ...overrides,
+  };
+}
+
+/** The default users: Ana (superadmin, logged in), Bruno (active), Carla (suspended, unverified). */
+export function makeAdminUsers(): AdminUser[] {
+  return [
+    makeAdminUser(),
+    makeAdminUser({
+      id: memberId(1),
+      email: "bruno@example.test",
+      name: "Bruno Lima",
+      is_superadmin: false,
+      created_at: "2026-02-01T00:00:00Z",
+    }),
+    makeAdminUser({
+      id: memberId(2),
+      email: "carla@example.test",
+      name: "Carla Souza",
+      status: "suspended",
+      is_superadmin: false,
+      email_verified_at: null,
+      created_at: "2026-03-01T00:00:00Z",
+    }),
+  ];
 }

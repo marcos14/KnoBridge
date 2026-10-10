@@ -113,13 +113,13 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: fc2f228
       - id: F3.6
         titulo: "Auditoria e painel do superadmin"
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-10
+        concluida_em: 2026-10-10
         commit: null
   - id: F4
     titulo: "Provedores de LLM, assistentes e conversas (backend)"
@@ -591,6 +591,8 @@ Nenhuma aberta.
 - 2026-10-10 — F3.4 concluída: 335 testes, cobertura 100/98,9/100/100, e2e 3 ok (D20).
 - 2026-10-10 — F3.5 iniciada.
 - 2026-10-10 — F3.5 concluída: 411 testes, cobertura 100/99,1/100/100, e2e 3 ok (D21).
+- 2026-10-10 — F3.6 iniciada.
+- 2026-10-10 — F3.6 concluída: 492 testes, cobertura 100/99,0/100/100, e2e 3 ok (D22).
 
 ## 8. Encerramento
 

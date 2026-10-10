@@ -12,6 +12,7 @@ import {
   makeWorkspace,
 } from "../factories";
 import { apiErrorResponse } from "./errors";
+import { page } from "./page";
 
 const WORKSPACE = "*/v1/workspaces/:workspaceId";
 const MEMBERS = "*/v1/workspaces/:workspaceId/members";
@@ -22,19 +23,6 @@ const RESEND = "*/v1/workspaces/:workspaceId/invites/:invitationId/resend";
 
 function noContent() {
   return new HttpResponse(null, { status: 204 });
-}
-
-/** One page of `rows`, honouring `limit` and `offset` like the API (default limit 50). */
-function page(request: Request, rows: readonly unknown[]) {
-  const query = new URL(request.url).searchParams;
-  const limit = Number(query.get("limit") ?? "50");
-  const offset = Number(query.get("offset") ?? "0");
-  return HttpResponse.json({
-    items: rows.slice(offset, offset + limit),
-    total: rows.length,
-    limit,
-    offset,
-  });
 }
 
 /** GET /v1/workspaces/{id}/members listing `members` (default: Ana, Bruno, Carla and Davi). */
