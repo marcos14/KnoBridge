@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 from collections.abc import Generator
+from typing import cast
 
 import pytest
 from api_support import CHEAP, START, ApiEnv, db_settings
+from chat_support import ChatOverrides
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from fakes.email_sender import FakeEmailSender
@@ -37,3 +40,11 @@ def api(app_database_url: str) -> Generator[ApiEnv]:
 def empty_api(empty_database_url: str) -> Generator[ApiEnv]:
     """App over a brand-new database without any user (first setup)."""
     yield from _env(empty_database_url)
+
+
+@pytest.fixture
+def chat(api: ApiEnv) -> Generator[ChatOverrides]:
+    """Retriever and provider factory overrides on ``api``, removed after the test."""
+    overrides = ChatOverrides(cast(FastAPI, api.client.app))
+    yield overrides
+    overrides.clear()

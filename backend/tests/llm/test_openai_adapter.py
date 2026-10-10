@@ -249,3 +249,33 @@ def test_openai_aclose_closes_client() -> None:
     run(provider.aclose)
 
     assert client.is_closed
+
+
+@pytest.mark.parametrize(
+    ("error", "error_type"),
+    [
+        ({"message": f"bad {API_KEY}", "type": "server_error"}, ProviderUnavailableError),
+        ({"message": "slow down", "code": "rate_limit_exceeded"}, ProviderRateLimitError),
+        ({"message": "no", "type": "invalid_request_error"}, ProviderRequestError),
+        ({"message": "no", "type": "authentication_error"}, ProviderAuthError),
+        ({"message": "?"}, ProviderUnavailableError),
+    ],
+)
+def test_openai_error_in_middle_of_stream_mapped(
+    error: dict[str, object], error_type: type[LLMProviderError]
+) -> None:
+    http = FakeHttp(lambda _: sse([(None, _chunk({"content": "Fine,"})), (None, {"error": error})]))
+    provider = _openai(http)
+    seen: list[object] = []
+
+    async def consume() -> None:
+        async for event in provider.stream_chat(MESSAGES, "gpt-test"):
+            seen.append(event)
+
+    with pytest.raises(error_type) as caught:
+        run(consume)
+
+    assert seen == [TextDelta("Fine,")]
+    assert caught.value.details == {"provider": "openai", "status": None}
+    assert API_KEY not in str(caught.value)
+    assert caught.value.__cause__ is None

@@ -4,13 +4,15 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator, Generator, Sequence
 from contextlib import contextmanager
+from http import HTTPStatus
+from typing import cast
 
 import anthropic
 import httpx2
 from anthropic import omit
 from anthropic.types import MessageParam
 
-from knobridge.llm.errors import connection_error, error_for_status
+from knobridge.llm.errors import connection_error, error_for_status, stream_error
 from knobridge.llm.provider import (
     ChatEvent,
     ChatMessage,
@@ -31,9 +33,23 @@ def _sdk_errors() -> Generator[None]:
     try:
         yield
     except anthropic.APIStatusError as exc:
+        if exc.status_code < HTTPStatus.BAD_REQUEST:
+            # An ``error`` event in the middle of the stream: the SDK raises it with the
+            # stream's own status (200), so only the error type in the body classifies it.
+            raise stream_error(_error_type(exc.body), PROVIDER) from None
         raise error_for_status(exc.status_code, PROVIDER) from None
     except anthropic.APIConnectionError:
         raise connection_error(PROVIDER) from None
+
+
+def _error_type(body: object) -> str | None:
+    """``error.type`` of an Anthropic error body (``{"type": "error", "error": {...}}``)."""
+    if isinstance(body, dict):
+        error = cast(dict[str, object], body).get("error")
+        if isinstance(error, dict):
+            kind = cast(dict[str, object], error).get("type")
+            return kind if isinstance(kind, str) else None
+    return None
 
 
 def _split(messages: Sequence[ChatMessage]) -> tuple[str | None, list[MessageParam]]:

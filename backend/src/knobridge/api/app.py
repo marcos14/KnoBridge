@@ -17,6 +17,7 @@ from knobridge.api import (
     assistants,
     audit,
     auth,
+    conversations,
     health,
     invites,
     me,
@@ -101,6 +102,7 @@ def create_app(
         invites,
         providers,
         assistants,
+        conversations,
         admin,
     )
     for module in routers:

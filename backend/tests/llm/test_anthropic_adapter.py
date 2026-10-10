@@ -11,6 +11,7 @@ from knobridge.llm.errors import (
     LLMProviderError,
     ProviderAuthError,
     ProviderRateLimitError,
+    ProviderRequestError,
     ProviderUnavailableError,
 )
 from knobridge.llm.provider import ChatMessage, ChatParams, ChatRole, ChatUsage, TextDelta
@@ -214,3 +215,58 @@ def test_anthropic_aclose_closes_client() -> None:
     run(provider.aclose)
 
     assert client.is_closed
+
+
+def _broken_stream(body: object) -> httpx2.Response:
+    return sse(
+        [
+            (
+                "content_block_delta",
+                {
+                    "type": "content_block_delta",
+                    "index": 0,
+                    "delta": {"type": "text_delta", "text": "Tudo"},
+                },
+            ),
+            ("error", body),
+        ]
+    )
+
+
+@pytest.mark.parametrize(
+    ("body", "error_type"),
+    [
+        (
+            {"type": "error", "error": {"type": "overloaded_error", "message": API_KEY}},
+            ProviderUnavailableError,
+        ),
+        (
+            {"type": "error", "error": {"type": "rate_limit_error", "message": "slow"}},
+            ProviderRateLimitError,
+        ),
+        (
+            {"type": "error", "error": {"type": "invalid_request_error", "message": "no"}},
+            ProviderRequestError,
+        ),
+        ({"type": "error", "error": {"type": 3}}, ProviderUnavailableError),
+        ({"type": "error", "error": "boom"}, ProviderUnavailableError),
+        ("not json", ProviderUnavailableError),
+    ],
+)
+def test_anthropic_error_in_middle_of_stream_mapped(
+    body: object, error_type: type[LLMProviderError]
+) -> None:
+    provider = _provider(FakeHttp(lambda _: _broken_stream(body)))
+    seen: list[object] = []
+
+    async def consume() -> None:
+        async for event in provider.stream_chat(MESSAGES, "claude-test"):
+            seen.append(event)
+
+    with pytest.raises(error_type) as caught:
+        run(consume)
+
+    assert seen == [TextDelta("Tudo")]
+    assert caught.value.details == {"provider": "anthropic", "status": None}
+    assert API_KEY not in str(caught.value)
+    assert caught.value.__cause__ is None

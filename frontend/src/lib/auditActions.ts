@@ -34,6 +34,7 @@ const ACTIONS: Record<AuditAction, true> = {
   "assistant.created": true,
   "assistant.updated": true,
   "assistant.deleted": true,
+  "conversation.deleted": true,
   "workspace.created": true,
   "workspace.updated": true,
   "workspace.suspended": true,

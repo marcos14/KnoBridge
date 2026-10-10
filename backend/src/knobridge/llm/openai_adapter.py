@@ -15,7 +15,7 @@ import openai
 from openai import omit
 from openai.types.chat import ChatCompletionMessageParam
 
-from knobridge.llm.errors import connection_error, error_for_status
+from knobridge.llm.errors import connection_error, error_for_status, stream_error
 from knobridge.llm.provider import (
     ChatEvent,
     ChatMessage,
@@ -37,6 +37,10 @@ def _sdk_errors(provider: str) -> Generator[None]:
         raise error_for_status(exc.status_code, provider) from None
     except openai.APIConnectionError:
         raise connection_error(provider) from None
+    except openai.APIError as exc:
+        # An error event in the middle of the stream, after the HTTP 200 (caught last: the
+        # two above are subclasses of it).
+        raise stream_error(exc.type or exc.code, provider) from None
 
 
 def _message(message: ChatMessage) -> ChatCompletionMessageParam:

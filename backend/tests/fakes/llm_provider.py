@@ -1,5 +1,7 @@
-"""Fakes around ``LLMProvider`` for API tests: a provider that always fails with a given
-domain error and a ``ProviderFactory`` that records what it was asked to build.
+"""Fakes around ``LLMProvider`` for API and chat tests: a provider that always fails with a given
+domain error, one that must never be called, a scripted streaming provider (records calls,
+fails or blocks mid-stream on demand) and a ``ProviderFactory`` that records what it was asked
+to build.
 
 The deterministic happy-path fake is production code (``knobridge.llm.fake.FakeLLMProvider``)
 because the ``fake`` provider kind uses it in development and E2E.
@@ -7,12 +9,93 @@ because the ``fake`` provider kind uses it in development and E2E.
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator, Sequence
+import asyncio
+from collections.abc import AsyncIterator, Callable, Sequence
 from dataclasses import dataclass, field
 
 from knobridge.llm.errors import LLMProviderError
 from knobridge.llm.models import ProviderKind
-from knobridge.llm.provider import ChatEvent, ChatMessage, ChatParams, LLMProvider
+from knobridge.llm.provider import (
+    ChatEvent,
+    ChatMessage,
+    ChatParams,
+    ChatUsage,
+    LLMProvider,
+    TextDelta,
+)
+
+
+class UnreachableLLMProvider:
+    """Fails the test if anything calls it (rule 8: no LLM call without sources)."""
+
+    def stream_chat(
+        self, messages: Sequence[ChatMessage], model: str, params: ChatParams | None = None
+    ) -> AsyncIterator[ChatEvent]:
+        raise AssertionError("the LLM must not be called")
+
+    async def list_models(self) -> list[str]:
+        raise AssertionError("the LLM must not be called")
+
+    async def check_connection(self) -> None:
+        raise AssertionError("the LLM must not be called")
+
+    async def aclose(self) -> None:
+        raise AssertionError("the LLM must not be called")
+
+
+@dataclass(frozen=True)
+class StreamCall:
+    messages: list[ChatMessage]
+    model: str
+    params: ChatParams | None
+
+
+@dataclass
+class ScriptedLLMProvider:
+    """Streams ``deltas`` then ``usage``, recording each call.
+
+    ``fail_after`` raises ``error`` once that many deltas were sent (0: before any).
+    ``on_delta`` runs before each delta (e.g. to advance a frozen clock). ``hold_after``
+    stops after that many deltas until ``release`` is set, so a test can disconnect while the
+    provider is still answering (no sleep: an ``asyncio.Event``).
+    """
+
+    deltas: Sequence[str] = ("Answer ", "with ", "sources [1]")
+    usage: ChatUsage = field(default_factory=lambda: ChatUsage(input_tokens=42, output_tokens=7))
+    error: Exception | None = None
+    fail_after: int = 0
+    on_delta: Callable[[], None] | None = None
+    hold_after: int | None = None
+    calls: list[StreamCall] = field(default_factory=lambda: [])
+    closed: bool = False
+    holding: asyncio.Event = field(default_factory=asyncio.Event)
+    release: asyncio.Event = field(default_factory=asyncio.Event)
+
+    async def stream_chat(
+        self, messages: Sequence[ChatMessage], model: str, params: ChatParams | None = None
+    ) -> AsyncIterator[ChatEvent]:
+        self.calls.append(StreamCall(list(messages), model, params))
+        for sent, delta in enumerate(self.deltas):
+            if self.error is not None and sent == self.fail_after:
+                raise self.error
+            if self.hold_after is not None and sent == self.hold_after:
+                self.holding.set()
+                await self.release.wait()
+            if self.on_delta is not None:
+                self.on_delta()
+            yield TextDelta(delta)
+        if self.error is not None:
+            raise self.error
+        yield self.usage
+
+    async def list_models(self) -> list[str]:
+        return ["scripted"]
+
+    async def check_connection(self) -> None:
+        return None
+
+    async def aclose(self) -> None:
+        self.closed = True
 
 
 class FailingLLMProvider:

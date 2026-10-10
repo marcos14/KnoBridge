@@ -56,4 +56,24 @@ describe("translateApiError", () => {
       "Escolha um provedor de LLM cadastrado neste workspace.",
     );
   });
+
+  it("test_translate_api_error_explains_chat_errors", () => {
+    const t = i18n.t.bind(i18n);
+    const codes = [
+      "assistant_inactive",
+      "chat_failed",
+      "feedback_target_invalid",
+      "provider_auth_failed",
+      "provider_rate_limited",
+      "provider_request_failed",
+      "provider_unavailable",
+    ];
+
+    for (const code of codes) {
+      expect(apiErrorKey(new ApiError(409, code))).toBe(`apiErrors.${code}`);
+    }
+    expect(translateApiError(new ApiError(409, "assistant_inactive"), t)).toBe(
+      "Este assistente está inativo e não aceita novas mensagens.",
+    );
+  });
 });

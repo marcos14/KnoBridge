@@ -20,6 +20,9 @@ from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from knobridge.assistants.service import AssistantService
+from knobridge.conversations.chat import ChatService
+from knobridge.conversations.retrieval import NullRetriever, Retriever
+from knobridge.conversations.service import ConversationService
 from knobridge.core.clock import Clock
 from knobridge.core.crypto import SecretBox
 from knobridge.core.db import scoped_session, system_session
@@ -167,6 +170,38 @@ ProviderFactoryDep = Annotated[ProviderFactory, Depends(get_provider_factory)]
 AssistantServiceDep = Annotated[AssistantService, Depends(get_assistant_service)]
 EmailSenderDep = Annotated[EmailSender, Depends(get_email_sender)]
 EmailComposerDep = Annotated[EmailComposer, Depends(get_email_composer)]
+
+
+def get_retriever() -> Retriever:
+    """Finds the sources of an answer; ``NullRetriever`` until indexing exists (tests override)."""
+    return NullRetriever()
+
+
+RetrieverDep = Annotated[Retriever, Depends(get_retriever)]
+
+
+def get_conversation_service(request: Request) -> ConversationService:
+    return ConversationService(request.app.state.clock)
+
+
+def get_chat_service(
+    request: Request,
+    retriever: RetrieverDep,
+    provider_factory: ProviderFactoryDep,
+    credentials: ProviderCredentialServiceDep,
+    session_factory: SessionFactoryDep,
+) -> ChatService:
+    return ChatService(
+        clock=request.app.state.clock,
+        retriever=retriever,
+        provider_factory=provider_factory,
+        credentials=credentials,
+        session_factory=session_factory,
+    )
+
+
+ConversationServiceDep = Annotated[ConversationService, Depends(get_conversation_service)]
+ChatServiceDep = Annotated[ChatService, Depends(get_chat_service)]
 ClientIpDep = Annotated[str | None, Depends(client_ip)]
 
 

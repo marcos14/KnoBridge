@@ -16,6 +16,7 @@ from sqlalchemy.pool import NullPool
 
 from knobridge.assistants import models as assistants_models
 from knobridge.audit import models as audit_models
+from knobridge.conversations import models as conversations_models
 from knobridge.core.models import Base
 from knobridge.core.settings import get_settings
 from knobridge.llm import models as llm_models
@@ -23,8 +24,18 @@ from knobridge.security import models as security_models
 from knobridge.tenancy import models as tenancy_models
 
 # Imported so their tables are in Base.metadata.
-_MODEL_MODULES = (tenancy_models, security_models, audit_models, llm_models, assistants_models)
+_MODEL_MODULES = (
+    tenancy_models,
+    security_models,
+    audit_models,
+    llm_models,
+    assistants_models,
+    conversations_models,
+)
 _TENANCY_TABLES = (
+    "conversations",
+    "messages",
+    "feedback",
     "memberships",
     "users",
     "workspaces",
@@ -119,6 +130,9 @@ def test_migration_upgrade_downgrade_tenancy(postgres_url: str) -> None:
         "invitations": (True, True, 1),
         "provider_credentials": (True, True, 1),
         "assistants": (True, True, 4),
+        "conversations": (True, True, 1),
+        "messages": (True, True, 1),
+        "feedback": (True, True, 1),
     }
     assert after_downgrade == {}
 
@@ -262,6 +276,29 @@ def test_migration_upgrade_downgrade_assistants(postgres_url: str) -> None:
     assert key_after_upgrade is True
     assert "assistants" not in after_downgrade
     assert after_downgrade["provider_credentials"] == (True, True, 1)
+    assert key_after_downgrade is False
+
+
+@pytest.mark.integration
+def test_migration_upgrade_downgrade_conversations(postgres_url: str) -> None:
+    config, _ = _alembic_config(postgres_url)
+    composite_key = "uq_assistants_workspace_id_id"
+    tables = ("conversations", "messages", "feedback")
+
+    command.upgrade(config, "head")
+    after_upgrade = _tenancy_catalog(postgres_url)
+    key_after_upgrade = _constraint_exists(postgres_url, composite_key)
+    command.downgrade(config, "0008")
+    after_downgrade = _tenancy_catalog(postgres_url)
+    key_after_downgrade = _constraint_exists(postgres_url, composite_key)
+    command.downgrade(config, "base")
+
+    assert {table: after_upgrade[table] for table in tables} == dict.fromkeys(
+        tables, (True, True, 1)
+    )
+    assert key_after_upgrade is True
+    assert not set(tables) & set(after_downgrade)
+    assert after_downgrade["assistants"] == (True, True, 4)
     assert key_after_downgrade is False
 
 

@@ -61,6 +61,40 @@ erDiagram
         text no_source_message "nunca vazia"
         boolean active
     }
+    assistants ||--o{ conversations : "atende"
+    users ||--o{ conversations : "conversa"
+    conversations {
+        uuid id PK
+        uuid workspace_id FK
+        uuid assistant_id FK "mesmo workspace"
+        uuid user_id FK "dono"
+        varchar title "da primeira pergunta"
+        varchar channel "panel"
+    }
+    conversations ||--o{ messages : "contém"
+    messages {
+        uuid id PK
+        uuid workspace_id FK
+        uuid conversation_id FK "mesmo workspace"
+        integer position "único por conversa"
+        varchar role "user | assistant"
+        text content
+        jsonb citations
+        varchar status "streaming | completed | no_source | failed | interrupted"
+        varchar error_code
+        varchar model
+        integer latency_ms
+    }
+    messages ||--o{ feedback : "recebe"
+    users ||--o{ feedback : "avalia"
+    feedback {
+        uuid id PK
+        uuid workspace_id FK
+        uuid message_id FK "mesmo workspace"
+        uuid user_id FK
+        varchar rating "up | down"
+        text comment
+    }
     login_attempts {
         uuid id PK
         varchar key_hash "único; SHA-256 de e-mail + IP"
@@ -283,4 +317,52 @@ Configuração de um assistente do workspace (plano 0002, F4.3), em [`backend/sr
 | `language` | `varchar(35)` | Tag BCP 47 das respostas; padrão da API `pt-BR`. |
 | `tone` | `varchar(32)` | `neutral`, `formal` ou `friendly`. |
 | `no_source_message` | `text` | Resposta quando não há fonte (regra 8 do AGENTS.md). Nunca vazia (`ck_assistants_no_source_message_not_empty`): vazio ou nulo na API grava a mensagem padrão em pt-BR, que diz que não sabe e oferece abrir chamado. |
-| `active` | `boolean` | Padrão `true`. Inativo some para viewer. |
+| `active` | `boolean` | Padrão `true`. Inativo some para viewer e não aceita conversa nova nem mensagem (409 `assistant_inactive`). |
+
+Único extra `uq_assistants_workspace_id_id` (`workspace_id`, `id`), alvo da FK composta de `conversations`. Excluir um assistente exclui as conversas dele (com mensagens e feedback); para preservar o histórico, desative-o.
+
+### `conversations`
+
+Conversa de um membro com um assistente (plano 0002, F4.4), em [`backend/src/knobridge/conversations/`](../../backend/src/knobridge/conversations/AGENTS.md). Dado de workspace com RLS forçada e uma política padrão (`conversations_workspace`, `USING` e `WITH CHECK`). A privacidade entre membros é regra da aplicação: só o dono envia mensagens e exclui; owner e admin do workspace leem qualquer conversa; os demais recebem 404. Só a exclusão é auditada (`conversation.deleted`, com `assistant_id` e `message_count`, sem conteúdo).
+
+| Coluna | Tipo | Regras |
+|---|---|---|
+| `workspace_id` | `uuid` | FK `workspaces.id`, `ON DELETE CASCADE`. |
+| `assistant_id` | `uuid` | FK composta `(workspace_id, assistant_id)` → `assistants (workspace_id, id)` (`fk_conversations_workspace_id_assistants`), `ON DELETE CASCADE`. |
+| `user_id` | `uuid` | Dono da conversa. FK `users.id`, `ON DELETE CASCADE`. |
+| `title` | `varchar(200)` | Nulo até a primeira pergunta; depois, a pergunta numa linha, cortada em 80 caracteres (sem LLM). |
+| `channel` | `varchar(32)` | `panel` (outros canais depois). |
+
+Únicos e índices: `uq_conversations_workspace_id_id` (alvo da FK de `messages`) e `ix_conversations_workspace_id_user_id_updated_at` ("minhas conversas", da mais recente). `updated_at` muda a cada pergunta.
+
+### `messages`
+
+Pergunta ou resposta de uma conversa. RLS forçada, política `messages_workspace`.
+
+| Coluna | Tipo | Regras |
+|---|---|---|
+| `workspace_id` | `uuid` | FK `workspaces.id`, `ON DELETE CASCADE`. |
+| `conversation_id` | `uuid` | FK composta `(workspace_id, conversation_id)` → `conversations (workspace_id, id)` (`fk_messages_workspace_id_conversations`), `ON DELETE CASCADE`. |
+| `position` | `integer` | Ordem na conversa a partir de 0, única por conversa (`uq_messages_conversation_id_position`); atribuída com a conversa travada (`FOR UPDATE`). |
+| `role` | `varchar(32)` | `user` ou `assistant`. |
+| `content` | `text` | Texto; numa resposta interrompida ou com erro, o que chegou a ser gerado. |
+| `citations` | `jsonb` | Lista de `{index, title, uri, snippet, document_id}`; padrão `[]`. Vazia em perguntas e em `no_source`. |
+| `status` | `varchar(32)` | `streaming`, `completed`, `no_source`, `failed`, `interrupted` (ver [chat-sse.md](chat-sse.md)). Perguntas são `completed`. |
+| `error_code` | `varchar(64)` | Código de domínio de uma resposta `failed` (ex.: `provider_unavailable`). |
+| `model` | `varchar(200)` | Modelo que respondeu; nulo em perguntas e em `no_source`. |
+| `input_tokens`, `output_tokens` | `integer` | Uso informado pelo provedor, quando há. |
+| `latency_ms` | `integer` | Da pergunta ao fim da resposta, pelo relógio injetado. |
+
+Único extra `uq_messages_workspace_id_id`, alvo da FK de `feedback`.
+
+### `feedback`
+
+Avaliação (👍/👎 e comentário) de uma resposta do assistente por um usuário que pode ler a conversa. RLS forçada, política `feedback_workspace`. Um por mensagem e usuário (`uq_feedback_message_id_user_id`); enviar de novo substitui (upsert).
+
+| Coluna | Tipo | Regras |
+|---|---|---|
+| `workspace_id` | `uuid` | FK `workspaces.id`, `ON DELETE CASCADE`. |
+| `message_id` | `uuid` | FK composta `(workspace_id, message_id)` → `messages (workspace_id, id)` (`fk_feedback_workspace_id_messages`), `ON DELETE CASCADE`. Só mensagens `assistant` (422 `feedback_target_invalid` na API). |
+| `user_id` | `uuid` | Quem avaliou. FK `users.id`, `ON DELETE CASCADE`. |
+| `rating` | `varchar(32)` | `up` ou `down`. |
+| `comment` | `text` | Até 2000 caracteres (validado na API); vazio permitido. |

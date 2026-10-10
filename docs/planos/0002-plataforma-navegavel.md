@@ -145,13 +145,13 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: da679b1
       - id: F4.4
         titulo: "Conversas, mensagens em streaming e feedback"
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-10
+        concluida_em: 2026-10-10
         commit: null
       - id: F4.5
         titulo: "Consulta administrativa de conversas"
@@ -600,6 +600,8 @@ Nenhuma aberta.
 - 2026-10-10 — F4.2 concluída: LLMProvider, adaptadores OpenAI/OpenRouter/Anthropic com SDKs oficiais, FakeLLMProvider, erros de domínio e teste de conexão auditado; backend 499 testes, 100%.
 - 2026-10-10 — F4.3 iniciada.
 - 2026-10-10 — F4.3 concluída: Assistant com RLS (migração 0008), CRUD com RBAC, FK composta de credencial, 409 provider_in_use, auditoria; backend 544 testes, 100%.
+- 2026-10-10 — F4.4 iniciada.
+- 2026-10-10 — F4.4 concluída: Conversation/Message/Feedback com RLS (migração 0009), orquestrador com regra 8 sem chamar LLM, SSE citations/delta/done/error, erros no meio do stream mapeados, desconexão tratada, docs/specs/chat-sse.md; backend 598 testes, 100%. Pendente conhecido: marcador streaming órfão se o processo morrer (tratar na F4.5).
 
 ## 8. Encerramento
 

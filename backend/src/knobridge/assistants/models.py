@@ -49,6 +49,8 @@ class Assistant(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "assistants"
     __table_args__ = (
         UniqueConstraint("workspace_id", "name"),
+        # Target of the composite foreign key of ``conversations``.
+        UniqueConstraint("workspace_id", "id"),
         ForeignKeyConstraint(
             ["workspace_id", "credential_id"],
             ["provider_credentials.workspace_id", "provider_credentials.id"],

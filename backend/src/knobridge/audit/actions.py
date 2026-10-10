@@ -48,3 +48,5 @@ class AuditAction(StrEnum):
     ASSISTANT_CREATED = "assistant.created"
     ASSISTANT_UPDATED = "assistant.updated"
     ASSISTANT_DELETED = "assistant.deleted"
+    # Conversations: only the deletion is audited (no content: ids and counts only).
+    CONVERSATION_DELETED = "conversation.deleted"
