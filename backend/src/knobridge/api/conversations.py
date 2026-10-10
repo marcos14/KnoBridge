@@ -175,7 +175,7 @@ def _message_out(view: MessageView) -> MessageOut:
         role=message.role,
         content=message.content,
         citations=[CitationOut.model_validate(item) for item in message.citations],
-        status=message.status,
+        status=view.status,
         error_code=message.error_code,
         model=message.model,
         input_tokens=message.input_tokens,

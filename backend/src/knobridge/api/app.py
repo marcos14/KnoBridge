@@ -14,6 +14,7 @@ from knobridge import __version__
 from knobridge.api import (
     account,
     admin,
+    admin_conversations,
     assistants,
     audit,
     auth,
@@ -103,6 +104,7 @@ def create_app(
         providers,
         assistants,
         conversations,
+        admin_conversations,
         admin,
     )
     for module in routers:

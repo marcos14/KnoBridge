@@ -1,6 +1,6 @@
 # Chat em streaming (SSE)
 
-> Rascunho v0.1 · 2026-10-10 · Plano 0002, F4.4
+> Rascunho v0.2 · 2026-10-10 · Plano 0002, F4.4 (v0.2, F4.5: resposta `streaming` órfã lida como `interrupted`)
 
 Contrato da resposta de `POST /v1/workspaces/{workspace_id}/conversations/{conversation_id}/messages`, que manda uma pergunta ao assistente da conversa e devolve a resposta como [Server-Sent Events](https://html.spec.whatwg.org/multipage/server-sent-events.html). Os schemas das rotas JSON (conversas, mensagens, feedback) estão no [`openapi.json`](openapi.json); lá, esta rota aparece com `200` em `text/event-stream`, e os eventos são descritos aqui. Implementação em [`backend/src/knobridge/conversations/`](../../backend/src/knobridge/conversations/AGENTS.md) e [`backend/src/knobridge/api/conversations.py`](../../backend/src/knobridge/api/AGENTS.md).
 
@@ -114,7 +114,7 @@ A mensagem fica gravada com `status: no_source` e `citations: []`. O painel usa 
 
 | `status` | Significado |
 |---|---|
-| `streaming` | O LLM está respondendo (só enquanto o stream está aberto). |
+| `streaming` | O LLM está respondendo (só enquanto o stream está aberto). Se o processo do servidor morrer no meio do stream, a mensagem ficaria `streaming` para sempre: por isso, uma resposta `streaming` sem atualização há mais de 5 minutos é lida como `interrupted` em `GET .../conversations/{id}` (e nas rotas administrativas), e a próxima pergunta da conversa grava `interrupted` nela antes de seguir. |
 | `completed` | Resposta completa, com citações. |
 | `no_source` | Resposta de "sem fonte", sem chamar o LLM. |
 | `failed` | Erro do provedor ou do servidor; `error_code` diz qual. |

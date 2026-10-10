@@ -323,7 +323,7 @@ Configuração de um assistente do workspace (plano 0002, F4.3), em [`backend/sr
 
 ### `conversations`
 
-Conversa de um membro com um assistente (plano 0002, F4.4), em [`backend/src/knobridge/conversations/`](../../backend/src/knobridge/conversations/AGENTS.md). Dado de workspace com RLS forçada e uma política padrão (`conversations_workspace`, `USING` e `WITH CHECK`). A privacidade entre membros é regra da aplicação: só o dono envia mensagens e exclui; owner e admin do workspace leem qualquer conversa; os demais recebem 404. Só a exclusão é auditada (`conversation.deleted`, com `assistant_id` e `message_count`, sem conteúdo).
+Conversa de um membro com um assistente (plano 0002, F4.4), em [`backend/src/knobridge/conversations/`](../../backend/src/knobridge/conversations/AGENTS.md). Dado de workspace com RLS forçada e uma política padrão (`conversations_workspace`, `USING` e `WITH CHECK`). A privacidade entre membros é regra da aplicação: só o dono envia mensagens e exclui; owner e admin do workspace leem qualquer conversa; os demais recebem 404. Owner e admin também têm a visão administrativa (plano 0002, F4.5: `/v1/workspaces/{id}/admin/conversations`, com contagens por conversa e totais do período, em consultas de número constante de statements). Só a exclusão é auditada (`conversation.deleted`, com `assistant_id` e `message_count`, sem conteúdo).
 
 | Coluna | Tipo | Regras |
 |---|---|---|
@@ -347,7 +347,7 @@ Pergunta ou resposta de uma conversa. RLS forçada, política `messages_workspac
 | `role` | `varchar(32)` | `user` ou `assistant`. |
 | `content` | `text` | Texto; numa resposta interrompida ou com erro, o que chegou a ser gerado. |
 | `citations` | `jsonb` | Lista de `{index, title, uri, snippet, document_id}`; padrão `[]`. Vazia em perguntas e em `no_source`. |
-| `status` | `varchar(32)` | `streaming`, `completed`, `no_source`, `failed`, `interrupted` (ver [chat-sse.md](chat-sse.md)). Perguntas são `completed`. |
+| `status` | `varchar(32)` | `streaming`, `completed`, `no_source`, `failed`, `interrupted` (ver [chat-sse.md](chat-sse.md)). Perguntas são `completed`. Uma resposta `streaming` com `updated_at` de mais de 5 minutos atrás é órfã (o processo morreu no meio do stream): as leituras a mostram como `interrupted`, e a próxima pergunta da conversa grava `interrupted` nela. |
 | `error_code` | `varchar(64)` | Código de domínio de uma resposta `failed` (ex.: `provider_unavailable`). |
 | `model` | `varchar(200)` | Modelo que respondeu; nulo em perguntas e em `no_source`. |
 | `input_tokens`, `output_tokens` | `integer` | Uso informado pelo provedor, quando há. |

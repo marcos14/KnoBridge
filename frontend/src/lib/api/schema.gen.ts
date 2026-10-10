@@ -494,6 +494,73 @@ export interface paths {
         patch: operations["update_workspace_v1_workspaces__workspace_id__patch"];
         trace?: never;
     };
+    "/v1/workspaces/{workspace_id}/admin/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Workspace Conversations
+         * @description Every member's conversations, most recently active first.
+         *
+         *     Filters: assistant, user, creation period ``[created_from, created_to)`` and
+         *     ``negative_feedback`` (only conversations with at least one thumbs down).
+         */
+        get: operations["list_workspace_conversations_v1_workspaces__workspace_id__admin_conversations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/admin/conversations/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Workspace Conversation Stats
+         * @description Totals of ``[created_from, created_to)``; by default, the 30 days before now.
+         *
+         *     Conversations count by creation time; messages, answers by status and feedback by the
+         *     creation time of the message. A ``streaming`` answer older than 5 minutes counts as
+         *     ``interrupted``.
+         */
+        get: operations["workspace_conversation_stats_v1_workspaces__workspace_id__admin_conversations_stats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/admin/conversations/{conversation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Workspace Conversation
+         * @description Any member's conversation with its messages in order and everyone's feedback.
+         */
+        get: operations["get_workspace_conversation_v1_workspaces__workspace_id__admin_conversations__conversation_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/workspaces/{workspace_id}/assistants": {
         parameters: {
             query?: never;
@@ -852,6 +919,170 @@ export interface components {
             /** Token */
             token: string;
         };
+        /** AdminConversationDetailOut */
+        AdminConversationDetailOut: {
+            /**
+             * Assistant Id
+             * Format: uuid
+             */
+            assistant_id: string;
+            /** Assistant Name */
+            assistant_name: string;
+            channel: components["schemas"]["ConversationChannel"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Last Message At */
+            last_message_at: string | null;
+            /** Message Count */
+            message_count: number;
+            messages: components["schemas"]["AdminMessagePage"];
+            /** Thumbs Down */
+            thumbs_down: number;
+            /** Thumbs Up */
+            thumbs_up: number;
+            /** Title */
+            title: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** User Email */
+            user_email: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** User Name */
+            user_name: string;
+        };
+        /** AdminConversationOut */
+        AdminConversationOut: {
+            /**
+             * Assistant Id
+             * Format: uuid
+             */
+            assistant_id: string;
+            /** Assistant Name */
+            assistant_name: string;
+            channel: components["schemas"]["ConversationChannel"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Last Message At */
+            last_message_at: string | null;
+            /** Message Count */
+            message_count: number;
+            /** Thumbs Down */
+            thumbs_down: number;
+            /** Thumbs Up */
+            thumbs_up: number;
+            /** Title */
+            title: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** User Email */
+            user_email: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** User Name */
+            user_name: string;
+        };
+        /** AdminConversationPageOut */
+        AdminConversationPageOut: {
+            /** Items */
+            items: components["schemas"]["AdminConversationOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Total */
+            total: number;
+        };
+        /** AdminFeedbackOut */
+        AdminFeedbackOut: {
+            /** Comment */
+            comment: string;
+            rating: components["schemas"]["FeedbackRating"];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** User Email */
+            user_email: string;
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+            /** User Name */
+            user_name: string;
+        };
+        /** AdminMessageOut */
+        AdminMessageOut: {
+            /** Citations */
+            citations: components["schemas"]["CitationOut"][];
+            /** Content */
+            content: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Error Code */
+            error_code: string | null;
+            /** Feedback */
+            feedback: components["schemas"]["AdminFeedbackOut"][];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Input Tokens */
+            input_tokens: number | null;
+            /** Latency Ms */
+            latency_ms: number | null;
+            /** Model */
+            model: string | null;
+            /** Output Tokens */
+            output_tokens: number | null;
+            role: components["schemas"]["MessageRole"];
+            status: components["schemas"]["MessageStatus"];
+        };
+        /** AdminMessagePage */
+        AdminMessagePage: {
+            /** Items */
+            items: components["schemas"]["AdminMessageOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Total */
+            total: number;
+        };
         /** AdminUserOut */
         AdminUserOut: {
             /**
@@ -1189,6 +1420,33 @@ export interface components {
             offset: number;
             /** Total */
             total: number;
+        };
+        /** ConversationStatsOut */
+        ConversationStatsOut: {
+            /** Conversations */
+            conversations: number;
+            /** Failed Answers */
+            failed_answers: number;
+            /** Interrupted Answers */
+            interrupted_answers: number;
+            /** Messages */
+            messages: number;
+            /** No Source Answers */
+            no_source_answers: number;
+            /**
+             * Period End
+             * Format: date-time
+             */
+            period_end: string;
+            /**
+             * Period Start
+             * Format: date-time
+             */
+            period_start: string;
+            /** Thumbs Down */
+            thumbs_down: number;
+            /** Thumbs Up */
+            thumbs_up: number;
         };
         /** CreateWorkspaceRequest */
         CreateWorkspaceRequest: {
@@ -2769,6 +3027,171 @@ export interface operations {
                 content?: never;
             };
             /** @description Invalid body. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_workspace_conversations_v1_workspaces__workspace_id__admin_conversations_get: {
+        parameters: {
+            query?: {
+                assistant_id?: string | null;
+                user_id?: string | null;
+                created_from?: string | null;
+                created_to?: string | null;
+                negative_feedback?: boolean;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminConversationPageOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below admin, or workspace suspended. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace not found or caller is not a member. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid query, or a period whose start is not before its end. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    workspace_conversation_stats_v1_workspaces__workspace_id__admin_conversations_stats_get: {
+        parameters: {
+            query?: {
+                created_from?: string | null;
+                created_to?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationStatsOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below admin, or workspace suspended. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace not found or caller is not a member. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid query, or a period whose start is not before its end. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_workspace_conversation_v1_workspaces__workspace_id__admin_conversations__conversation_id__get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                conversation_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminConversationDetailOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below admin, or workspace suspended. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or conversation not found, or caller is not a member. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid query, or a period whose start is not before its end. */
             422: {
                 headers: {
                     [name: string]: unknown;

@@ -40,6 +40,7 @@ from knobridge.conversations.service import (
     get_readable_conversation,
     require_owner,
 )
+from knobridge.conversations.stale import interrupt_stale_streaming
 from knobridge.conversations.turn import (
     ChatEvent,
     ChatFailedError,
@@ -109,6 +110,10 @@ class ChatService:
             db, workspace_id, conversation_id, reader, lock=True
         )
         require_owner(conversation, reader)
+        # An answer orphaned by a dead process must not stay ``streaming`` behind the new one.
+        await interrupt_stale_streaming(
+            db, workspace_id=workspace_id, conversation_id=conversation_id, now=started_at
+        )
         assistant = await get_active_assistant(db, workspace_id, conversation.assistant_id)
         position = await self._next_position(db, workspace_id, conversation_id)
         history = await self._history(db, workspace_id, conversation_id)

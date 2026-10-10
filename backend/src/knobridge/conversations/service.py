@@ -27,7 +27,9 @@ from knobridge.conversations.models import (
     FeedbackRating,
     Message,
     MessageRole,
+    MessageStatus,
 )
+from knobridge.conversations.stale import effective_status
 from knobridge.core.clock import Clock
 from knobridge.core.errors import ConflictError, ForbiddenError, NotFoundError, ValidationError
 
@@ -50,9 +52,14 @@ class Reader:
 
 @dataclass(frozen=True)
 class MessageView:
-    """A message with the reader's own feedback on it (``None`` when not given)."""
+    """A message with the reader's own feedback on it (``None`` when not given).
+
+    ``status`` is the one to show: an orphan ``streaming`` answer reads as ``interrupted``
+    (``stale.py``).
+    """
 
     message: Message
+    status: MessageStatus
     feedback: Feedback | None
 
 
@@ -105,6 +112,7 @@ def require_owner(conversation: Conversation, reader: Reader) -> None:
 
 class ConversationService:
     def __init__(self, clock: Clock) -> None:
+        self._clock = clock
         self._audit = AuditService(clock)
 
     async def create(
@@ -188,7 +196,15 @@ class ConversationService:
             .limit(limit)
             .offset(offset)
         )
-        views = [MessageView(message=message, feedback=feedback) for message, feedback in rows]
+        now = self._clock.now()
+        views = [
+            MessageView(
+                message=message,
+                status=effective_status(message.status, message.updated_at, now),
+                feedback=feedback,
+            )
+            for message, feedback in rows
+        ]
         return views, total or 0
 
     async def delete(

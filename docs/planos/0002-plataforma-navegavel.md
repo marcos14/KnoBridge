@@ -152,13 +152,13 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: 737d109
       - id: F4.5
         titulo: "Consulta administrativa de conversas"
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-10
+        concluida_em: 2026-10-10
         commit: null
   - id: F5
     titulo: "Assistentes, chat e conversas (frontend)"
@@ -602,6 +602,8 @@ Nenhuma aberta.
 - 2026-10-10 — F4.3 concluída: Assistant com RLS (migração 0008), CRUD com RBAC, FK composta de credencial, 409 provider_in_use, auditoria; backend 544 testes, 100%.
 - 2026-10-10 — F4.4 iniciada.
 - 2026-10-10 — F4.4 concluída: Conversation/Message/Feedback com RLS (migração 0009), orquestrador com regra 8 sem chamar LLM, SSE citations/delta/done/error, erros no meio do stream mapeados, desconexão tratada, docs/specs/chat-sse.md; backend 598 testes, 100%. Pendente conhecido: marcador streaming órfão se o processo morrer (tratar na F4.5).
+- 2026-10-10 — F4.5 iniciada.
+- 2026-10-10 — F4.5 concluída: Listagem, detalhe e stats administrativos de conversas (owner/admin), sem N+1 (consultas constantes testadas), streaming órfão tratado como interrupted; backend 607 testes, 100%.
 
 ## 8. Encerramento
 

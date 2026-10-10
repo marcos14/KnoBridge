@@ -42,6 +42,414 @@
         "title": "AcceptInvitationRequest",
         "type": "object"
       },
+      "AdminConversationDetailOut": {
+        "properties": {
+          "assistant_id": {
+            "format": "uuid",
+            "title": "Assistant Id",
+            "type": "string"
+          },
+          "assistant_name": {
+            "title": "Assistant Name",
+            "type": "string"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/ConversationChannel"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "last_message_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Message At"
+          },
+          "message_count": {
+            "title": "Message Count",
+            "type": "integer"
+          },
+          "messages": {
+            "$ref": "#/components/schemas/AdminMessagePage"
+          },
+          "thumbs_down": {
+            "title": "Thumbs Down",
+            "type": "integer"
+          },
+          "thumbs_up": {
+            "title": "Thumbs Up",
+            "type": "integer"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "user_email": {
+            "title": "User Email",
+            "type": "string"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          },
+          "user_name": {
+            "title": "User Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "channel",
+          "assistant_id",
+          "assistant_name",
+          "user_id",
+          "user_name",
+          "user_email",
+          "message_count",
+          "thumbs_up",
+          "thumbs_down",
+          "last_message_at",
+          "created_at",
+          "updated_at",
+          "messages"
+        ],
+        "title": "AdminConversationDetailOut",
+        "type": "object"
+      },
+      "AdminConversationOut": {
+        "properties": {
+          "assistant_id": {
+            "format": "uuid",
+            "title": "Assistant Id",
+            "type": "string"
+          },
+          "assistant_name": {
+            "title": "Assistant Name",
+            "type": "string"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/ConversationChannel"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "last_message_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Message At"
+          },
+          "message_count": {
+            "title": "Message Count",
+            "type": "integer"
+          },
+          "thumbs_down": {
+            "title": "Thumbs Down",
+            "type": "integer"
+          },
+          "thumbs_up": {
+            "title": "Thumbs Up",
+            "type": "integer"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "user_email": {
+            "title": "User Email",
+            "type": "string"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          },
+          "user_name": {
+            "title": "User Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "channel",
+          "assistant_id",
+          "assistant_name",
+          "user_id",
+          "user_name",
+          "user_email",
+          "message_count",
+          "thumbs_up",
+          "thumbs_down",
+          "last_message_at",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "AdminConversationOut",
+        "type": "object"
+      },
+      "AdminConversationPageOut": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AdminConversationOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "AdminConversationPageOut",
+        "type": "object"
+      },
+      "AdminFeedbackOut": {
+        "properties": {
+          "comment": {
+            "title": "Comment",
+            "type": "string"
+          },
+          "rating": {
+            "$ref": "#/components/schemas/FeedbackRating"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "user_email": {
+            "title": "User Email",
+            "type": "string"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          },
+          "user_name": {
+            "title": "User Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "user_name",
+          "user_email",
+          "rating",
+          "comment",
+          "updated_at"
+        ],
+        "title": "AdminFeedbackOut",
+        "type": "object"
+      },
+      "AdminMessageOut": {
+        "properties": {
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/CitationOut"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "feedback": {
+            "items": {
+              "$ref": "#/components/schemas/AdminFeedbackOut"
+            },
+            "title": "Feedback",
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "input_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Tokens"
+          },
+          "latency_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latency Ms"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "output_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Tokens"
+          },
+          "role": {
+            "$ref": "#/components/schemas/MessageRole"
+          },
+          "status": {
+            "$ref": "#/components/schemas/MessageStatus"
+          }
+        },
+        "required": [
+          "id",
+          "role",
+          "content",
+          "citations",
+          "status",
+          "error_code",
+          "model",
+          "input_tokens",
+          "output_tokens",
+          "latency_ms",
+          "created_at",
+          "feedback"
+        ],
+        "title": "AdminMessageOut",
+        "type": "object"
+      },
+      "AdminMessagePage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AdminMessageOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "AdminMessagePage",
+        "type": "object"
+      },
       "AdminUserOut": {
         "properties": {
           "created_at": {
@@ -898,6 +1306,61 @@
           "offset"
         ],
         "title": "ConversationPage",
+        "type": "object"
+      },
+      "ConversationStatsOut": {
+        "properties": {
+          "conversations": {
+            "title": "Conversations",
+            "type": "integer"
+          },
+          "failed_answers": {
+            "title": "Failed Answers",
+            "type": "integer"
+          },
+          "interrupted_answers": {
+            "title": "Interrupted Answers",
+            "type": "integer"
+          },
+          "messages": {
+            "title": "Messages",
+            "type": "integer"
+          },
+          "no_source_answers": {
+            "title": "No Source Answers",
+            "type": "integer"
+          },
+          "period_end": {
+            "format": "date-time",
+            "title": "Period End",
+            "type": "string"
+          },
+          "period_start": {
+            "format": "date-time",
+            "title": "Period Start",
+            "type": "string"
+          },
+          "thumbs_down": {
+            "title": "Thumbs Down",
+            "type": "integer"
+          },
+          "thumbs_up": {
+            "title": "Thumbs Up",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "period_start",
+          "period_end",
+          "conversations",
+          "messages",
+          "thumbs_up",
+          "thumbs_down",
+          "no_source_answers",
+          "failed_answers",
+          "interrupted_answers"
+        ],
+        "title": "ConversationStatsOut",
         "type": "object"
       },
       "CreateWorkspaceRequest": {
@@ -3452,6 +3915,312 @@
         "summary": "Update Workspace",
         "tags": [
           "members"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/admin/conversations": {
+      "get": {
+        "description": "Every member's conversations, most recently active first.\n\nFilters: assistant, user, creation period ``[created_from, created_to)`` and\n``negative_feedback`` (only conversations with at least one thumbs down).",
+        "operationId": "list_workspace_conversations_v1_workspaces__workspace_id__admin_conversations_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "assistant_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Assistant Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "user_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "User Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "created_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Created From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "created_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Created To"
+            }
+          },
+          {
+            "in": "query",
+            "name": "negative_feedback",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Negative Feedback",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminConversationPageOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below admin, or workspace suspended."
+          },
+          "404": {
+            "description": "Workspace not found or caller is not a member."
+          },
+          "422": {
+            "description": "Invalid query, or a period whose start is not before its end."
+          }
+        },
+        "summary": "List Workspace Conversations",
+        "tags": [
+          "admin-conversations"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/admin/conversations/stats": {
+      "get": {
+        "description": "Totals of ``[created_from, created_to)``; by default, the 30 days before now.\n\nConversations count by creation time; messages, answers by status and feedback by the\ncreation time of the message. A ``streaming`` answer older than 5 minutes counts as\n``interrupted``.",
+        "operationId": "workspace_conversation_stats_v1_workspaces__workspace_id__admin_conversations_stats_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "created_from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Created From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "created_to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Created To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationStatsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below admin, or workspace suspended."
+          },
+          "404": {
+            "description": "Workspace not found or caller is not a member."
+          },
+          "422": {
+            "description": "Invalid query, or a period whose start is not before its end."
+          }
+        },
+        "summary": "Workspace Conversation Stats",
+        "tags": [
+          "admin-conversations"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/admin/conversations/{conversation_id}": {
+      "get": {
+        "description": "Any member's conversation with its messages in order and everyone's feedback.",
+        "operationId": "get_workspace_conversation_v1_workspaces__workspace_id__admin_conversations__conversation_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 500,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminConversationDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below admin, or workspace suspended."
+          },
+          "404": {
+            "description": "Workspace or conversation not found, or caller is not a member."
+          },
+          "422": {
+            "description": "Invalid query, or a period whose start is not before its end."
+          }
+        },
+        "summary": "Get Workspace Conversation",
+        "tags": [
+          "admin-conversations"
         ]
       }
     },
