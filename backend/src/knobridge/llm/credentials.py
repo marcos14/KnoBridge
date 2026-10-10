@@ -177,10 +177,11 @@ class ProviderCredentialService:
         try:
             await db.flush()
         except IntegrityError as exc:
-            # Only a foreign key can stop the delete: an assistant still uses the credential.
-            # The caller's transaction is now failed and rolls back when this propagates.
+            # Only a foreign key can stop the delete: an assistant or a collection still uses
+            # the credential. The caller's transaction is now failed and rolls back when this
+            # propagates.
             raise ProviderInUseError(
-                "The provider is used by an assistant; change or delete the assistant first."
+                "The provider is used by an assistant or a collection; change or delete it first."
             ) from exc
         await self._audit.record(
             db,

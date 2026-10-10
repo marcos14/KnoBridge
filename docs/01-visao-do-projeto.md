@@ -298,6 +298,7 @@ Quando entrar (fase 3): OpenTelemetry + Langfuse para traces; conjunto de avalia
 | D13 | Observabilidade e avaliação | Agora / depois | **Depois** (fase 3); agora só log estruturado e feedback | Fácil |
 | D14 | Canal no "padrão OpenAI" | Só REST própria / também Chat Completions | **Também Chat Completions** (`/v1/chat/completions`) | Fácil |
 | D15 | Segredos em repouso (chaves de provedores, depois tokens de conectores e canais) | Fernet / pgcrypto / AES-GCM na aplicação / KMS externo | **AES-256-GCM na aplicação**, chave por finalidade derivada de `KNOBRIDGE_SECRET_KEY` (HKDF), versão no texto cifrado e AAD com workspace e linha ([ADR 0003](adr/0003-segredos-cifrados.md)) | Médio (recifrar) |
+| D16 | Índice de conhecimento (coleção, fonte, modelo de embedding) | Fonte em N coleções / fonte em uma coleção; dimensão variável / fixa | **Coleção define credencial e modelo de embedding; fonte em uma única coleção; `vector(1536)` fixo com HNSW cosseno e `tsvector` gerado; modelo registrado por chunk (trocar = reindexar); pipeline fixo sobre Temporal antes do canvas** ([ADR 0004](adr/0004-indice-de-conhecimento.md)) | Médio (reindexar) |
 
 ## 10. Fluxos de exemplo
 

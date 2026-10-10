@@ -19,6 +19,7 @@ from knobridge.audit import models as audit_models
 from knobridge.conversations import models as conversations_models
 from knobridge.core.models import Base
 from knobridge.core.settings import get_settings
+from knobridge.ingestion import models as ingestion_models
 from knobridge.llm import models as llm_models
 from knobridge.security import models as security_models
 from knobridge.tenancy import models as tenancy_models
@@ -31,6 +32,7 @@ _MODEL_MODULES = (
     llm_models,
     assistants_models,
     conversations_models,
+    ingestion_models,
 )
 _TENANCY_TABLES = (
     "conversations",
@@ -46,7 +48,14 @@ _TENANCY_TABLES = (
     "invitations",
     "provider_credentials",
     "assistants",
+    "collections",
+    "sources",
+    "runs",
+    "run_errors",
+    "documents",
+    "chunks",
 )
+_INDEX_TABLES = ("collections", "sources", "runs", "run_errors", "documents", "chunks")
 
 ALEMBIC_INI = Path(__file__).resolve().parents[2] / "alembic.ini"
 
@@ -133,6 +142,7 @@ def test_migration_upgrade_downgrade_tenancy(postgres_url: str) -> None:
         "conversations": (True, True, 1),
         "messages": (True, True, 1),
         "feedback": (True, True, 1),
+        **dict.fromkeys(_INDEX_TABLES, (True, True, 1)),
     }
     assert after_downgrade == {}
 
@@ -300,6 +310,51 @@ def test_migration_upgrade_downgrade_conversations(postgres_url: str) -> None:
     assert not set(tables) & set(after_downgrade)
     assert after_downgrade["assistants"] == (True, True, 4)
     assert key_after_downgrade is False
+
+
+def _index_methods(database_url: str) -> dict[str, str]:
+    """Map each index of ``chunks`` to its access method (``btree``, ``hnsw``, ``gin``)."""
+
+    async def query() -> dict[str, str]:
+        engine = create_async_engine(database_url, poolclass=NullPool)
+        try:
+            async with engine.connect() as connection:
+                result = await connection.execute(
+                    text(
+                        "SELECT i.relname, a.amname FROM pg_index x"
+                        " JOIN pg_class i ON i.oid = x.indexrelid"
+                        " JOIN pg_class t ON t.oid = x.indrelid"
+                        " JOIN pg_am a ON a.oid = i.relam"
+                        " WHERE t.relname = 'chunks'"
+                    )
+                )
+                return {row[0]: row[1] for row in result}
+        finally:
+            await engine.dispose()
+
+    return asyncio.run(query())
+
+
+@pytest.mark.integration
+def test_migration_upgrade_downgrade_knowledge_index(postgres_url: str) -> None:
+    config, _ = _alembic_config(postgres_url)
+
+    command.upgrade(config, "head")
+    after_upgrade = _tenancy_catalog(postgres_url)
+    indexes_after_upgrade = _index_methods(postgres_url)
+    command.downgrade(config, "0009")
+    after_downgrade = _tenancy_catalog(postgres_url)
+    indexes_after_downgrade = _index_methods(postgres_url)
+    command.downgrade(config, "base")
+
+    assert {table: after_upgrade[table] for table in _INDEX_TABLES} == dict.fromkeys(
+        _INDEX_TABLES, (True, True, 1)
+    )
+    assert indexes_after_upgrade["ix_chunks_embedding_hnsw"] == "hnsw"
+    assert indexes_after_upgrade["ix_chunks_tsv_gin"] == "gin"
+    assert not set(_INDEX_TABLES) & set(after_downgrade)
+    assert after_downgrade["provider_credentials"] == (True, True, 1)
+    assert indexes_after_downgrade == {}
 
 
 def _schema_diff(connection: Connection) -> list[object]:
