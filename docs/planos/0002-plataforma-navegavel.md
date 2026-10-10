@@ -195,12 +195,12 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: 4b90393
       - id: F6.2
         titulo: "Specs, guias e documentação final"
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code
+        iniciada_em: 2026-10-10
         concluida_em: null
         commit: null
 decisoes:
@@ -612,6 +612,7 @@ Nenhuma aberta.
 - 2026-10-10 — F5.3 concluída: Tela /w/:id/conversations (totais, filtros na URL, detalhe somente leitura), correção das duas pontas da F5.2 com testes, code-splitting (chunk principal 994→350 kB); 702 testes.
 - 2026-10-10 — F5 concluída; F6.1 iniciada.
 - 2026-10-10 — F6.1 concluída: Proxy headers restritos ao nginx, compose e2e, Playwright stack (setup→convites via Mailpit→recuperação de senha→provedor fake→chat sem fonte→revisão→tema), job e2e-stack na CI; orquestrador rodou do zero: 11 de 13 rodadas verdes (1 crash nativo do Node no Windows 0xC0000409, 1 sem detalhe), ~34 s para subir, ~18 s de teste. Achado: cabeçalho do chat mostra 'Conversa sem título' após a primeira resposta.
+- 2026-10-10 — F6.2 iniciada; em paralelo, correção do título da conversa no chat (achado da F6.1).
 
 ## 8. Encerramento
 
