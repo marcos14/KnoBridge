@@ -1,0 +1,17 @@
+{
+  "app": {
+    "title": "KnoBridge"
+  },
+  "nav": {
+    "label": "Navegação principal"
+  },
+  "home": {
+    "title": "Início",
+    "description": "Bem-vindo ao painel do KnoBridge."
+  },
+  "notFound": {
+    "title": "Página não encontrada",
+    "description": "O endereço acessado não existe.",
+    "backHome": "Voltar para o início"
+  }
+}

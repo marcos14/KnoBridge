@@ -1,6 +1,6 @@
 # frontend/
 
-**Função**: painel administrativo do KnoBridge em React + TypeScript. Fontes e conectores, canvas de pipelines (React Flow), execuções, coleções, assistentes, canais, conversas, custos e configurações do workspace. Estado: só este arquivo. O bootstrap está na seção 12 do `AGENTS.md` da raiz.
+**Função**: painel administrativo do KnoBridge em React + TypeScript. Fontes e conectores, canvas de pipelines (React Flow), execuções, coleções, assistentes, canais, conversas, custos e configurações do workspace. Estado: app Vite com providers (roteador, TanStack Query, i18n pt-BR), layout vazio e gates (lint, typecheck, Vitest com cobertura ≥ 95). Sem telas de produto nem chamadas de API ainda.
 
 **Entra aqui**: aplicação Vite em `src/`, testes ao lado dos arquivos (`*.test.tsx`) e E2E em `e2e/`, `package.json`, `pnpm-lock.yaml`, configs de ESLint, Prettier, Vitest e Playwright, `Dockerfile`, `README.md` curto.
 **Não entra aqui**: o widget embutível (vai para `widget/`), documentação (vai para `docs/`), lógica de negócio que pertence ao backend, dados reais.
@@ -20,6 +20,7 @@ frontend/src/
 ```
 
 **Convenções locais**
+
 - Node LTS, `pnpm`. TypeScript `strict`; sem `any` sem comentário; sem `@ts-ignore` (use `@ts-expect-error` com motivo).
 - ESLint + Prettier. A CI falha com aviso.
 - Estado de servidor só via TanStack Query; estado local via hooks; store global só com necessidade demonstrada.
@@ -31,11 +32,13 @@ frontend/src/
 - Streaming de respostas (SSE) tratado por um hook único, reutilizado pelo chat de teste e pela visualização de conversas.
 
 **Como testar**
+
 ```sh
 pnpm lint && pnpm typecheck
 pnpm test -- --coverage        # Vitest; thresholds de 95 em lines, branches, functions e statements
 pnpm e2e                       # Playwright: fluxos críticos do canvas e do chat de teste
 ```
+
 - Vitest + Testing Library para componentes e hooks; MSW para a API (nunca mockar `fetch` à mão).
 - Playwright só para os poucos fluxos críticos; rodam na CI contra o backend em container.
 - Componentes de `components/ui/` gerados pelo shadcn podem ficar fora da medição de cobertura, com justificativa no `vitest.config.ts`.

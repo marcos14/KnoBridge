@@ -46,17 +46,17 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: eb66531
   - id: F3
     titulo: Frontend base
-    status: pendente
+    status: em_execucao
     subfases:
       - id: F3.1
         titulo: App Vite com providers, i18n e gates
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-10
+        concluida_em: 2026-10-10
         commit: null
       - id: F3.2
         titulo: shadcn/ui, cliente gerado do OpenAPI, MSW, Playwright e Dockerfile
@@ -160,6 +160,13 @@ decisoes:
     decisao: "Worker com HealthWorkflow knobridge.health.v1 e activity knobridge.health.ping.v1 (timeout 10s, 3 tentativas); imagem única do backend (uv 0.11.11, python:3.12-slim, uid 10001); encerramento gracioso por SIGTERM fica para quando houver workflows de domínio."
     motivo: "Prova o caminho completo de registro e execução sem antecipar domínio; activities idempotentes toleram o encerramento abrupto por ora."
     alternativas: "Tratar SIGTERM já no bootstrap."
+    adr: null
+  - id: D12
+    data: 2026-10-10
+    por: agente
+    decisao: "Frontend: react 19, react-router 8, TanStack Query 5, i18next com chaves tipadas, Vite 8, Vitest 5 com cobertura sempre ligada; TypeScript 6.0 e ESLint 9 por compatibilidade de peers (typescript-eslint e jsx-a11y); AppProviders compartilhado entre App e testes."
+    motivo: "Versões estáveis atuais com peers limpos; pnpm 11 repassa o '--' literalmente, então a cobertura precisa estar ligada no config."
+    alternativas: "TypeScript 7 e ESLint 10 (peers quebrados); react-router 7."
     adr: null
 pendencias_usuario: []
 ---
@@ -300,6 +307,8 @@ Nenhuma no momento. A CI só roda de fato quando o repositório estiver no GitHu
 - 2026-10-10 — F2.2 concluída: 48 testes (5 de integração com pgvector/pg17), cobertura 100% (D10).
 - 2026-10-10 — F2.3 iniciada.
 - 2026-10-10 — F2.3 concluída: 62 testes, cobertura 100%; docker build ok e entry points presentes na imagem (D11).
+- 2026-10-10 — F3.1 iniciada.
+- 2026-10-10 — F3.1 concluída: 11 testes, cobertura 100%; lint, typecheck e build ok (D12).
 
 ## 8. Encerramento
 
