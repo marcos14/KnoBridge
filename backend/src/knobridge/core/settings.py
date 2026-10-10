@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 from datetime import timedelta
+from decimal import Decimal
 from functools import lru_cache
-from typing import Literal, Self
+from typing import Annotated, Literal, Self
 
 from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -79,6 +80,9 @@ class Settings(BaseSettings):
     smtp_starttls: bool = False
     # Seconds to wait for the SMTP server on each operation.
     smtp_timeout: float = Field(default=10.0, gt=0)
+    # Embedding prices in USD per million tokens by model id, as JSON; merged over the
+    # defaults of llm/pricing.py (a model listed here replaces the default price).
+    embedding_prices: dict[str, Annotated[Decimal, Field(ge=0)]] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def _check_secret_key(self) -> Self:

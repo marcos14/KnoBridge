@@ -89,3 +89,37 @@ def stream_error(error_type: str | None, provider: str) -> LLMProviderError:
     if "invalid_request" in kind or "not_found" in kind:
         return ProviderRequestError("The provider rejected the request.", provider=provider)
     return ProviderUnavailableError("The provider failed while answering.", provider=provider)
+
+
+class EmbeddingsNotSupportedError(LLMProviderError):
+    """The credential's provider has no embeddings API (Anthropic)."""
+
+    code = "provider_embeddings_unsupported"
+    status_code = HTTPStatus.UNPROCESSABLE_ENTITY
+
+    def __init__(self, provider: str) -> None:
+        super().__init__("The provider does not offer embeddings.", provider=provider)
+
+
+class EmbeddingResponseError(LLMProviderError):
+    """The provider answered 200 with fewer or more vectors than texts sent."""
+
+    code = "embedding_invalid_response"
+
+    def __init__(self, *, provider: str, expected: int, received: int) -> None:
+        super().__init__("The provider returned an invalid embedding response.", provider=provider)
+        self.details = {"provider": provider, "expected": expected, "received": received}
+
+
+class EmbeddingDimensionError(LLMProviderError):
+    """A vector came back with another dimension than the index stores (wrong model)."""
+
+    code = "embedding_dimension_mismatch"
+
+    def __init__(self, *, provider: str, expected: int, received: int) -> None:
+        super().__init__(
+            f"The embedding model returned vectors of dimension {received}; "
+            f"the index stores {expected}.",
+            provider=provider,
+        )
+        self.details = {"provider": provider, "expected": expected, "received": received}

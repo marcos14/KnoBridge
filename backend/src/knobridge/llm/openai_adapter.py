@@ -29,7 +29,7 @@ OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
 
 @contextmanager
-def _sdk_errors(provider: str) -> Generator[None]:
+def sdk_errors(provider: str) -> Generator[None]:
     # ``from None``: the SDK exception text can echo part of the API key.
     try:
         yield
@@ -79,7 +79,7 @@ class OpenAIProvider:
         options = params or ChatParams()
         limit = omit if options.max_tokens is None else options.max_tokens
         usage = ChatUsage(input_tokens=None, output_tokens=None)
-        with _sdk_errors(self.name):
+        with sdk_errors(self.name):
             stream = await self._client.chat.completions.create(
                 model=model,
                 messages=[_message(message) for message in messages],
@@ -101,7 +101,7 @@ class OpenAIProvider:
         yield usage
 
     async def list_models(self) -> list[str]:
-        with _sdk_errors(self.name):
+        with sdk_errors(self.name):
             return [model.id async for model in self._client.models.list()]
 
     async def check_connection(self) -> None:
@@ -134,5 +134,5 @@ class OpenRouterProvider(OpenAIProvider):
 
     async def check_connection(self) -> None:
         # ``/models`` answers without a key here; ``/key`` describes the key and needs it.
-        with _sdk_errors(self.name):
+        with sdk_errors(self.name):
             await self._client.get("/key", cast_to=str)

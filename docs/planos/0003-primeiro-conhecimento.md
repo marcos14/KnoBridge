@@ -21,13 +21,13 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: 425ae6b
       - id: F1.2
         titulo: EmbeddingProvider, adaptador OpenAI-compatível e fake
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-10
+        concluida_em: 2026-10-10
         commit: null
       - id: F1.3
         titulo: Contrato de conector, seleção de arquivos e conector de pasta local
@@ -482,6 +482,8 @@ Ver `decisoes[]` no frontmatter. ADR previsto: 0004 (índice de conhecimento: di
 - 2026-10-10 — plano criado a partir de duas rodadas de perguntas; aguardando aprovação.
 - 2026-10-10 — Plano aprovado pelo usuário; P1 respondida. F1.1 iniciada.
 - 2026-10-10 — F1.1 concluída: Modelos Collection/Source/Run/RunError/Document/Chunk (vector(1536) HNSW, tsv gerado com GIN), migração 0010 com RLS, ADR 0004; 657 testes, 100%.
+- 2026-10-10 — F1.2 iniciada.
+- 2026-10-10 — F1.2 concluída: EmbeddingProvider, adaptador OpenAI/OpenRouter, fake por hashing, tabela de preços; 693 testes, 100%.
 
 ## 8. Encerramento
 
