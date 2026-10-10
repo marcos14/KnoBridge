@@ -1,6 +1,6 @@
 # frontend/
 
-**Função**: painel administrativo do KnoBridge em React + TypeScript. Fontes e conectores, canvas de pipelines (React Flow), execuções, coleções, assistentes, canais, conversas, custos e configurações do workspace. Estado: app Vite com providers (roteador, TanStack Query, i18n pt-BR), Tailwind v4 + shadcn/ui, cliente tipado gerado do OpenAPI (`src/lib/api/`), indicador de status da API no cabeçalho, infraestrutura de autenticação (cliente com cookie de sessão e CSRF, hooks de sessão, guardas de rota em `src/features/auth/`, rotas em inglês com telas provisórias), MSW nos testes, smoke E2E com Playwright e imagem nginx. Sem telas de produto ainda.
+**Função**: painel administrativo do KnoBridge em React + TypeScript. Fontes e conectores, canvas de pipelines (React Flow), execuções, coleções, assistentes, canais, conversas, custos e configurações do workspace. Estado: app Vite com providers (roteador, TanStack Query, i18n pt-BR), Tailwind v4 + shadcn/ui, cliente tipado gerado do OpenAPI (`src/lib/api/`), indicador de status da API no cabeçalho, infraestrutura de autenticação (cliente com cookie de sessão e CSRF, hooks de sessão, guardas de rota em `src/features/auth/`, rotas em inglês com telas provisórias), shell autenticado em `src/app/shell/` (sidebar recolhível por papel, seletor de workspace, menu do usuário, tema claro/escuro/sistema aplicado antes do primeiro paint pelo script inline do `index.html`, páginas esqueleto de Fontes, Pipelines, Coleções e Canais), MSW nos testes, smoke E2E com Playwright e imagem nginx. Sem telas de produto ainda.
 
 **Entra aqui**: aplicação Vite em `src/`, testes ao lado dos arquivos (`*.test.tsx`) e E2E em `e2e/`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml` (configurações do pnpm), `components.json` (shadcn), configs de ESLint, Prettier, Vitest e Playwright, `Dockerfile`, `nginx.conf`, `.dockerignore`, `README.md` curto.
 **Não entra aqui**: o widget embutível (vai para `widget/`), documentação (vai para `docs/`), lógica de negócio que pertence ao backend, dados reais.
@@ -13,6 +13,7 @@ frontend/src/
   features/       # uma pasta por área: auth, sources, pipelines, runs, collections, assistants, channels, conversations, settings
   components/ui/  # shadcn/ui (gerado; editar só o necessário)
   components/     # componentes compartilhados próprios
+  hooks/          # hooks React genéricos (caminho esperado pelo shadcn, ex.: use-mobile)
   lib/api/        # cliente gerado do OpenAPI do backend + hooks TanStack Query
   lib/            # utilitários puros (cobertura 100%)
   i18n/           # pt-BR primeiro; chaves em inglês

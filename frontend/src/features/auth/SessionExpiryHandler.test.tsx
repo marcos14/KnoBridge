@@ -18,7 +18,7 @@ describe("SessionExpiryHandler", () => {
   it("test_session_expiry_redirects_to_login_preserving_destination", async () => {
     const destination = `/w/${WORKSPACE_ID}?tab=sources`;
     const { router, queryClient } = renderWithProviders({ path: destination });
-    await screen.findByRole("heading", { level: 1, name: "Workspace" });
+    await screen.findByRole("heading", { level: 1, name: "Início" });
     server.use(...expiredSession);
 
     await act(() => apiClient.GET("/v1/me/sessions"));

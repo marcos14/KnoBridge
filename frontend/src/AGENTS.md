@@ -2,7 +2,7 @@
 
 **Função**: código-fonte do painel administrativo. Ponto de entrada (`main.tsx`) e uma pasta por responsabilidade, conforme o layout previsto em [../AGENTS.md](../AGENTS.md).
 
-**Entra aqui**: `main.tsx` (só importa `index.css` e monta `<App />` no `#root`), `index.css` (Tailwind v4 e tema do shadcn/ui), `vite-env.d.ts` (tipos de `import.meta.env`, como `VITE_API_BASE_URL`) e as pastas `app/`, `components/`, `features/`, `i18n/`, `lib/` e `test/`.
+**Entra aqui**: `main.tsx` (só importa `index.css` e monta `<App />` no `#root`), `index.css` (Tailwind v4 e tema do shadcn/ui), `vite-env.d.ts` (tipos de `import.meta.env`, como `VITE_API_BASE_URL`) e as pastas `app/`, `components/`, `features/`, `hooks/` (hooks genéricos no caminho do shadcn), `i18n/`, `lib/` e `test/`.
 **Não entra aqui**: configs de ferramenta (ficam na raiz de `frontend/`), testes E2E (`frontend/e2e/`), documentação (`docs/`).
 
 **Convenções locais**:

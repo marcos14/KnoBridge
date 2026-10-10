@@ -7,7 +7,7 @@ describe("App", () => {
   it("test_app_renders_without_error", async () => {
     render(<App />);
 
-    expect(screen.getByRole("banner")).toHaveTextContent("KnoBridge");
     expect(await screen.findByRole("heading", { level: 1, name: "Início" })).toBeInTheDocument();
+    expect(screen.getByRole("banner")).toHaveTextContent("KnoBridge");
   });
 });

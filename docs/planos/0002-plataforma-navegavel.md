@@ -85,13 +85,13 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: 7a43fbb
       - id: F3.2
         titulo: "Shell: sidebar, menus, seletor de workspace, menu do usuário e tema"
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-10
+        concluida_em: 2026-10-10
         commit: null
       - id: F3.3
         titulo: "Telas públicas: setup, login, senha, convite e verificação"
@@ -583,6 +583,8 @@ Nenhuma aberta.
 - 2026-10-10 — F2.4 concluída: 421 testes, cobertura 100% (D16).
 - 2026-10-10 — F3.1 iniciada.
 - 2026-10-10 — F3.1 concluída: 99 testes, cobertura 100%, e2e 2 ok (D17). Tratamento visual de workspace suspenso fica para F3.2.
+- 2026-10-10 — F3.2 iniciada.
+- 2026-10-10 — F3.2 concluída: 190 testes, cobertura 100/97,3/100/100, e2e 3 ok (D18). Code-splitting por rota anotado para F5.3.
 
 ## 8. Encerramento
 

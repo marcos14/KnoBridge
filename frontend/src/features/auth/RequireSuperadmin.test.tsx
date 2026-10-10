@@ -15,7 +15,7 @@ describe("RequireSuperadmin", () => {
     renderWithProviders({ path: "/admin/users" });
 
     expect(
-      await screen.findByRole("heading", { level: 1, name: "Administração da instância" }),
+      await screen.findByRole("heading", { level: 1, name: "Usuários da instância" }),
     ).toBeInTheDocument();
   });
 

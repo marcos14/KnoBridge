@@ -8,7 +8,7 @@
 - `errors.ts`: `apiErrorResponse(status, code, details?)`, resposta no formato de erro padrão.
 - `health.ts`: `healthReadyOk` (padrão), `healthReadyUnavailable`, `healthReadyNetworkError`, `healthReadyPending`.
 - `setup.ts`: `setupStatusDone` e `setupOk` (padrão), `setupStatusNeeded`, `setupStatusServerError`, `setupAlreadyCompleted`.
-- `auth.ts`: `meOk`, `loginOk`, `logoutOk`, `csrfOk` (padrão), `meAs(me)`, `meUnauthenticated`, `meServerError`, `loginInvalidCredentials`, `logoutUnauthenticated`, `logoutCsrfFailed`.
+- `auth.ts`: `meOk`, `updateProfileOk` (`PATCH /v1/me`, aplica o corpo ao usuário padrão), `loginOk`, `logoutOk`, `csrfOk` (padrão), `meAs(me)`, `meUnauthenticated`, `meServerError`, `updateProfileCsrfFailed`, `loginInvalidCredentials`, `logoutUnauthenticated`, `logoutCsrfFailed`.
 
 **Não entra aqui**: fábricas de dados (`../factories.ts`), testes, dados reais.
 

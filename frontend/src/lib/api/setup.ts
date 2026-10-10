@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { meQueryKey, setupStatusQueryKey } from "./auth";
+import { setupStatusQueryKey, storeSession } from "./auth";
 import { apiClient, unwrap } from "./client";
 import type { components } from "./schema.gen";
 
@@ -31,7 +31,7 @@ export function useRunSetup() {
     mutationFn: async (body: SetupInput) => unwrap(await apiClient.POST("/v1/setup", { body })),
     onSuccess: (me) => {
       queryClient.setQueryData<SetupStatus>(setupStatusQueryKey, { needs_setup: false });
-      queryClient.setQueryData(meQueryKey, me);
+      storeSession(queryClient, me);
     },
   });
 }

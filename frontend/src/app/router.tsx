@@ -1,7 +1,9 @@
-import { createBrowserRouter, type RouteObject } from "react-router";
+import type { ReactNode } from "react";
+import { createBrowserRouter, Navigate, type RouteObject } from "react-router";
 
 import { RequireAuth } from "@/features/auth/RequireAuth";
 import { RequireSetupDone } from "@/features/auth/RequireSetupDone";
+import { RequireSetupPending } from "@/features/auth/RequireSetupPending";
 import { RequireSuperadmin } from "@/features/auth/RequireSuperadmin";
 import { RequireWorkspaceRole } from "@/features/auth/RequireWorkspaceRole";
 
@@ -9,6 +11,25 @@ import { HomePage } from "./HomePage";
 import { Layout } from "./Layout";
 import { NotFoundPage } from "./NotFoundPage";
 import { PlaceholderPage } from "./PlaceholderPage";
+import { PublicLayout } from "./PublicLayout";
+import { AppShell } from "./shell/AppShell";
+import { AreaSkeletonPage } from "./shell/AreaSkeletonPage";
+import { HomeRedirect } from "./shell/HomeRedirect";
+import { areaMinRole, type WorkspaceArea } from "./shell/navItems";
+import { WorkspaceLayout } from "./shell/WorkspaceLayout";
+
+/**
+ * Route of a workspace area (`/w/:workspaceId/<area>`), guarded by the role the menu uses for
+ * the same area (`WORKSPACE_AREAS`), so a hidden item is also a closed route.
+ */
+function workspaceArea(area: Exclude<WorkspaceArea, "home">, element: ReactNode): RouteObject {
+  return {
+    path: area,
+    element: <RequireWorkspaceRole minRole={areaMinRole(area)} />,
+    // Sub-pages (e.g. a source's detail) arrive with each feature; until then they are a 404.
+    children: [{ index: true, element }],
+  };
+}
 
 // URLs in English (plan 0002, D11); the texts on screen come from i18n.
 export const routes: RouteObject[] = [
@@ -16,42 +37,83 @@ export const routes: RouteObject[] = [
     path: "/",
     element: <Layout />,
     children: [
-      { path: "setup", element: <PlaceholderPage page="setup" /> },
+      {
+        element: <PublicLayout />,
+        children: [
+          {
+            path: "setup",
+            element: <RequireSetupPending />,
+            children: [{ index: true, element: <PlaceholderPage page="setup" /> }],
+          },
+        ],
+      },
       {
         element: <RequireSetupDone />,
         children: [
-          { path: "login", element: <PlaceholderPage page="login" /> },
-          { path: "forgot-password", element: <PlaceholderPage page="forgotPassword" /> },
-          { path: "reset-password", element: <PlaceholderPage page="resetPassword" /> },
-          { path: "verify-email", element: <PlaceholderPage page="verifyEmail" /> },
-          { path: "accept-invitation", element: <PlaceholderPage page="acceptInvitation" /> },
+          {
+            element: <PublicLayout />,
+            children: [
+              { path: "login", element: <PlaceholderPage page="login" /> },
+              { path: "forgot-password", element: <PlaceholderPage page="forgotPassword" /> },
+              { path: "reset-password", element: <PlaceholderPage page="resetPassword" /> },
+              { path: "verify-email", element: <PlaceholderPage page="verifyEmail" /> },
+              { path: "accept-invitation", element: <PlaceholderPage page="acceptInvitation" /> },
+            ],
+          },
           {
             element: <RequireAuth />,
             children: [
-              { index: true, element: <HomePage /> },
-              { path: "account/*", element: <PlaceholderPage page="account" /> },
               {
-                path: "admin",
-                element: <RequireSuperadmin />,
-                children: [{ path: "*", element: <PlaceholderPage page="admin" /> }],
-              },
-              {
-                path: "w/:workspaceId",
-                element: <RequireWorkspaceRole />,
+                element: <AppShell />,
                 children: [
-                  { index: true, element: <PlaceholderPage page="workspace" /> },
+                  { index: true, element: <HomeRedirect /> },
                   {
-                    path: "settings",
-                    element: <RequireWorkspaceRole minRole="admin" />,
+                    path: "account",
                     children: [
-                      { path: "*", element: <PlaceholderPage page="workspaceSettings" /> },
+                      { index: true, element: <Navigate to="profile" replace /> },
+                      { path: "profile", element: <PlaceholderPage page="accountProfile" /> },
+                      { path: "security", element: <PlaceholderPage page="accountSecurity" /> },
                     ],
                   },
+                  {
+                    path: "admin",
+                    element: <RequireSuperadmin />,
+                    children: [
+                      { index: true, element: <Navigate to="workspaces" replace /> },
+                      { path: "workspaces", element: <PlaceholderPage page="adminWorkspaces" /> },
+                      { path: "users", element: <PlaceholderPage page="adminUsers" /> },
+                      { path: "audit", element: <PlaceholderPage page="adminAudit" /> },
+                    ],
+                  },
+                  {
+                    path: "w/:workspaceId",
+                    element: <RequireWorkspaceRole />,
+                    children: [
+                      {
+                        element: <WorkspaceLayout />,
+                        children: [
+                          { index: true, element: <HomePage /> },
+                          workspaceArea("chat", <PlaceholderPage page="chat" />),
+                          workspaceArea("conversations", <PlaceholderPage page="conversations" />),
+                          workspaceArea("assistants", <PlaceholderPage page="assistants" />),
+                          workspaceArea("providers", <PlaceholderPage page="providers" />),
+                          workspaceArea("sources", <AreaSkeletonPage area="sources" />),
+                          workspaceArea("pipelines", <AreaSkeletonPage area="pipelines" />),
+                          workspaceArea("collections", <AreaSkeletonPage area="collections" />),
+                          workspaceArea("channels", <AreaSkeletonPage area="channels" />),
+                          workspaceArea("members", <PlaceholderPage page="members" />),
+                          workspaceArea("settings", <PlaceholderPage page="workspaceSettings" />),
+                          workspaceArea("audit", <PlaceholderPage page="audit" />),
+                          { path: "*", element: <NotFoundPage /> },
+                        ],
+                      },
+                    ],
+                  },
+                  { path: "*", element: <NotFoundPage /> },
                 ],
               },
             ],
           },
-          { path: "*", element: <NotFoundPage /> },
         ],
       },
     ],

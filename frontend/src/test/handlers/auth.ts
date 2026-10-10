@@ -1,6 +1,6 @@
 import { http, HttpResponse } from "msw";
 
-import type { Me } from "@/lib/api/auth";
+import type { Me, ProfileUpdate } from "@/lib/api/auth";
 
 import { makeMe } from "../factories";
 import { apiErrorResponse } from "./errors";
@@ -23,6 +23,25 @@ export const meUnauthenticated = http.get(ME, () => apiErrorResponse(401, "unaut
 
 /** GET /v1/me failing on the server (500). */
 export const meServerError = http.get(ME, () => apiErrorResponse(500, "internal_error"));
+
+/**
+ * PATCH /v1/me applying the body to the default user and answering like GET /v1/me; omitted or
+ * null fields keep their value, as in the backend.
+ */
+export const updateProfileOk = http.patch(ME, async ({ request }) => {
+  const body = (await request.json()) as ProfileUpdate;
+  const me = makeMe();
+  const user = {
+    ...me.user,
+    name: body.name ?? me.user.name,
+    locale: body.locale ?? me.user.locale,
+    theme: body.theme ?? me.user.theme,
+  };
+  return HttpResponse.json<Me>({ ...me, user });
+});
+
+/** PATCH /v1/me rejected by the CSRF check (403). */
+export const updateProfileCsrfFailed = http.patch(ME, () => apiErrorResponse(403, "csrf_failed"));
 
 /** POST /v1/auth/login accepting any credentials and answering like GET /v1/me. */
 export const loginOk = http.post(LOGIN, () => HttpResponse.json<Me>(makeMe()));
@@ -48,4 +67,4 @@ export const csrfOk = http.get(CSRF, () =>
   HttpResponse.json({ csrf_token: "synthetic-nonce.synthetic-signature" }),
 );
 
-export const authHandlers = [meOk, loginOk, logoutOk, csrfOk];
+export const authHandlers = [meOk, updateProfileOk, loginOk, logoutOk, csrfOk];

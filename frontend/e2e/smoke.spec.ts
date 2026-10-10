@@ -28,7 +28,13 @@ test("test_app_shell_loads", async ({ page }) => {
 
   await expect(page).toHaveTitle("KnoBridge");
   await expect(page.getByRole("main")).toBeVisible();
-  await expect(page.getByRole("heading", { level: 1, name: "Início" })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Você ainda não participa de nenhum workspace" }),
+  ).toBeVisible();
+  // Without workspaces the menu has no items; the shell still offers its toggle.
+  await expect(
+    page.getByRole("button", { name: "Mostrar ou ocultar o menu lateral" }),
+  ).toBeVisible();
   await expect(page.getByRole("status")).toBeVisible();
 });
 
@@ -47,4 +53,15 @@ test("test_anonymous_user_is_sent_to_login", async ({ page }) => {
 
   await expect(page.getByRole("heading", { level: 1, name: "Entrar" })).toBeVisible();
   await expect(page).toHaveURL(/\/login\?next=%2Faccount$/);
+});
+
+// The inline script of index.html paints the saved theme before the app loads (no white flash).
+test("test_saved_dark_theme_is_applied_before_the_app_loads", async ({ page }) => {
+  // A string runs in the page; e2e/ is type-checked without the DOM library.
+  await page.addInitScript('window.localStorage.setItem("knobridge-theme", "dark");');
+  await page.route("**/v1/**", (route) => route.abort());
+
+  await page.goto("/login");
+
+  await expect(page.locator("html")).toHaveClass("dark");
 });

@@ -15,7 +15,7 @@ describe("RequireWorkspaceRole", () => {
     asMemberWithRole("viewer");
     renderWithProviders({ path: `/w/${WORKSPACE_ID}` });
 
-    expect(await screen.findByRole("heading", { level: 1, name: "Workspace" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Início" })).toBeInTheDocument();
   });
 
   it("test_require_workspace_role_shows_403_for_non_member", async () => {
@@ -37,9 +37,34 @@ describe("RequireWorkspaceRole", () => {
     expect(screen.getByRole("link", { name: "Voltar para o início" })).toHaveAttribute("href", "/");
   });
 
+  it.each([
+    ["viewer", "members"],
+    ["viewer", "assistants"],
+    ["editor", "conversations"],
+    ["editor", "audit"],
+  ] as const)("test_require_workspace_role_%s_cannot_open_%s", async (role, area) => {
+    asMemberWithRole(role);
+    renderWithProviders({ path: `/w/${WORKSPACE_ID}/${area}` });
+
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Acesso negado" }),
+    ).toBeInTheDocument();
+  });
+
+  it.each([
+    ["editor", "providers", "Provedores"],
+    ["admin", "members", "Membros"],
+    ["viewer", "chat", "Chat"],
+  ] as const)("test_require_workspace_role_%s_opens_%s", async (role, area, title) => {
+    asMemberWithRole(role);
+    renderWithProviders({ path: `/w/${WORKSPACE_ID}/${area}` });
+
+    expect(await screen.findByRole("heading", { level: 1, name: title })).toBeInTheDocument();
+  });
+
   it("test_require_workspace_role_lets_sufficient_role_through", async () => {
     asMemberWithRole("admin");
-    renderWithProviders({ path: `/w/${WORKSPACE_ID}/settings/members` });
+    renderWithProviders({ path: `/w/${WORKSPACE_ID}/settings` });
 
     expect(
       await screen.findByRole("heading", { level: 1, name: "Configurações do workspace" }),

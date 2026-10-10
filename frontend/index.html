@@ -4,6 +4,22 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>KnoBridge</title>
+    <script>
+      // Applies the saved theme before the first paint, so a dark theme does not flash white.
+      // Mirrors src/lib/theme.ts (key "knobridge-theme"); the profile value replaces it on load.
+      (function () {
+        try {
+          var theme = window.localStorage.getItem("knobridge-theme");
+          var dark =
+            theme === "dark" ||
+            (theme !== "light" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.classList.toggle("dark", dark);
+          document.documentElement.style.colorScheme = dark ? "dark" : "light";
+        } catch (error) {
+          // Storage blocked (private window, sandbox): keep the default light theme.
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -4,8 +4,8 @@
 
 **Entra aqui**:
 
-- Guardas (elementos de rota de layout, renderizam `<Outlet />` quando liberam): `RequireSetupDone` (instância sem usuário → `/setup`), `RequireAuth` (anônimo → `/login?next=<destino>`), `RequireWorkspaceRole({ minRole })` (sem membership no `:workspaceId` ou papel abaixo de `minRole` → 403), `RequireSuperadmin` (não superadmin → 403).
-- `ForbiddenPage.tsx`: 403 renderizado no lugar, sem trocar a URL.
+- Guardas (elementos de rota de layout, renderizam `<Outlet />` quando liberam): `RequireSetupDone` (instância sem usuário → `/setup`), `RequireSetupPending` (o inverso, só em `/setup`: setup já feito → `/`), `RequireAuth` (anônimo → `/login?next=<destino>`; logo após um logout explícito, `useLoggedOutByUser()`, → `/login` limpo), `RequireWorkspaceRole({ minRole })` (sem membership no `:workspaceId` ou papel abaixo de `minRole` → 403), `RequireSuperadmin` (não superadmin → 403).
+- `ForbiddenPage.tsx`: 403 renderizado no lugar, sem trocar a URL (nas rotas autenticadas, dentro do shell).
 - `GuardStatus.tsx`: carregando e falha com "Tentar novamente", usados pelos guardas que consultam a API.
 - `SessionExpiryHandler.tsx`: registra o handler de 401 do cliente; marca `me` como `null` e leva ao login preservando o destino.
 - `roles.ts` (`hasRole`, `findWorkspace`), `redirect.ts` (`loginPath`, `safeNextPath`, `LOGIN_PATH`, `SETUP_PATH`), `useCurrentWorkspace.ts`.

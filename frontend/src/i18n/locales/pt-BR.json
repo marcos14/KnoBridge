@@ -3,7 +3,80 @@
     "title": "KnoBridge"
   },
   "nav": {
-    "label": "Navegação principal"
+    "label": "Navegação principal",
+    "workspaceGroup": "Workspace",
+    "adminGroup": "Administração da instância",
+    "items": {
+      "home": "Início",
+      "chat": "Chat",
+      "conversations": "Conversas",
+      "assistants": "Assistentes",
+      "providers": "Provedores",
+      "sources": "Fontes",
+      "pipelines": "Pipelines",
+      "collections": "Coleções",
+      "channels": "Canais",
+      "members": "Membros",
+      "settings": "Configurações",
+      "audit": "Auditoria"
+    },
+    "adminItems": {
+      "workspaces": "Workspaces",
+      "users": "Usuários",
+      "audit": "Auditoria da instância"
+    }
+  },
+  "shell": {
+    "skipToContent": "Pular para o conteúdo",
+    "toggleSidebar": "Mostrar ou ocultar o menu lateral",
+    "sidebarTitle": "Menu lateral",
+    "sidebarDescription": "Navegação entre as áreas do painel."
+  },
+  "workspaceSwitcher": {
+    "label": "Trocar de workspace",
+    "placeholder": "Selecionar workspace",
+    "listLabel": "Seus workspaces",
+    "suspended": "suspenso"
+  },
+  "userMenu": {
+    "label": "Menu do usuário",
+    "profile": "Perfil",
+    "security": "Segurança",
+    "theme": "Tema",
+    "themes": {
+      "light": "Claro",
+      "dark": "Escuro",
+      "system": "Sistema"
+    },
+    "logout": "Sair"
+  },
+  "noWorkspace": {
+    "title": "Você ainda não participa de nenhum workspace",
+    "description": "Peça a um administrador do workspace que envie um convite para o seu e-mail.",
+    "adminShortcut": "Criar ou gerenciar workspaces"
+  },
+  "workspaceSuspended": {
+    "title": "Workspace suspenso",
+    "description": "Este workspace foi suspenso pela administração da instância. Os dados continuam guardados, mas ninguém pode usá-lo até que ele seja reativado. Troque de workspace no menu lateral ou fale com o administrador."
+  },
+  "areas": {
+    "emptyTitle": "Nada por aqui ainda",
+    "sources": {
+      "title": "Fontes",
+      "description": "Fontes são os lugares de onde o KnoBridge lê conhecimento: repositórios de código, sistemas de chamados e documentações. Quando você conectar a primeira, ela aparece aqui."
+    },
+    "pipelines": {
+      "title": "Pipelines",
+      "description": "Pipelines transformam o conteúdo das fontes em índices para busca, em etapas visuais e incrementais. Os pipelines do workspace aparecem aqui."
+    },
+    "collections": {
+      "title": "Coleções",
+      "description": "Coleções guardam os trechos indexados pelos pipelines e são consultadas pelos assistentes. As coleções do workspace aparecem aqui."
+    },
+    "channels": {
+      "title": "Canais",
+      "description": "Canais levam os assistentes até as pessoas: API, webhooks, MCP, Slack, Google Chat e o widget embutível. Os canais configurados aparecem aqui."
+    }
   },
   "apiStatus": {
     "loading": "API: verificando…",
@@ -36,10 +109,18 @@
     "resetPassword": "Redefinir senha",
     "verifyEmail": "Verificar e-mail",
     "acceptInvitation": "Aceitar convite",
-    "account": "Minha conta",
-    "admin": "Administração da instância",
-    "workspace": "Workspace",
-    "workspaceSettings": "Configurações do workspace"
+    "accountProfile": "Perfil",
+    "accountSecurity": "Segurança",
+    "adminWorkspaces": "Workspaces da instância",
+    "adminUsers": "Usuários da instância",
+    "adminAudit": "Auditoria da instância",
+    "chat": "Chat",
+    "conversations": "Conversas",
+    "assistants": "Assistentes",
+    "providers": "Provedores",
+    "members": "Membros",
+    "workspaceSettings": "Configurações do workspace",
+    "audit": "Auditoria"
   },
   "apiErrors": {
     "unknown": "Algo deu errado. Tente novamente.",

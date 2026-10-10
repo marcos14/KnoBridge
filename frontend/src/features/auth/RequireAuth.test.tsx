@@ -21,9 +21,7 @@ describe("RequireAuth", () => {
   it("test_require_auth_lets_logged_in_user_through", async () => {
     renderWithProviders({ path: "/account/profile" });
 
-    expect(
-      await screen.findByRole("heading", { level: 1, name: "Minha conta" }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Perfil" })).toBeInTheDocument();
   });
 
   it("test_require_auth_does_not_guard_public_routes", async () => {
@@ -45,8 +43,6 @@ describe("RequireAuth", () => {
     server.use(meOk);
     await user.click(screen.getByRole("button", { name: "Tentar novamente" }));
 
-    expect(
-      await screen.findByRole("heading", { level: 1, name: "Minha conta" }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Perfil" })).toBeInTheDocument();
   });
 });
