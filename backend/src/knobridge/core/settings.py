@@ -30,6 +30,10 @@ class Settings(BaseSettings):
     log_level: LogLevel = "INFO"
     api_host: str = "127.0.0.1"
     api_port: int = Field(default=8000, ge=1, le=65535)
+    # Proxies whose X-Forwarded-For/-Proto headers are trusted (comma-separated IPs or CIDRs,
+    # "*" for any). Behind a reverse proxy, list it here so the client IP (used by login
+    # throttling) is the real client instead of the proxy; other peers' headers are ignored.
+    forwarded_allow_ips: str = Field(default="127.0.0.1", min_length=1)
     cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:5173"])
     # Secret because the DSN carries the database password; read it with get_secret_value().
     database_url: SecretStr = SecretStr(

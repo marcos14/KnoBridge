@@ -120,5 +120,8 @@ def serve(settings: Settings | None = None) -> None:
         create_app(settings),
         host=settings.api_host,
         port=settings.api_port,
+        # The client IP comes from X-Forwarded-For only when the peer is a trusted proxy.
+        proxy_headers=True,
+        forwarded_allow_ips=settings.forwarded_allow_ips,
         log_config=None,  # keep the JSON logging set up by create_app
     )

@@ -36,6 +36,12 @@ def test_settings_defaults_without_environment() -> None:
     assert (settings.env, settings.log_level, settings.api_host) == ("local", "INFO", "127.0.0.1")
 
 
+def test_settings_trusts_forwarded_headers_only_from_localhost_by_default() -> None:
+    settings = Settings()
+
+    assert settings.forwarded_allow_ips == "127.0.0.1"
+
+
 def test_settings_reads_dotenv_file_from_cwd(tmp_path: Path) -> None:
     # The autouse fixture already moved the cwd to tmp_path.
     (tmp_path / ".env").write_text("KNOBRIDGE_LOG_LEVEL=WARNING\n", encoding="utf-8")

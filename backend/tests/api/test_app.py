@@ -49,7 +49,7 @@ def test_create_app_uses_cached_settings_by_default(monkeypatch: pytest.MonkeyPa
 def test_serve_runs_uvicorn_on_configured_address(monkeypatch: pytest.MonkeyPatch) -> None:
     calls: list[tuple[object, str, int]] = []
 
-    def fake_run(app: object, *, host: str, port: int, log_config: object) -> None:
+    def fake_run(app: object, *, host: str, port: int, **_: object) -> None:
         calls.append((app, host, port))
 
     monkeypatch.setattr(app_module.uvicorn, "run", fake_run)
@@ -61,11 +61,28 @@ def test_serve_runs_uvicorn_on_configured_address(monkeypatch: pytest.MonkeyPatc
     assert (host, port) == ("0.0.0.0", 8123)  # noqa: S104
 
 
+def test_serve_trusts_forwarded_headers_only_from_configured_proxies(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[tuple[bool, str]] = []
+
+    def fake_run(
+        app: object, *, proxy_headers: bool, forwarded_allow_ips: str, **_: object
+    ) -> None:
+        calls.append((proxy_headers, forwarded_allow_ips))
+
+    monkeypatch.setattr(app_module.uvicorn, "run", fake_run)
+
+    serve(Settings(forwarded_allow_ips="172.30.57.10"))
+
+    assert calls == [(True, "172.30.57.10")]
+
+
 def test_serve_uses_cached_settings_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
     ports: list[int] = []
     monkeypatch.setenv("KNOBRIDGE_API_PORT", "8999")
 
-    def fake_run(app: object, *, host: str, port: int, log_config: object) -> None:
+    def fake_run(app: object, *, port: int, **_: object) -> None:
         ports.append(port)
 
     monkeypatch.setattr(app_module.uvicorn, "run", fake_run)

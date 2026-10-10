@@ -103,6 +103,11 @@ O compose passa para `api`, `worker` e `migrate` as variáveis abaixo, com defau
 | `KNOBRIDGE_PUBLIC_BASE_URL` | `http://localhost:${FRONTEND_PORT}` | Endereço do painel, como o navegador o vê, usado nos links dos e-mails |
 | `KNOBRIDGE_SMTP_FROM` | `KnoBridge <no-reply@knobridge.local>` | Remetente dos e-mails |
 | `KNOBRIDGE_SMTP_HOST` / `KNOBRIDGE_SMTP_PORT` | `mailpit` / `1025` | Fixos: neste ambiente o SMTP é sempre o Mailpit |
+| `KNOBRIDGE_ENV` | `local` | Ambiente do backend. Qualquer valor diferente de `production` aceita o provedor de LLM `fake` (sem rede, para testes) |
+| `KNOBRIDGE_COOKIE_SECURE` | `false` | **Só em desenvolvimento**: o painel aqui é HTTP puro, então os cookies não levam `Secure`. Com HTTPS, use `true` (o padrão da aplicação) |
+| `KNOBRIDGE_FORWARDED_ALLOW_IPS` (só `api`) | `${FRONTEND_IPV4}` (`10.213.57.10`) | Proxies cujo `X-Forwarded-For` a API aceita. O nginx do painel repassa `/v1` para a `api`; confiando só nele, o IP do cliente (usado na limitação de tentativas de login) é o do navegador, e não o do proxy |
+
+A rede do compose tem sub-rede fixa (`COMPOSE_SUBNET`, padrão `10.213.57.0/24`) e o `frontend` tem endereço fixo nela (`FRONTEND_IPV4`), para a `api` saber qual é o seu proxy. Requisições direto na porta da `api` (`API_PORT`) não passam pelo nginx e contam o IP de quem conectou.
 
 Rodando o backend fora do Docker (`uv run knobridge-api`), os defaults de `backend/.env.example` já apontam o SMTP para `localhost:1025`; suba só o Mailpit com `docker compose -f deploy/docker-compose.yml up -d --wait mailpit`.
 
@@ -118,6 +123,45 @@ docker compose -f deploy/docker-compose.yml down -v
 
 Depois de mudar código do backend ou do frontend, rode de novo com `--build` para reconstruir as imagens.
 
+## Rodar o E2E contra a stack
+
+Os testes Playwright de `frontend/e2e/stack/` exercitam o painel inteiro contra a API, o banco e o Mailpit reais: configuração inicial, login, criação de workspace com convite do proprietário (o link é lido pela API HTTP do Mailpit), convite de um leitor, "esqueci minha senha" e redefinição, provedor `fake` e assistente, chat com a resposta "sem fonte" e avaliação, a conversa na tela de conversas do proprietário e o tema que acompanha a conta. O `pnpm e2e` comum não os roda.
+
+Pré-requisitos, além do Docker: Node 24+ e `pnpm` em `frontend/`, com `pnpm install --frozen-lockfile` e `pnpm exec playwright install chromium` feitos uma vez.
+
+1. Suba a stack com o arquivo de E2E por cima (projeto próprio, `knobridge-e2e`, separado dos volumes do ambiente de desenvolvimento):
+
+   ```bash
+   docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.e2e.yml up -d --build --wait
+   ```
+
+2. Rode os testes, de `frontend/`:
+
+   ```bash
+   pnpm e2e:stack
+   ```
+
+3. Derrube e apague os volumes, para a próxima rodada começar do zero:
+
+   ```bash
+   docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.e2e.yml down -v
+   ```
+
+Os testes usam só endereços sintéticos `@example.test`. Num banco limpo eles fazem a configuração inicial com o superadmin `admin@example.test`; num banco já usado entram com a mesma conta (`E2E_ADMIN_EMAIL` e `E2E_ADMIN_PASSWORD` trocam as credenciais) e criam o resto com um sufixo por rodada, então repetir sem `down -v` também funciona.
+
+Com a stack em outras portas, informe as URLs: `E2E_BASE_URL` (painel, padrão `http://localhost:5173`) e `E2E_MAILPIT_URL` (padrão `http://localhost:8025`). Para rodar ao mesmo tempo que o ambiente de desenvolvimento, troque as portas (`*_PORT`), a sub-rede (`COMPOSE_SUBNET`) e o endereço do painel (`FRONTEND_IPV4`), por exemplo:
+
+```bash
+export FRONTEND_PORT=15173 API_PORT=18000 POSTGRES_PORT=15432 TEMPORAL_PORT=17233 \
+  TEMPORAL_UI_PORT=18080 MAILPIT_SMTP_PORT=11025 MAILPIT_UI_PORT=18025 \
+  MINIO_API_PORT=19000 MINIO_CONSOLE_PORT=19001 \
+  COMPOSE_SUBNET=10.213.58.0/24 FRONTEND_IPV4=10.213.58.10
+docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.e2e.yml up -d --build --wait
+(cd frontend && E2E_BASE_URL=http://localhost:15173 E2E_MAILPIT_URL=http://localhost:18025 pnpm e2e:stack)
+```
+
+Na CI, o job `e2e-stack` de `.github/workflows/ci.yml` faz os mesmos três passos; quando falha, publica o relatório do Playwright e os logs dos contêineres como artefato.
+
 ## Problemas comuns
 
 - **Porta já em uso** (`bind: address already in use` ou `ports are not available`): troque a porta no `deploy/.env` (ex.: `MINIO_API_PORT=9010` e `MINIO_CONSOLE_PORT=9011`) e suba de novo. Para descobrir quem ocupa a porta: `netstat -ano | findstr :9000` (Windows) ou `lsof -i :9000` (Linux/macOS).
@@ -126,6 +170,7 @@ Depois de mudar código do backend ou do frontend, rode de novo com `--build` pa
 - **`temporal` demora a ficar saudável**: na primeira subida ele aplica os schemas e registra o namespace; o healthcheck só passa quando o namespace existe. Acompanhe com `docker compose -f deploy/docker-compose.yml logs -f temporal`.
 - **E-mail não aparece no Mailpit**: confira se o `mailpit` está `healthy` (`docker compose -f deploy/docker-compose.yml ps mailpit`) e procure `email_delivery_failed` no log da `api` ou do `worker`. Fora do Docker, o backend precisa de `KNOBRIDGE_SMTP_HOST=localhost` e `KNOBRIDGE_SMTP_PORT` igual a `MAILPIT_SMTP_PORT`.
 - **Painel mostra "API: indisponível"**: confira se a `api` está `healthy` e se `curl http://localhost:5173/v1/health/ready` responde 200. Se responder 502, o nginx não alcança a `api`.
+- **`Pool overlaps with other one on this address space`** ao criar a rede: a sub-rede `COMPOSE_SUBNET` colide com outra rede Docker ou da sua máquina (ou com outra stack do KnoBridge rodando). Escolha outra no `deploy/.env` e ajuste `FRONTEND_IPV4` para um endereço dentro dela.
 - **`init-databases.sh` falha com `$'\r': command not found`**: o arquivo foi salvo com fim de linha CRLF. O `.gitattributes` força LF; rode `git add --renormalize .` ou salve o arquivo com LF e faça `down -v`.
 
 ## Referências

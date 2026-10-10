@@ -1,4 +1,5 @@
-"""Shared dependencies: ``require_superadmin``, ``workspace_context``, ``require_role``.
+"""Shared dependencies: ``require_superadmin``, ``workspace_context``, ``require_role``, and
+``client_ip`` behind uvicorn's proxy-headers handling.
 
 Probe routes are added to the real app so the dependencies run exactly as in production.
 No ``from __future__ import annotations`` here: the role probes are built in a loop and
@@ -11,9 +12,10 @@ from typing import Annotated
 
 import pytest
 from api_support import CHEAP, START, ApiEnv, db_settings
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, FastAPI, Request
 from fastapi.testclient import TestClient
 from sqlalchemy import text
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from fakes.email_sender import FakeEmailSender
 from knobridge.api.app import create_app
@@ -187,3 +189,40 @@ def test_client_ip_reads_peer_address() -> None:
     )
 
     assert client_ip(request) == "10.1.2.3"
+
+
+async def _ip_probe(request: Request) -> dict[str, str | None]:
+    return {"ip": client_ip(request)}
+
+
+def _behind_proxy_headers(trusted: str, peer: str) -> TestClient:
+    """``client_ip`` behind uvicorn's proxy-headers handling, as ``serve`` turns it on."""
+    peer_app = FastAPI()
+    peer_app.add_api_route("/ip", _ip_probe)
+    peer_app.add_middleware(ProxyHeadersMiddleware, trusted_hosts=trusted)
+    return TestClient(peer_app, client=(peer, 1))
+
+
+def test_client_ip_comes_from_forwarded_header_of_trusted_proxy() -> None:
+    client = _behind_proxy_headers("172.30.57.10", "172.30.57.10")
+
+    response = client.get("/ip", headers={"X-Forwarded-For": "203.0.113.7"})
+
+    assert response.json() == {"ip": "203.0.113.7"}
+
+
+def test_client_ip_ignores_forwarded_header_of_untrusted_peer() -> None:
+    client = _behind_proxy_headers("172.30.57.10", "198.51.100.9")
+
+    response = client.get("/ip", headers={"X-Forwarded-For": "203.0.113.7"})
+
+    assert response.json() == {"ip": "198.51.100.9"}
+
+
+def test_client_ip_ignores_spoofed_entries_before_the_trusted_proxy() -> None:
+    # nginx appends the address it saw to whatever X-Forwarded-For the client sent.
+    client = _behind_proxy_headers("172.30.57.0/24", "172.30.57.10")
+
+    response = client.get("/ip", headers={"X-Forwarded-For": "1.2.3.4, 203.0.113.7"})
+
+    assert response.json() == {"ip": "203.0.113.7"}

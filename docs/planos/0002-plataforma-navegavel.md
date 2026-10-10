@@ -162,7 +162,7 @@ fases:
         commit: 720a472
   - id: F5
     titulo: "Assistentes, chat e conversas (frontend)"
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F5.1
         titulo: "Telas de provedores e assistentes"
@@ -184,17 +184,17 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: 5b2528b
   - id: F6
     titulo: "Ponta a ponta e documentação"
-    status: pendente
+    status: em_execucao
     subfases:
       - id: F6.1
         titulo: "Compose, E2E contra a stack e CI"
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-10
+        concluida_em: 2026-10-10
         commit: null
       - id: F6.2
         titulo: "Specs, guias e documentação final"
@@ -610,6 +610,8 @@ Nenhuma aberta.
 - 2026-10-10 — F5.2 concluída: Tela /w/:id/chat com useChatStream (parser SSE incremental, CSRF, AbortController), Markdown seguro, citações clicáveis, fallback sem fonte com 'Abrir chamado' desabilitado, feedback, e2e do chat; 656 testes. Pontas: pergunta duplicada por instante ao abrir conversa nova; erro de envio persiste até a próxima pergunta (tratar na F5.3).
 - 2026-10-10 — F5.3 iniciada.
 - 2026-10-10 — F5.3 concluída: Tela /w/:id/conversations (totais, filtros na URL, detalhe somente leitura), correção das duas pontas da F5.2 com testes, code-splitting (chunk principal 994→350 kB); 702 testes.
+- 2026-10-10 — F5 concluída; F6.1 iniciada.
+- 2026-10-10 — F6.1 concluída: Proxy headers restritos ao nginx, compose e2e, Playwright stack (setup→convites via Mailpit→recuperação de senha→provedor fake→chat sem fonte→revisão→tema), job e2e-stack na CI; orquestrador rodou do zero: 11 de 13 rodadas verdes (1 crash nativo do Node no Windows 0xC0000409, 1 sem detalhe), ~34 s para subir, ~18 s de teste. Achado: cabeçalho do chat mostra 'Conversa sem título' após a primeira resposta.
 
 ## 8. Encerramento
 

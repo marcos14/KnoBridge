@@ -27,7 +27,10 @@ pnpm test -- --coverage          # Vitest com cobertura (gate de 95%)
 pnpm test:watch                  # modo watch, sem cobertura
 pnpm exec playwright install chromium   # uma vez, antes do primeiro E2E
 pnpm e2e                         # Playwright: build + vite preview na porta 4173
+pnpm e2e:stack                   # Playwright contra a stack do compose já no ar
 ```
+
+O `e2e:stack` precisa da stack de `deploy/docker-compose.yml` + `deploy/docker-compose.e2e.yml` no ar; passo a passo em [docs/guias/subir-ambiente.md](../docs/guias/subir-ambiente.md).
 
 Imagem Docker (nginx servindo `dist/`, com fallback de SPA e proxy de `/v1/` para o serviço `api`):
 

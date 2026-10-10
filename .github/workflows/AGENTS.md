@@ -8,7 +8,8 @@
   - `backend`: ruff, pyright, pytest com gate de 95% (integração com Postgres via testcontainers no Docker do runner) e checagem de que `docs/specs/openapi.json` está em dia.
   - `frontend`: lint, format, typecheck, Vitest com cobertura, build, `check:api` e Playwright (relatório enviado como artefato quando falha).
   - `secrets`: gitleaks sobre todo o histórico.
-  - `compose`: `docker compose ... config -q` (só valida; não sobe a stack).
+  - `compose`: `docker compose ... config -q` do compose e da camada de E2E (só valida).
+  - `e2e-stack`: sobe `deploy/docker-compose.yml` + `deploy/docker-compose.e2e.yml` do zero, roda `pnpm e2e:stack` em `frontend/`, publica o relatório do Playwright e os logs dos contêineres quando falha e sempre termina com `down -v`.
 - Workflows futuros (release, publicação de imagens), um arquivo por propósito.
 
 **Não entra aqui**: lógica de checagem com mais de algumas linhas de shell (vira script testado em `scripts/`); segredos; workflows que escrevem no repositório sem decisão registrada.

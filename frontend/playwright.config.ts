@@ -6,6 +6,8 @@ const isCI = process.env.CI !== undefined;
 
 export default defineConfig({
   testDir: "./e2e",
+  // Needs the whole stack up; runs only through playwright.stack.config.ts (pnpm e2e:stack).
+  testIgnore: "stack/**",
   fullyParallel: true,
   forbidOnly: isCI,
   // Failures are fixed at the root, never retried away (AGENTS.md, section 5).

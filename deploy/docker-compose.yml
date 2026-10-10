@@ -14,7 +14,8 @@ x-backend: &backend
   build: ../backend
   image: knobridge-backend:dev
   environment: &backend-env
-    KNOBRIDGE_ENV: local
+    # Any value but production allows the `fake` LLM provider (deploy/docker-compose.e2e.yml pins it).
+    KNOBRIDGE_ENV: ${KNOBRIDGE_ENV:-local}
     KNOBRIDGE_LOG_LEVEL: ${KNOBRIDGE_LOG_LEVEL:-INFO}
     KNOBRIDGE_DATABASE_URL: postgresql+asyncpg://${KNOBRIDGE_DB_USER:-knobridge}:${KNOBRIDGE_DB_PASSWORD:-knobridge-dev}@postgres:5432/${KNOBRIDGE_DB_NAME:-knobridge}
     KNOBRIDGE_TEMPORAL_ADDRESS: temporal:7233
@@ -23,6 +24,9 @@ x-backend: &backend
     # DEV-ONLY default (the same public value as DEV_SECRET_KEY in core/settings.py); set a real
     # secret in deploy/.env for anything beyond a local machine.
     KNOBRIDGE_SECRET_KEY: ${KNOBRIDGE_SECRET_KEY:-dev-only-insecure-secret-key-change-me}
+    # DEV-ONLY: the panel is served over plain HTTP here, so cookies are not marked Secure.
+    # Anywhere with HTTPS keep the application default (true).
+    KNOBRIDGE_COOKIE_SECURE: ${KNOBRIDGE_COOKIE_SECURE:-false}
     # Links in e-mails point to the admin panel as seen from the browser.
     KNOBRIDGE_PUBLIC_BASE_URL: ${KNOBRIDGE_PUBLIC_BASE_URL:-http://localhost:${FRONTEND_PORT:-5173}}
     # Every e-mail goes to Mailpit, which catches it instead of delivering (UI on MAILPIT_UI_PORT).
@@ -150,6 +154,9 @@ services:
       KNOBRIDGE_API_HOST: 0.0.0.0
       KNOBRIDGE_API_PORT: 8000
       KNOBRIDGE_CORS_ORIGINS: '["http://localhost:${FRONTEND_PORT:-5173}"]'
+      # The panel's nginx proxies /v1 here; trust its X-Forwarded-For (and only its), so login
+      # throttling counts per real client IP instead of per proxy.
+      KNOBRIDGE_FORWARDED_ALLOW_IPS: ${KNOBRIDGE_FORWARDED_ALLOW_IPS:-${FRONTEND_IPV4:-10.213.57.10}}
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -190,11 +197,23 @@ services:
         condition: service_healthy
     ports:
       - ${BIND_ADDRESS:-127.0.0.1}:${FRONTEND_PORT:-5173}:80
+    networks:
+      default:
+        # Fixed address: it is the only proxy the API trusts (KNOBRIDGE_FORWARDED_ALLOW_IPS).
+        ipv4_address: ${FRONTEND_IPV4:-10.213.57.10}
     healthcheck:
       test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1/]
       interval: 5s
       timeout: 5s
       retries: 20
+
+networks:
+  default:
+    ipam:
+      config:
+        # Fixed subnet so the panel's proxy has a known address (FRONTEND_IPV4 must be inside it).
+        # Change both if it overlaps a network of your machine or another running stack.
+        - subnet: ${COMPOSE_SUBNET:-10.213.57.0/24}
 
 volumes:
   postgres-data:
