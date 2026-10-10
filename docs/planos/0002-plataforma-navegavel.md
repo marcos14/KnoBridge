@@ -5,10 +5,10 @@ slug: plataforma-navegavel
 solicitado_por: usuario
 criado_em: 2026-10-10
 atualizado_em: 2026-10-10
-status: em_execucao
+status: concluido
 aprovado_em: 2026-10-10
 aprovado_por: usuario
-concluido_em: null
+concluido_em: 2026-10-10
 branch: plano/0002-plataforma-navegavel
 fases:
   - id: F1
@@ -187,7 +187,7 @@ fases:
         commit: 5b2528b
   - id: F6
     titulo: "Ponta a ponta e documentação"
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F6.1
         titulo: "Compose, E2E contra a stack e CI"
@@ -202,7 +202,7 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: 5108f1e
 decisoes:
   - id: D1
     data: 2026-10-10
@@ -330,15 +330,15 @@ Redirecionado pelo usuário na mesma conversa:
 
 ## 3. Critérios de aceite
 
-- [ ] Instalação nova: `/` leva ao setup; o setup cria o superadmin e some depois disso (também por API, com proteção contra corrida).
-- [ ] Login, logout, logout em todos os dispositivos, recuperação de senha, verificação de e-mail e aceite de convite funcionando ponta a ponta com e-mails visíveis no Mailpit.
-- [ ] Multi-tenant: toda tabela de dados de workspace tem `workspace_id` e RLS forçada; testes de isolamento para cada consulta (workspace B não vê dado do A).
-- [ ] RBAC owner/admin/editor/viewer aplicado na API e refletido no menu; superadmin com painel próprio.
-- [ ] Auditoria registrando os eventos de autenticação, membros, convites, configurações, provedores e assistentes, com tela de consulta paginada e filtrável.
-- [ ] Provedores de LLM com chave cifrada em repouso, nunca devolvida pela API; assistentes configuráveis; chat com streaming SSE, histórico, feedback e tela de conversas para admin.
-- [ ] Shell navegável: sidebar com menus por papel, seletor de workspace, menu do usuário, tema claro/escuro/sistema persistido, i18n pt-BR, páginas esqueleto de Fontes, Pipelines, Coleções e Canais.
-- [ ] E2E Playwright contra a stack do compose cobrindo setup → login → convite → aceite → recuperação de senha → chat; rodando na CI.
-- [ ] Gates de cobertura ≥ 95% (backend e frontend), lint, typecheck, `check_agents_md`, `check_plans`, contrato OpenAPI atualizado; ADRs e specs escritos.
+- [x] Instalação nova: `/` leva ao setup; o setup cria o superadmin e some depois disso (também por API, com proteção contra corrida).
+- [x] Login, logout, logout em todos os dispositivos, recuperação de senha, verificação de e-mail e aceite de convite funcionando ponta a ponta com e-mails visíveis no Mailpit.
+- [x] Multi-tenant: toda tabela de dados de workspace tem `workspace_id` e RLS forçada; testes de isolamento para cada consulta (workspace B não vê dado do A).
+- [x] RBAC owner/admin/editor/viewer aplicado na API e refletido no menu; superadmin com painel próprio.
+- [x] Auditoria registrando os eventos de autenticação, membros, convites, configurações, provedores e assistentes, com tela de consulta paginada e filtrável.
+- [x] Provedores de LLM com chave cifrada em repouso, nunca devolvida pela API; assistentes configuráveis; chat com streaming SSE, histórico, feedback e tela de conversas para admin.
+- [x] Shell navegável: sidebar com menus por papel, seletor de workspace, menu do usuário, tema claro/escuro/sistema persistido, i18n pt-BR, páginas esqueleto de Fontes, Pipelines, Coleções e Canais.
+- [x] E2E Playwright contra a stack do compose cobrindo setup → login → convite → aceite → recuperação de senha → chat; rodando na CI.
+- [x] Gates de cobertura ≥ 95% (backend e frontend), lint, typecheck, `check_agents_md`, `check_plans`, contrato OpenAPI atualizado; ADRs e specs escritos.
 
 ## 4. Fases e subfases
 
@@ -615,7 +615,37 @@ Nenhuma aberta.
 - 2026-10-10 — F6.2 iniciada; em paralelo, correção do título da conversa no chat (achado da F6.1).
 - 2026-10-10 — Correção: título da conversa nova no cabeçalho do chat (corrida entre a primeira leitura do detalhe e a invalidação no fim do stream; cancelQueries antes de invalidar), com teste que reproduz.
 - 2026-10-10 — F6.2 concluída: Specs autenticacao.md (matrizes de permissão), chat.md, modelo-de-dados.md v0.2; guia primeiro-acesso.md; README, CHANGELOG e AGENTS.md raiz atualizados; links e Mermaid validados; template de senha inicial removido; texto de verificação aponta para Perfil.
+- 2026-10-10 — Plano 0002 concluído.
 
 ## 8. Encerramento
 
-A preencher ao concluir.
+**Entregue** (24 subfases, F1.1 a F6.2, mais três correções com teste de reprodução):
+
+- **Base**: tenancy com RLS forçada em toda tabela de workspace (ADR 0001), sessão server-side com cookie httpOnly e CSRF assinado (ADR 0002), e-mail transacional via SMTP/Mailpit, auditoria.
+- **Autenticação**: setup inicial do superadmin protegido contra corrida, login com limitação por e-mail+IP (IP real atrás do nginx via proxy headers), logout e logout em todos os dispositivos, recuperação de senha, verificação de e-mail, convites com token no corpo.
+- **Multi-tenant e administração**: N workspaces por usuário com papéis owner/admin/editor/viewer, membros e convites, configurações, painel do superadmin, auditoria do workspace e da instância.
+- **LLM e chat**: credenciais de provedor cifradas com AES-256-GCM e nunca devolvidas (ADR 0003); adaptadores OpenAI/OpenRouter/Anthropic com SDKs oficiais e provedor `fake` determinístico; assistentes; chat com SSE, citações, feedback e regra 8 (sem fonte, resposta "sem fonte" sem chamar o LLM); consulta administrativa de conversas com totais.
+- **Painel**: shell com menus por papel, seletor de workspace, tema persistido, i18n pt-BR, telas de conta, membros, configurações, auditoria, superadmin, provedores, assistentes, chat e conversas; páginas esqueleto de Fontes, Pipelines, Coleções e Canais; rotas carregadas sob demanda (chunk principal de 994 para 350 kB).
+- **Qualidade**: backend com 611 testes e 100% de cobertura; frontend com 703 testes (99,8% de linhas, 98,5% de branches); E2E Playwright sem backend (`pnpm e2e`) e contra a stack do compose (`pnpm e2e:stack`, job `e2e-stack` na CI).
+- **Docs**: specs `modelo-de-dados.md`, `autenticacao.md`, `chat.md`, `chat-sse.md` e `openapi.json`; guias `primeiro-acesso.md` e `subir-ambiente.md`; ADRs 0001 a 0003.
+
+**Ficou de fora, e por quê**:
+
+- RAG, fontes, pipelines, coleções e canais: fora do escopo combinado (só navegação e esqueleto). Hoje toda resposta do chat é a de "sem fonte", porque o `Retriever` de produção é o `NullRetriever`.
+- Abrir chamado: o botão aparece desabilitado até existir integração de chamados.
+- Auditoria da leitura de conversas por admin: não estava no escopo aprovado; candidata a plano futuro (LGPD).
+- Renomear conversa: não há endpoint; o título é gerado da primeira pergunta.
+- Encerrar outras sessões revoga uma a uma (D20); um endpoint dedicado é melhoria futura.
+- Testes de formulário com `userEvent` podem passar de 5 s sob carga paralela artificial na máquina local; não acontece na suíte normal.
+- E2E da stack no Windows local: 11 de 13 rodadas verdes; uma falha foi crash nativo do Node (0xC0000409), outra não deixou detalhe e não se repetiu.
+
+**Como demonstrar**:
+
+```bash
+docker compose -f deploy/docker-compose.yml up -d --build --wait
+# abra http://localhost:5173 e siga docs/guias/primeiro-acesso.md (e-mails em http://localhost:8025)
+
+docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.e2e.yml up -d --build --wait
+(cd frontend && pnpm e2e:stack)
+docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.e2e.yml down -v
+```
