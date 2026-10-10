@@ -42,6 +42,8 @@ def create_app(settings: Settings | None = None, engine: AsyncEngine | None = No
                 await db_engine.dispose()
 
     app = FastAPI(title="KnoBridge API", version=__version__, lifespan=lifespan)
+    # Read by dependencies that need configuration per app (e.g. the CSRF check).
+    app.state.settings = resolved
     app.add_middleware(
         CORSMiddleware,
         allow_origins=resolved.cors_origins,

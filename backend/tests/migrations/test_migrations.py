@@ -16,10 +16,11 @@ from sqlalchemy.pool import NullPool
 
 from knobridge.core.models import Base
 from knobridge.core.settings import get_settings
+from knobridge.security import models as security_models
 from knobridge.tenancy import models as tenancy_models
 
-_MODEL_MODULES = (tenancy_models,)  # imported so their tables are in Base.metadata
-_TENANCY_TABLES = ("memberships", "users", "workspaces")
+_MODEL_MODULES = (tenancy_models, security_models)  # so their tables are in Base.metadata
+_TENANCY_TABLES = ("memberships", "users", "workspaces", "sessions", "user_tokens")
 
 ALEMBIC_INI = Path(__file__).resolve().parents[2] / "alembic.ini"
 
@@ -96,8 +97,25 @@ def test_migration_upgrade_downgrade_tenancy(postgres_url: str) -> None:
         "users": (False, False, 0),
         "workspaces": (True, True, 2),
         "memberships": (True, True, 2),
+        "sessions": (True, True, 1),
+        "user_tokens": (True, True, 1),
     }
     assert after_downgrade == {}
+
+
+@pytest.mark.integration
+def test_migration_upgrade_downgrade_sessions_and_user_tokens(postgres_url: str) -> None:
+    config, _ = _alembic_config(postgres_url)
+
+    command.upgrade(config, "head")
+    after_upgrade = _tenancy_catalog(postgres_url)
+    command.downgrade(config, "0002")
+    after_downgrade = _tenancy_catalog(postgres_url)
+    command.downgrade(config, "base")
+
+    assert after_upgrade["sessions"] == (True, True, 1)
+    assert after_upgrade["user_tokens"] == (True, True, 1)
+    assert set(after_downgrade) == {"users", "workspaces", "memberships"}
 
 
 def _schema_diff(connection: Connection) -> list[object]:

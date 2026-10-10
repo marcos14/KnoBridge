@@ -77,7 +77,7 @@ docker run --rm knobridge-backend knobridge-worker           # worker
 docker run --rm knobridge-backend alembic upgrade head       # migrações
 ```
 
-Passe a configuração por variáveis `KNOBRIDGE_*` (`-e` ou `--env-file`); o `.env` não entra na imagem.
+Passe a configuração por variáveis `KNOBRIDGE_*` (`-e` ou `--env-file`); o `.env` não entra na imagem. Com `KNOBRIDGE_ENV=production`, defina `KNOBRIDGE_SECRET_KEY` (32+ caracteres): a API não sobe com o valor padrão de desenvolvimento.
 
 ## Testar
 

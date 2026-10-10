@@ -1,12 +1,13 @@
 # backend/src/knobridge/core/
 
-**Função**: infraestrutura transversal usada por todos os módulos: configuração, logging estruturado, erros de domínio, base ORM e acesso async ao banco com escopo de RLS. Mais tarde: segurança e ids.
+**Função**: infraestrutura transversal usada por todos os módulos: configuração, logging estruturado, erros de domínio, base ORM, relógio injetável e acesso async ao banco com escopo de RLS. Mais tarde: ids. Primitivas de autenticação ficam em `security/`.
 
 **Entra aqui**:
-- `settings.py`: `Settings` (pydantic-settings, prefixo `KNOBRIDGE_`, `.env` opcional) e `get_settings()` com cache. **Único lugar que lê variável de ambiente.**
+- `settings.py`: `Settings` (pydantic-settings, prefixo `KNOBRIDGE_`, `.env` opcional) e `get_settings()` com cache. **Único lugar que lê variável de ambiente.** Inclui as de autenticação (`secret_key`, que em produção não pode ficar no padrão `DEV_SECRET_KEY`; `session_ttl`; `session_cookie_name`; `cookie_secure`).
 - `logging.py`: `configure_logging(settings)` (JSON via structlog, inclusive para o logging da stdlib), `get_logger(name)` e `log_context(workspace_id=, run_id=, conversation_id=)`.
 - `db.py`: `create_engine(settings)` (`AsyncEngine` com pool e timeout de conexão), `create_session_factory(engine)`, `ping(engine)` (`SELECT 1`) e as dependências FastAPI `get_engine` e `get_session` (uma sessão por requisição, sempre fechada; transação é responsabilidade de quem usa). Engine e fábrica ficam em `app.state`, criados pelo lifespan de `create_app`. Escopo de RLS: `scoped_session(factory, workspace_id=, user_id=)` abre sessão + transação e grava `app.workspace_id`/`app.user_id` com `set_config(..., true)` (o `SET LOCAL` parametrizado); `system_session(factory)` é o modo de sistema (`app.system = 'on'`), só para setup, superadmin e login; `apply_scope` e `apply_system_scope` fazem o mesmo numa transação já aberta. O escopo morre no commit.
 - `models.py`: `Base` declarativa com `NAMING_CONVENTION` (nomes de restrição iguais nos modelos e nas migrações), mixins `UUIDPrimaryKeyMixin` e `TimestampMixin`, e `str_enum(enum, nome)` (enum como `VARCHAR` + `CHECK`, gravando o valor).
+- `clock.py`: `Clock` (protocolo com `now()` em UTC com fuso), `SystemClock` (produção) e `FrozenClock` (testes; `advance`). Toda lógica que compara com "agora" recebe um `Clock` injetado.
 - `errors.py`: `KnoBridgeError` e subclasses genéricas (`NotFoundError`, `ValidationError`, `ConflictError`, `ServiceUnavailableError`), e `register_error_handlers(app)`, que garante o formato `{"error": {"code", "message", "details"}}` em toda resposta de erro.
 
 **Não entra aqui**: regra de negócio, modelos de domínio, routers (vão para `api/`), adaptadores de provedores externos (`llm/`, `connectors/`, `channels/`).

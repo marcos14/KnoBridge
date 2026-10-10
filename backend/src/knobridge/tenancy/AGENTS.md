@@ -1,6 +1,6 @@
 # backend/src/knobridge/tenancy/
 
-**Função**: identidade e tenancy. Usuários da instância, workspaces e memberships (papel do usuário em cada workspace). Mais tarde: autenticação e-mail/senha, sessões, convites, API keys e RBAC.
+**Função**: identidade e tenancy. Usuários da instância, workspaces e memberships (papel do usuário em cada workspace). Mais tarde: serviços de cadastro, convites, API keys e RBAC. As primitivas de autenticação (senha, tokens, sessões, CSRF) ficam em [`security/`](../security/AGENTS.md).
 
 **Entra aqui**:
 - `models.py`: modelos ORM `User` (identidade da instância, sem `workspace_id` e sem RLS; e-mail único sem diferenciar maiúsculas pelo índice `uq_users_email_lower`), `Workspace` (slug único, status) e `Membership` (única por `workspace_id` + `user_id`, papel `owner`/`admin`/`editor`/`viewer`), e os `StrEnum` `AuthProvider`, `UserStatus`, `Theme`, `WorkspaceStatus`, `Role`.

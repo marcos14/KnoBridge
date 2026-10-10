@@ -28,6 +28,8 @@ Sem nenhuma delas, as tabelas com RLS não retornam linhas.
 erDiagram
     users ||--o{ memberships : "participa"
     workspaces ||--o{ memberships : "tem"
+    users ||--o{ sessions : "abre"
+    users |o--o{ user_tokens : "recebe"
     users {
         uuid id PK
         varchar email "único sem diferenciar maiúsculas"
@@ -51,6 +53,24 @@ erDiagram
         uuid workspace_id FK
         uuid user_id FK
         varchar role "owner | admin | editor | viewer"
+    }
+    sessions {
+        uuid id PK
+        uuid user_id FK
+        varchar token_hash "único; SHA-256"
+        timestamptz last_seen_at
+        timestamptz expires_at
+        varchar ip_prefix
+        varchar user_agent
+        timestamptz revoked_at
+    }
+    user_tokens {
+        uuid id PK
+        uuid user_id FK "nulo só em convites"
+        varchar purpose "password_reset | email_verification | invitation"
+        varchar token_hash "único; SHA-256"
+        timestamptz expires_at
+        timestamptz used_at
     }
 ```
 
@@ -95,3 +115,31 @@ Papel de um usuário num workspace. RLS forçada.
 | `role` | `varchar(32)` | `owner`, `admin`, `editor` ou `viewer`. |
 
 Única por (`workspace_id`, `user_id`). Políticas: `memberships_select` (workspace selecionado, próprias memberships ou sistema) e `memberships_write` (workspace selecionado ou sistema).
+
+### `sessions`
+
+Sessão de login server-side ([ADR 0002](../adr/0002-sessao-server-side.md)). Dado da instância (sem `workspace_id`), com RLS forçada pelo dono: política `sessions_owner` (`user_id = app.user_id` ou sistema). Validação por token roda em modo de sistema.
+
+| Coluna | Tipo | Regras |
+|---|---|---|
+| `user_id` | `uuid` | FK `users.id`, `ON DELETE CASCADE`; índice `ix_sessions_user_id`. |
+| `token_hash` | `varchar(64)` | SHA-256 em hex do token do cookie; único (`uq_sessions_token_hash`). O token em claro nunca é gravado. |
+| `last_seen_at` | `timestamptz` | Última validação. |
+| `expires_at` | `timestamptz` | `last_seen_at + session_ttl` (expiração deslizante). |
+| `ip_prefix` | `varchar(64)` | Prefixo de rede do IP (IPv4 /24, IPv6 /48); opcional. |
+| `user_agent` | `varchar(200)` | User-agent truncado; opcional. |
+| `revoked_at` | `timestamptz` | Nulo enquanto a sessão vale. |
+
+`created_at` vem do relógio da aplicação (o mesmo da expiração).
+
+### `user_tokens`
+
+Token de uso único enviado por e-mail. Dado da instância, com RLS forçada pelo dono: política `user_tokens_owner` (`user_id = app.user_id` ou sistema). Emissão e consumo rodam em modo de sistema.
+
+| Coluna | Tipo | Regras |
+|---|---|---|
+| `user_id` | `uuid` | FK `users.id`, `ON DELETE CASCADE`; índice `ix_user_tokens_user_id`. Obrigatório, exceto em convites (`ck_user_tokens_user_required`). |
+| `purpose` | `varchar(32)` | `password_reset`, `email_verification` ou `invitation`. |
+| `token_hash` | `varchar(64)` | SHA-256 em hex; único (`uq_user_tokens_token_hash`). |
+| `expires_at` | `timestamptz` | Após este instante o token é recusado. |
+| `used_at` | `timestamptz` | Preenchido no consumo; token usado é recusado. |

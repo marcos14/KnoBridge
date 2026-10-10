@@ -117,3 +117,7 @@ def test_create_app_lifespan_keeps_injected_engine_open(
 
     assert engine is injected
     assert disposed == []
+
+
+def test_create_app_exposes_settings_in_state(app: FastAPI, settings: Settings) -> None:
+    assert app.state.settings is settings

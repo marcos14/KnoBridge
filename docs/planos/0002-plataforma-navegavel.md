@@ -21,13 +21,13 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: c7f63af
       - id: F1.2
         titulo: "Primitivas de segurança: senha, tokens, sessões e CSRF"
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-10
+        concluida_em: 2026-10-10
         commit: null
       - id: F1.3
         titulo: "E-mail: interface, SMTP, templates e Mailpit"
@@ -266,6 +266,13 @@ decisoes:
     decisao: "RLS: escopo por set_config transacional (app.workspace_id, app.user_id) e modo de sistema por app.system=on aceito pelas políticas; políticas separadas de leitura e escrita; workspaces com RLS forçada; users sem RLS (identidade da instância); enums como VARCHAR+CHECK."
     motivo: "Uma credencial e um pool só; parâmetros ligados sem SQL dinâmico; escrita restrita ao workspace selecionado impede autopromoção."
     alternativas: "Papel separado com BYPASSRLS para tarefas de sistema (registrado no ADR 0001 como evolução)."
+    adr: null
+  - id: D10
+    data: 2026-10-10
+    por: agente
+    decisao: "Sessões e user_tokens com RLS forçada por user_id (ou modo de sistema); CSRF double-submit assinado com HMAC da secret_key; produção exige secret_key própria com 32+ caracteres; session_ttl ISO 8601 (P7D); só expiração deslizante por ora; IP e user-agent resumidos (LGPD)."
+    motivo: "Defesa em profundidade para credenciais; impede cookie CSRF plantado por subdomínio."
+    alternativas: "Sessões sem RLS; CSRF sem assinatura; expiração absoluta já agora."
     adr: null
 pendencias_usuario: []
 ---
@@ -538,6 +545,8 @@ Nenhuma aberta.
 - 2026-10-10 — plano aprovado pelo usuário; início da execução.
 - 2026-10-10 — F1.1 iniciada.
 - 2026-10-10 — F1.1 concluída: 90 testes, cobertura 100%; RLS provada com papel dono e papel não dono; ADR 0001 (D9).
+- 2026-10-10 — F1.2 iniciada.
+- 2026-10-10 — F1.2 concluída: 153 testes, cobertura 100%; ADR 0002 (D10). KNOBRIDGE_SECRET_KEY no compose fica para F1.3/F6.1.
 
 ## 8. Encerramento
 

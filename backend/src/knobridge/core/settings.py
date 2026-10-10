@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
 from functools import lru_cache
-from typing import Literal
+from typing import Literal, Self
 
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Development-only default; production refuses to start with it (see _check_secret_key).
+DEV_SECRET_KEY = "dev-only-insecure-secret-key-change-me"  # noqa: S105 - documented dev default
 
 Environment = Literal["local", "test", "production"]
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
@@ -38,6 +42,19 @@ class Settings(BaseSettings):
     temporal_address: str = "localhost:7233"
     temporal_namespace: str = "default"
     temporal_task_queue: str = "knobridge"
+    # Signs CSRF tokens; at least 32 characters. Secret: read it with get_secret_value().
+    secret_key: SecretStr = Field(default=SecretStr(DEV_SECRET_KEY), min_length=32)
+    # Idle lifetime of a login session: each validated request pushes expiry this far ahead.
+    session_ttl: timedelta = Field(default=timedelta(days=7), gt=timedelta(0))
+    session_cookie_name: str = Field(default="knobridge_session", min_length=1)
+    # Send cookies only over HTTPS. Browsers also accept Secure cookies on http://localhost.
+    cookie_secure: bool = True
+
+    @model_validator(mode="after")
+    def _check_secret_key(self) -> Self:
+        if self.env == "production" and self.secret_key.get_secret_value() == DEV_SECRET_KEY:
+            raise ValueError("KNOBRIDGE_SECRET_KEY must be set in production")
+        return self
 
 
 @lru_cache(maxsize=1)

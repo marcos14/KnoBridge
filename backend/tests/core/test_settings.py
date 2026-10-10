@@ -1,15 +1,17 @@
 from __future__ import annotations
 
+from datetime import timedelta
 from pathlib import Path
 
 import pytest
 from pydantic import ValidationError
 
-from knobridge.core.settings import Settings, get_settings
+from knobridge.core.settings import DEV_SECRET_KEY, Settings, get_settings
 
 
 def test_settings_reads_env_prefix(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("KNOBRIDGE_ENV", "production")
+    monkeypatch.setenv("KNOBRIDGE_SECRET_KEY", "p" * 40)
     monkeypatch.setenv("KNOBRIDGE_API_PORT", "9000")
     monkeypatch.setenv("KNOBRIDGE_CORS_ORIGINS", '["https://a.example", "https://b.example"]')
 
@@ -107,3 +109,47 @@ def test_settings_reads_temporal_variables(monkeypatch: pytest.MonkeyPatch) -> N
         settings.temporal_namespace,
         settings.temporal_task_queue,
     ) == ("temporal:7233", "knobridge", "pipelines")
+
+
+def test_settings_security_defaults() -> None:
+    settings = Settings()
+
+    assert settings.secret_key.get_secret_value() == DEV_SECRET_KEY
+    assert settings.session_ttl == timedelta(days=7)
+    assert (settings.session_cookie_name, settings.cookie_secure) == ("knobridge_session", True)
+
+
+def test_settings_reads_security_variables(monkeypatch: pytest.MonkeyPatch) -> None:
+    secret = "k" * 48
+    monkeypatch.setenv("KNOBRIDGE_SECRET_KEY", secret)
+    monkeypatch.setenv("KNOBRIDGE_SESSION_TTL", "PT1H")
+    monkeypatch.setenv("KNOBRIDGE_SESSION_COOKIE_NAME", "kb_sid")
+    monkeypatch.setenv("KNOBRIDGE_COOKIE_SECURE", "false")
+
+    settings = Settings()
+
+    assert settings.secret_key.get_secret_value() == secret
+    assert secret not in repr(settings)
+    assert settings.session_ttl == timedelta(hours=1)
+    assert (settings.session_cookie_name, settings.cookie_secure) == ("kb_sid", False)
+
+
+def test_settings_rejects_short_secret_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("KNOBRIDGE_SECRET_KEY", "too-short")
+
+    with pytest.raises(ValidationError):
+        Settings()
+
+
+def test_settings_rejects_non_positive_session_ttl(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("KNOBRIDGE_SESSION_TTL", "PT0S")
+
+    with pytest.raises(ValidationError):
+        Settings()
+
+
+def test_settings_requires_secret_key_in_production(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("KNOBRIDGE_ENV", "production")
+
+    with pytest.raises(ValidationError, match="KNOBRIDGE_SECRET_KEY"):
+        Settings()

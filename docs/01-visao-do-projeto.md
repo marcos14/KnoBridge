@@ -294,7 +294,7 @@ Quando entrar (fase 3): OpenTelemetry + Langfuse para traces; conjunto de avalia
 | D9 | Multi-tenant | Desde o início / depois | Desde o início (modelo de dados); RLS forçada por `SET LOCAL`, usuários com N workspaces ([ADR 0001](adr/0001-tenancy-e-rls.md)) | Muito difícil depois |
 | D10 | Mapeamento de código | Harness de agente / tree-sitter / ambos | **Harness** (Claude Code ou Codex) como principal; tree-sitter como fallback obrigatório | Fácil (são dois nós do canvas) |
 | D11 | Provedores de LLM | — | APIs **OpenAI, Anthropic, OpenRouter**; **assinatura OpenAI** (Codex CLI) para harness e desenvolvimento | Fácil |
-| D12 | Autenticação inicial | E-mail/senha / OIDC desde o início | **E-mail/senha** por ora; OIDC depois | Médio (prever `provider` no modelo) |
+| D12 | Autenticação inicial | E-mail/senha / OIDC desde o início | **E-mail/senha** por ora; OIDC depois; sessão server-side com cookie httpOnly e CSRF double-submit ([ADR 0002](adr/0002-sessao-server-side.md)) | Médio (prever `provider` no modelo) |
 | D13 | Observabilidade e avaliação | Agora / depois | **Depois** (fase 3); agora só log estruturado e feedback | Fácil |
 | D14 | Canal no "padrão OpenAI" | Só REST própria / também Chat Completions | **Também Chat Completions** (`/v1/chat/completions`) | Fácil |
 
