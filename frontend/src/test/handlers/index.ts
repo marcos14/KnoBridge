@@ -3,6 +3,7 @@ import { adminHandlers } from "./admin";
 import { assistantsHandlers } from "./assistants";
 import { auditHandlers } from "./audit";
 import { authHandlers } from "./auth";
+import { conversationsHandlers } from "./conversations";
 import { healthReadyOk } from "./health";
 import { invitesHandlers } from "./invites";
 import { membersHandlers } from "./members";
@@ -15,6 +16,7 @@ export * from "./admin";
 export * from "./assistants";
 export * from "./audit";
 export * from "./auth";
+export * from "./conversations";
 export * from "./errors";
 export * from "./health";
 export * from "./invites";
@@ -41,4 +43,5 @@ export const handlers = [
   ...adminHandlers,
   ...providersHandlers,
   ...assistantsHandlers,
+  ...conversationsHandlers,
 ];

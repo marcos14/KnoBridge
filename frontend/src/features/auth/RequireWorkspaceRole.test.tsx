@@ -56,6 +56,7 @@ describe("RequireWorkspaceRole", () => {
     ["editor", "providers", "Provedores"],
     ["viewer", "members", "Membros"],
     ["viewer", "chat", "Chat"],
+    ["admin", "conversations", "Conversas"],
   ] as const)("test_require_workspace_role_%s_opens_%s", async (role, area, title) => {
     asMemberWithRole(role);
     renderWithProviders({ path: `/w/${WORKSPACE_ID}/${area}` });

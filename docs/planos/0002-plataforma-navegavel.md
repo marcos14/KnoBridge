@@ -170,13 +170,13 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: a864c23
       - id: F5.2
         titulo: "Chat com streaming"
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-10
+        concluida_em: 2026-10-10
         commit: null
       - id: F5.3
         titulo: "Tela de conversas (owner/admin)"
@@ -606,6 +606,8 @@ Nenhuma aberta.
 - 2026-10-10 — F4.5 concluída: Listagem, detalhe e stats administrativos de conversas (owner/admin), sem N+1 (consultas constantes testadas), streaming órfão tratado como interrupted; backend 607 testes, 100%.
 - 2026-10-10 — F4 concluída; F5.1 iniciada.
 - 2026-10-10 — F5.1 concluída: Telas /w/:id/providers e /w/:id/assistants com testes de conexão, chave mascarada, confirmação de exclusão com aviso sobre conversas; 570 testes, 100/99,04. Bundle 847 kB (code-splitting na F5.3).
+- 2026-10-10 — F5.2 iniciada.
+- 2026-10-10 — F5.2 concluída: Tela /w/:id/chat com useChatStream (parser SSE incremental, CSRF, AbortController), Markdown seguro, citações clicáveis, fallback sem fonte com 'Abrir chamado' desabilitado, feedback, e2e do chat; 656 testes. Pontas: pergunta duplicada por instante ao abrir conversa nova; erro de envio persiste até a próxima pergunta (tratar na F5.3).
 
 ## 8. Encerramento
 

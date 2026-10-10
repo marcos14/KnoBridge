@@ -455,8 +455,81 @@
       }
     }
   },
+  "chat": {
+    "title": "Chat",
+    "retry": "Tentar de novo",
+    "newTitle": "Nova conversa",
+    "newDescription": "Escolha o assistente e faça a sua pergunta. As respostas citam as fontes usadas.",
+    "list": {
+      "label": "Suas conversas",
+      "new": "Nova conversa",
+      "loading": "Carregando conversas…",
+      "loadFailed": "Não foi possível carregar as conversas.",
+      "empty": "Você ainda não tem conversas.",
+      "untitled": "Conversa sem título",
+      "loadMore": "Carregar mais",
+      "delete": "Excluir",
+      "deleteLabel": "Excluir a conversa {{title}}",
+      "deleteTitle": "Excluir conversa?",
+      "deleteDescription": "A conversa \"{{title}}\" será excluída com todas as mensagens e avaliações. Isso não pode ser desfeito."
+    },
+    "assistants": {
+      "label": "Assistente",
+      "loading": "Carregando assistentes…",
+      "loadFailed": "Não foi possível carregar os assistentes.",
+      "noneTitle": "Nenhum assistente disponível",
+      "noneManager": "Ainda não há assistente ativo neste workspace. Crie ou ative um assistente para começar a conversar.",
+      "noneMember": "Ainda não há assistente ativo neste workspace. Peça a um administrador que configure um.",
+      "goToAssistants": "Configurar assistentes"
+    },
+    "conversation": {
+      "label": "Conversa",
+      "loading": "Carregando conversa…",
+      "loadFailed": "Não foi possível carregar a conversa.",
+      "notFound": "Conversa não encontrada",
+      "assistant": "Assistente: {{name}}"
+    },
+    "thread": {
+      "label": "Mensagens da conversa"
+    },
+    "message": {
+      "you": "Você",
+      "assistant": "Assistente",
+      "thinking": "O assistente está respondendo…",
+      "interrupted": "A resposta foi interrompida antes do fim.",
+      "resend": "Reenviar pergunta",
+      "openTicket": "Abrir chamado",
+      "openTicketHint": "Disponível quando houver integração de chamados."
+    },
+    "citations": {
+      "title": "Fontes",
+      "panelDescription": "Trecho da fonte usado na resposta.",
+      "openSource": "Abrir a fonte",
+      "close": "Fechar"
+    },
+    "citationLabel": "Fonte {{index}}: {{title}}",
+    "composer": {
+      "label": "Sua pergunta",
+      "placeholder": "Escreva a sua pergunta…",
+      "hint": "Enter envia; Shift+Enter quebra a linha.",
+      "send": "Enviar",
+      "stop": "Parar",
+      "required": "Escreva uma pergunta.",
+      "tooLong": "A pergunta pode ter até {{max}} caracteres."
+    },
+    "feedback": {
+      "up": "Resposta útil",
+      "down": "Resposta não ajudou",
+      "saved": "Obrigado pela avaliação.",
+      "addComment": "Adicionar comentário",
+      "editComment": "Editar comentário",
+      "commentLabel": "Comentário (opcional)",
+      "commentTooLong": "O comentário pode ter até {{max}} caracteres.",
+      "saveComment": "Salvar comentário",
+      "cancel": "Cancelar"
+    }
+  },
   "pages": {
-    "chat": "Chat",
     "conversations": "Conversas"
   },
   "audit": {

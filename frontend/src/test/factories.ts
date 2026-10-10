@@ -3,6 +3,7 @@ import type { AdminUser, AdminWorkspace } from "@/lib/api/admin";
 import type { Assistant } from "@/lib/api/assistants";
 import type { AuditEvent } from "@/lib/api/audit";
 import type { Me, UserWorkspace } from "@/lib/api/auth";
+import type { Citation, Conversation, ConversationDetail, Message } from "@/lib/api/conversations";
 import type { Invitation, InvitationPreview } from "@/lib/api/invites";
 import type { Member } from "@/lib/api/members";
 import type { Provider } from "@/lib/api/providers";
@@ -364,4 +365,105 @@ export function makeAssistants(): Assistant[] {
     }),
     makeAssistant(),
   ];
+}
+
+export const CONVERSATION_ID = "00000000-0000-4000-8000-0000000000d1";
+export const OTHER_CONVERSATION_ID = "00000000-0000-4000-8000-0000000000d2";
+
+/** Synthetic message id `n` (`messageId(1)`, `messageId(2)`, …). */
+export function messageId(n: number): string {
+  return `00000000-0000-4000-8000-0000000e${String(n).padStart(4, "0")}`;
+}
+
+/** One item of `GET .../conversations`: by default "Como fecho o caixa?" with Suporte ERP. */
+export function makeConversation(overrides: Partial<Conversation> = {}): Conversation {
+  return {
+    id: CONVERSATION_ID,
+    assistant_id: ASSISTANT_ID,
+    user_id: USER_ID,
+    channel: "panel",
+    title: "Como fecho o caixa?",
+    created_at: "2026-10-09T10:00:00Z",
+    updated_at: "2026-10-09T10:05:00Z",
+    ...overrides,
+  };
+}
+
+/** The default conversation list: "Como fecho o caixa?" and an older one about invoices. */
+export function makeConversations(): Conversation[] {
+  return [
+    makeConversation(),
+    makeConversation({
+      id: OTHER_CONVERSATION_ID,
+      title: "Emissão de nota fiscal",
+      created_at: "2026-10-01T09:00:00Z",
+      updated_at: "2026-10-01T09:10:00Z",
+    }),
+  ];
+}
+
+/** A numbered source of an answer: by default [1] "Manual do caixa". */
+export function makeCitation(overrides: Partial<Citation> = {}): Citation {
+  return {
+    index: 1,
+    title: "Manual do caixa",
+    uri: "https://docs.example.test/caixa",
+    snippet: "Para fechar o caixa, confira os lançamentos do dia e clique em Fechar.",
+    document_id: "doc-caixa",
+    ...overrides,
+  };
+}
+
+/** A message of a conversation: by default a completed assistant answer without sources. */
+export function makeMessage(overrides: Partial<Message> = {}): Message {
+  return {
+    id: messageId(2),
+    role: "assistant",
+    content: "Resposta.",
+    status: "completed",
+    citations: [],
+    error_code: null,
+    feedback: null,
+    model: "gpt-4.1-mini",
+    input_tokens: 100,
+    output_tokens: 20,
+    latency_ms: 1200,
+    created_at: "2026-10-09T10:05:00Z",
+    ...overrides,
+  };
+}
+
+/** A user question (always `completed`, no model data). */
+export function makeQuestion(content: string, id: string = messageId(1)): Message {
+  return makeMessage({
+    id,
+    role: "user",
+    content,
+    model: null,
+    input_tokens: null,
+    output_tokens: null,
+    latency_ms: null,
+  });
+}
+
+/** The default thread: the cash question and a cited answer. */
+export function makeThread(): Message[] {
+  return [
+    makeQuestion("Como fecho o caixa?"),
+    makeMessage({
+      content: "Confira os lançamentos e clique em **Fechar** [1].",
+      citations: [makeCitation()],
+    }),
+  ];
+}
+
+/** Body of `GET .../conversations/{id}`: `conversation` with `messages` in one page. */
+export function makeConversationDetail(
+  conversation: Conversation = makeConversation(),
+  messages: Message[] = makeThread(),
+): ConversationDetail {
+  return {
+    ...conversation,
+    messages: { items: messages, total: messages.length, limit: 500, offset: 0 },
+  };
 }

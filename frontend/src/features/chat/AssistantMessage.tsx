@@ -1,0 +1,104 @@
+import { AlertTriangle, LifeBuoy, RotateCcw } from "lucide-react";
+import { type ReactNode, useId } from "react";
+import { useTranslation } from "react-i18next";
+
+import { Button } from "@/components/ui/button";
+import { translateApiErrorCode } from "@/i18n/apiErrors";
+import type { Citation, MessageStatus } from "@/lib/api/conversations";
+
+import { ChatMarkdown } from "./ChatMarkdown";
+
+interface AssistantMessageProps {
+  content: string;
+  citations: readonly Citation[];
+  status: MessageStatus;
+  errorCode: string | null;
+  onCitation: (citation: Citation) => void;
+  /** Sends the question again (failed or interrupted answers); absent when it cannot be resent. */
+  onResend?: () => void;
+  /** Rating controls, for finished answers. */
+  feedback?: ReactNode;
+}
+
+/** One answer of the assistant: Markdown with its sources, what happened to it and its actions. */
+export function AssistantMessage({
+  content,
+  citations,
+  status,
+  errorCode,
+  onCitation,
+  onResend,
+  feedback,
+}: AssistantMessageProps) {
+  const { t } = useTranslation();
+  const ticketHintId = useId();
+  const problem =
+    status === "failed"
+      ? translateApiErrorCode(errorCode ?? "chat_failed", t)
+      : status === "interrupted"
+        ? t("chat.message.interrupted")
+        : null;
+
+  return (
+    <div className="flex flex-col gap-3">
+      {content !== "" && (
+        <ChatMarkdown content={content} citations={citations} onCitation={onCitation} />
+      )}
+      {status === "streaming" && content === "" && (
+        <p className="text-muted-foreground text-sm">{t("chat.message.thinking")}</p>
+      )}
+      {citations.length > 0 && (
+        <div className="flex flex-col gap-1">
+          <p className="text-muted-foreground text-xs font-medium">{t("chat.citations.title")}</p>
+          <ul className="flex flex-wrap gap-2">
+            {citations.map((citation) => (
+              <li key={citation.index}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-auto max-w-64 py-1 text-left whitespace-normal"
+                  onClick={() => {
+                    onCitation(citation);
+                  }}
+                >
+                  [{citation.index}] {citation.title}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {status === "no_source" && (
+        <div className="flex flex-col items-start gap-1">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled
+            aria-describedby={ticketHintId}
+          >
+            <LifeBuoy aria-hidden="true" />
+            {t("chat.message.openTicket")}
+          </Button>
+          <p id={ticketHintId} className="text-muted-foreground text-xs">
+            {t("chat.message.openTicketHint")}
+          </p>
+        </div>
+      )}
+      {problem !== null && (
+        <div className="border-destructive/40 text-destructive flex flex-wrap items-center gap-2 rounded-md border px-3 py-2 text-sm">
+          <AlertTriangle aria-hidden="true" className="size-4" />
+          <span>{problem}</span>
+          {onResend !== undefined && (
+            <Button type="button" variant="outline" size="sm" onClick={onResend}>
+              <RotateCcw aria-hidden="true" />
+              {t("chat.message.resend")}
+            </Button>
+          )}
+        </div>
+      )}
+      {feedback}
+    </div>
+  );
+}

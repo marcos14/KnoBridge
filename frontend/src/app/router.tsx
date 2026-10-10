@@ -19,6 +19,7 @@ import { RequireWorkspaceRole } from "@/features/auth/RequireWorkspaceRole";
 import { ResetPasswordPage } from "@/features/auth/ResetPasswordPage";
 import { SetupPage } from "@/features/auth/SetupPage";
 import { VerifyEmailPage } from "@/features/auth/VerifyEmailPage";
+import { ChatPage } from "@/features/chat/ChatPage";
 import { MembersPage } from "@/features/members/MembersPage";
 import { ProvidersPage } from "@/features/providers/ProvidersPage";
 import { WorkspaceSettingsPage } from "@/features/settings/WorkspaceSettingsPage";
@@ -36,14 +37,22 @@ import { WorkspaceLayout } from "./shell/WorkspaceLayout";
 
 /**
  * Route of a workspace area (`/w/:workspaceId/<area>`), guarded by the role the menu uses for
- * the same area (`WORKSPACE_AREAS`), so a hidden item is also a closed route.
+ * the same area (`WORKSPACE_AREAS`), so a hidden item is also a closed route. `subPaths` (e.g.
+ * `:conversationId`) are served by the same element, which stays mounted while the URL moves
+ * between them; other sub-pages are a 404.
  */
-function workspaceArea(area: Exclude<WorkspaceArea, "home">, element: ReactNode): RouteObject {
+function workspaceArea(
+  area: Exclude<WorkspaceArea, "home">,
+  element: ReactNode,
+  subPaths: readonly string[] = [],
+): RouteObject {
   return {
     path: area,
     element: <RequireWorkspaceRole minRole={areaMinRole(area)} />,
-    // Sub-pages (e.g. a source's detail) arrive with each feature; until then they are a 404.
-    children: [{ index: true, element }],
+    children:
+      subPaths.length === 0
+        ? [{ index: true, element }]
+        : [{ element, children: [{ index: true }, ...subPaths.map((path) => ({ path }))] }],
   };
 }
 
@@ -109,7 +118,7 @@ export const routes: RouteObject[] = [
                         element: <WorkspaceLayout />,
                         children: [
                           { index: true, element: <HomePage /> },
-                          workspaceArea("chat", <PlaceholderPage page="chat" />),
+                          workspaceArea("chat", <ChatPage />, [":conversationId"]),
                           workspaceArea("conversations", <PlaceholderPage page="conversations" />),
                           workspaceArea("assistants", <AssistantsPage />),
                           workspaceArea("providers", <ProvidersPage />),
