@@ -8,6 +8,7 @@ import pytest
 from api_support import CHEAP, START, ApiEnv, db_settings
 from fastapi.testclient import TestClient
 
+from fakes.email_sender import FakeEmailSender
 from knobridge.api.app import create_app
 from knobridge.core.clock import FrozenClock
 from knobridge.security.passwords import PasswordHasher
@@ -16,9 +17,14 @@ from knobridge.security.passwords import PasswordHasher
 def _env(database_url: str) -> Generator[ApiEnv]:
     clock = FrozenClock(START)
     hasher = PasswordHasher(CHEAP)
-    app = create_app(db_settings(database_url), clock=clock, password_hasher=hasher)
+    emails = FakeEmailSender()
+    app = create_app(
+        db_settings(database_url), clock=clock, password_hasher=hasher, email_sender=emails
+    )
     with TestClient(app) as client:
-        yield ApiEnv(client=client, clock=clock, database_url=database_url, hasher=hasher)
+        yield ApiEnv(
+            client=client, clock=clock, database_url=database_url, hasher=hasher, emails=emails
+        )
 
 
 @pytest.fixture

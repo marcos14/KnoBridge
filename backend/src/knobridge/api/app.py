@@ -11,12 +11,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from knobridge import __version__
-from knobridge.api import audit, auth, health, me, setup
+from knobridge.api import account, audit, auth, health, me, recovery, setup
 from knobridge.core.clock import Clock, SystemClock
 from knobridge.core.db import create_engine, create_session_factory
 from knobridge.core.errors import register_error_handlers
 from knobridge.core.logging import configure_logging
 from knobridge.core.settings import Settings, get_settings
+from knobridge.email.rendering import EmailComposer
+from knobridge.email.sender import EmailSender, SmtpEmailSender
 from knobridge.security.passwords import PasswordHasher
 
 API_PREFIX = "/v1"
@@ -28,14 +30,16 @@ def create_app(
     *,
     clock: Clock | None = None,
     password_hasher: PasswordHasher | None = None,
+    email_sender: EmailSender | None = None,
 ) -> FastAPI:
     """Build the API with logging, CORS, standard error handlers and every ``/v1`` router.
 
     The lifespan stores the database engine and session factory in ``app.state``. Without
     ``engine`` it builds one from ``settings`` and disposes it on shutdown; an injected
-    ``engine`` (tests) stays owned by the caller and is not disposed. ``clock`` and
-    ``password_hasher`` default to the real ones; tests inject a frozen clock and cheap
-    argon2 parameters. All of them are read by the dependencies in ``api/deps.py``.
+    ``engine`` (tests) stays owned by the caller and is not disposed. ``clock``,
+    ``password_hasher`` and ``email_sender`` default to the real ones (SMTP from settings);
+    tests inject a frozen clock, cheap argon2 parameters and a fake sender. All of them are
+    read by the dependencies in ``api/deps.py``.
     """
     resolved = settings if settings is not None else get_settings()
     configure_logging(resolved)
@@ -56,6 +60,12 @@ def create_app(
     app.state.settings = resolved
     app.state.clock = clock if clock is not None else SystemClock()
     app.state.password_hasher = password_hasher if password_hasher is not None else PasswordHasher()
+    app.state.email_sender = (
+        email_sender
+        if email_sender is not None
+        else SmtpEmailSender.from_settings(resolved, clock=app.state.clock)
+    )
+    app.state.email_composer = EmailComposer.from_settings(resolved)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=resolved.cors_origins,
@@ -66,7 +76,7 @@ def create_app(
     register_error_handlers(app)
 
     v1 = APIRouter(prefix=API_PREFIX)
-    for module in (health, setup, auth, me, audit):
+    for module in (health, setup, auth, recovery, me, account, audit):
         v1.include_router(module.router)
     app.include_router(v1)
     return app

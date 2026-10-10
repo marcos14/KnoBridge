@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 
+from fakes.email_sender import FakeEmailSender
 from knobridge.api.app import create_app
 from knobridge.api.deps import (
     WorkspaceContext,
@@ -64,7 +65,13 @@ def probe_api(app_database_url: str) -> Generator[ApiEnv]:
     app = create_app(db_settings(app_database_url), clock=clock, password_hasher=hasher)
     app.include_router(probe)
     with TestClient(app) as client:
-        yield ApiEnv(client=client, clock=clock, database_url=app_database_url, hasher=hasher)
+        yield ApiEnv(
+            client=client,
+            clock=clock,
+            database_url=app_database_url,
+            hasher=hasher,
+            emails=FakeEmailSender(),
+        )
 
 
 @pytest.mark.integration

@@ -41,6 +41,15 @@ def test_throttle_key_differs_by_ip_and_hides_inputs() -> None:
     assert len(key) == 64
 
 
+def test_throttle_key_scope_separates_counters() -> None:
+    login = throttle_key("ana@example.test", None)
+    reset = throttle_key("ANA@example.test", None, scope="password_reset")
+
+    assert reset != login
+    assert reset == throttle_key("ana@example.test", None, scope="password_reset")
+    assert reset != throttle_key("ana@example.test", None, scope="email_verification")
+
+
 @pytest.mark.integration
 def test_throttle_blocks_after_max_failures_until_window_ends(
     run_db: RunScenario, clock: FrozenClock

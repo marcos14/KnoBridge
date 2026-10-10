@@ -23,9 +23,15 @@ from knobridge.core.clock import Clock
 from knobridge.security.models import LoginAttempt
 
 
-def throttle_key(email: str, ip: str | None) -> str:
-    """Hash identifying the pair (e-mail, client IP); the e-mail is case-insensitive."""
+def throttle_key(email: str, ip: str | None, *, scope: str | None = None) -> str:
+    """Hash identifying the pair (e-mail, client IP); the e-mail is case-insensitive.
+
+    ``scope`` separates counters that share the table (e.g. ``"password_reset"`` limits reset
+    e-mails per address). Login uses no scope, so its keys keep their original format.
+    """
     raw = f"{email.strip().lower()}|{ip or ''}"
+    if scope is not None:
+        raw = f"{scope}|{raw}"
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
 

@@ -53,6 +53,13 @@ class Settings(BaseSettings):
     login_max_attempts: int = Field(default=5, ge=1)
     # Length of that window; it starts at the first failure and resets after it elapses.
     login_attempt_window: timedelta = Field(default=timedelta(minutes=15), gt=timedelta(0))
+    # Validity of the single-use links sent by e-mail.
+    password_reset_ttl: timedelta = Field(default=timedelta(hours=1), gt=timedelta(0))
+    email_verification_ttl: timedelta = Field(default=timedelta(hours=24), gt=timedelta(0))
+    # E-mails of each kind (password reset, verification) one address may trigger per window,
+    # so these endpoints cannot be used to flood a mailbox.
+    account_email_max_requests: int = Field(default=3, ge=1)
+    account_email_window: timedelta = Field(default=timedelta(hours=1), gt=timedelta(0))
     # Absolute URL of the admin panel; e-mail links (reset, verification, invitation) start here.
     public_base_url: str = Field(default="http://localhost:5173", pattern=r"^https?://[^/\s]+")
     # Outgoing SMTP server for transactional e-mail (Mailpit in development).

@@ -14,10 +14,10 @@
 
 | Ação | Escopo |
 |---|---|
-| `setup.completed`, `user.created`, `user.suspended`, `user.reactivated` | instância |
+| `setup.completed`, `user.created`, `user.suspended`, `user.reactivated`, `user.profile.updated` | instância |
 | `workspace.created`, `workspace.updated`, `workspace.suspended` | workspace |
 | `auth.login.succeeded`, `auth.login.failed`, `auth.logout.succeeded`, `auth.sessions.revoked` | instância |
-| `auth.password.changed`, `auth.password_reset.requested`, `auth.password_reset.completed`, `auth.email.verified` | instância |
+| `auth.password.changed`, `auth.password_reset.requested`, `auth.password_reset.completed`, `auth.email.verified`, `auth.email_verification.requested` | instância |
 | `membership.invited`, `membership.invitation.accepted`, `membership.role.changed`, `membership.removed` | workspace |
 
 **Convenções locais**:

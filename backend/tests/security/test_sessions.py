@@ -233,3 +233,55 @@ def test_session_rls_hides_other_users_sessions(
         assert unscoped == []
 
     run_rls_db(scenario)
+
+
+@pytest.mark.integration
+def test_session_revoke_with_user_id_ignores_other_users(
+    run_db: RunScenario, clock: FrozenClock
+) -> None:
+    service = SessionService(clock, TTL)
+
+    async def scenario(factory: SessionFactory) -> tuple[bool, bool]:
+        user_a, user_b = await create_user(factory), await create_user(factory)
+        async with system_session(factory) as db:
+            other = await service.create(db, user_id=user_b)
+            # System mode sees every row: only the explicit owner filter protects user B.
+            wrong_owner = await service.revoke(db, session_id=other.session.id, user_id=user_a)
+            right_owner = await service.revoke(db, session_id=other.session.id, user_id=user_b)
+        return wrong_owner, right_owner
+
+    assert run_db(scenario) == (False, True)
+
+
+@pytest.mark.integration
+def test_session_list_active_skips_revoked_and_expired(
+    run_db: RunScenario, clock: FrozenClock
+) -> None:
+    service = SessionService(clock, TTL)
+
+    async def scenario(
+        factory: SessionFactory,
+    ) -> tuple[list[uuid.UUID], list[uuid.UUID], int, list[uuid.UUID]]:
+        user_id = await create_user(factory)
+        async with system_session(factory) as db:
+            await service.create(db, user_id=user_id)  # expires exactly when the clock lands
+            clock.advance(TTL - timedelta(minutes=1))
+            older = await service.create(db, user_id=user_id)
+            clock.advance(timedelta(minutes=1))
+            newer = await service.create(db, user_id=user_id)
+            revoked = await service.create(db, user_id=user_id)
+            await service.revoke(db, session_id=revoked.session.id)
+        async with scoped_session(factory, workspace_id=None, user_id=user_id) as db:
+            page, total = await service.list_active(db, user_id=user_id, limit=1, offset=0)
+            rest, _ = await service.list_active(db, user_id=user_id, limit=10, offset=1)
+        return (
+            [s.id for s in page],
+            [s.id for s in rest],
+            total,
+            [newer.session.id, older.session.id],
+        )
+
+    page, rest, total, expected = run_db(scenario)
+
+    assert total == 2
+    assert page + rest == expected

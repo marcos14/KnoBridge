@@ -7,20 +7,26 @@ pytest puts this folder on ``sys.path`` (``tests/`` has no ``__init__.py``).
 from __future__ import annotations
 
 import asyncio
+import re
 import uuid
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from urllib.parse import unquote
 
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
+from fakes.email_sender import FakeEmailSender
+from knobridge.audit.models import AuditEvent
 from knobridge.core.clock import FrozenClock
 from knobridge.core.db import create_session_factory, system_session
 from knobridge.core.settings import Settings
 from knobridge.security.csrf import CSRF_COOKIE_NAME, CSRF_HEADER_NAME
+from knobridge.security.models import Session
 from knobridge.security.passwords import Argon2Params, PasswordHasher
 from knobridge.tenancy.models import Membership, Role, User, UserStatus, Workspace, WorkspaceStatus
 
@@ -77,6 +83,7 @@ class ApiEnv:
     clock: FrozenClock
     database_url: str
     hasher: PasswordHasher
+    emails: FakeEmailSender
 
     def create_user(
         self,
@@ -139,7 +146,49 @@ class ApiEnv:
         )
         assert response.status_code == 200, response.text
 
+    def emailed_token(self, address: str) -> str:
+        """The token in the link of the last e-mail sent to ``address``."""
+        email = self.emails.sent_to(address)[-1]
+        match = re.search(r"\?token=([A-Za-z0-9_\-%]+)", email.text)
+        assert match is not None, email.text
+        return unquote(match.group(1))
+
     def csrf_headers(self) -> dict[str, str]:
         token = self.client.cookies.get(CSRF_COOKIE_NAME)
         assert token is not None
         return {CSRF_HEADER_NAME: token}
+
+    def sessions(self, user_id: uuid.UUID) -> list[Session]:
+        """Every session row of the user (revoked included), oldest first."""
+
+        async def scenario(factory: SessionFactory) -> list[Session]:
+            async with system_session(factory) as db:
+                rows = await db.scalars(
+                    select(Session)
+                    .where(Session.user_id == user_id)
+                    .order_by(Session.created_at, Session.id)
+                )
+                return list(rows)
+
+        return run_db(self.database_url, scenario)
+
+    def user(self, user_id: uuid.UUID) -> User:
+        async def scenario(factory: SessionFactory) -> User:
+            async with system_session(factory) as db:
+                return (await db.scalars(select(User).where(User.id == user_id))).one()
+
+        return run_db(self.database_url, scenario)
+
+    def audit_actions(self, user_id: uuid.UUID) -> list[tuple[str, dict[str, object]]]:
+        """(action, details) of the instance events about the user, oldest first."""
+
+        async def scenario(factory: SessionFactory) -> list[tuple[str, dict[str, object]]]:
+            async with system_session(factory) as db:
+                rows = await db.scalars(
+                    select(AuditEvent)
+                    .where(AuditEvent.target_type == "user", AuditEvent.target_id == str(user_id))
+                    .order_by(AuditEvent.occurred_at, AuditEvent.id)
+                )
+                return [(event.action, dict(event.details)) for event in rows]
+
+        return run_db(self.database_url, scenario)

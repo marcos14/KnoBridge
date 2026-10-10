@@ -23,7 +23,10 @@ from knobridge.core.clock import Clock
 from knobridge.core.db import scoped_session
 from knobridge.core.errors import ForbiddenError, NotFoundError, UnauthenticatedError
 from knobridge.core.settings import Settings
+from knobridge.email.rendering import EmailComposer
+from knobridge.email.sender import EmailSender
 from knobridge.security.passwords import PasswordHasher
+from knobridge.tenancy.account import AccountConfig, AccountService
 from knobridge.tenancy.auth import AuthConfig, AuthenticatedUser, AuthService
 from knobridge.tenancy.models import Role, WorkspaceStatus
 from knobridge.tenancy.queries import get_workspace_access
@@ -59,6 +62,29 @@ def get_setup_service(
     return SetupService(request.app.state.clock, request.app.state.password_hasher, auth)
 
 
+def get_account_service(
+    request: Request, auth: Annotated[AuthService, Depends(get_auth_service)]
+) -> AccountService:
+    settings = get_settings_from_app(request)
+    config = AccountConfig(
+        password_reset_ttl=settings.password_reset_ttl,
+        email_verification_ttl=settings.email_verification_ttl,
+        email_max_requests=settings.account_email_max_requests,
+        email_window=settings.account_email_window,
+    )
+    return AccountService(request.app.state.clock, request.app.state.password_hasher, auth, config)
+
+
+def get_email_sender(request: Request) -> EmailSender:
+    sender: EmailSender = request.app.state.email_sender
+    return sender
+
+
+def get_email_composer(request: Request) -> EmailComposer:
+    composer: EmailComposer = request.app.state.email_composer
+    return composer
+
+
 def client_ip(request: Request) -> str | None:
     """Address of the direct peer (uvicorn applies ``--proxy-headers`` when configured)."""
     return None if request.client is None else request.client.host
@@ -68,6 +94,9 @@ SettingsDep = Annotated[Settings, Depends(get_settings_from_app)]
 SessionFactoryDep = Annotated[async_sessionmaker[AsyncSession], Depends(get_session_factory)]
 AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]
 SetupServiceDep = Annotated[SetupService, Depends(get_setup_service)]
+AccountServiceDep = Annotated[AccountService, Depends(get_account_service)]
+EmailSenderDep = Annotated[EmailSender, Depends(get_email_sender)]
+EmailComposerDep = Annotated[EmailComposer, Depends(get_email_composer)]
 ClientIpDep = Annotated[str | None, Depends(client_ip)]
 
 

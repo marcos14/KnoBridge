@@ -53,13 +53,13 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: a39e25f
       - id: F2.2
         titulo: "Recuperação de senha, verificação de e-mail, perfil e sessões"
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-10
+        concluida_em: 2026-10-10
         commit: null
       - id: F2.3
         titulo: "Convites e membros do workspace"
@@ -575,6 +575,8 @@ Nenhuma aberta.
 - 2026-10-10 — F1.4 concluída: 213 testes, cobertura 100% (D12).
 - 2026-10-10 — F2.1 iniciada.
 - 2026-10-10 — F2.1 concluída: 285 testes, cobertura 100%; frontend com tipos regenerados ok (D13). Pendência técnica para F6.1: proxy headers no uvicorn atrás do nginx.
+- 2026-10-10 — F2.2 iniciada.
+- 2026-10-10 — F2.2 concluída: 327 testes, cobertura 100% (D14).
 
 ## 8. Encerramento
 

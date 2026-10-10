@@ -19,7 +19,7 @@ from datetime import timedelta
 from http import HTTPStatus
 
 from fastapi import Response
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from knobridge.core.clock import Clock
@@ -122,15 +122,41 @@ class SessionService:
         await db.flush()
         return session
 
-    async def revoke(self, db: AsyncSession, *, session_id: uuid.UUID) -> bool:
-        """Revoke one session; ``False`` when it does not exist or was already revoked."""
-        result = await db.execute(
+    async def revoke(
+        self, db: AsyncSession, *, session_id: uuid.UUID, user_id: uuid.UUID | None = None
+    ) -> bool:
+        """Revoke one session; ``False`` when it does not exist or was already revoked.
+
+        With ``user_id``, only a session of that user is revoked (on top of RLS).
+        """
+        statement = (
             update(Session)
             .where(Session.id == session_id, Session.revoked_at.is_(None))
             .values(revoked_at=self._clock.now())
             .returning(Session.id)
         )
-        return result.first() is not None
+        if user_id is not None:
+            statement = statement.where(Session.user_id == user_id)
+        return (await db.execute(statement)).first() is not None
+
+    async def list_active(
+        self, db: AsyncSession, *, user_id: uuid.UUID, limit: int, offset: int
+    ) -> tuple[list[Session], int]:
+        """Live sessions of the user, most recently seen first, and their total count."""
+        live = (
+            Session.user_id == user_id,
+            Session.revoked_at.is_(None),
+            Session.expires_at > self._clock.now(),
+        )
+        total = await db.scalar(select(func.count()).select_from(Session).where(*live))
+        rows = await db.scalars(
+            select(Session)
+            .where(*live)
+            .order_by(Session.last_seen_at.desc(), Session.id)
+            .limit(limit)
+            .offset(offset)
+        )
+        return list(rows), total or 0
 
     async def revoke_all(
         self,

@@ -27,6 +27,8 @@ class AuditAction(StrEnum):
     AUTH_PASSWORD_RESET_REQUESTED = "auth.password_reset.requested"  # noqa: S105 - action name
     AUTH_PASSWORD_RESET_COMPLETED = "auth.password_reset.completed"  # noqa: S105 - action name
     AUTH_EMAIL_VERIFIED = "auth.email.verified"
+    AUTH_EMAIL_VERIFICATION_REQUESTED = "auth.email_verification.requested"
+    USER_PROFILE_UPDATED = "user.profile.updated"
     # Workspace membership.
     MEMBERSHIP_INVITED = "membership.invited"
     MEMBERSHIP_INVITATION_ACCEPTED = "membership.invitation.accepted"
