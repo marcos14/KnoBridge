@@ -7,6 +7,7 @@
 - `WorkspaceAuditPage.tsx` e `InstanceAuditPage.tsx`: título e origem dos eventos (`useWorkspaceAudit` ou `useInstanceAudit`) e dos autores (membros do workspace ou a primeira página de usuários da instância, até 200).
 - `AuditLog.tsx`: barra de filtros, tabela paginada pela API (`DataTable`, 20 por página), estados de carregando, erro com "Tentar novamente", vazio (com ou sem filtro) e o diálogo de detalhe.
 - `AuditFilterBar.tsx`: ação (todas as ações do contrato, com rótulo pt-BR), autor, período "De"/"Até" (dias inclusivos) e "Limpar filtros". Cada mudança vale na hora.
+- `FilterSelect.tsx`: select dos filtros (ação, autor) que só monta as opções com a lista aberta; o gatilho mostra o rótulo escolhido. O Select do Radix fechado monta todos os itens (e os renderiza de novo num update aninhado), o que com as 29 ações era a maior parte do custo de abrir a tela. Efeito colateral aceito: com o gatilho fechado, digitar letras não troca o valor (abra com Enter, espaço ou setas).
 - `AuditEventDialog.tsx`: todos os campos do evento e os `details` chave a chave (texto como está, o resto em JSON indentado).
 - `useAuditSearch.ts`: filtros e página na query string (`?action=&actor=&from=&to=&offset=`); mudar filtro volta para a primeira página.
 - `actors.ts`: nome do autor (`Sistema` sem autor, `Usuário <id>` para quem não está na lista).

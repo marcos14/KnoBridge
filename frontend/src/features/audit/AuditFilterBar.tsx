@@ -4,18 +4,12 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { auditActionLabel } from "@/i18n/auditActions";
 import { AUDIT_ACTIONS, isAuditAction } from "@/lib/auditActions";
 import { type AuditFilters, hasAuditFilters } from "@/lib/auditFilters";
 
 import type { AuditActor } from "./actors";
+import { FilterSelect } from "./FilterSelect";
 
 /** Value of the "no filter" item: Radix Select items cannot have an empty value. */
 const ALL = "all";
@@ -49,45 +43,36 @@ export function AuditFilterBar({ filters, actors, onChange }: AuditFilterBarProp
       <legend className="sr-only">{t("audit.filters.label")}</legend>
       <div className="flex flex-col gap-2">
         <Label htmlFor={actionId}>{t("audit.filters.action")}</Label>
-        <Select
+        <FilterSelect
+          id={actionId}
+          className="w-full sm:w-64"
           value={filters.action ?? ALL}
+          options={[
+            { value: ALL, label: t("audit.filters.allActions") },
+            ...AUDIT_ACTIONS.map((action) => ({
+              value: action,
+              label: auditActionLabel(action, t),
+            })),
+          ]}
           onValueChange={(value) => {
             change({ action: isAuditAction(value) ? value : undefined });
           }}
-        >
-          <SelectTrigger id={actionId} className="w-full sm:w-64">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>{t("audit.filters.allActions")}</SelectItem>
-            {AUDIT_ACTIONS.map((action) => (
-              <SelectItem key={action} value={action}>
-                {auditActionLabel(action, t)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        />
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor={actorId}>{t("audit.filters.actor")}</Label>
-        <Select
+        <FilterSelect
+          id={actorId}
+          className="w-full sm:w-56"
           value={filters.actor ?? ALL}
+          options={[
+            { value: ALL, label: t("audit.filters.allActors") },
+            ...actorOptions.map((actor) => ({ value: actor.id, label: actor.name })),
+          ]}
           onValueChange={(value) => {
             change({ actor: value === ALL ? undefined : value });
           }}
-        >
-          <SelectTrigger id={actorId} className="w-full sm:w-56">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>{t("audit.filters.allActors")}</SelectItem>
-            {actorOptions.map((actor) => (
-              <SelectItem key={actor.id} value={actor.id}>
-                {actor.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        />
       </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor={fromId}>{t("audit.filters.from")}</Label>

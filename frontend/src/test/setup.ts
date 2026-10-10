@@ -1,12 +1,19 @@
 import "@testing-library/jest-dom/vitest";
 
-import { cleanup } from "@testing-library/react";
+import { cleanup, configure } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll } from "vitest";
 
+import { lazyElementError } from "./elementError";
 import { installMatchMedia, resetMatchMedia } from "./matchMedia";
 import { server } from "./server";
 
 installMatchMedia();
+configure({ getElementError: lazyElementError });
+
+// jsdom parses its default stylesheet on the first getComputedStyle of each document (~70 ms
+// alone, several times that in a loaded suite). Paying it here keeps it out of the first test of
+// every file, where it used to land inside the first findByRole (its accessibility check).
+window.getComputedStyle(document.body);
 
 // Radix popovers (dropdown menu, tooltip) call these browser APIs, which jsdom does not provide.
 class ResizeObserverStub {

@@ -131,7 +131,7 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: 7e1c548
       - id: F4.2
         titulo: "Camada LLM: interface, adaptadores e teste de conexão"
         status: pendente

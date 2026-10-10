@@ -4,7 +4,8 @@
 
 **Entra aqui**:
 
-- `setup.ts`: matchers do jest-dom; instala `matchMedia` e os stubs de `ResizeObserver`, `scrollIntoView` e pointer capture que os popovers do Radix pedem e o jsdom não tem; sobe o servidor MSW antes da suíte (`onUnhandledRequest: "error"`); após cada teste faz `cleanup`, `server.resetHandlers()` e limpa o estado fora do React (`localStorage`, `sessionStorage`, classe e estilo do `<html>`, cookie da sidebar, media queries); fecha o servidor no fim.
+- `setup.ts`: matchers do jest-dom; troca o `getElementError` do testing-library pelo de `elementError.ts`; aquece o estilo do jsdom (`getComputedStyle` uma vez, que no primeiro uso de cada documento analisa a folha padrão e caía dentro do primeiro `findByRole` de cada arquivo); instala `matchMedia` e os stubs de `ResizeObserver`, `scrollIntoView` e pointer capture que os popovers do Radix pedem e o jsdom não tem; sobe o servidor MSW antes da suíte (`onUnhandledRequest: "error"`); após cada teste faz `cleanup`, `server.resetHandlers()` e limpa o estado fora do React (`localStorage`, `sessionStorage`, classe e estilo do `<html>`, cookie da sidebar, media queries); fecha o servidor no fim.
+- `elementError.ts`: `lazyElementError`, mesmo erro do padrão do testing-library, mas o dump do DOM só é montado quando a mensagem é lida. `waitFor`/`findBy*` descartam o erro de cada tentativa falha (a cada mutação do DOM e a cada 50 ms); imprimir o documento inteiro em cada uma consumia boa parte do 1 s do `findBy*` no primeiro render de uma página com a suíte carregada.
 - `matchMedia.ts`: `window.matchMedia` controlável (`setPrefersDark`, `setMobileViewport`, `resetMatchMedia`, `matchMediaListenerCount`), que notifica os ouvintes como uma mudança real.
 - `server.ts`: `server` do `msw/node` com os handlers padrão.
 - `handlers/`: handlers MSW por recurso (ver o `AGENTS.md` da pasta); `@/test/handlers` reexporta todos.
