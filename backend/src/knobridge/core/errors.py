@@ -59,6 +59,11 @@ class ConflictError(KnoBridgeError):
     status_code = HTTPStatus.CONFLICT
 
 
+class ServiceUnavailableError(KnoBridgeError):
+    code = "service_unavailable"
+    status_code = HTTPStatus.SERVICE_UNAVAILABLE
+
+
 def error_body(code: str, message: str, details: ErrorDetails = None) -> dict[str, object]:
     return {"error": {"code": code, "message": message, "details": details}}
 

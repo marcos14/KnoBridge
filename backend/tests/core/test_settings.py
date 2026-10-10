@@ -56,3 +56,30 @@ def test_get_settings_returns_cached_instance() -> None:
     second = get_settings()
 
     assert first is second
+
+
+def test_settings_reads_database_url_as_secret(monkeypatch: pytest.MonkeyPatch) -> None:
+    url = "postgresql+asyncpg://app:s3cret@db.example:5432/kb"
+    monkeypatch.setenv("KNOBRIDGE_DATABASE_URL", url)
+
+    settings = Settings()
+
+    assert settings.database_url.get_secret_value() == url
+    assert "s3cret" not in repr(settings)
+
+
+def test_settings_database_defaults_point_to_local_postgres() -> None:
+    settings = Settings()
+
+    assert settings.database_url.get_secret_value() == (
+        "postgresql+asyncpg://knobridge:knobridge@localhost:5432/knobridge"
+    )
+    assert (settings.database_pool_size, settings.database_max_overflow) == (5, 10)
+    assert settings.database_connect_timeout == 5.0
+
+
+def test_settings_rejects_non_positive_connect_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("KNOBRIDGE_DATABASE_CONNECT_TIMEOUT", "0")
+
+    with pytest.raises(ValidationError):
+        Settings()

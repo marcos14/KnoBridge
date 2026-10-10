@@ -3,9 +3,9 @@
 **Função**: fronteira HTTP do backend. A factory `create_app()` monta a aplicação FastAPI (logging, CORS, handlers de erro) e inclui todos os routers sob `/v1`.
 
 **Entra aqui**:
-- `app.py`: `create_app(settings=None)` e `serve()` (comando `knobridge-api`).
-- Um módulo por recurso com o seu `APIRouter` e schemas Pydantic de entrada e saída (hoje `health.py`: `GET /v1/health/live`).
-- Dependências FastAPI (autenticação, sessão, workspace corrente) quando existirem.
+- `app.py`: `create_app(settings=None, engine=None)` e `serve()` (comando `knobridge-api`). O lifespan guarda engine e fábrica de sessões em `app.state`; descarta no shutdown só o engine que ele mesmo criou (o injetado, usado em testes, é do chamador).
+- Um módulo por recurso com o seu `APIRouter` e schemas Pydantic de entrada e saída (hoje `health.py`: `GET /v1/health/live` e `GET /v1/health/ready`, que faz `SELECT 1` e responde 503 `service_unavailable` sem expor a mensagem do driver).
+- Dependências FastAPI de API (autenticação, workspace corrente) quando existirem. Sessão de banco: use `get_session` de `core/db.py`.
 
 **Não entra aqui**: regra de negócio (fica no módulo de domínio; o router só valida, chama e serializa), acesso direto a banco, leitura de variável de ambiente (use `core/settings.py`), API compatível com OpenAI e webhooks de canais (vão para `channels/`).
 

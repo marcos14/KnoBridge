@@ -1,0 +1,16 @@
+# backend/tests/migrations/
+
+**Função**: testes da cadeia de migrações Alembic de `backend/migrations/`.
+
+**Entra aqui**: `test_migrations.py`, que roda `alembic upgrade` e `downgrade` programaticamente (`alembic.command`) contra o Postgres 17 + pgvector da fixture `postgres_url`, e confere o efeito no catálogo do banco (`pg_extension`, `pg_tables`, políticas de RLS).
+**Não entra aqui**: testes de consultas e repositórios de domínio (ficam na pasta do módulo), testes de `core/db.py` (`tests/core/test_db.py`).
+
+**Convenções locais**:
+- Cada migração nova estende estes testes: depois do `upgrade` o objeto existe (com RLS, se for tabela de dados) e depois do `downgrade` não existe mais.
+- O teste sempre deixa o banco em `base` ao terminar: o container é compartilhado pela sessão de testes.
+- Use `config.attributes["configure_logger"] = False` para o `env.py` não reconfigurar o logging dos testes, e `config.attributes["database_url"]` para apontar para o container.
+- Testes que tocam o banco levam `@pytest.mark.integration` (exigem Docker).
+
+**Como testar**: de `backend/`, `uv run pytest tests/migrations`.
+
+**Leia também**: [migrations/AGENTS.md](../../migrations/AGENTS.md); [tests/AGENTS.md](../AGENTS.md).

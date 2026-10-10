@@ -32,13 +32,13 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: 36c5162
       - id: F2.2
         titulo: Banco async, Alembic e readiness
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-10
+        concluida_em: 2026-10-10
         commit: null
       - id: F2.3
         titulo: Worker Temporal e imagem Docker do backend
@@ -146,6 +146,13 @@ decisoes:
     decisao: "Backend usa httpx2 (não httpx) como dependência de teste; sem pytest-asyncio por ora; build com hatchling e versão única em knobridge.__version__; comando knobridge-api."
     motivo: "Starlette 1.7 tipa e exige httpx2 no TestClient; com httpx o pyright strict falha e há aviso de depreciação."
     alternativas: "httpx com ignores de tipo."
+    adr: null
+  - id: D10
+    data: 2026-10-10
+    por: agente
+    decisao: "Engine async no app.state via lifespan (injetável em teste); testes async via asyncio.run sem pytest-asyncio; migrations/env.py fora da medição de cobertura (fora de src/) mas exercitado pelos testes de migração; o gate de 95% vale para a suíte completa, com integração."
+    motivo: "Mantém o pacote medido 100% sem pragma e evita dependência extra; a CI roda integração sempre."
+    alternativas: "pytest-asyncio; mover env.py para src/."
     adr: null
 pendencias_usuario: []
 ---
@@ -282,6 +289,8 @@ Nenhuma no momento. A CI só roda de fato quando o repositório estiver no GitHu
 - 2026-10-10 — F1.1 concluída: 55 testes, cobertura 100%; check_agents_md e check_plans passam no repo. Agente acrescentou validação de datas AAAA-MM-DD em check_plans (D8).
 - 2026-10-10 — F2.1 iniciada.
 - 2026-10-10 — F2.1 concluída: 31 testes, cobertura 100%; ruff e pyright strict limpos (D9).
+- 2026-10-10 — F2.2 iniciada.
+- 2026-10-10 — F2.2 concluída: 48 testes (5 de integração com pgvector/pg17), cobertura 100% (D10).
 
 ## 8. Encerramento
 

@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
+
 import uvicorn
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 from knobridge import __version__
 from knobridge.api import health
+from knobridge.core.db import create_engine, create_session_factory
 from knobridge.core.errors import register_error_handlers
 from knobridge.core.logging import configure_logging
 from knobridge.core.settings import Settings, get_settings
@@ -15,15 +20,31 @@ from knobridge.core.settings import Settings, get_settings
 API_PREFIX = "/v1"
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
-    """Build the API with logging, CORS, standard error handlers and every ``/v1`` router."""
-    settings = settings if settings is not None else get_settings()
-    configure_logging(settings)
+def create_app(settings: Settings | None = None, engine: AsyncEngine | None = None) -> FastAPI:
+    """Build the API with logging, CORS, standard error handlers and every ``/v1`` router.
 
-    app = FastAPI(title="KnoBridge API", version=__version__)
+    The lifespan stores the database engine and session factory in ``app.state``. Without
+    ``engine`` it builds one from ``settings`` and disposes it on shutdown; an injected
+    ``engine`` (tests) stays owned by the caller and is not disposed.
+    """
+    resolved = settings if settings is not None else get_settings()
+    configure_logging(resolved)
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
+        db_engine = engine if engine is not None else create_engine(resolved)
+        app.state.engine = db_engine
+        app.state.session_factory = create_session_factory(db_engine)
+        try:
+            yield
+        finally:
+            if engine is None:
+                await db_engine.dispose()
+
+    app = FastAPI(title="KnoBridge API", version=__version__, lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.cors_origins,
+        allow_origins=resolved.cors_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

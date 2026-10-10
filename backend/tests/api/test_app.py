@@ -3,6 +3,7 @@ from __future__ import annotations
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from knobridge import __version__
 from knobridge.api import app as app_module
@@ -20,7 +21,7 @@ def test_create_app_exposes_title_and_version_in_openapi(client: TestClient) -> 
 def test_create_app_mounts_routers_under_v1(app: FastAPI) -> None:
     paths = app.openapi()["paths"]
 
-    assert "/v1/health/live" in paths
+    assert {"/v1/health/live", "/v1/health/ready"} <= paths.keys()
     assert all(path.startswith("/v1/") for path in paths)
 
 
@@ -72,3 +73,47 @@ def test_serve_uses_cached_settings_by_default(monkeypatch: pytest.MonkeyPatch) 
     serve()
 
     assert ports == [8999]
+
+
+def _record_disposals(monkeypatch: pytest.MonkeyPatch) -> list[AsyncEngine]:
+    disposed: list[AsyncEngine] = []
+    original = AsyncEngine.dispose
+
+    async def spy_dispose(self: AsyncEngine, close: bool = True) -> None:
+        disposed.append(self)
+        await original(self, close)
+
+    monkeypatch.setattr(AsyncEngine, "dispose", spy_dispose)
+    return disposed
+
+
+def test_create_app_lifespan_builds_engine_from_settings_and_disposes_it(
+    settings: Settings, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    disposed = _record_disposals(monkeypatch)
+    app = create_app(settings)
+
+    with TestClient(app):
+        engine = app.state.engine
+        session_factory = app.state.session_factory
+
+    assert isinstance(engine, AsyncEngine)
+    assert engine.url.render_as_string(hide_password=False) == (
+        settings.database_url.get_secret_value()
+    )
+    assert session_factory.kw["bind"] is engine
+    assert disposed == [engine]
+
+
+def test_create_app_lifespan_keeps_injected_engine_open(
+    settings: Settings, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    disposed = _record_disposals(monkeypatch)
+    injected = create_async_engine("postgresql+asyncpg://user:pass@db.invalid:5432/knobridge")
+    app = create_app(settings, engine=injected)
+
+    with TestClient(app):
+        engine = app.state.engine
+
+    assert engine is injected
+    assert disposed == []

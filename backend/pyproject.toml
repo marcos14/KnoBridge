@@ -11,6 +11,9 @@ dependencies = [
     "pydantic>=2.9",
     "pydantic-settings>=2.6",
     "structlog>=24.4",
+    "sqlalchemy[asyncio]>=2.0.36",
+    "asyncpg>=0.30",
+    "alembic>=1.14",
 ]
 
 [project.scripts]
@@ -23,6 +26,7 @@ dev = [
     "pytest>=8.3",
     "pytest-cov>=6.0",
     "ruff>=0.8",
+    "testcontainers[postgres]>=4.9",
 ]
 
 [build-system]
@@ -69,7 +73,7 @@ select = [
 quote-style = "double"
 
 [tool.pyright]
-include = ["src", "tests"]
+include = ["src", "tests", "migrations"]
 exclude = [".venv", "**/__pycache__"]
 pythonVersion = "3.12"
 typeCheckingMode = "strict"

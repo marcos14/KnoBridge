@@ -11,6 +11,7 @@ from knobridge.core.errors import (
     ConflictError,
     KnoBridgeError,
     NotFoundError,
+    ServiceUnavailableError,
     ValidationError,
     register_error_handlers,
 )
@@ -85,6 +86,7 @@ def test_error_handler_honors_code_and_status_overrides(error_client: TestClient
         (NotFoundError("x"), "not_found", 404),
         (ValidationError("x"), "validation_error", 422),
         (ConflictError("x"), "conflict", 409),
+        (ServiceUnavailableError("x"), "service_unavailable", 503),
     ],
 )
 def test_domain_errors_have_default_code_and_status(

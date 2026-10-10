@@ -1,9 +1,9 @@
 # backend/tests/core/
 
-**Função**: testes unitários de `src/knobridge/core/` (settings, logging e erros).
+**Função**: testes de `src/knobridge/core/` (settings, logging, erros e banco).
 
-**Entra aqui**: um `test_<módulo>.py` por módulo de `core/` (`test_settings.py`, `test_logging.py`, `test_errors.py`).
-**Não entra aqui**: testes de routers do produto (vão para `tests/api/`), testes de integração com banco.
+**Entra aqui**: um `test_<módulo>.py` por módulo de `core/` (`test_settings.py`, `test_logging.py`, `test_errors.py`, `test_db.py`). Em `test_db.py`, os testes de `ping` e `get_session` contra banco real levam `@pytest.mark.integration`.
+**Não entra aqui**: testes de routers do produto (vão para `tests/api/`), testes de migrações (`tests/migrations/`).
 
 **Convenções locais**:
 - Variáveis de ambiente só via `monkeypatch.setenv`; a fixture automática de `tests/conftest.py` limpa as `KNOBRIDGE_*` do host.
