@@ -67,7 +67,7 @@ fases:
         commit: 0793492
   - id: F4
     titulo: Infra local e CI
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F4.1
         titulo: Docker Compose e guia de subida
@@ -75,13 +75,13 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: 60557e6
       - id: F4.2
         titulo: CI no GitHub Actions, pre-commit e docs finais
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-10
+        concluida_em: 2026-10-10
         commit: null
 decisoes:
   - id: D1
@@ -181,6 +181,13 @@ decisoes:
     decisao: "MinIO no compose usa a build comunitária pgsty/minio com tag de release fixa, trocável por MINIO_IMAGE; Temporal via auto-setup 1.29.7 (só dev) com bancos temporal e temporal_visibility no mesmo Postgres; extensão vector criada no init do Postgres; portas em 127.0.0.1 e configuráveis."
     motivo: "A imagem oficial minio/minio saiu do Docker Hub e quay.io exige autenticação; o componente (MinIO, S3-compatível) não muda, só a origem da imagem."
     alternativas: "Filesystem no lugar do MinIO; outra implementação S3 (ex. SeaweedFS, Garage)."
+    adr: null
+  - id: D15
+    data: 2026-10-10
+    por: agente
+    decisao: "CI com actions fixadas (setup-uv por SHA), gitleaks via binário com checksum (não a action), Python 3.12 fixo; pre-commit com prettier rodando no pacote frontend inteiro e exclusão de arquivos gerados e de docs/planos dos fixers."
+    motivo: "A gitleaks-action exige licença em repositório de organização; caminhos relativos do pre-commit quebram com pnpm --dir."
+    alternativas: "gitleaks-action; prettier por arquivo."
     adr: null
 pendencias_usuario: []
 ---
@@ -327,6 +334,8 @@ Nenhuma no momento. A CI só roda de fato quando o repositório estiver no GitHu
 - 2026-10-10 — F3.2 concluída: backend 68 testes 100%; frontend 27 testes 100%, e2e 1 ok, check:api ok, docker build ok (D13). Fora do escopo, para plano futuro: schema ErrorResponse no OpenAPI para tipar o formato de erro no frontend.
 - 2026-10-10 — F4.1 iniciada.
 - 2026-10-10 — F4.1 concluída: compose verificado pelo agente e pelo orquestrador (todos os serviços saudáveis, ready 200 direto e via proxy do frontend, migrate exit 0) (D14).
+- 2026-10-10 — F4.2 iniciada.
+- 2026-10-10 — F4.2 concluída: actionlint ok, pre-commit limpo, gates de scripts, backend e frontend verdes; README, CHANGELOG e AGENTS.md da raiz atualizados (D15).
 
 ## 8. Encerramento
 

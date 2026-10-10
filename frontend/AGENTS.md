@@ -43,7 +43,7 @@ pnpm e2e                       # Playwright: fluxos críticos do canvas e do cha
 ```
 
 - Vitest + Testing Library para componentes e hooks; MSW para a API (nunca mockar `fetch` à mão; handlers em `src/test/handlers.ts`). O Vitest lê só `src/**/*.test.{ts,tsx}`.
-- Playwright só para os poucos fluxos críticos; rodam na CI contra o backend em container.
+- Playwright só para os poucos fluxos críticos; na CI (job `frontend` de `.github/workflows/ci.yml`) rodam contra o build de produção servido pelo `vite preview`, sem backend. Fluxos que precisarem da API real passarão a subir o backend em container.
 - Componentes de `components/ui/` gerados pelo shadcn podem ficar fora da medição de cobertura, com justificativa no `vitest.config.ts`.
 
 **Leia também**: `AGENTS.md` da raiz (seções 5 e 6.3); `docs/01-visao-do-projeto.md`, seções 7.2 e 8.

@@ -52,4 +52,4 @@ uv run pytest --cov=knobridge --cov-branch --cov-fail-under=95
 - Suíte de contrato para conectores em `tests/connectors/contract/` e para canais em `tests/channels/contract/`. Fakes de LLM, embeddings e reranker em `tests/fakes/`. Executáveis fake `claude` e `codex` para o harness, que emitem o JSONL esperado.
 - Teste de isolamento de workspace para cada repositório ou consulta nova.
 
-**Leia também**: `AGENTS.md` da raiz (seções 5, 6 e 9); `docs/01-visao-do-projeto.md`, seções 6 a 8; `docs/specs/` quando existir.
+**Leia também**: `AGENTS.md` da raiz (seções 5, 6 e 9); `docs/01-visao-do-projeto.md`, seções 6 a 8; `docs/specs/` (contrato OpenAPI em `docs/specs/openapi.json`); CI em `.github/workflows/ci.yml` (job `backend`).

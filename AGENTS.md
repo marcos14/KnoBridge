@@ -9,7 +9,7 @@ Se este arquivo e um `AGENTS.md` de pasta conflitarem, vale o mais específico (
 KnoBridge é uma plataforma open source (Apache 2.0) que conecta repositórios de código, sistemas de chamados e documentações, transforma tudo em índices para RAG por meio de pipelines visuais e incrementais, e entrega suporte em linguagem natural por API REST, API compatível com OpenAI, webhooks, MCP, Slack, Google Chat e widget embutível.
 
 - **Fonte da verdade sobre o produto**: [docs/01-visao-do-projeto.md](docs/01-visao-do-projeto.md). Escopo, arquitetura (seção 6), módulos (7), stack (8), decisões (9), roadmap (11) e perguntas em aberto (13).
-- **Status em 2026-10-10**: ideia em definição, sem código. O próximo trabalho é o bootstrap e a Fase 0 do roadmap (seção 12 deste arquivo).
+- **Status em 2026-10-10**: bootstrap do plano [0001](docs/planos/0001-bootstrap.md) concluído (esqueleto, gates e CI), sem funcionalidades de produto. O próximo trabalho é a Fase 0 do roadmap (seção 12 deste arquivo).
 
 ## 2. Regras inegociáveis
 
@@ -79,12 +79,12 @@ Antes de começar, leia este arquivo, o `AGENTS.md` de cada pasta que for tocar 
 | Pasta | Função | Estado |
 |---|---|---|
 | `docs/` | Toda documentação e planos: visão, plano, ADRs, especificações, guias, pesquisa | Existe |
-| `backend/` | Python: API REST e compatível com OpenAI (FastAPI), workers e workflows (Temporal), conectores, engine de pipelines, harness de código, recuperação, assistentes, canais, servidor MCP, migrações | Só `AGENTS.md` |
-| `frontend/` | Painel admin em React + TypeScript (canvas de pipelines, fontes, assistentes, canais, conversas) | Só `AGENTS.md` |
+| `backend/` | Python: API REST e compatível com OpenAI (FastAPI), workers e workflows (Temporal), conectores, engine de pipelines, harness de código, recuperação, assistentes, canais, servidor MCP, migrações | Existe |
+| `frontend/` | Painel admin em React + TypeScript (canvas de pipelines, fontes, assistentes, canais, conversas) | Existe |
 | `widget/` | Web Component do chat embutível (1 arquivo JS) | A criar |
-| `deploy/` | Docker Compose, Helm chart, scripts de infra | A criar |
-| `scripts/` | Automação do repositório (checagens de CI, geração de código) | A criar |
-| `.github/` | Workflows de CI | A criar |
+| `deploy/` | Docker Compose, Helm chart, scripts de infra | Existe |
+| `scripts/` | Automação do repositório (checagens de CI, geração de código) | Existe |
+| `.github/` | Workflows de CI | Existe |
 
 Regras:
 
@@ -92,7 +92,7 @@ Regras:
 - **Toda pasta, em qualquer nível, criada por nós tem `AGENTS.md`.** Exceções: pastas geradas ou vendorizadas (`node_modules/`, `.venv/`, `dist/`, `build/`, `__pycache__/`, `coverage/`, `htmlcov/`, `.pytest_cache/`), pastas de arquivos gerados por ferramenta (ex.: `migrations/versions/`) e pastas que contêm só dados de fixture, sem código.
 - O `AGENTS.md` de uma pasta é curto (10 a 60 linhas) e específico: função, o que entra e o que não entra, convenções locais, como testar, para onde apontar. Não repete o que está aqui; linka.
 - Quando a função de uma pasta muda, o `AGENTS.md` dela muda na mesma entrega.
-- A CI falha se houver pasta sem `AGENTS.md` (`scripts/check_agents_md.py`, a criar no bootstrap).
+- A CI falha se houver pasta sem `AGENTS.md` (`scripts/check_agents_md.py`, também rodado no pre-commit).
 - Codex e outros agentes carregam `AGENTS.md` de subpastas sozinhos; o Claude Code só carrega o da raiz via `CLAUDE.md`. Por isso a regra explícita: leia o `AGENTS.md` da pasta antes de editar nela.
 
 ## 5. Testes
@@ -197,14 +197,14 @@ Resumo; detalhes e layout em [frontend/AGENTS.md](frontend/AGENTS.md).
 
 ## 12. Estado atual e bootstrap da Fase 0
 
-Não há código. A primeira tarefa de implementação monta o esqueleto abaixo **antes** de qualquer funcionalidade, porque os gates desta página dependem dele. O bootstrap é ele mesmo o primeiro plano (`docs/planos/0001-bootstrap.md`), criado e executado pelo fluxo da seção 3:
+O bootstrap (plano [0001](docs/planos/0001-bootstrap.md)) montou o esqueleto e os gates desta página, ainda sem funcionalidades de produto:
 
-1. `.gitignore` (Python, Node, `.env`, caches), `.editorconfig`, `CHANGELOG.md`.
-2. `backend/`: `pyproject.toml` com `uv`, `ruff`, `pyright`, `pytest` (`--cov --cov-branch --cov-fail-under=95`), `testcontainers`; pacote `src/knobridge/` com um endpoint `health` e um teste.
-3. `frontend/`: Vite + React + TypeScript strict, ESLint/Prettier, Vitest com thresholds 95, um componente e um teste.
-4. `deploy/docker-compose.yml`: Postgres 17 + pgvector, Temporal (server + UI), MinIO, `api`, `worker`, `frontend`.
-5. `scripts/check_agents_md.py`, `scripts/check_plans.py` (valida o frontmatter de `docs/planos/`) e workflow de CI em `.github/workflows/ci.yml` rodando todos os gates.
-6. Hooks de pre-commit com ruff, prettier e checagem de segredos.
+1. Raiz: `.gitignore`, `.gitattributes`, `.editorconfig`, `CHANGELOG.md` e `.pre-commit-config.yaml` (higiene de arquivos, ruff, prettier, gitleaks, `check_agents_md.py` e `check_plans.py`).
+2. `backend/`: projeto `uv` com ruff, pyright strict e pytest com gate de 95%; pacote `knobridge` com settings, logging JSON, erros, engine async do banco, `GET /v1/health/live` e `/v1/health/ready`, exportação do OpenAPI para `docs/specs/openapi.json`, migrações Alembic (pgvector), worker Temporal com workflow de saúde e `Dockerfile`.
+3. `frontend/`: Vite + React + TypeScript strict, ESLint/Prettier, Vitest com thresholds de 95, Tailwind + shadcn/ui, i18n pt-BR, cliente gerado do OpenAPI, MSW, smoke E2E com Playwright e `Dockerfile`.
+4. `deploy/docker-compose.yml`: Postgres 17 + pgvector, Temporal (server + UI), MinIO, `migrate`, `api`, `worker` e `frontend`. Como subir: [docs/guias/subir-ambiente.md](docs/guias/subir-ambiente.md).
+5. `scripts/check_agents_md.py` e `scripts/check_plans.py` (valida o frontmatter de `docs/planos/`), com testes.
+6. `.github/workflows/ci.yml`: gates de `scripts/`, `backend/` e `frontend/` (incluindo contrato OpenAPI e Playwright), varredura de segredos com gitleaks e validação do compose.
 
 Depois disso, siga o roadmap da visão: protótipo em linha de comando (repositório + chamados → pgvector → perguntas com citações), harness de código em 2 ou 3 módulos reais com Claude Code e com Codex, spike Temporal, comparação OpenAI x Gemini embedding em pt-BR.
 
