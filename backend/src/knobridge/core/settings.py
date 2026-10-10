@@ -56,6 +56,7 @@ class Settings(BaseSettings):
     # Validity of the single-use links sent by e-mail.
     password_reset_ttl: timedelta = Field(default=timedelta(hours=1), gt=timedelta(0))
     email_verification_ttl: timedelta = Field(default=timedelta(hours=24), gt=timedelta(0))
+    invitation_ttl: timedelta = Field(default=timedelta(days=7), gt=timedelta(0))
     # E-mails of each kind (password reset, verification) one address may trigger per window,
     # so these endpoints cannot be used to flood a mailbox.
     account_email_max_requests: int = Field(default=3, ge=1)

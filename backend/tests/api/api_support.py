@@ -131,6 +131,48 @@ class ApiEnv:
 
         return run_db(self.database_url, scenario)
 
+    def add_member(self, workspace_id: uuid.UUID, user_id: uuid.UUID, role: Role) -> None:
+        async def scenario(factory: SessionFactory) -> None:
+            async with system_session(factory) as db:
+                db.add(Membership(workspace_id=workspace_id, user_id=user_id, role=role))
+
+        run_db(self.database_url, scenario)
+
+    def set_workspace_status(self, workspace_id: uuid.UUID, status: WorkspaceStatus) -> None:
+        async def scenario(factory: SessionFactory) -> None:
+            async with system_session(factory) as db:
+                workspace = await db.get(Workspace, workspace_id)
+                assert workspace is not None
+                workspace.status = status
+
+        run_db(self.database_url, scenario)
+
+    def roles(self, workspace_id: uuid.UUID) -> dict[uuid.UUID, Role]:
+        """Every membership of the workspace: user id -> role."""
+
+        async def scenario(factory: SessionFactory) -> dict[uuid.UUID, Role]:
+            async with system_session(factory) as db:
+                rows = await db.execute(
+                    select(Membership.user_id, Membership.role).where(
+                        Membership.workspace_id == workspace_id
+                    )
+                )
+                return {row.user_id: row.role for row in rows}
+
+        return run_db(self.database_url, scenario)
+
+    def workspace_audit(self, workspace_id: uuid.UUID) -> list[tuple[str, dict[str, object]]]:
+        """(action, details) of the workspace's events (same-instant order not guaranteed)."""
+
+        async def scenario(factory: SessionFactory) -> list[tuple[str, dict[str, object]]]:
+            async with system_session(factory) as db:
+                rows = await db.scalars(
+                    select(AuditEvent).where(AuditEvent.workspace_id == workspace_id)
+                )
+                return [(event.action, dict(event.details)) for event in rows]
+
+        return run_db(self.database_url, scenario)
+
     def set_user_status(self, user_id: uuid.UUID, status: UserStatus) -> None:
         async def scenario(factory: SessionFactory) -> None:
             async with system_session(factory) as db:

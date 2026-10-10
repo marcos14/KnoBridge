@@ -30,6 +30,7 @@ _TENANCY_TABLES = (
     "user_tokens",
     "audit_events",
     "login_attempts",
+    "invitations",
 )
 
 ALEMBIC_INI = Path(__file__).resolve().parents[2] / "alembic.ini"
@@ -111,6 +112,7 @@ def test_migration_upgrade_downgrade_tenancy(postgres_url: str) -> None:
         "user_tokens": (True, True, 1),
         "audit_events": (True, True, 3),
         "login_attempts": (True, True, 1),
+        "invitations": (True, True, 1),
     }
     assert after_downgrade == {}
 
@@ -157,6 +159,53 @@ def test_migration_upgrade_downgrade_login_attempts(postgres_url: str) -> None:
     assert after_upgrade["login_attempts"] == (True, True, 1)
     assert "login_attempts" not in after_downgrade
     assert "audit_events" in after_downgrade
+
+
+def _user_tokens_shape(database_url: str) -> tuple[bool, str]:
+    """(user_tokens has workspace_id, USING clause of its owner policy)."""
+
+    async def query() -> tuple[bool, str]:
+        engine = create_async_engine(database_url, poolclass=NullPool)
+        try:
+            async with engine.connect() as connection:
+                has_column = await connection.scalar(
+                    text(
+                        "SELECT count(*) = 1 FROM information_schema.columns"
+                        " WHERE table_name = 'user_tokens' AND column_name = 'workspace_id'"
+                    )
+                )
+                policy = await connection.scalar(
+                    text(
+                        "SELECT qual FROM pg_policies"
+                        " WHERE tablename = 'user_tokens' AND policyname = 'user_tokens_owner'"
+                    )
+                )
+                return bool(has_column), str(policy)
+        finally:
+            await engine.dispose()
+
+    return asyncio.run(query())
+
+
+@pytest.mark.integration
+def test_migration_upgrade_downgrade_invitations(postgres_url: str) -> None:
+    config, _ = _alembic_config(postgres_url)
+
+    command.upgrade(config, "head")
+    after_upgrade = _tenancy_catalog(postgres_url)
+    tokens_after_upgrade = _user_tokens_shape(postgres_url)
+    command.downgrade(config, "0005")
+    after_downgrade = _tenancy_catalog(postgres_url)
+    tokens_after_downgrade = _user_tokens_shape(postgres_url)
+    command.downgrade(config, "base")
+
+    assert after_upgrade["invitations"] == (True, True, 1)
+    assert tokens_after_upgrade[0] is True
+    assert "app.workspace_id" in tokens_after_upgrade[1]
+    assert "invitations" not in after_downgrade
+    assert after_downgrade["user_tokens"] == (True, True, 1)
+    assert tokens_after_downgrade[0] is False
+    assert "app.workspace_id" not in tokens_after_downgrade[1]
 
 
 def _schema_diff(connection: Connection) -> list[object]:

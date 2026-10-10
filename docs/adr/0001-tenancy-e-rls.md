@@ -38,3 +38,20 @@ No deploy (`deploy/postgres/init-databases.sh`), a aplicação conecta com o pap
 - Unicidade global (e-mail, slug) continua valendo acima da RLS; o erro de conflito pode revelar que um slug existe, o que é aceitável.
 - Ambiente local com superusuário (ex.: o `docker run` de exemplo do `backend/README.md`) ignora RLS; o isolamento só é garantido com o papel de aplicação do compose.
 - Modelo de dados em [docs/specs/modelo-de-dados.md](../specs/modelo-de-dados.md).
+
+## Emenda 2026-10-10: tokens de convite com workspace_id
+
+> Plano 0002, F2.3 · migração `0006`
+
+**Contexto.** Convites (`invitations`) são dado de workspace: `workspace_id NOT NULL`, RLS forçada e a política padrão do item 5. O link de uso único de cada convite fica em `user_tokens` (finalidade `invitation`, `user_id` nulo porque o convidado pode ainda não ter conta). A política original de `user_tokens` (`user_id = app.user_id OR app.system = 'on'`) não enxerga um token sem usuário numa transação de workspace, então o owner ou admin que convida não conseguiria emitir, reenviar nem revogar o link na mesma transação em que grava o convite e o evento de auditoria.
+
+**Decisão.**
+
+1. `user_tokens` ganha `workspace_id` opcional (FK `workspaces.id`, `ON DELETE CASCADE`), preenchido só em tokens de convite (`CHECK workspace_id IS NULL OR purpose = 'invitation'`).
+2. A política `user_tokens_owner` passa a ser `user_id = app.user_id OR workspace_id = app.workspace_id OR app.system = 'on'`: o workspace selecionado vê e altera só os tokens de convite que ele emitiu.
+3. Convidar, reenviar e revogar rodam inteiramente no `scoped_session` do workspace (o `WorkspaceContext` da rota): convite, token e auditoria se gravam ou se desfazem juntos.
+4. Pré-visualizar e aceitar continuam em `system_session`, como toda busca por token (item 7): quem chega só tem o token, ainda sem workspace nem usuário autorizados.
+
+**Por que não `system_session` na gestão.** Emitir o token em modo de sistema exigiria uma segunda sessão e uma segunda transação além da do `WorkspaceContext`: o token e o convite poderiam se separar numa falha (token órfão, ou convite apontando para token inexistente), a auditoria deixaria de estar na mesma transação da mudança, e o modo de sistema, restrito a setup, superadmin e buscas por token, passaria a ser usado em operações comuns de owner e admin. Ampliar a política mantém a gestão sob a barreira da RLS do próprio workspace.
+
+**Consequências.** Um workspace não enxerga tokens de outro nem tokens de conta (reset, verificação), que continuam visíveis só ao usuário dono ou ao modo de sistema; isso é coberto por `tests/security/test_tokens.py` e `tests/tenancy/test_invitations_rls.py`, como papel dono e como não dono. O downgrade de `0006` restaura a política original; tokens de convite remanescentes ficam inalcançáveis, sem efeito.

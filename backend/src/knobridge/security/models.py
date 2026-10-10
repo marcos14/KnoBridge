@@ -17,7 +17,7 @@ from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String, U
 from sqlalchemy.orm import Mapped, mapped_column
 
 from knobridge.core.models import Base, TimestampMixin, UUIDPrimaryKeyMixin, str_enum
-from knobridge.tenancy.models import User
+from knobridge.tenancy.models import User, Workspace
 
 TOKEN_HASH_LENGTH = 64  # hex SHA-256
 
@@ -49,15 +49,23 @@ class UserToken(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     """A single-use, expiring token sent by e-mail (password reset, verification, invite).
 
     ``user_id`` is optional only for invitations, whose recipient may not have an account yet.
+    ``workspace_id`` is set only on invitation tokens: the inviting workspace owns them, so
+    its scoped transactions can issue and revoke them (policy ``user_tokens_owner``).
     """
 
     __tablename__ = "user_tokens"
     __table_args__ = (
         CheckConstraint("user_id IS NOT NULL OR purpose = 'invitation'", name="user_required"),
+        CheckConstraint(
+            "workspace_id IS NULL OR purpose = 'invitation'", name="workspace_only_invitation"
+        ),
     )
 
     user_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid, ForeignKey(User.id, ondelete="CASCADE"), index=True
+    )
+    workspace_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey(Workspace.id, ondelete="CASCADE"), index=True
     )
     purpose: Mapped[TokenPurpose] = mapped_column(str_enum(TokenPurpose, "purpose"), nullable=False)
     token_hash: Mapped[str] = mapped_column(String(TOKEN_HASH_LENGTH), nullable=False, unique=True)

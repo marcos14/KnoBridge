@@ -30,6 +30,10 @@ erDiagram
     workspaces ||--o{ memberships : "tem"
     users ||--o{ sessions : "abre"
     users |o--o{ user_tokens : "recebe"
+    workspaces |o--o{ user_tokens : "emite convite"
+    workspaces ||--o{ invitations : "convida"
+    user_tokens ||--o| invitations : "link atual"
+    users |o--o{ invitations : "convidou"
     workspaces |o--o{ audit_events : "registra"
     users |o--o{ audit_events : "age"
     login_attempts {
@@ -75,10 +79,22 @@ erDiagram
     user_tokens {
         uuid id PK
         uuid user_id FK "nulo só em convites"
+        uuid workspace_id FK "só em convites"
         varchar purpose "password_reset | email_verification | invitation"
         varchar token_hash "único; SHA-256"
         timestamptz expires_at
         timestamptz used_at
+    }
+    invitations {
+        uuid id PK
+        uuid workspace_id FK
+        varchar email "minúsculas"
+        varchar role "owner | admin | editor | viewer"
+        uuid invited_by_user_id FK "nulo se o autor foi excluído"
+        uuid token_id FK "único; link atual"
+        timestamptz expires_at
+        timestamptz accepted_at
+        timestamptz revoked_at
     }
     audit_events {
         uuid id PK
@@ -153,15 +169,31 @@ Sessão de login server-side ([ADR 0002](../adr/0002-sessao-server-side.md)). Da
 
 ### `user_tokens`
 
-Token de uso único enviado por e-mail. Dado da instância, com RLS forçada pelo dono: política `user_tokens_owner` (`user_id = app.user_id` ou sistema). Emissão e consumo rodam em modo de sistema.
+Token de uso único enviado por e-mail. Dado da instância, com RLS forçada pelo dono: política `user_tokens_owner` (`user_id = app.user_id`, `workspace_id = app.workspace_id` ou sistema). Tokens de conta (reset, verificação) são emitidos e consumidos em modo de sistema. Tokens de convite pertencem ao workspace que convida: são emitidos, reenviados e revogados na transação do workspace, junto com o convite; a pré-visualização e o aceite (só com o token) rodam em modo de sistema.
 
 | Coluna | Tipo | Regras |
 |---|---|---|
 | `user_id` | `uuid` | FK `users.id`, `ON DELETE CASCADE`; índice `ix_user_tokens_user_id`. Obrigatório, exceto em convites (`ck_user_tokens_user_required`). |
+| `workspace_id` | `uuid` | FK `workspaces.id`, `ON DELETE CASCADE`; índice `ix_user_tokens_workspace_id`. Só em convites (`ck_user_tokens_workspace_only_invitation`). |
 | `purpose` | `varchar(32)` | `password_reset`, `email_verification` ou `invitation`. |
 | `token_hash` | `varchar(64)` | SHA-256 em hex; único (`uq_user_tokens_token_hash`). |
 | `expires_at` | `timestamptz` | Após este instante o token é recusado. |
 | `used_at` | `timestamptz` | Preenchido no consumo; token usado é recusado. |
+
+### `invitations`
+
+Convite de um e-mail para um workspace com um papel (plano 0002, F2.3), em `backend/src/knobridge/tenancy/`. Dado de workspace com RLS forçada: política `invitations_workspace` (`workspace_id = app.workspace_id` ou sistema). Pendente = sem `accepted_at` e sem `revoked_at` (um convite vencido continua pendente e pode ser reenviado). Reconvidar o mesmo e-mail revoga o pendente; reenviar troca o token (o antigo é marcado como usado) e recomeça a validade (`invitation_ttl`, padrão 7 dias); revogar marca o token como usado.
+
+| Coluna | Tipo | Regras |
+|---|---|---|
+| `workspace_id` | `uuid` | FK `workspaces.id`, `ON DELETE CASCADE`. |
+| `email` | `varchar(320)` | Obrigatório, em minúsculas. Um pendente por (`workspace_id`, `email`): índice único parcial `uq_invitations_pending_email` (`WHERE accepted_at IS NULL AND revoked_at IS NULL`). |
+| `role` | `varchar(32)` | `owner`, `admin`, `editor` ou `viewer`; nunca acima do papel de quem convida. |
+| `invited_by_user_id` | `uuid` | FK `users.id`, `ON DELETE SET NULL`. |
+| `token_id` | `uuid` | FK `user_tokens.id`, `ON DELETE CASCADE`; único (`uq_invitations_token_id`). Link atual. |
+| `expires_at` | `timestamptz` | Cópia da validade do token atual, para listar sem ler `user_tokens`. |
+| `accepted_at` | `timestamptz` | Preenchido no aceite, junto com a membership. |
+| `revoked_at` | `timestamptz` | Preenchido ao revogar ou ao ser substituído por novo convite. |
 
 ### `audit_events`
 

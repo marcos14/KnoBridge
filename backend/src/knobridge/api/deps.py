@@ -26,8 +26,12 @@ from knobridge.core.settings import Settings
 from knobridge.email.rendering import EmailComposer
 from knobridge.email.sender import EmailSender
 from knobridge.security.passwords import PasswordHasher
+from knobridge.security.sessions import InvalidSessionError
+from knobridge.tenancy.acceptance import InvitationAcceptance
 from knobridge.tenancy.account import AccountConfig, AccountService
 from knobridge.tenancy.auth import AuthConfig, AuthenticatedUser, AuthService
+from knobridge.tenancy.invitations import InvitationService
+from knobridge.tenancy.members import MemberService
 from knobridge.tenancy.models import Role, WorkspaceStatus
 from knobridge.tenancy.queries import get_workspace_access
 from knobridge.tenancy.rbac import role_at_least
@@ -75,6 +79,26 @@ def get_account_service(
     return AccountService(request.app.state.clock, request.app.state.password_hasher, auth, config)
 
 
+def get_clock(request: Request) -> Clock:
+    clock: Clock = request.app.state.clock
+    return clock
+
+
+def get_invitation_service(request: Request) -> InvitationService:
+    settings = get_settings_from_app(request)
+    return InvitationService(request.app.state.clock, settings.invitation_ttl)
+
+
+def get_invitation_acceptance(
+    request: Request, auth: Annotated[AuthService, Depends(get_auth_service)]
+) -> InvitationAcceptance:
+    return InvitationAcceptance(request.app.state.clock, request.app.state.password_hasher, auth)
+
+
+def get_member_service(request: Request) -> MemberService:
+    return MemberService(request.app.state.clock)
+
+
 def get_email_sender(request: Request) -> EmailSender:
     sender: EmailSender = request.app.state.email_sender
     return sender
@@ -95,6 +119,10 @@ SessionFactoryDep = Annotated[async_sessionmaker[AsyncSession], Depends(get_sess
 AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]
 SetupServiceDep = Annotated[SetupService, Depends(get_setup_service)]
 AccountServiceDep = Annotated[AccountService, Depends(get_account_service)]
+ClockDep = Annotated[Clock, Depends(get_clock)]
+InvitationServiceDep = Annotated[InvitationService, Depends(get_invitation_service)]
+InvitationAcceptanceDep = Annotated[InvitationAcceptance, Depends(get_invitation_acceptance)]
+MemberServiceDep = Annotated[MemberService, Depends(get_member_service)]
 EmailSenderDep = Annotated[EmailSender, Depends(get_email_sender)]
 EmailComposerDep = Annotated[EmailComposer, Depends(get_email_composer)]
 ClientIpDep = Annotated[str | None, Depends(client_ip)]
@@ -114,6 +142,28 @@ async def current_user(
 
 
 CurrentUserDep = Annotated[AuthenticatedUser, Depends(current_user)]
+
+
+async def optional_current_user(
+    request: Request,
+    settings: SettingsDep,
+    factory: SessionFactoryDep,
+    auth: AuthServiceDep,
+) -> AuthenticatedUser | None:
+    """The session's user when there is a live session; ``None`` (never 401) otherwise.
+
+    For public routes that behave differently for a logged-in visitor (accepting an invite).
+    """
+    token = request.cookies.get(settings.session_cookie_name)
+    if not token:
+        return None
+    try:
+        return await auth.authenticate(factory, token=token)
+    except (InvalidSessionError, UnauthenticatedError):
+        return None
+
+
+OptionalUserDep = Annotated[AuthenticatedUser | None, Depends(optional_current_user)]
 
 
 def require_superadmin(current: CurrentUserDep) -> AuthenticatedUser:

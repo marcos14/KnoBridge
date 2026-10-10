@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 from http import HTTPStatus
 
-from sqlalchemy import update
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from knobridge.core.clock import Clock
@@ -60,10 +60,13 @@ class UserTokenService:
         purpose: TokenPurpose,
         ttl: timedelta,
         user_id: uuid.UUID | None,
+        workspace_id: uuid.UUID | None = None,
     ) -> IssuedToken:
+        """Store a new token; ``workspace_id`` only for invitations (the inviting workspace)."""
         token = generate_token()
         record = UserToken(
             user_id=user_id,
+            workspace_id=workspace_id,
             purpose=purpose,
             token_hash=hash_token(token),
             expires_at=self._clock.now() + ttl,
@@ -71,6 +74,22 @@ class UserTokenService:
         db.add(record)
         await db.flush()
         return IssuedToken(token=token, record=record)
+
+    async def find_valid(
+        self, db: AsyncSession, *, token: str, purpose: TokenPurpose
+    ) -> UserToken | None:
+        """The usable token (unused, unexpired, same purpose) without consuming it.
+
+        For read-only previews (e.g. showing an invitation before accepting it); anything
+        that acts on the token must go through :meth:`consume`.
+        """
+        statement = select(UserToken).where(
+            UserToken.token_hash == hash_token(token),
+            UserToken.purpose == purpose,
+            UserToken.used_at.is_(None),
+            UserToken.expires_at > self._clock.now(),
+        )
+        return (await db.scalars(statement)).one_or_none()
 
     async def consume(self, db: AsyncSession, *, token: str, purpose: TokenPurpose) -> UserToken:
         """Mark the token used and return it; raise :class:`InvalidTokenError` otherwise.

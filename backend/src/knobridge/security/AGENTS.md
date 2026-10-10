@@ -4,7 +4,7 @@
 
 **Entra aqui**:
 - `passwords.py`: `PasswordHasher` (argon2id; `hash`, `verify`, `needs_rehash`, `verify_and_update` para rehash transparente, `verify_dummy` para igualar o tempo quando o e-mail não existe), `Argon2Params` e `validate_password` (12 a 1024 caracteres; `WeakPasswordError` 422).
-- `tokens.py`: `generate_token` (32 bytes, base64url), `hash_token` (SHA-256 hex) e `UserTokenService` (`issue`, `consume` atômico de uso único; `InvalidTokenError` 400 sem revelar o motivo).
+- `tokens.py`: `generate_token` (32 bytes, base64url), `hash_token` (SHA-256 hex) e `UserTokenService` (`issue`, com `workspace_id` só em convites; `consume` atômico de uso único; `find_valid`, que só consulta, para pré-visualizações; `InvalidTokenError` 400 sem revelar o motivo).
 - `models.py`: `Session` (tabela `sessions`), `UserToken` (tabela `user_tokens`, `TokenPurpose`) e `LoginAttempt` (tabela `login_attempts`, uma linha por chave de limitação). Só hashes são gravados.
 - `throttle.py`: `throttle_key(email, ip, scope=None)` (SHA-256 de `lower(email)|ip`, prefixado pelo `scope` quando há; o login não usa escopo, `tenancy/account.py` usa `password_reset` e `email_verification` com `ip=None` para limitar e-mails por endereço) e `LoginThrottle(clock, max_attempts=, window=)` com `retry_after`, `register_failure` (upsert atômico; janela fixa contada da primeira falha) e `reset`. Roda em `system_session`.
 - `sessions.py`: `SessionService` (`create`, `validate` com expiração deslizante, `revoke` com filtro opcional por `user_id`, `revoke_all` com `except_session_id`, `list_active` paginado com total; `InvalidSessionError` 401), `set_session_cookie` e os resumos `summarize_ip`/`summarize_user_agent`.
@@ -14,7 +14,7 @@
 
 **Convenções locais**:
 - Toda lógica de expiração recebe um `Clock` (`core/clock.py`); nunca `datetime.now()` aqui.
-- Os serviços recebem a `AsyncSession` de quem chama. Busca por token (login, validar sessão, emitir ou consumir token de e-mail) roda em `system_session`; listar ou revogar as próprias sessões roda em `scoped_session(user_id=...)`. `sessions` e `user_tokens` têm RLS forçada por `user_id`; `login_attempts` tem RLS forçada só para modo de sistema.
+- Os serviços recebem a `AsyncSession` de quem chama. Busca por token (login, validar sessão, emitir ou consumir token de e-mail) roda em `system_session`; listar ou revogar as próprias sessões roda em `scoped_session(user_id=...)`. `sessions` e `user_tokens` têm RLS forçada por `user_id` (em `user_tokens`, também pelo `workspace_id` dos tokens de convite, para o workspace que convida emitir e revogar o link na sua transação; migração `0006`); `login_attempts` tem RLS forçada só para modo de sistema.
 - Token em claro só existe no valor devolvido (`IssuedSession.token`, `IssuedToken.token`): nunca gravar, logar nem devolver em listagem.
 - Erros de autenticação são vagos de propósito (não dizer se o token expirou, foi usado ou não existe).
 - Mudou modelo: migração nova e `docs/specs/modelo-de-dados.md` na mesma entrega.

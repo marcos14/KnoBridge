@@ -32,5 +32,7 @@ class AuditAction(StrEnum):
     # Workspace membership.
     MEMBERSHIP_INVITED = "membership.invited"
     MEMBERSHIP_INVITATION_ACCEPTED = "membership.invitation.accepted"
+    MEMBERSHIP_INVITATION_RESENT = "membership.invitation.resent"
+    MEMBERSHIP_INVITATION_REVOKED = "membership.invitation.revoked"
     MEMBERSHIP_ROLE_CHANGED = "membership.role.changed"
     MEMBERSHIP_REMOVED = "membership.removed"

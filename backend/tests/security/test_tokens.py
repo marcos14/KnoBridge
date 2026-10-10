@@ -20,6 +20,7 @@ from knobridge.security.tokens import (
     generate_token,
     hash_token,
 )
+from knobridge.tenancy.models import Workspace
 
 TTL = timedelta(hours=1)
 
@@ -195,5 +196,109 @@ def test_token_rls_hides_other_users_tokens(run_rls_db: RunScenario, clock: Froz
             unscoped = (await db.scalars(select(UserToken.id))).all()
         assert visible == {own.record.id}
         assert unscoped == []
+
+    run_rls_db(scenario)
+
+
+@pytest.mark.integration
+def test_token_find_valid_does_not_consume(run_db: RunScenario, clock: FrozenClock) -> None:
+    service = UserTokenService(clock)
+
+    async def scenario(factory: SessionFactory) -> tuple[bool, bool, bool]:
+        user_id = await create_user(factory)
+        async with system_session(factory) as db:
+            issued = await service.issue(
+                db, purpose=TokenPurpose.PASSWORD_RESET, ttl=TTL, user_id=user_id
+            )
+        async with system_session(factory) as db:
+            found = await service.find_valid(
+                db, token=issued.token, purpose=TokenPurpose.PASSWORD_RESET
+            )
+            other_purpose = await service.find_valid(
+                db, token=issued.token, purpose=TokenPurpose.EMAIL_VERIFICATION
+            )
+        async with system_session(factory) as db:
+            await service.consume(db, token=issued.token, purpose=TokenPurpose.PASSWORD_RESET)
+        async with system_session(factory) as db:
+            after_use = await service.find_valid(
+                db, token=issued.token, purpose=TokenPurpose.PASSWORD_RESET
+            )
+        return found is not None, other_purpose is None, after_use is None
+
+    assert run_db(scenario) == (True, True, True)
+
+
+@pytest.mark.integration
+def test_token_find_valid_ignores_expired(run_db: RunScenario, clock: FrozenClock) -> None:
+    service = UserTokenService(clock)
+
+    async def scenario(factory: SessionFactory) -> UserToken | None:
+        user_id = await create_user(factory)
+        async with system_session(factory) as db:
+            issued = await service.issue(
+                db, purpose=TokenPurpose.PASSWORD_RESET, ttl=TTL, user_id=user_id
+            )
+        clock.advance(TTL)
+        async with system_session(factory) as db:
+            return await service.find_valid(
+                db, token=issued.token, purpose=TokenPurpose.PASSWORD_RESET
+            )
+
+    assert run_db(scenario) is None
+
+
+@pytest.mark.integration
+def test_token_workspace_only_for_invitations(run_db: RunScenario, clock: FrozenClock) -> None:
+    service = UserTokenService(clock)
+
+    async def scenario(factory: SessionFactory) -> None:
+        user_id = await create_user(factory)
+        async with system_session(factory) as db:
+            workspace = Workspace(name="W", slug=f"w-{uuid.uuid4().hex[:12]}")
+            db.add(workspace)
+            await db.flush()
+            await service.issue(
+                db,
+                purpose=TokenPurpose.PASSWORD_RESET,
+                ttl=TTL,
+                user_id=user_id,
+                workspace_id=workspace.id,
+            )
+
+    with pytest.raises(IntegrityError, match="ck_user_tokens_workspace_only_invitation"):
+        run_db(scenario)
+
+
+@pytest.mark.integration
+def test_token_rls_workspace_owns_invitation_tokens(
+    run_rls_db: RunScenario, clock: FrozenClock
+) -> None:
+    service = UserTokenService(clock)
+
+    async def scenario(factory: SessionFactory) -> None:
+        async with system_session(factory) as db:
+            workspace_a = Workspace(name="A", slug=f"a-{uuid.uuid4().hex[:12]}")
+            workspace_b = Workspace(name="B", slug=f"b-{uuid.uuid4().hex[:12]}")
+            db.add_all([workspace_a, workspace_b])
+            await db.flush()
+        async with scoped_session(factory, workspace_id=workspace_a.id, user_id=None) as db:
+            own = await service.issue(
+                db,
+                purpose=TokenPurpose.INVITATION,
+                ttl=TTL,
+                user_id=None,
+                workspace_id=workspace_a.id,
+            )
+        async with scoped_session(factory, workspace_id=workspace_b.id, user_id=None) as db:
+            await service.issue(
+                db,
+                purpose=TokenPurpose.INVITATION,
+                ttl=TTL,
+                user_id=None,
+                workspace_id=workspace_b.id,
+            )
+        async with scoped_session(factory, workspace_id=workspace_a.id, user_id=None) as db:
+            visible = set((await db.scalars(select(UserToken.id))).all())
+        assert visible == {own.record.id}
 
     run_rls_db(scenario)

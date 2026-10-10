@@ -2,7 +2,7 @@
 
 **Função**: testes de `src/knobridge/tenancy/`: restrições dos modelos e isolamento por RLS contra Postgres real.
 
-**Entra aqui**: `test_tenancy_models.py` (nome distinto de `tests/core/test_models.py`, porque os testes não são pacotes e o pytest exige basenames únicos) , `test_rbac.py` (hierarquia de papéis, unitário) e `test_setup_service.py` (setups concorrentes sobre `empty_database_url`). O fluxo HTTP de login, setup e `/me` é testado em `tests/api/`.
+**Entra aqui**: `test_tenancy_models.py` (nome distinto de `tests/core/test_models.py`, porque os testes não são pacotes e o pytest exige basenames únicos) , `test_rbac.py` (hierarquia de papéis e `ensure_role_within`, unitário), `test_setup_service.py` (setups concorrentes sobre `empty_database_url`) e `test_invitations_rls.py` (RLS de `invitations`). As regras de convite e membros são testadas pelas rotas, em `tests/api/test_invites.py` e `tests/api/test_members.py`. O fluxo HTTP de login, setup e `/me` é testado em `tests/api/`.
 **Não entra aqui**: testes de routers (`tests/api/`), da cadeia de migrações (`tests/migrations/`), dos helpers de sessão (`tests/core/test_db.py`).
 
 **Convenções locais**:
