@@ -20,6 +20,16 @@ x-backend: &backend
     KNOBRIDGE_TEMPORAL_ADDRESS: temporal:7233
     KNOBRIDGE_TEMPORAL_NAMESPACE: ${TEMPORAL_NAMESPACE:-default}
     KNOBRIDGE_TEMPORAL_TASK_QUEUE: ${KNOBRIDGE_TEMPORAL_TASK_QUEUE:-knobridge}
+    # DEV-ONLY default (the same public value as DEV_SECRET_KEY in core/settings.py); set a real
+    # secret in deploy/.env for anything beyond a local machine.
+    KNOBRIDGE_SECRET_KEY: ${KNOBRIDGE_SECRET_KEY:-dev-only-insecure-secret-key-change-me}
+    # Links in e-mails point to the admin panel as seen from the browser.
+    KNOBRIDGE_PUBLIC_BASE_URL: ${KNOBRIDGE_PUBLIC_BASE_URL:-http://localhost:${FRONTEND_PORT:-5173}}
+    # Every e-mail goes to Mailpit, which catches it instead of delivering (UI on MAILPIT_UI_PORT).
+    KNOBRIDGE_SMTP_HOST: mailpit
+    KNOBRIDGE_SMTP_PORT: 1025
+    KNOBRIDGE_SMTP_FROM: ${KNOBRIDGE_SMTP_FROM:-KnoBridge <no-reply@knobridge.local>}
+    KNOBRIDGE_SMTP_STARTTLS: "false"
 
 services:
   postgres:
@@ -107,6 +117,22 @@ services:
       timeout: 5s
       retries: 20
 
+  mailpit:
+    # Development SMTP server: accepts every message and shows it in a web UI; delivers nothing.
+    image: axllent/mailpit:v1.31.4
+    restart: unless-stopped
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: "true"
+      MP_SMTP_AUTH_ALLOW_INSECURE: "true"
+    ports:
+      - ${BIND_ADDRESS:-127.0.0.1}:${MAILPIT_SMTP_PORT:-1025}:1025
+      - ${BIND_ADDRESS:-127.0.0.1}:${MAILPIT_UI_PORT:-8025}:8025
+    healthcheck:
+      test: [CMD, /mailpit, readyz]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
   migrate:
     <<: *backend
     command: [alembic, upgrade, head]
@@ -127,6 +153,8 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+      mailpit:
+        condition: service_healthy
     ports:
       - ${BIND_ADDRESS:-127.0.0.1}:${API_PORT:-8000}:8000
     healthcheck:
@@ -149,6 +177,8 @@ services:
       migrate:
         condition: service_completed_successfully
       temporal:
+        condition: service_healthy
+      mailpit:
         condition: service_healthy
 
   frontend:

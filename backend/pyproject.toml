@@ -16,6 +16,8 @@ dependencies = [
     "alembic>=1.14",
     "temporalio>=1.34.0",
     "argon2-cffi>=23.1",
+    "aiosmtplib>=3.0",
+    "jinja2>=3.1",
 ]
 
 [project.scripts]
@@ -25,6 +27,7 @@ knobridge-openapi = "knobridge.api.openapi:main"
 
 [dependency-groups]
 dev = [
+    "aiosmtpd>=1.4",
     "httpx2>=2.13.1",
     "pyright>=1.1.390",
     "pytest>=8.3",

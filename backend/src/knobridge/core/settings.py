@@ -49,6 +49,19 @@ class Settings(BaseSettings):
     session_cookie_name: str = Field(default="knobridge_session", min_length=1)
     # Send cookies only over HTTPS. Browsers also accept Secure cookies on http://localhost.
     cookie_secure: bool = True
+    # Absolute URL of the admin panel; e-mail links (reset, verification, invitation) start here.
+    public_base_url: str = Field(default="http://localhost:5173", pattern=r"^https?://[^/\s]+")
+    # Outgoing SMTP server for transactional e-mail (Mailpit in development).
+    smtp_host: str = Field(default="localhost", min_length=1)
+    smtp_port: int = Field(default=1025, ge=1, le=65535)
+    # Login is attempted only when a user is set.
+    smtp_user: str | None = None
+    smtp_password: SecretStr | None = None
+    smtp_from: str = Field(default="KnoBridge <no-reply@knobridge.local>", min_length=3)
+    # Upgrade the connection with STARTTLS (typically port 587). Mailpit in dev needs false.
+    smtp_starttls: bool = False
+    # Seconds to wait for the SMTP server on each operation.
+    smtp_timeout: float = Field(default=10.0, gt=0)
 
     @model_validator(mode="after")
     def _check_secret_key(self) -> Self:

@@ -28,13 +28,13 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: b285241
       - id: F1.3
         titulo: "E-mail: interface, SMTP, templates e Mailpit"
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-10
+        concluida_em: 2026-10-10
         commit: null
       - id: F1.4
         titulo: "Auditoria: modelo, serviço e consulta"
@@ -273,6 +273,13 @@ decisoes:
     decisao: "Sessões e user_tokens com RLS forçada por user_id (ou modo de sistema); CSRF double-submit assinado com HMAC da secret_key; produção exige secret_key própria com 32+ caracteres; session_ttl ISO 8601 (P7D); só expiração deslizante por ora; IP e user-agent resumidos (LGPD)."
     motivo: "Defesa em profundidade para credenciais; impede cookie CSRF plantado por subdomínio."
     alternativas: "Sessões sem RLS; CSRF sem assinatura; expiração absoluta já agora."
+    adr: null
+  - id: D11
+    data: 2026-10-10
+    por: agente
+    decisao: "URLs do painel em inglês, definidas pelos links de e-mail (LINK_PATHS): /reset-password, /verify-email, /accept-invitation, /set-password (com ?token=); demais rotas também em inglês (/login, /setup, /forgot-password, /account/profile, /w/:id/members...). Prevalece sobre os nomes em português citados nas subfases F3.x; textos de interface seguem em pt-BR."
+    motivo: "Identificadores em inglês (AGENTS.md 6.1) e um único contrato entre e-mail e frontend."
+    alternativas: "Rotas em português."
     adr: null
 pendencias_usuario: []
 ---
@@ -547,6 +554,8 @@ Nenhuma aberta.
 - 2026-10-10 — F1.1 concluída: 90 testes, cobertura 100%; RLS provada com papel dono e papel não dono; ADR 0001 (D9).
 - 2026-10-10 — F1.2 iniciada.
 - 2026-10-10 — F1.2 concluída: 153 testes, cobertura 100%; ADR 0002 (D10). KNOBRIDGE_SECRET_KEY no compose fica para F1.3/F6.1.
+- 2026-10-10 — F1.3 iniciada.
+- 2026-10-10 — F1.3 concluída: 184 testes, cobertura 100%; Mailpit no compose verificado com envio real; secret_key e public_base_url no compose (D11).
 
 ## 8. Encerramento
 

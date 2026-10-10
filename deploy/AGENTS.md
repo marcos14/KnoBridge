@@ -1,6 +1,6 @@
 # deploy/
 
-**Função**: infraestrutura para subir o KnoBridge. Hoje, o Docker Compose do ambiente de desenvolvimento completo (Postgres + pgvector, Temporal, MinIO, migrações, API, worker e painel). O Helm chart virá depois, em `deploy/helm/`.
+**Função**: infraestrutura para subir o KnoBridge. Hoje, o Docker Compose do ambiente de desenvolvimento completo (Postgres + pgvector, Temporal, MinIO, Mailpit como SMTP de desenvolvimento, migrações, API, worker e painel). O Helm chart virá depois, em `deploy/helm/`.
 
 **Entra aqui**:
 - `docker-compose.yml`: o ambiente de desenvolvimento; `docker compose -f deploy/docker-compose.yml up --build`.
@@ -20,7 +20,8 @@
 - Toda variável tem default de desenvolvimento no compose (`${VAR:-default}`), para o `up` funcionar sem `.env`, e aparece no `.env.example`. Credenciais de exemplo são só para desenvolvimento e estão marcadas assim.
 - Portas do host publicadas em `${BIND_ADDRESS:-127.0.0.1}` e configuráveis por variável (`*_PORT`).
 - Todo serviço de longa duração tem `healthcheck`; dependências usam `service_healthy` ou `service_completed_successfully` (caso do `migrate`).
-- Uma imagem de backend para `migrate`, `api` e `worker`; muda só o `command`.
+- Uma imagem de backend para `migrate`, `api` e `worker`; muda só o `command`. Variáveis `KNOBRIDGE_*` comuns aos três ficam na âncora `x-backend` (inclusive `KNOBRIDGE_SECRET_KEY`, com default público de dev, e o SMTP fixo no `mailpit`).
+- Em dev, todo e-mail vai para o `mailpit` (UI em `MAILPIT_UI_PORT`); nada é entregue a caixas reais.
 - Scripts de shell com fim de linha LF (garantido pelo `.gitattributes`).
 
 **Como testar**:

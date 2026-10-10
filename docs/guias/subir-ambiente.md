@@ -2,7 +2,7 @@
 
 > Rascunho v0.1 · 2026-10-10 · Em uso
 
-Como subir o KnoBridge completo na sua máquina com Docker Compose: banco, Temporal, armazenamento de objetos, migrações, API, worker e painel. Ainda não há funcionalidades de produto; o objetivo é ter a base rodando e saudável.
+Como subir o KnoBridge completo na sua máquina com Docker Compose: banco, Temporal, armazenamento de objetos, servidor de e-mail de desenvolvimento, migrações, API, worker e painel. Ainda não há funcionalidades de produto; o objetivo é ter a base rodando e saudável.
 
 ## Pré-requisitos
 
@@ -36,7 +36,7 @@ Todos os comandos rodam a partir da raiz do repositório.
    docker compose -f deploy/docker-compose.yml up -d --build --wait
    ```
 
-   Ordem de subida: `postgres` saudável → `temporal` e `migrate` → `api` (depois que `migrate` termina com sucesso) e `worker` (depois que `migrate` termina e o Temporal fica saudável) → `frontend` (depois que a `api` fica saudável).
+   Ordem de subida: `postgres` e `mailpit` saudáveis → `temporal` e `migrate` → `api` (depois que `migrate` termina com sucesso) e `worker` (depois que `migrate` termina e o Temporal fica saudável), ambos só com o `mailpit` saudável → `frontend` (depois que a `api` fica saudável).
 
 ## Serviços e portas
 
@@ -46,6 +46,7 @@ Todos os comandos rodam a partir da raiz do repositório.
 | `temporal` | `temporalio/auto-setup:1.29.7` | 7233 | `TEMPORAL_PORT` | Servidor Temporal (gRPC) |
 | `temporal-ui` | `temporalio/ui:2.55.0` | 8080 | `TEMPORAL_UI_PORT` | Interface web do Temporal |
 | `minio` | `pgsty/minio:RELEASE.2026-08-04T00-00-00Z` | 9000 (API S3), 9001 (console) | `MINIO_API_PORT`, `MINIO_CONSOLE_PORT` | Armazenamento de objetos compatível com S3 |
+| `mailpit` | `axllent/mailpit:v1.31.4` | 1025 (SMTP), 8025 (interface web) | `MAILPIT_SMTP_PORT`, `MAILPIT_UI_PORT` | Servidor SMTP de desenvolvimento: recebe os e-mails da API e do worker e os mostra na interface, sem entregar a ninguém |
 | `migrate` | backend (local) | — | — | Roda `alembic upgrade head` uma vez e termina |
 | `api` | backend (local) | 8000 | `API_PORT` | API REST (`knobridge-api`) |
 | `worker` | backend (local) | — | — | Worker Temporal (`knobridge-worker`), fila `knobridge` |
@@ -86,6 +87,25 @@ Todas as portas são publicadas só em `127.0.0.1` (variável `BIND_ADDRESS`).
 
 6. Console do MinIO: abra <http://localhost:9001> e entre com `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` (padrão de dev: `knobridge` / `knobridge-dev`).
 
+7. E-mails: abra <http://localhost:8025> (Mailpit). Todo e-mail transacional enviado pela API ou pelo worker (redefinição de senha, verificação de e-mail, convite, senha inicial) aparece ali, e nenhum sai para caixas reais. Os links apontam para `KNOBRIDGE_PUBLIC_BASE_URL` (padrão `http://localhost:5173`, o painel). Para conferir só o servidor:
+
+   ```bash
+   curl http://localhost:8025/api/v1/info
+   ```
+
+## Configuração da API e do worker
+
+O compose passa para `api`, `worker` e `migrate` as variáveis abaixo, com default de desenvolvimento; as configuráveis estão em `deploy/.env.example`:
+
+| Variável | Padrão no compose | Para quê |
+|---|---|---|
+| `KNOBRIDGE_SECRET_KEY` | `dev-only-insecure-secret-key-change-me` | Assina os tokens CSRF. **Valor público, só para desenvolvimento**: fora da sua máquina, gere um com `python -c "import secrets; print(secrets.token_urlsafe(48))"` e ponha no `deploy/.env` |
+| `KNOBRIDGE_PUBLIC_BASE_URL` | `http://localhost:${FRONTEND_PORT}` | Endereço do painel, como o navegador o vê, usado nos links dos e-mails |
+| `KNOBRIDGE_SMTP_FROM` | `KnoBridge <no-reply@knobridge.local>` | Remetente dos e-mails |
+| `KNOBRIDGE_SMTP_HOST` / `KNOBRIDGE_SMTP_PORT` | `mailpit` / `1025` | Fixos: neste ambiente o SMTP é sempre o Mailpit |
+
+Rodando o backend fora do Docker (`uv run knobridge-api`), os defaults de `backend/.env.example` já apontam o SMTP para `localhost:1025`; suba só o Mailpit com `docker compose -f deploy/docker-compose.yml up -d --wait mailpit`.
+
 ## Derrubar e limpar
 
 ```bash
@@ -104,6 +124,7 @@ Depois de mudar código do backend ou do frontend, rode de novo com `--build` pa
 - **Mudei usuário, senha ou nome de banco no `.env` e nada mudou**: o script `deploy/postgres/init-databases.sh` só roda com o volume vazio. Rode `down -v` e suba de novo (apaga os dados locais).
 - **`migrate` saiu com erro**: veja `docker compose -f deploy/docker-compose.yml logs migrate`. Em geral é banco inacessível ou credencial divergente entre `KNOBRIDGE_DB_*` e um volume antigo; `down -v` resolve em dev.
 - **`temporal` demora a ficar saudável**: na primeira subida ele aplica os schemas e registra o namespace; o healthcheck só passa quando o namespace existe. Acompanhe com `docker compose -f deploy/docker-compose.yml logs -f temporal`.
+- **E-mail não aparece no Mailpit**: confira se o `mailpit` está `healthy` (`docker compose -f deploy/docker-compose.yml ps mailpit`) e procure `email_delivery_failed` no log da `api` ou do `worker`. Fora do Docker, o backend precisa de `KNOBRIDGE_SMTP_HOST=localhost` e `KNOBRIDGE_SMTP_PORT` igual a `MAILPIT_SMTP_PORT`.
 - **Painel mostra "API: indisponível"**: confira se a `api` está `healthy` e se `curl http://localhost:5173/v1/health/ready` responde 200. Se responder 502, o nginx não alcança a `api`.
 - **`init-databases.sh` falha com `$'\r': command not found`**: o arquivo foi salvo com fim de linha CRLF. O `.gitattributes` força LF; rode `git add --renormalize .` ou salve o arquivo com LF e faça `down -v`.
 
@@ -113,4 +134,5 @@ Depois de mudar código do backend ou do frontend, rode de novo com `--build` pa
 - Temporal auto-setup e variáveis (`DB`, `POSTGRES_SEEDS`, `SKIP_DB_CREATE`): <https://hub.docker.com/r/temporalio/auto-setup>
 - Temporal UI: <https://hub.docker.com/r/temporalio/ui>
 - Build comunitária do MinIO usada aqui (as imagens oficiais `minio/minio` deixaram de ser publicadas publicamente): <https://hub.docker.com/r/pgsty/minio>
+- Mailpit (servidor SMTP de desenvolvimento): <https://mailpit.axllent.org/docs/>
 - Docker Compose (`depends_on`, `healthcheck`, `--wait`): <https://docs.docker.com/reference/compose-file/services/>

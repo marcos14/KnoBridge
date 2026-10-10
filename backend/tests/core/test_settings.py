@@ -153,3 +153,46 @@ def test_settings_requires_secret_key_in_production(monkeypatch: pytest.MonkeyPa
 
     with pytest.raises(ValidationError, match="KNOBRIDGE_SECRET_KEY"):
         Settings()
+
+
+def test_settings_email_defaults_point_to_local_mailpit() -> None:
+    settings = Settings()
+
+    assert settings.public_base_url == "http://localhost:5173"
+    assert (settings.smtp_host, settings.smtp_port) == ("localhost", 1025)
+    assert (settings.smtp_user, settings.smtp_password) == (None, None)
+    assert settings.smtp_from == "KnoBridge <no-reply@knobridge.local>"
+    assert (settings.smtp_starttls, settings.smtp_timeout) == (False, 10.0)
+
+
+def test_settings_reads_email_variables(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("KNOBRIDGE_PUBLIC_BASE_URL", "https://kb.example")
+    monkeypatch.setenv("KNOBRIDGE_SMTP_HOST", "smtp.example")
+    monkeypatch.setenv("KNOBRIDGE_SMTP_PORT", "587")
+    monkeypatch.setenv("KNOBRIDGE_SMTP_USER", "mailer")
+    monkeypatch.setenv("KNOBRIDGE_SMTP_PASSWORD", "smtp-s3cret")
+    monkeypatch.setenv("KNOBRIDGE_SMTP_FROM", "Suporte <suporte@kb.example>")
+    monkeypatch.setenv("KNOBRIDGE_SMTP_STARTTLS", "true")
+
+    settings = Settings()
+
+    assert settings.public_base_url == "https://kb.example"
+    assert (settings.smtp_host, settings.smtp_port, settings.smtp_user) == (
+        "smtp.example",
+        587,
+        "mailer",
+    )
+    assert settings.smtp_password is not None
+    assert settings.smtp_password.get_secret_value() == "smtp-s3cret"
+    assert "smtp-s3cret" not in repr(settings)
+    assert (settings.smtp_from, settings.smtp_starttls) == ("Suporte <suporte@kb.example>", True)
+
+
+@pytest.mark.parametrize("url", ["kb.example", "ftp://kb.example", "https://"])
+def test_settings_rejects_public_base_url_without_http_scheme(
+    monkeypatch: pytest.MonkeyPatch, url: str
+) -> None:
+    monkeypatch.setenv("KNOBRIDGE_PUBLIC_BASE_URL", url)
+
+    with pytest.raises(ValidationError):
+        Settings()

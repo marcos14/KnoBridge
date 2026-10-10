@@ -1,0 +1,6 @@
+{% extends "_layout.txt" %}
+{% block content %}
+{{ inviter_name }} convidou você para participar do workspace "{{ workspace_name }}" no KnoBridge.
+Para aceitar o convite, abra o endereço abaixo:
+{% endblock %}
+{% block ignore_note %}Se você não esperava este convite, ignore este e-mail.{% endblock %}
