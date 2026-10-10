@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { createBrowserRouter, Navigate, type RouteObject } from "react-router";
 
+import { ProfilePage } from "@/features/account/ProfilePage";
+import { SecurityPage } from "@/features/account/SecurityPage";
 import { AcceptInvitationPage } from "@/features/auth/AcceptInvitationPage";
 import { ForgotPasswordPage } from "@/features/auth/ForgotPasswordPage";
 import { LoginPage } from "@/features/auth/LoginPage";
@@ -77,8 +79,8 @@ export const routes: RouteObject[] = [
                     path: "account",
                     children: [
                       { index: true, element: <Navigate to="profile" replace /> },
-                      { path: "profile", element: <PlaceholderPage page="accountProfile" /> },
-                      { path: "security", element: <PlaceholderPage page="accountSecurity" /> },
+                      { path: "profile", element: <ProfilePage /> },
+                      { path: "security", element: <SecurityPage /> },
                     ],
                   },
                   {

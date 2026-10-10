@@ -8,7 +8,7 @@ import { isApiErrorCode } from "@/lib/api/client";
 import { useVerifyEmail } from "@/lib/api/recovery";
 
 import { AuthCard } from "./AuthCard";
-import { FormAlert } from "./FormAlert";
+import { FormAlert } from "@/components/FormAlert";
 import { useUrlToken } from "./useUrlToken";
 
 /** `/verify-email?token=`: confirms the address as soon as the e-mailed link is opened. */

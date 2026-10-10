@@ -13,7 +13,12 @@ interface RenderWithProvidersOptions {
   path?: string;
   /** Route tree to mount. Defaults to the app routes. */
   routes?: RouteObject[];
+  /** "Now" seen by the app (relative dates). Defaults to `TEST_NOW`. */
+  now?: Date;
 }
+
+/** Fixed "now" of the tests, so relative dates do not depend on the real clock. */
+export const TEST_NOW = new Date("2026-10-10T12:00:00Z");
 
 interface RenderWithProvidersResult extends RenderResult {
   /** The in-memory router, to assert on `router.state.location` after redirects. */
@@ -36,11 +41,15 @@ export function createTestQueryClient(): QueryClient {
 export function renderWithProviders({
   path = "/",
   routes = appRoutes,
+  now = TEST_NOW,
 }: RenderWithProvidersOptions = {}): RenderWithProvidersResult {
   const router = createMemoryRouter(routes, { initialEntries: [path] });
   const queryClient = createTestQueryClient();
+  const clock = () => new Date(now);
 
-  const result = render(<AppProviders router={router} queryClient={queryClient} i18n={i18n} />);
+  const result = render(
+    <AppProviders router={router} queryClient={queryClient} i18n={i18n} clock={clock} />,
+  );
   return { ...result, router, queryClient };
 }
 

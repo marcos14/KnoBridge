@@ -12,10 +12,10 @@ import { isApiErrorCode } from "@/lib/api/client";
 import { useResetPassword } from "@/lib/api/recovery";
 
 import { AuthCard } from "./AuthCard";
-import { FormAlert } from "./FormAlert";
+import { FormAlert } from "@/components/FormAlert";
 import { FORGOT_PASSWORD_PATH, LOGIN_PATH } from "./redirect";
-import { newPasswordFields, PASSWORD_MIN_LENGTH, withMatchingPasswords } from "./schemas";
-import { TextField } from "./TextField";
+import { newPasswordFields, PASSWORD_MIN_LENGTH, withMatchingPasswords } from "@/lib/schemas";
+import { TextField } from "@/components/TextField";
 import { useUrlToken } from "./useUrlToken";
 
 const linkClass = "text-sm underline underline-offset-4";

@@ -1,9 +1,11 @@
+import { accountHandlers } from "./account";
 import { authHandlers } from "./auth";
 import { healthReadyOk } from "./health";
 import { invitesHandlers } from "./invites";
 import { recoveryHandlers } from "./recovery";
 import { setupHandlers } from "./setup";
 
+export * from "./account";
 export * from "./auth";
 export * from "./errors";
 export * from "./health";
@@ -22,4 +24,5 @@ export const handlers = [
   ...authHandlers,
   ...recoveryHandlers,
   ...invitesHandlers,
+  ...accountHandlers,
 ];

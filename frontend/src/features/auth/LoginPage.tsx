@@ -11,9 +11,9 @@ import { translateApiError } from "@/i18n/apiErrors";
 import { useLogin } from "@/lib/api/auth";
 
 import { AuthCard } from "./AuthCard";
-import { FormAlert } from "./FormAlert";
+import { FormAlert } from "@/components/FormAlert";
 import { FORGOT_PASSWORD_PATH, NEXT_PARAM, safeNextPath } from "./redirect";
-import { TextField } from "./TextField";
+import { TextField } from "@/components/TextField";
 
 /** `/login`: e-mail and password; afterwards goes to the validated `?next=` or to the panel. */
 export function LoginPage() {

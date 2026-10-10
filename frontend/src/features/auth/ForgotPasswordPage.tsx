@@ -11,10 +11,10 @@ import { translateApiError } from "@/i18n/apiErrors";
 import { useForgotPassword } from "@/lib/api/recovery";
 
 import { AuthCard } from "./AuthCard";
-import { FormAlert } from "./FormAlert";
+import { FormAlert } from "@/components/FormAlert";
 import { LOGIN_PATH } from "./redirect";
-import { emailField } from "./schemas";
-import { TextField } from "./TextField";
+import { emailField } from "@/lib/schemas";
+import { TextField } from "@/components/TextField";
 
 /**
  * `/forgot-password`: asks for a reset link. The confirmation is the same whether the address has

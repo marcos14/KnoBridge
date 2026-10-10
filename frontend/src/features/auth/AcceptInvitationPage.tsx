@@ -15,7 +15,7 @@ import {
 import { readStoredItem, removeStoredItem, writeStoredItem } from "@/lib/storage";
 
 import { AuthCard } from "./AuthCard";
-import { FormAlert } from "./FormAlert";
+import { FormAlert } from "@/components/FormAlert";
 import { GuardError, GuardLoading } from "./GuardStatus";
 import { invitationStep } from "./invitationStep";
 import { InvitationSignupForm } from "./InvitationSignupForm";

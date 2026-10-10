@@ -99,13 +99,13 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: f61b6cb
       - id: F3.4
         titulo: "Perfil e segurança da conta"
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-10
+        concluida_em: 2026-10-10
         commit: null
       - id: F3.5
         titulo: "Membros, convites e configurações do workspace"
@@ -587,6 +587,8 @@ Nenhuma aberta.
 - 2026-10-10 — F3.2 concluída: 190 testes, cobertura 100/97,3/100/100, e2e 3 ok (D18). Code-splitting por rota anotado para F5.3.
 - 2026-10-10 — F3.3 iniciada.
 - 2026-10-10 — F3.3 concluída: 259 testes, cobertura 100/98,4/100/100, e2e 3 ok (D19).
+- 2026-10-10 — F3.4 iniciada.
+- 2026-10-10 — F3.4 concluída: 335 testes, cobertura 100/98,9/100/100, e2e 3 ok (D20).
 
 ## 8. Encerramento
 

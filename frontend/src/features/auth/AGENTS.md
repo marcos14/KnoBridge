@@ -5,14 +5,14 @@
 **Entra aqui**:
 
 - Telas públicas (dentro do `PublicLayout`): `SetupPage` (`/setup`: nome, e-mail, senha e confirmação → shell), `LoginPage` (`/login`: vai ao `?next=` validado ou a `/`; link "Esqueci minha senha"), `ForgotPasswordPage` (`/forgot-password`: confirmação genérica, igual exista a conta ou não), `ResetPasswordPage` (`/reset-password?token=`), `VerifyEmailPage` (`/verify-email?token=`: verifica ao abrir, uma vez só), `AcceptInvitationPage` (`/accept-invitation?token=`: mostra o convite e cria a conta, manda ao login ou aceita com a conta logada; outra conta logada → explica e oferece sair; depois vai para `/w/<workspace>`). `InvitationSignupForm` e `invitationStep.ts` (`signup`/`login`/`accept`/`mismatch`) apoiam a tela de convite.
-- Peças das telas: `AuthCard` (coluna com o `h1`), `TextField` (campo de react-hook-form com label, dica e erro), `FormAlert` (erro da API, `role="alert"`, recebe o foco ao aparecer), `schemas.ts` (zod: `nameField`, `emailField`, `newPasswordFields` + `withMatchingPasswords`, limites `PASSWORD_MIN_LENGTH` 12 e `PASSWORD_MAX_LENGTH` 1024 do backend), `useUrlToken` (lê `?token=` uma vez e o tira da barra de endereço com `replace`).
+- Peças das telas: `AuthCard` (coluna com o `h1`), `useUrlToken` (lê `?token=` uma vez e o tira da barra de endereço com `replace`). Campo, alerta e schemas de formulário são compartilhados com `features/account/`: `components/TextField.tsx`, `components/FormAlert.tsx` e `lib/schemas.ts`.
 - Guardas (elementos de rota de layout, renderizam `<Outlet />` quando liberam): `RequireSetupDone` (instância sem usuário → `/setup`), `RequireSetupPending` (o inverso, só em `/setup`: setup já feito → `/`), `RequireAuth` (anônimo → `/login?next=<destino>`; logo após um logout explícito, `useLoggedOutByUser()`, → `/login` limpo), `RequireWorkspaceRole({ minRole })` (sem membership no `:workspaceId` ou papel abaixo de `minRole` → 403), `RequireSuperadmin` (não superadmin → 403).
 - `ForbiddenPage.tsx`: 403 renderizado no lugar, sem trocar a URL (nas rotas autenticadas, dentro do shell).
 - `GuardStatus.tsx`: carregando e falha com "Tentar novamente", usados pelos guardas e pela tela de convite.
 - `SessionExpiryHandler.tsx`: registra o handler de 401 do cliente; marca `me` como `null` e leva ao login preservando o destino.
 - `roles.ts` (`hasRole`, `findWorkspace`), `redirect.ts` (`loginPath`, `safeNextPath`, `LOGIN_PATH`, `SETUP_PATH`, `FORGOT_PASSWORD_PATH`, `ACCEPT_INVITATION_PATH`), `useCurrentWorkspace.ts`.
 
-**Não entra aqui**: chamadas de API e hooks (`lib/api/auth.ts`, `setup.ts`, `recovery.ts`, `invites.ts`), árvore de rotas (`app/router.tsx`), textos (`i18n/locales/`, chaves `auth.*`), telas da conta logada (perfil, segurança), que são de outra área.
+**Não entra aqui**: chamadas de API e hooks (`lib/api/auth.ts`, `setup.ts`, `recovery.ts`, `invites.ts`), árvore de rotas (`app/router.tsx`), textos (`i18n/locales/`, chaves `auth.*`), telas da conta logada (perfil, segurança: `features/account/`).
 
 **Convenções locais**:
 

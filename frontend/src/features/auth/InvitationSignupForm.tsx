@@ -12,8 +12,8 @@ import {
   newPasswordFields,
   PASSWORD_MIN_LENGTH,
   withMatchingPasswords,
-} from "./schemas";
-import { TextField } from "./TextField";
+} from "@/lib/schemas";
+import { TextField } from "@/components/TextField";
 
 export interface InvitationSignupValues {
   name: string;

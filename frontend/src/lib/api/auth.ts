@@ -107,6 +107,20 @@ const ANONYMOUS_QUERY_HASHES = new Set(
 );
 
 /**
+ * Forgets the session the user ended in this tab (logout, or revoking this session on the security
+ * page): `useMe` answers `null`, `useLoggedOutByUser` answers `true` and every user-scoped query
+ * leaves the cache.
+ */
+export function endSession(queryClient: QueryClient): void {
+  // Marker first: the guards that react to `me === null` must already see it.
+  queryClient.setQueryData(loggedOutQueryKey, true);
+  queryClient.setQueryData(meQueryKey, null);
+  queryClient.removeQueries({
+    predicate: (query) => !ANONYMOUS_QUERY_HASHES.has(query.queryHash),
+  });
+}
+
+/**
  * `POST /v1/auth/logout`. A 401 means the session had already ended, which is the goal too.
  * Afterwards `useMe` answers `null`, `useLoggedOutByUser` answers `true` and every user-scoped
  * query is dropped from the cache.
@@ -121,12 +135,7 @@ export function useLogout() {
       }
     },
     onSuccess: () => {
-      // Marker first: the guards that react to `me === null` must already see it.
-      queryClient.setQueryData(loggedOutQueryKey, true);
-      queryClient.setQueryData(meQueryKey, null);
-      queryClient.removeQueries({
-        predicate: (query) => !ANONYMOUS_QUERY_HASHES.has(query.queryHash),
-      });
+      endSession(queryClient);
     },
   });
 }

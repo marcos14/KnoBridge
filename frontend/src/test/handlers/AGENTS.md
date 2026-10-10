@@ -12,6 +12,7 @@
 
 - `recovery.ts`: `forgotPasswordOk`, `resetPasswordOk` e `verifyEmailOk` (padrão, 204), `forgotPasswordServerError`, `resetPasswordInvalidToken`, `resetPasswordWeak`, `verifyEmailInvalidToken`, `verifyEmailServerError`.
 - `invites.ts`: `invitationPreviewOk` e `acceptInvitationOk` (padrão: convite de editor para `bruno@example.test`, sem conta; o aceite devolve o `me` do convidado já membro), `invitationPreviewAs(preview)`, `invitationPreviewInvalidToken`, `acceptInvitationLoginRequired`, `acceptInvitationEmailMismatch`, `acceptInvitationInvalidToken`, `acceptInvitationAlreadyMember`.
+- `account.ts`: `sessionsOk` (lista padrão: esta sessão e um celular, paginada por `limit`/`offset`), `revokeSessionOk`, `changePasswordOk` e `resendVerificationOk` (padrão), `sessionsAs(sessions)`, `sessionStore(initial)` (GET + DELETE com estado: a sessão revogada some da próxima listagem; `revoked` guarda os ids), `sessionsServerError`, `revokeSessionCsrfFailed`, `changePasswordInvalidCurrent`, `changePasswordWeak`, `resendVerificationAlreadyVerified`, `resendVerificationTooMany(seconds)`.
 - `record.ts`: `recordingPost(path, respond)` (guarda os corpos JSON recebidos, para afirmar o que a tela enviou) e `pendingPost(path)` (nunca responde, para ver o estado de envio).
 
 **Não entra aqui**: fábricas de dados (`../factories.ts`), testes, dados reais.

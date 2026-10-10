@@ -11,15 +11,15 @@ import { translateApiError } from "@/i18n/apiErrors";
 import { useRunSetup } from "@/lib/api/setup";
 
 import { AuthCard } from "./AuthCard";
-import { FormAlert } from "./FormAlert";
+import { FormAlert } from "@/components/FormAlert";
 import {
   emailField,
   nameField,
   newPasswordFields,
   PASSWORD_MIN_LENGTH,
   withMatchingPasswords,
-} from "./schemas";
-import { TextField } from "./TextField";
+} from "@/lib/schemas";
+import { TextField } from "@/components/TextField";
 
 /** `/setup`: creates the first superadmin of a fresh instance and enters the panel. */
 export function SetupPage() {

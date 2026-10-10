@@ -4,7 +4,7 @@
 
 **Entra aqui**:
 
-- Componentes próprios reutilizáveis, um por arquivo em `PascalCase.tsx`, com teste ao lado (hoje `ApiStatus.tsx`, indicador de status da API no cabeçalho).
+- Componentes próprios reutilizáveis, um por arquivo em `PascalCase.tsx`, com teste ao lado (hoje `ApiStatus.tsx`, indicador de status da API no cabeçalho; `TextField.tsx`, campo de react-hook-form com label, dica e erro; `FormAlert.tsx`, erro de envio de formulário com `role="alert"`, que recebe o foco ao aparecer; os dois usados pelas telas de `features/auth/` e `features/account/`).
 - `ui/`: componentes do shadcn/ui (ver [ui/AGENTS.md](ui/AGENTS.md)).
 
 **Não entra aqui**: telas e componentes de uma feature só (`features/<area>/`), layout e rotas (`app/`), chamadas de API (`lib/api/`; aqui só se consomem os hooks).

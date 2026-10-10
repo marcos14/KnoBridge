@@ -12,6 +12,7 @@ import {
   isApiErrorCode,
   readCookie,
   resolveBaseUrl,
+  retryAfterSeconds,
   setUnauthorizedHandler,
   toApiError,
   unwrap,
@@ -93,6 +94,24 @@ describe("toApiError", () => {
     expect(toApiError(422, { detail: [] }).code).toBeUndefined();
     expect(toApiError(422, { error: "boom" }).code).toBeUndefined();
     expect(toApiError(422, { error: { code: 42 } }).code).toBeUndefined();
+  });
+});
+
+describe("retryAfterSeconds", () => {
+  it("test_retry_after_seconds_reads_details", () => {
+    const error = new ApiError(429, "too_many_attempts", { retry_after_seconds: 90 });
+
+    expect(retryAfterSeconds(error)).toBe(90);
+  });
+
+  it.each([
+    ["no details", new ApiError(429, "too_many_attempts", null)],
+    ["no field", new ApiError(429, "too_many_attempts", {})],
+    ["not a number", new ApiError(429, "too_many_attempts", { retry_after_seconds: "90" })],
+    ["zero", new ApiError(429, "too_many_attempts", { retry_after_seconds: 0 })],
+    ["not an ApiError", new TypeError("Failed to fetch")],
+  ])("test_retry_after_seconds_%s_is_undefined", (_case, error) => {
+    expect(retryAfterSeconds(error)).toBeUndefined();
   });
 });
 

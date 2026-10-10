@@ -172,6 +172,68 @@
       "logout": "Sair"
     }
   },
+  "account": {
+    "saving": "Salvando…",
+    "profile": {
+      "title": "Perfil",
+      "description": "Seus dados e preferências no painel.",
+      "email": {
+        "title": "E-mail",
+        "readOnly": "O e-mail é o seu login e não pode ser alterado por aqui.",
+        "verified": "Verificado",
+        "unverified": "Não verificado",
+        "unverifiedHint": "Confirme o seu e-mail pelo link que enviamos. Se ele não chegou ou expirou, peça um novo.",
+        "resend": "Reenviar e-mail de verificação",
+        "resent": "Enviamos um novo link de verificação para {{email}}. Confira também a caixa de spam.",
+        "alreadyVerified": "Este e-mail já foi verificado.",
+        "tooMany": "Você pediu muitos e-mails seguidos. Tente de novo {{when}}."
+      },
+      "preferences": {
+        "title": "Dados e preferências",
+        "language": "Idioma",
+        "languageHint": "Por enquanto o painel está disponível só em português.",
+        "theme": "Tema",
+        "submit": "Salvar alterações",
+        "saved": "Perfil atualizado."
+      }
+    },
+    "security": {
+      "title": "Segurança",
+      "description": "Senha e sessões abertas da sua conta.",
+      "password": {
+        "title": "Trocar senha",
+        "description": "Ao trocar a senha, todas as outras sessões da conta são encerradas. Esta continua aberta.",
+        "current": "Senha atual",
+        "submit": "Trocar senha",
+        "done": "Senha alterada. As outras sessões foram encerradas."
+      },
+      "sessions": {
+        "title": "Sessões ativas",
+        "description": "Navegadores e aparelhos conectados à sua conta, do uso mais recente para o mais antigo.",
+        "loading": "Carregando sessões…",
+        "loadFailed": "Não foi possível carregar as sessões.",
+        "retry": "Tentar novamente",
+        "current": "Esta sessão",
+        "lastSeen": "Último acesso {{when}}",
+        "createdAt": "Iniciada em {{date}}",
+        "network": "Rede {{ip}}",
+        "unknownDevice": "Dispositivo desconhecido",
+        "device": "{{browser}} no {{os}}",
+        "deviceOs": "Navegador no {{os}}",
+        "revoke": "Encerrar",
+        "revokeLabel": "Encerrar a sessão {{device}}",
+        "revokeCurrent": "Sair desta sessão",
+        "revokeCurrentTitle": "Sair desta sessão?",
+        "revokeCurrentDescription": "Você vai precisar entrar de novo neste navegador.",
+        "revokeOthers": "Encerrar todas as outras",
+        "revokeOthersTitle": "Encerrar todas as outras sessões?",
+        "revokeOthersDescription": "Todos os outros navegadores e aparelhos conectados à sua conta vão precisar entrar de novo. Esta sessão continua aberta.",
+        "revokedOthers": "As outras sessões foram encerradas.",
+        "onlyCurrent": "Não há outras sessões abertas.",
+        "cancel": "Cancelar"
+      }
+    }
+  },
   "roles": {
     "owner": "proprietário",
     "admin": "administrador",
@@ -179,8 +241,6 @@
     "viewer": "leitor"
   },
   "pages": {
-    "accountProfile": "Perfil",
-    "accountSecurity": "Segurança",
     "adminWorkspaces": "Workspaces da instância",
     "adminUsers": "Usuários da instância",
     "adminAudit": "Auditoria da instância",

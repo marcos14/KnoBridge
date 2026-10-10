@@ -54,6 +54,15 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
+/** Seconds to wait from a 429 `too_many_attempts` (`details.retry_after_seconds`), if given. */
+export function retryAfterSeconds(error: unknown): number | undefined {
+  if (!(error instanceof ApiError) || !isRecord(error.details)) {
+    return undefined;
+  }
+  const seconds = error.details.retry_after_seconds;
+  return typeof seconds === "number" && seconds > 0 ? seconds : undefined;
+}
+
 /** Builds an `ApiError` from a status and a body in the `{"error": {code, message, details}}` shape. */
 export function toApiError(status: number, body: unknown): ApiError {
   const error = isRecord(body) ? body.error : undefined;

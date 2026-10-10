@@ -9,6 +9,9 @@
 - `theme.ts`: `Theme`, `THEMES`, `resolveTheme`, `applyTheme` (classe `dark` e `color-scheme` no `<html>`), `storeTheme`. A chave `knobridge-theme` é lida também pelo script inline do `index.html` (primeiro paint): mude os dois juntos.
 - `lastWorkspace.ts`: último workspace usado (`localStorage`) e `pickWorkspace` (último, se ainda membro e ativo; senão o primeiro ativo; senão o primeiro).
 - `initials.ts`: iniciais para o avatar.
+- `schemas.ts`: campos zod dos formulários (`nameField`, `emailField`, `newPasswordFields` + `withMatchingPasswords`), com os limites do backend (`PASSWORD_MIN_LENGTH` 12, `PASSWORD_MAX_LENGTH` 1024, `NAME_MAX_LENGTH`, `EMAIL_MAX_LENGTH`); mensagens via `t` (chaves `auth.validation.*`).
+- `intl.ts`: `formatRelativeTime(date, now, locale)` ("há 5 minutos", "em 2 horas"), `formatDateTime(date, locale, timeZone?)` e `languageName(tag, locale)`, com `Intl`. O "agora" é sempre parâmetro (nos componentes, de `useClock()`).
+- `userAgent.ts`: `summarizeUserAgent` (navegador e sistema de um `User-Agent`, ou `null`).
 - `api/`: cliente gerado do OpenAPI e hooks TanStack Query (ver [api/AGENTS.md](api/AGENTS.md)).
 - Futuramente: funções puras de domínio usadas por várias features (formatação, validação, transformação do grafo do canvas).
 
