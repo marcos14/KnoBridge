@@ -19,7 +19,7 @@
 | `auth.login.succeeded`, `auth.login.failed`, `auth.logout.succeeded`, `auth.sessions.revoked` | instância |
 | `auth.password.changed`, `auth.password_reset.requested`, `auth.password_reset.completed`, `auth.email.verified`, `auth.email_verification.requested` | instância |
 | `membership.invited`, `membership.invitation.accepted`, `membership.invitation.resent`, `membership.invitation.revoked`, `membership.role.changed`, `membership.removed` | workspace |
-| `provider.created`, `provider.updated`, `provider.deleted` (credenciais de provedor de LLM; nome, tipo e campos alterados, nunca a chave) | workspace |
+| `provider.created`, `provider.updated`, `provider.deleted`, `provider.tested` (credenciais de provedor de LLM; nome, tipo, campos alterados e, no teste de conexão, `ok` e `error_code`; nunca a chave) | workspace |
 
 **Convenções locais**:
 - **Nunca grave segredo** (senha, token, cookie, chave, cabeçalho `Authorization`) nem dado pessoal além do necessário em `metadata`. Prefira ids a e-mails e nomes. Chaves que contêm `password`, `secret`, `token`, `cookie`, `authorization` ou `api_key` são recusadas por `record`.

@@ -225,7 +225,8 @@
           "membership.removed",
           "provider.created",
           "provider.updated",
-          "provider.deleted"
+          "provider.deleted",
+          "provider.tested"
         ],
         "title": "AuditAction",
         "type": "string"
@@ -837,6 +838,31 @@
         "title": "ProviderCreate",
         "type": "object"
       },
+      "ProviderErrorDetails": {
+        "properties": {
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "required": [
+          "provider",
+          "status"
+        ],
+        "title": "ProviderErrorDetails",
+        "type": "object"
+      },
       "ProviderKind": {
         "enum": [
           "openai",
@@ -928,6 +954,53 @@
           "offset"
         ],
         "title": "ProviderPage",
+        "type": "object"
+      },
+      "ProviderTestError": {
+        "description": "Same shape as the API error body: ``provider_auth_failed``, ``provider_rate_limited``,\n``provider_unavailable`` or ``provider_request_failed``.",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "details": {
+            "$ref": "#/components/schemas/ProviderErrorDetails"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "details"
+        ],
+        "title": "ProviderTestError",
+        "type": "object"
+      },
+      "ProviderTestResult": {
+        "properties": {
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProviderTestError"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ok",
+          "error"
+        ],
+        "title": "ProviderTestResult",
         "type": "object"
       },
       "ProviderUpdate": {
@@ -3480,6 +3553,69 @@
           }
         },
         "summary": "Update Provider",
+        "tags": [
+          "providers"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/providers/{provider_id}/test": {
+      "post": {
+        "description": "Call the provider with the stored key (cheapest authenticated call) and report it.\n\nA provider failure is a 200 with ``ok: false`` and the domain error, so the attempt is\naudited (``provider.tested``) either way; the key is never returned or logged.",
+        "operationId": "test_provider_v1_workspaces__workspace_id__providers__provider_id__test_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Provider Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderTestResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
+          },
+          "404": {
+            "description": "Workspace or provider not found, or caller is not a member."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Test Provider",
         "tags": [
           "providers"
         ]

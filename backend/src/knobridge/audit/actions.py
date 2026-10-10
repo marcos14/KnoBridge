@@ -43,3 +43,4 @@ class AuditAction(StrEnum):
     PROVIDER_CREATED = "provider.created"
     PROVIDER_UPDATED = "provider.updated"
     PROVIDER_DELETED = "provider.deleted"
+    PROVIDER_TESTED = "provider.tested"

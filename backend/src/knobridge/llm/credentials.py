@@ -21,7 +21,12 @@ from knobridge.audit.service import AuditService, AuditTarget
 from knobridge.core.clock import Clock
 from knobridge.core.crypto import SecretBox
 from knobridge.core.errors import ConflictError, NotFoundError, ValidationError
+from knobridge.core.logging import get_logger
+from knobridge.llm.errors import LLMProviderError
+from knobridge.llm.factory import ProviderFactory
 from knobridge.llm.models import ProviderCredential, ProviderKind
+
+_log = get_logger(__name__)
 
 # HKDF label of the data key; a new label (v2) means a new key, never reuse this one.
 CREDENTIALS_KEY_INFO = b"knobridge/provider-credentials/v1"
@@ -175,6 +180,57 @@ class ProviderCredentialService:
             metadata={"name": credential.name, "kind": credential.kind.value},
             ip=ip,
         )
+
+    async def test_connection(
+        self,
+        db: AsyncSession,
+        *,
+        workspace_id: uuid.UUID,
+        actor_id: uuid.UUID,
+        credential_id: uuid.UUID,
+        factory: ProviderFactory,
+        ip: str | None,
+    ) -> LLMProviderError | None:
+        """Make the provider's cheapest authenticated call with the stored key.
+
+        Returns the failure instead of raising it, so the audit event (``provider.tested``,
+        with ``ok`` and ``error_code``) commits with the request either way. The key is
+        decrypted only in memory for the call.
+        """
+        credential = await self._get(db, workspace_id, credential_id)
+        provider = factory(
+            credential.kind, api_key=self.reveal_key(credential), base_url=credential.base_url
+        )
+        failure: LLMProviderError | None = None
+        try:
+            await provider.check_connection()
+        except LLMProviderError as exc:
+            failure = exc
+            _log.warning(
+                "provider_test_failed",
+                workspace_id=str(workspace_id),
+                provider_id=str(credential.id),
+                kind=credential.kind.value,
+                error_code=exc.code,
+                status=exc.status,
+            )
+        finally:
+            await provider.aclose()
+        await self._audit.record(
+            db,
+            action=AuditAction.PROVIDER_TESTED,
+            workspace_id=workspace_id,
+            actor_user_id=actor_id,
+            target=_target(credential),
+            metadata={
+                "name": credential.name,
+                "kind": credential.kind.value,
+                "ok": failure is None,
+                "error_code": None if failure is None else failure.code,
+            },
+            ip=ip,
+        )
+        return failure
 
     def reveal_key(self, credential: ProviderCredential) -> str:
         """The API key in clear, only to call the provider; never log or return it."""

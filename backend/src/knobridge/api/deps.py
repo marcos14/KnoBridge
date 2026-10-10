@@ -27,6 +27,7 @@ from knobridge.core.settings import Settings
 from knobridge.email.rendering import EmailComposer
 from knobridge.email.sender import EmailSender
 from knobridge.llm.credentials import CREDENTIALS_KEY_INFO, ProviderCredentialService
+from knobridge.llm.factory import ProviderFactory, create_provider
 from knobridge.security.passwords import PasswordHasher
 from knobridge.security.sessions import InvalidSessionError
 from knobridge.tenancy.acceptance import InvitationAcceptance
@@ -123,6 +124,11 @@ def get_provider_credential_service(request: Request) -> ProviderCredentialServi
     )
 
 
+def get_provider_factory() -> ProviderFactory:
+    """Builds LLM adapters from credentials; tests override it to return fakes."""
+    return create_provider
+
+
 def get_email_sender(request: Request) -> EmailSender:
     sender: EmailSender = request.app.state.email_sender
     return sender
@@ -152,6 +158,7 @@ AdminUserServiceDep = Annotated[AdminUserService, Depends(get_admin_user_service
 ProviderCredentialServiceDep = Annotated[
     ProviderCredentialService, Depends(get_provider_credential_service)
 ]
+ProviderFactoryDep = Annotated[ProviderFactory, Depends(get_provider_factory)]
 EmailSenderDep = Annotated[EmailSender, Depends(get_email_sender)]
 EmailComposerDep = Annotated[EmailComposer, Depends(get_email_composer)]
 ClientIpDep = Annotated[str | None, Depends(client_ip)]

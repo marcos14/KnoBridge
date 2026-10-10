@@ -4,6 +4,7 @@ Owners, admins and editors list, create, update and delete them; viewers get 403
 key is write-only: it is accepted on create and update and never returned, only its masked
 form (``key_hint``, e.g. ``****1234``). The ``fake`` kind is refused in production (422
 ``provider_kind_not_allowed``); names are unique per workspace (409 ``provider_name_taken``).
+``POST .../{provider_id}/test`` checks the stored key against the provider.
 """
 
 from __future__ import annotations
@@ -19,6 +20,7 @@ from pydantic import BaseModel, StringConstraints
 from knobridge.api.deps import (
     ClientIpDep,
     ProviderCredentialServiceDep,
+    ProviderFactoryDep,
     WorkspaceContext,
     require_role,
 )
@@ -85,6 +87,26 @@ class ProviderPage(BaseModel):
     total: int
     limit: int
     offset: int
+
+
+class ProviderErrorDetails(BaseModel):
+    provider: str
+    # HTTP status returned by the provider; null when it could not be reached.
+    status: int | None
+
+
+class ProviderTestError(BaseModel):
+    """Same shape as the API error body: ``provider_auth_failed``, ``provider_rate_limited``,
+    ``provider_unavailable`` or ``provider_request_failed``."""
+
+    code: str
+    message: str
+    details: ProviderErrorDetails
+
+
+class ProviderTestResult(BaseModel):
+    ok: bool
+    error: ProviderTestError | None
 
 
 def _out(credential: ProviderCredential) -> ProviderOut:
@@ -179,6 +201,43 @@ async def update_provider(
         ip=ip,
     )
     return _out(credential)
+
+
+@router.post(
+    "/{provider_id}/test",
+    dependencies=[Depends(require_csrf)],
+    responses=_WRITE_ERRORS,
+)
+async def test_provider(
+    provider_id: uuid.UUID,
+    context: EditorContext,
+    providers: ProviderCredentialServiceDep,
+    factory: ProviderFactoryDep,
+    ip: ClientIpDep,
+) -> ProviderTestResult:
+    """Call the provider with the stored key (cheapest authenticated call) and report it.
+
+    A provider failure is a 200 with ``ok: false`` and the domain error, so the attempt is
+    audited (``provider.tested``) either way; the key is never returned or logged.
+    """
+    failure = await providers.test_connection(
+        context.db,
+        workspace_id=context.workspace_id,
+        actor_id=context.current.user.id,
+        credential_id=provider_id,
+        factory=factory,
+        ip=ip,
+    )
+    if failure is None:
+        return ProviderTestResult(ok=True, error=None)
+    return ProviderTestResult(
+        ok=False,
+        error=ProviderTestError(
+            code=failure.code,
+            message=failure.message,
+            details=ProviderErrorDetails(provider=failure.provider, status=failure.status),
+        ),
+    )
 
 
 @router.delete(

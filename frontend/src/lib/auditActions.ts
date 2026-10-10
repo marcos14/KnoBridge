@@ -30,6 +30,7 @@ const ACTIONS: Record<AuditAction, true> = {
   "provider.created": true,
   "provider.updated": true,
   "provider.deleted": true,
+  "provider.tested": true,
   "workspace.created": true,
   "workspace.updated": true,
   "workspace.suspended": true,

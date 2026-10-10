@@ -4,7 +4,8 @@
 
 **Entra aqui**:
 - `email_sender.py`: `FakeEmailSender` (implementa `EmailSender`; guarda as mensagens em `sent`, filtra com `sent_to(endereço)`).
-- Futuramente: fakes de `LLMProvider`, `EmbeddingProvider`, `Reranker`, conectores e canais, um módulo por interface.
+- `llm_provider.py`: `FailingLLMProvider` (implementa `LLMProvider`; toda chamada levanta o `LLMProviderError` dado; `closed` diz se foi fechado) e `RecordingFactory` (`ProviderFactory` que devolve o provedor dado e grava `FactoryCall(kind, api_key, base_url)`), para trocar `api.deps.get_provider_factory` via `dependency_overrides`. O fake de caminho feliz é produção (`knobridge.llm.fake.FakeLLMProvider`), porque o tipo `fake` o usa em dev e E2E.
+- Futuramente: fakes de `EmbeddingProvider`, `Reranker`, conectores e canais, um módulo por interface.
 
 **Não entra aqui**: testes (`test_*.py` ficam na pasta do módulo testado), fixtures de dados (`tests/fixtures/`), servidores de protocolo de apoio usados por um único módulo de teste (ficam no `<subpasta>_support.py` da pasta, como o SMTP de `tests/email/`).
 

@@ -134,10 +134,10 @@ fases:
         commit: 7e1c548
       - id: F4.2
         titulo: "Camada LLM: interface, adaptadores e teste de conexão"
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-10
+        concluida_em: 2026-10-10
         commit: null
       - id: F4.3
         titulo: "Assistentes"
@@ -595,6 +595,9 @@ Nenhuma aberta.
 - 2026-10-10 — F3.6 concluída: 492 testes, cobertura 100/99,0/100/100, e2e 3 ok (D22).
 - 2026-10-10 — F4.1 iniciada.
 - 2026-10-10 — F4.1 concluída: 459 testes backend 100%; ADR 0003 (D23). Detectada intermitência nos testes de auditoria do frontend (vinda da F3.6): correção antes da F4.2.
+- 2026-10-10 — Correção dos testes de auditoria intermitentes (7635b22): causa medida e corrigida sem mexer em timeout; 8 execuções seguidas verdes. Efeito colateral: busca por letra com o filtro fechado deixou de existir (abre com Enter/setas).
+- 2026-10-10 — F4.2 iniciada.
+- 2026-10-10 — F4.2 concluída: LLMProvider, adaptadores OpenAI/OpenRouter/Anthropic com SDKs oficiais, FakeLLMProvider, erros de domínio e teste de conexão auditado; backend 499 testes, 100%.
 
 ## 8. Encerramento
 

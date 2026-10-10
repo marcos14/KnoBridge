@@ -670,6 +670,29 @@ export interface paths {
         patch: operations["update_provider_v1_workspaces__workspace_id__providers__provider_id__patch"];
         trace?: never;
     };
+    "/v1/workspaces/{workspace_id}/providers/{provider_id}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test Provider
+         * @description Call the provider with the stored key (cheapest authenticated call) and report it.
+         *
+         *     A provider failure is a 200 with ``ok: false`` and the domain error, so the attempt is
+         *     audited (``provider.tested``) either way; the key is never returned or logged.
+         */
+        post: operations["test_provider_v1_workspaces__workspace_id__providers__provider_id__test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -754,7 +777,7 @@ export interface components {
          * AuditAction
          * @enum {string}
          */
-        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted";
+        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted" | "provider.tested";
         /** AuditEventOut */
         AuditEventOut: {
             /** Action */
@@ -973,6 +996,13 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** ProviderErrorDetails */
+        ProviderErrorDetails: {
+            /** Provider */
+            provider: string;
+            /** Status */
+            status: number | null;
+        };
         /**
          * ProviderKind
          * @enum {string}
@@ -1013,6 +1043,24 @@ export interface components {
             offset: number;
             /** Total */
             total: number;
+        };
+        /**
+         * ProviderTestError
+         * @description Same shape as the API error body: ``provider_auth_failed``, ``provider_rate_limited``,
+         *     ``provider_unavailable`` or ``provider_request_failed``.
+         */
+        ProviderTestError: {
+            /** Code */
+            code: string;
+            details: components["schemas"]["ProviderErrorDetails"];
+            /** Message */
+            message: string;
+        };
+        /** ProviderTestResult */
+        ProviderTestResult: {
+            error: components["schemas"]["ProviderTestError"] | null;
+            /** Ok */
+            ok: boolean;
         };
         /**
          * ProviderUpdate
@@ -2959,6 +3007,59 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    test_provider_v1_workspaces__workspace_id__providers__provider_id__test_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProviderTestResult"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or provider not found, or caller is not a member. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };
