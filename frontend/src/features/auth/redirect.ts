@@ -1,5 +1,7 @@
 export const LOGIN_PATH = "/login";
 export const SETUP_PATH = "/setup";
+export const FORGOT_PASSWORD_PATH = "/forgot-password";
+export const ACCEPT_INVITATION_PATH = "/accept-invitation";
 
 /** Query parameter that carries where to go after logging in. */
 export const NEXT_PARAM = "next";

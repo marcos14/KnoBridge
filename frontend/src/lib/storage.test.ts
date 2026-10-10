@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { readStoredItem, writeStoredItem } from "./storage";
+import { readStoredItem, removeStoredItem, writeStoredItem } from "./storage";
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -23,6 +23,32 @@ describe("storage", () => {
     });
 
     expect(readStoredItem("knobridge-test")).toBeUndefined();
+  });
+
+  it("test_storage_session_area_is_separate_from_local", () => {
+    writeStoredItem("knobridge-test", "tab", "session");
+
+    expect(readStoredItem("knobridge-test", "session")).toBe("tab");
+    expect(window.sessionStorage.getItem("knobridge-test")).toBe("tab");
+    expect(readStoredItem("knobridge-test")).toBeUndefined();
+  });
+
+  it("test_storage_remove_forgets_item", () => {
+    writeStoredItem("knobridge-test", "tab", "session");
+
+    removeStoredItem("knobridge-test", "session");
+
+    expect(readStoredItem("knobridge-test", "session")).toBeUndefined();
+  });
+
+  it("test_storage_remove_ignores_storage_failure", () => {
+    vi.spyOn(Storage.prototype, "removeItem").mockImplementation(() => {
+      throw new DOMException("blocked", "SecurityError");
+    });
+
+    expect(() => {
+      removeStoredItem("knobridge-test");
+    }).not.toThrow();
   });
 
   it("test_storage_write_ignores_storage_failure", () => {

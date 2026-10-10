@@ -1,4 +1,5 @@
 import type { Me, UserWorkspace } from "@/lib/api/auth";
+import type { InvitationPreview } from "@/lib/api/invites";
 
 /** Synthetic ids, fixed so tests can build URLs such as `/w/${WORKSPACE_ID}`. */
 export const USER_ID = "00000000-0000-4000-8000-000000000001";
@@ -29,6 +30,22 @@ export function makeMe(overrides: Partial<Me> = {}): Me {
     },
     is_superadmin: false,
     workspaces: [makeWorkspace()],
+    ...overrides,
+  };
+}
+
+/** Body of `POST /v1/invites/preview`: an editor invitation to a new address (no account yet). */
+export function makeInvitationPreview(
+  overrides: Partial<InvitationPreview> = {},
+): InvitationPreview {
+  return {
+    workspace_id: WORKSPACE_ID,
+    workspace_name: "Acme Suporte",
+    email: "bruno@example.test",
+    role: "editor",
+    inviter_name: "Ana Teste",
+    user_exists: false,
+    expires_at: "2026-01-08T00:00:00Z",
     ...overrides,
   };
 }

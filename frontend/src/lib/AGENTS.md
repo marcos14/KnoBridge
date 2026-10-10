@@ -5,7 +5,7 @@
 **Entra aqui**:
 
 - `utils.ts`: `cn()` (junta classes e resolve conflitos do Tailwind), usado pelos componentes do shadcn/ui e pelos nossos.
-- `storage.ts`: `readStoredItem`/`writeStoredItem`, acesso ao `localStorage` que nunca lança (janela privada, dados bloqueados → "nada guardado"). Só para conveniências do navegador.
+- `storage.ts`: `readStoredItem`/`writeStoredItem`/`removeStoredItem`, acesso ao `localStorage` (padrão) ou ao `sessionStorage` (`"session"`, só a aba atual) que nunca lança (janela privada, dados bloqueados → "nada guardado"). Só para conveniências do navegador (tema, último workspace, convite pendente durante o login).
 - `theme.ts`: `Theme`, `THEMES`, `resolveTheme`, `applyTheme` (classe `dark` e `color-scheme` no `<html>`), `storeTheme`. A chave `knobridge-theme` é lida também pelo script inline do `index.html` (primeiro paint): mude os dois juntos.
 - `lastWorkspace.ts`: último workspace usado (`localStorage`) e `pickWorkspace` (último, se ainda membro e ativo; senão o primeiro ativo; senão o primeiro).
 - `initials.ts`: iniciais para o avatar.

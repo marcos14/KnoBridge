@@ -92,13 +92,13 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: 85df6f1
       - id: F3.3
         titulo: "Telas públicas: setup, login, senha, convite e verificação"
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-10
+        concluida_em: 2026-10-10
         commit: null
       - id: F3.4
         titulo: "Perfil e segurança da conta"
@@ -585,6 +585,8 @@ Nenhuma aberta.
 - 2026-10-10 — F3.1 concluída: 99 testes, cobertura 100%, e2e 2 ok (D17). Tratamento visual de workspace suspenso fica para F3.2.
 - 2026-10-10 — F3.2 iniciada.
 - 2026-10-10 — F3.2 concluída: 190 testes, cobertura 100/97,3/100/100, e2e 3 ok (D18). Code-splitting por rota anotado para F5.3.
+- 2026-10-10 — F3.3 iniciada.
+- 2026-10-10 — F3.3 concluída: 259 testes, cobertura 100/98,4/100/100, e2e 3 ok (D19).
 
 ## 8. Encerramento
 

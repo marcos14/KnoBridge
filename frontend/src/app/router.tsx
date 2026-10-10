@@ -1,11 +1,17 @@
 import type { ReactNode } from "react";
 import { createBrowserRouter, Navigate, type RouteObject } from "react-router";
 
+import { AcceptInvitationPage } from "@/features/auth/AcceptInvitationPage";
+import { ForgotPasswordPage } from "@/features/auth/ForgotPasswordPage";
+import { LoginPage } from "@/features/auth/LoginPage";
 import { RequireAuth } from "@/features/auth/RequireAuth";
 import { RequireSetupDone } from "@/features/auth/RequireSetupDone";
 import { RequireSetupPending } from "@/features/auth/RequireSetupPending";
 import { RequireSuperadmin } from "@/features/auth/RequireSuperadmin";
 import { RequireWorkspaceRole } from "@/features/auth/RequireWorkspaceRole";
+import { ResetPasswordPage } from "@/features/auth/ResetPasswordPage";
+import { SetupPage } from "@/features/auth/SetupPage";
+import { VerifyEmailPage } from "@/features/auth/VerifyEmailPage";
 
 import { HomePage } from "./HomePage";
 import { Layout } from "./Layout";
@@ -43,7 +49,7 @@ export const routes: RouteObject[] = [
           {
             path: "setup",
             element: <RequireSetupPending />,
-            children: [{ index: true, element: <PlaceholderPage page="setup" /> }],
+            children: [{ index: true, element: <SetupPage /> }],
           },
         ],
       },
@@ -53,11 +59,11 @@ export const routes: RouteObject[] = [
           {
             element: <PublicLayout />,
             children: [
-              { path: "login", element: <PlaceholderPage page="login" /> },
-              { path: "forgot-password", element: <PlaceholderPage page="forgotPassword" /> },
-              { path: "reset-password", element: <PlaceholderPage page="resetPassword" /> },
-              { path: "verify-email", element: <PlaceholderPage page="verifyEmail" /> },
-              { path: "accept-invitation", element: <PlaceholderPage page="acceptInvitation" /> },
+              { path: "login", element: <LoginPage /> },
+              { path: "forgot-password", element: <ForgotPasswordPage /> },
+              { path: "reset-password", element: <ResetPasswordPage /> },
+              { path: "verify-email", element: <VerifyEmailPage /> },
+              { path: "accept-invitation", element: <AcceptInvitationPage /> },
             ],
           },
           {

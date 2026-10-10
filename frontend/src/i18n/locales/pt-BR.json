@@ -102,13 +102,83 @@
     "loadFailed": "Não foi possível carregar a página. Verifique a conexão e tente novamente.",
     "retry": "Tentar novamente"
   },
+  "auth": {
+    "fields": {
+      "name": "Nome",
+      "email": "E-mail",
+      "password": "Senha",
+      "newPassword": "Nova senha",
+      "confirmPassword": "Confirme a senha"
+    },
+    "validation": {
+      "nameRequired": "Informe seu nome.",
+      "emailRequired": "Informe seu e-mail.",
+      "emailInvalid": "Informe um e-mail válido.",
+      "passwordRequired": "Informe sua senha.",
+      "passwordTooShort": "A senha precisa ter ao menos {{min}} caracteres.",
+      "passwordMismatch": "As senhas não conferem.",
+      "tooLong": "Use no máximo {{max}} caracteres."
+    },
+    "passwordHint": "Use ao menos {{min}} caracteres. Uma frase longa é mais fácil de lembrar e mais segura.",
+    "submitting": "Enviando…",
+    "backToLogin": "Voltar para o login",
+    "setup": {
+      "title": "Configuração inicial",
+      "description": "Crie a conta do primeiro superadministrador desta instância do KnoBridge.",
+      "submit": "Criar conta e entrar"
+    },
+    "login": {
+      "title": "Entrar",
+      "description": "Acesse o painel com seu e-mail e senha.",
+      "submit": "Entrar",
+      "forgotPassword": "Esqueci minha senha"
+    },
+    "forgotPassword": {
+      "title": "Recuperar senha",
+      "description": "Informe o e-mail da sua conta. Enviaremos um link para você criar uma nova senha.",
+      "submit": "Enviar link",
+      "sent": "Se houver uma conta com esse e-mail, você vai receber em instantes um link para redefinir a senha. Confira também a caixa de spam."
+    },
+    "resetPassword": {
+      "title": "Redefinir senha",
+      "description": "Escolha a nova senha da sua conta.",
+      "submit": "Salvar nova senha",
+      "done": "Senha alterada. Entre com a nova senha.",
+      "goToLogin": "Ir para o login",
+      "invalid": "O link de redefinição é inválido, expirou ou já foi usado. Peça um novo link.",
+      "requestNew": "Pedir um novo link"
+    },
+    "verifyEmail": {
+      "title": "Verificar e-mail",
+      "verifying": "Verificando seu e-mail…",
+      "done": "E-mail verificado. Obrigado!",
+      "goToPanel": "Ir para o painel",
+      "invalid": "O link de verificação é inválido, expirou ou já foi usado. Entre na sua conta e peça um novo link em Segurança.",
+      "retry": "Tentar novamente"
+    },
+    "acceptInvitation": {
+      "title": "Aceitar convite",
+      "invalid": "Este convite é inválido, expirou, já foi usado ou foi revogado. Peça um novo convite a quem convidou você.",
+      "invitedBy": "{{inviter}} convidou você para participar do workspace {{workspace}} como {{role}}.",
+      "invited": "Você foi convidado para participar do workspace {{workspace}} como {{role}}.",
+      "invitedEmail": "Convite enviado para {{email}}.",
+      "createAccount": "Crie sua conta para aceitar o convite.",
+      "submitNew": "Criar conta e aceitar",
+      "loginToAccept": "Já existe uma conta para {{email}}. Entre com ela para aceitar o convite.",
+      "login": "Entrar para aceitar",
+      "acceptAs": "Você está conectado como {{email}}.",
+      "accept": "Aceitar convite",
+      "mismatch": "Este convite foi enviado para {{invited}}, mas você está conectado com outra conta. Saia e entre com a conta do convite.",
+      "logout": "Sair"
+    }
+  },
+  "roles": {
+    "owner": "proprietário",
+    "admin": "administrador",
+    "editor": "editor",
+    "viewer": "leitor"
+  },
   "pages": {
-    "setup": "Configuração inicial",
-    "login": "Entrar",
-    "forgotPassword": "Recuperar senha",
-    "resetPassword": "Redefinir senha",
-    "verifyEmail": "Verificar e-mail",
-    "acceptInvitation": "Aceitar convite",
     "accountProfile": "Perfil",
     "accountSecurity": "Segurança",
     "adminWorkspaces": "Workspaces da instância",

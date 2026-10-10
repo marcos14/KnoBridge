@@ -9,6 +9,7 @@ import {
   CSRF_COOKIE_NAME,
   CSRF_HEADER_NAME,
   createApiClient,
+  isApiErrorCode,
   readCookie,
   resolveBaseUrl,
   setUnauthorizedHandler,
@@ -62,6 +63,18 @@ describe("ApiError", () => {
 
     expect(error.code).toBe("weak_password");
     expect(error.details).toEqual({ min_length: 12 });
+  });
+});
+
+describe("isApiErrorCode", () => {
+  it("test_is_api_error_code_matches_code_of_api_error", () => {
+    expect(isApiErrorCode(new ApiError(400, "invalid_token"), "invalid_token")).toBe(true);
+  });
+
+  it("test_is_api_error_code_rejects_other_code_and_other_errors", () => {
+    expect(isApiErrorCode(new ApiError(400, "weak_password"), "invalid_token")).toBe(false);
+    expect(isApiErrorCode(new TypeError("Failed to fetch"), "invalid_token")).toBe(false);
+    expect(isApiErrorCode(null, "invalid_token")).toBe(false);
   });
 });
 
@@ -210,6 +223,7 @@ describe("unauthorized handler", () => {
       http.get("*/v1/me", () => apiErrorResponse(401, "unauthenticated")),
       http.post("*/v1/auth/login", () => apiErrorResponse(401, "invalid_credentials")),
       http.post("*/v1/auth/logout", () => apiErrorResponse(401, "unauthenticated")),
+      http.post("*/v1/invites/accept", () => apiErrorResponse(401, "login_required")),
     );
   });
 
@@ -223,12 +237,13 @@ describe("unauthorized handler", () => {
     expect(onUnauthorized).toHaveBeenCalledOnce();
   });
 
-  it("test_client_ignores_expected_401_of_anonymous_me_login_and_logout", async () => {
+  it("test_client_ignores_expected_401_of_anonymous_me_login_logout_and_invitation", async () => {
     const client = createApiClient(BASE);
 
     await client.GET("/v1/me");
     await client.POST("/v1/auth/login", { body: { email: "a@example.test", password: "x" } });
     await client.POST("/v1/auth/logout");
+    await client.POST("/v1/invites/accept", { body: { token: "synthetic" } });
 
     expect(onUnauthorized).not.toHaveBeenCalled();
   });

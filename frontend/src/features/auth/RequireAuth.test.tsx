@@ -31,7 +31,7 @@ describe("RequireAuth", () => {
     expect(
       await screen.findByRole("heading", { level: 1, name: "Redefinir senha" }),
     ).toBeInTheDocument();
-    expect(router.state.location.search).toBe("?token=abc");
+    expect(router.state.location.pathname).toBe("/reset-password");
   });
 
   it("test_require_auth_offers_retry_when_session_cannot_be_loaded", async () => {

@@ -10,6 +10,10 @@
 - `setup.ts`: `setupStatusDone` e `setupOk` (padrão), `setupStatusNeeded`, `setupStatusServerError`, `setupAlreadyCompleted`.
 - `auth.ts`: `meOk`, `updateProfileOk` (`PATCH /v1/me`, aplica o corpo ao usuário padrão), `loginOk`, `logoutOk`, `csrfOk` (padrão), `meAs(me)`, `meUnauthenticated`, `meServerError`, `updateProfileCsrfFailed`, `loginInvalidCredentials`, `logoutUnauthenticated`, `logoutCsrfFailed`.
 
+- `recovery.ts`: `forgotPasswordOk`, `resetPasswordOk` e `verifyEmailOk` (padrão, 204), `forgotPasswordServerError`, `resetPasswordInvalidToken`, `resetPasswordWeak`, `verifyEmailInvalidToken`, `verifyEmailServerError`.
+- `invites.ts`: `invitationPreviewOk` e `acceptInvitationOk` (padrão: convite de editor para `bruno@example.test`, sem conta; o aceite devolve o `me` do convidado já membro), `invitationPreviewAs(preview)`, `invitationPreviewInvalidToken`, `acceptInvitationLoginRequired`, `acceptInvitationEmailMismatch`, `acceptInvitationInvalidToken`, `acceptInvitationAlreadyMember`.
+- `record.ts`: `recordingPost(path, respond)` (guarda os corpos JSON recebidos, para afirmar o que a tela enviou) e `pendingPost(path)` (nunca responde, para ver o estado de envio).
+
 **Não entra aqui**: fábricas de dados (`../factories.ts`), testes, dados reais.
 
 **Convenções locais**:

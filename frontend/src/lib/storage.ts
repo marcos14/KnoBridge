@@ -1,21 +1,37 @@
+type StorageArea = "local" | "session";
+
+function storageFor(area: StorageArea): Storage {
+  return area === "local" ? window.localStorage : window.sessionStorage;
+}
+
 /**
- * `localStorage` access that never throws. Private windows, blocked site data and sandboxed frames
+ * Web storage access that never throws. Private windows, blocked site data and sandboxed frames
  * make even reading `window.localStorage` raise; the panel only keeps conveniences there (theme for
- * the first paint, last workspace), so a failure means "nothing stored".
+ * the first paint, last workspace, a pending invitation in the tab), so a failure means "nothing
+ * stored". `area` picks `localStorage` (default) or `sessionStorage` (this tab only).
  */
-export function readStoredItem(key: string): string | undefined {
+export function readStoredItem(key: string, area: StorageArea = "local"): string | undefined {
   try {
-    return window.localStorage.getItem(key) ?? undefined;
+    return storageFor(area).getItem(key) ?? undefined;
   } catch {
     return undefined;
   }
 }
 
 /** Saves `value` under `key`; silently does nothing when storage is unavailable. */
-export function writeStoredItem(key: string, value: string): void {
+export function writeStoredItem(key: string, value: string, area: StorageArea = "local"): void {
   try {
-    window.localStorage.setItem(key, value);
+    storageFor(area).setItem(key, value);
   } catch {
     // Storage unavailable: the value is a convenience, losing it is harmless.
+  }
+}
+
+/** Forgets `key`; silently does nothing when storage is unavailable. */
+export function removeStoredItem(key: string, area: StorageArea = "local"): void {
+  try {
+    storageFor(area).removeItem(key);
+  } catch {
+    // Storage unavailable: there is nothing stored to forget.
   }
 }

@@ -10,13 +10,15 @@ const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS", "TRACE"]);
 
 /**
  * Requests whose 401 is an expected answer, not an expired session: an anonymous `GET /v1/me`
- * (how the app learns nobody is logged in), a login with wrong credentials and a logout of a
- * session that already ended.
+ * (how the app learns nobody is logged in), a login with wrong credentials, a logout of a
+ * session that already ended and an invitation accepted for an address that must log in first
+ * (`login_required`, handled by the invitation screen).
  */
 const EXPECTED_UNAUTHORIZED = [
   { method: "GET", path: "/v1/me" },
   { method: "POST", path: "/v1/auth/login" },
   { method: "POST", path: "/v1/auth/logout" },
+  { method: "POST", path: "/v1/invites/accept" },
 ];
 
 /**
@@ -41,6 +43,11 @@ export class ApiError extends Error {
     this.code = code;
     this.details = details;
   }
+}
+
+/** Whether `error` is an `ApiError` carrying the API error `code`. */
+export function isApiErrorCode(error: unknown, code: string): error is ApiError {
+  return error instanceof ApiError && error.code === code;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

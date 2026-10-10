@@ -35,6 +35,7 @@ afterEach(() => {
   server.resetHandlers();
   // State the app keeps outside React: stored preferences, the theme class and media queries.
   window.localStorage.clear();
+  window.sessionStorage.clear();
   document.documentElement.className = "";
   document.documentElement.removeAttribute("style");
   document.cookie = "sidebar_state=; max-age=0; path=/";
