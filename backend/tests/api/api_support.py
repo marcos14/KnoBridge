@@ -92,6 +92,7 @@ class ApiEnv:
         superadmin: bool = False,
         status: UserStatus = UserStatus.ACTIVE,
         hasher: PasswordHasher | None = None,
+        name: str = "Test User",
     ) -> SeededUser:
         password_hash = None if password is None else (hasher or self.hasher).hash(password)
         email = f"{unique('user')}@example.test"
@@ -100,7 +101,7 @@ class ApiEnv:
             async with system_session(factory) as db:
                 user = User(
                     email=email,
-                    name="Test User",
+                    name=name,
                     password_hash=password_hash,
                     is_superadmin=superadmin,
                     status=status,

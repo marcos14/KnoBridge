@@ -67,13 +67,13 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: 4a7da46
       - id: F2.4
         titulo: "API do superadmin"
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-10
+        concluida_em: 2026-10-10
         commit: null
   - id: F3
     titulo: "Shell navegável e telas de conta e administração (frontend)"
@@ -579,6 +579,8 @@ Nenhuma aberta.
 - 2026-10-10 — F2.2 concluída: 327 testes, cobertura 100% (D14).
 - 2026-10-10 — F2.3 iniciada.
 - 2026-10-10 — F2.3 concluída: 376 testes, cobertura 100%; emenda ao ADR 0001 (D15).
+- 2026-10-10 — F2.4 iniciada.
+- 2026-10-10 — F2.4 concluída: 421 testes, cobertura 100% (D16).
 
 ## 8. Encerramento
 

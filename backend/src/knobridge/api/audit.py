@@ -11,7 +11,13 @@ from pydantic import BaseModel
 
 from knobridge.api.deps import WorkspaceContext, require_role
 from knobridge.audit.actions import AuditAction
-from knobridge.audit.queries import DEFAULT_LIMIT, MAX_LIMIT, AuditFilter, list_audit_events
+from knobridge.audit.queries import (
+    DEFAULT_LIMIT,
+    MAX_LIMIT,
+    AuditFilter,
+    AuditPage,
+    list_audit_events,
+)
 from knobridge.tenancy.models import Role
 
 router = APIRouter(prefix="/workspaces/{workspace_id}/audit", tags=["audit"])
@@ -67,6 +73,11 @@ async def list_workspace_audit(
         limit=limit,
         offset=offset,
     )
+    return audit_page(page)
+
+
+def audit_page(page: AuditPage) -> AuditEventPage:
+    """Serialize a page of events (also used by ``GET /v1/admin/audit``)."""
     return AuditEventPage(
         items=[
             AuditEventOut(

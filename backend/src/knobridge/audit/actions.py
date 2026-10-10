@@ -15,9 +15,12 @@ class AuditAction(StrEnum):
     USER_CREATED = "user.created"
     USER_SUSPENDED = "user.suspended"
     USER_REACTIVATED = "user.reactivated"
+    USER_SUPERADMIN_GRANTED = "user.superadmin.granted"
+    USER_SUPERADMIN_REVOKED = "user.superadmin.revoked"
     WORKSPACE_CREATED = "workspace.created"
     WORKSPACE_UPDATED = "workspace.updated"
     WORKSPACE_SUSPENDED = "workspace.suspended"
+    WORKSPACE_REACTIVATED = "workspace.reactivated"
     # Authentication and account.
     AUTH_LOGIN_SUCCEEDED = "auth.login.succeeded"
     AUTH_LOGIN_FAILED = "auth.login.failed"

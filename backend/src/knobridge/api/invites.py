@@ -117,7 +117,7 @@ class AcceptInvitationRequest(InvitationTokenRequest):
     password: str | None = Field(default=None, max_length=MAX_PASSWORD_LENGTH)
 
 
-def _out(invitation: Invitation, clock: Clock) -> InvitationOut:
+def invitation_out(invitation: Invitation, clock: Clock) -> InvitationOut:
     return InvitationOut(
         id=invitation.id,
         email=invitation.email,
@@ -129,7 +129,7 @@ def _out(invitation: Invitation, clock: Clock) -> InvitationOut:
     )
 
 
-def _send(
+def send_invitation(
     tasks: BackgroundTasks,
     sender: EmailSender,
     composer: EmailComposer,
@@ -181,8 +181,8 @@ async def create_invite(
         role=body.role,
         ip=ip,
     )
-    _send(tasks, sender, composer, issued.delivery)
-    return _out(issued.invitation, clock)
+    send_invitation(tasks, sender, composer, issued.delivery)
+    return invitation_out(issued.invitation, clock)
 
 
 @workspace_router.get("", responses=_MANAGE_ERRORS)
@@ -198,7 +198,10 @@ async def list_invites(
         context.db, workspace_id=context.workspace_id, limit=limit, offset=offset
     )
     return InvitationPage(
-        items=[_out(item, clock) for item in items], total=total, limit=limit, offset=offset
+        items=[invitation_out(item, clock) for item in items],
+        total=total,
+        limit=limit,
+        offset=offset,
     )
 
 
@@ -247,8 +250,8 @@ async def resend_invite(
         actor_role=context.role,
         ip=ip,
     )
-    _send(tasks, sender, composer, issued.delivery)
-    return _out(issued.invitation, clock)
+    send_invitation(tasks, sender, composer, issued.delivery)
+    return invitation_out(issued.invitation, clock)
 
 
 public_router = APIRouter(prefix="/invites", tags=["invites"])

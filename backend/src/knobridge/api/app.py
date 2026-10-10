@@ -11,7 +11,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from knobridge import __version__
-from knobridge.api import account, audit, auth, health, invites, me, members, recovery, setup
+from knobridge.api import (
+    account,
+    admin,
+    audit,
+    auth,
+    health,
+    invites,
+    me,
+    members,
+    recovery,
+    setup,
+)
 from knobridge.core.clock import Clock, SystemClock
 from knobridge.core.db import create_engine, create_session_factory
 from knobridge.core.errors import register_error_handlers
@@ -76,7 +87,7 @@ def create_app(
     register_error_handlers(app)
 
     v1 = APIRouter(prefix=API_PREFIX)
-    for module in (health, setup, auth, recovery, me, account, audit, members, invites):
+    for module in (health, setup, auth, recovery, me, account, audit, members, invites, admin):
         v1.include_router(module.router)
     app.include_router(v1)
     return app

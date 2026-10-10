@@ -20,7 +20,7 @@ from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from knobridge.core.clock import Clock
-from knobridge.core.db import scoped_session
+from knobridge.core.db import scoped_session, system_session
 from knobridge.core.errors import ForbiddenError, NotFoundError, UnauthenticatedError
 from knobridge.core.settings import Settings
 from knobridge.email.rendering import EmailComposer
@@ -29,6 +29,8 @@ from knobridge.security.passwords import PasswordHasher
 from knobridge.security.sessions import InvalidSessionError
 from knobridge.tenancy.acceptance import InvitationAcceptance
 from knobridge.tenancy.account import AccountConfig, AccountService
+from knobridge.tenancy.admin_users import AdminUserService
+from knobridge.tenancy.admin_workspaces import AdminWorkspaceService
 from knobridge.tenancy.auth import AuthConfig, AuthenticatedUser, AuthService
 from knobridge.tenancy.invitations import InvitationService
 from knobridge.tenancy.members import MemberService
@@ -99,6 +101,17 @@ def get_member_service(request: Request) -> MemberService:
     return MemberService(request.app.state.clock)
 
 
+def get_admin_workspace_service(
+    request: Request, invitations: Annotated[InvitationService, Depends(get_invitation_service)]
+) -> AdminWorkspaceService:
+    return AdminWorkspaceService(request.app.state.clock, invitations)
+
+
+def get_admin_user_service(request: Request) -> AdminUserService:
+    settings = get_settings_from_app(request)
+    return AdminUserService(request.app.state.clock, settings.session_ttl)
+
+
 def get_email_sender(request: Request) -> EmailSender:
     sender: EmailSender = request.app.state.email_sender
     return sender
@@ -123,6 +136,8 @@ ClockDep = Annotated[Clock, Depends(get_clock)]
 InvitationServiceDep = Annotated[InvitationService, Depends(get_invitation_service)]
 InvitationAcceptanceDep = Annotated[InvitationAcceptance, Depends(get_invitation_acceptance)]
 MemberServiceDep = Annotated[MemberService, Depends(get_member_service)]
+AdminWorkspaceServiceDep = Annotated[AdminWorkspaceService, Depends(get_admin_workspace_service)]
+AdminUserServiceDep = Annotated[AdminUserService, Depends(get_admin_user_service)]
 EmailSenderDep = Annotated[EmailSender, Depends(get_email_sender)]
 EmailComposerDep = Annotated[EmailComposer, Depends(get_email_composer)]
 ClientIpDep = Annotated[str | None, Depends(client_ip)]
@@ -170,6 +185,25 @@ def require_superadmin(current: CurrentUserDep) -> AuthenticatedUser:
     if not current.user.is_superadmin:
         raise ForbiddenError("Superadmin access required.")
     return current
+
+
+@dataclass(frozen=True)
+class SuperadminContext:
+    """The superadmin caller and a ``system_session`` (every workspace visible)."""
+
+    current: AuthenticatedUser
+    db: AsyncSession
+
+
+async def superadmin_context(
+    current: Annotated[AuthenticatedUser, Depends(require_superadmin)], factory: SessionFactoryDep
+) -> AsyncGenerator[SuperadminContext]:
+    """System mode only after ``require_superadmin``; commits before the response is sent."""
+    async with system_session(factory) as db:
+        yield SuperadminContext(current=current, db=db)
+
+
+SuperadminContextDep = Annotated[SuperadminContext, Depends(superadmin_context, scope="function")]
 
 
 @dataclass(frozen=True)
