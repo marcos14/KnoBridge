@@ -1,0 +1,90 @@
+[project]
+name = "knobridge"
+dynamic = ["version"]
+description = "KnoBridge backend: API, workers, connectors, pipelines and assistants."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "Apache-2.0"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "structlog>=24.4",
+]
+
+[project.scripts]
+knobridge-api = "knobridge.api.app:serve"
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.13.1",
+    "pyright>=1.1.390",
+    "pytest>=8.3",
+    "pytest-cov>=6.0",
+    "ruff>=0.8",
+]
+
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+# Single source of truth for the version, also exposed at runtime as knobridge.__version__.
+path = "src/knobridge/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/knobridge"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # pyflakes
+    "I",     # isort
+    "B",     # bugbear
+    "UP",    # pyupgrade
+    "SIM",   # simplify
+    "RUF",   # ruff-specific
+    "C4",    # comprehensions
+    "PTH",   # use pathlib
+    "PT",    # pytest style
+    "N",     # naming
+    "S",     # bandit (security)
+    "T20",   # print statements
+    "ANN",   # annotations
+    "ASYNC", # async pitfalls
+    "FAST",  # FastAPI
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.pyright]
+include = ["src", "tests"]
+exclude = [".venv", "**/__pycache__"]
+pythonVersion = "3.12"
+typeCheckingMode = "strict"
+venvPath = "."
+venv = ".venv"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["integration: needs real Postgres/Temporal via containers"]
+addopts = "--cov=knobridge --cov-branch --cov-report=term-missing --cov-fail-under=95"
+
+[tool.coverage.run]
+branch = true
+source = ["knobridge"]
+
+[tool.coverage.report]
+show_missing = true
+exclude_also = ["if TYPE_CHECKING:"]

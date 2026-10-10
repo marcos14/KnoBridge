@@ -21,17 +21,17 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: 9e82685
   - id: F2
     titulo: Backend base
-    status: pendente
+    status: em_execucao
     subfases:
       - id: F2.1
         titulo: Pacote Python, core e API com health
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-10
+        concluida_em: 2026-10-10
         commit: null
       - id: F2.2
         titulo: Banco async, Alembic e readiness
@@ -139,6 +139,13 @@ decisoes:
     decisao: check_plans.py também valida que campos de data são null ou AAAA-MM-DD válidos, e lê o YAML preservando ids e datas como texto.
     motivo: Regra de datas absolutas do docs/planos/AGENTS.md; YAML padrão converte 0010 em octal e datas em objetos.
     alternativas: Validar só os campos pedidos; usar yaml.safe_load puro.
+    adr: null
+  - id: D9
+    data: 2026-10-10
+    por: agente
+    decisao: "Backend usa httpx2 (não httpx) como dependência de teste; sem pytest-asyncio por ora; build com hatchling e versão única em knobridge.__version__; comando knobridge-api."
+    motivo: "Starlette 1.7 tipa e exige httpx2 no TestClient; com httpx o pyright strict falha e há aviso de depreciação."
+    alternativas: "httpx com ignores de tipo."
     adr: null
 pendencias_usuario: []
 ---
@@ -273,6 +280,8 @@ Nenhuma no momento. A CI só roda de fato quando o repositório estiver no GitHu
 - 2026-10-10 — plano aprovado pelo usuário; início da execução.
 - 2026-10-10 — F1.1 iniciada.
 - 2026-10-10 — F1.1 concluída: 55 testes, cobertura 100%; check_agents_md e check_plans passam no repo. Agente acrescentou validação de datas AAAA-MM-DD em check_plans (D8).
+- 2026-10-10 — F2.1 iniciada.
+- 2026-10-10 — F2.1 concluída: 31 testes, cobertura 100%; ruff e pyright strict limpos (D9).
 
 ## 8. Encerramento
 

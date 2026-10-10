@@ -1,6 +1,6 @@
 # backend/
 
-**Função**: todo o código Python do KnoBridge. API REST e API compatível com OpenAI (FastAPI), workers e workflows (Temporal), conectores, engine incremental de pipelines, harness de mapeamento de código, parsing, recuperação (busca híbrida + reranker), assistentes, canais (Slack, Google Chat, widget, MCP, webhooks) e migrações. Estado: só este arquivo. O bootstrap está na seção 12 do `AGENTS.md` da raiz.
+**Função**: todo o código Python do KnoBridge. API REST e API compatível com OpenAI (FastAPI), workers e workflows (Temporal), conectores, engine incremental de pipelines, harness de mapeamento de código, parsing, recuperação (busca híbrida + reranker), assistentes, canais (Slack, Google Chat, widget, MCP, webhooks) e migrações. Estado: pacote `knobridge` com `core/` (settings, logging JSON, erros) e `api/` (factory FastAPI e `GET /v1/health/live`); ainda sem banco, Temporal ou domínio. Como instalar e rodar: [README.md](README.md).
 
 **Entra aqui**: código de produção em `src/knobridge/`, testes em `tests/`, migrações em `migrations/`, `pyproject.toml`, `uv.lock`, `.env.example`, `Dockerfile`, `README.md` curto (como rodar).
 **Não entra aqui**: documentação (vai para `docs/`), frontend e widget, Docker Compose e Helm (vão para `deploy/`), dados reais de clientes.
