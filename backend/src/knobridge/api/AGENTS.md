@@ -4,6 +4,7 @@
 
 **Entra aqui**:
 - `app.py`: `create_app(settings=None, engine=None)` e `serve()` (comando `knobridge-api`). O lifespan guarda engine e fábrica de sessões em `app.state`; descarta no shutdown só o engine que ele mesmo criou (o injetado, usado em testes, é do chamador).
+- `openapi.py`: comando `knobridge-openapi` (`--output`, padrão `docs/specs/openapi.json` na raiz do repositório), que grava o OpenAPI de `create_app` com saída determinística (chaves ordenadas, indentação 2, newline final). Não precisa de banco.
 - Um módulo por recurso com o seu `APIRouter` e schemas Pydantic de entrada e saída (hoje `health.py`: `GET /v1/health/live` e `GET /v1/health/ready`, que faz `SELECT 1` e responde 503 `service_unavailable` sem expor a mensagem do driver).
 - Dependências FastAPI de API (autenticação, workspace corrente) quando existirem. Sessão de banco: use `get_session` de `core/db.py`.
 
@@ -15,6 +16,7 @@
 - Erros saem como `KnoBridgeError` (de `core/errors.py`); não monte JSON de erro à mão.
 - `workspace_id` vem da autenticação, nunca do corpo ou da query da API pública.
 - Listagens sempre paginadas.
+- Mudou rota ou schema: `uv run knobridge-openapi` e commite `docs/specs/openapi.json` na mesma entrega (o frontend gera os tipos dele).
 
 **Como testar**: de `backend/`, `uv run pytest tests/api`; os testes usam a fixture `client` (TestClient sobre `create_app`) de `tests/conftest.py`.
 

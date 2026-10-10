@@ -1,0 +1,20 @@
+# frontend/src/lib/
+
+**Função**: código sem interface. Utilitários puros e, em `api/`, o acesso ao backend.
+
+**Entra aqui**:
+
+- `utils.ts`: `cn()` (junta classes e resolve conflitos do Tailwind), usado pelos componentes do shadcn/ui e pelos nossos.
+- `api/`: cliente gerado do OpenAPI e hooks TanStack Query (ver [api/AGENTS.md](api/AGENTS.md)).
+- Futuramente: funções puras de domínio usadas por várias features (formatação, validação, transformação do grafo do canvas).
+
+**Não entra aqui**: componentes React (`components/` ou `features/`), textos de interface (`i18n/`), helpers de teste (`test/`).
+
+**Convenções locais**:
+
+- Funções puras, pequenas e tipadas; sem estado global nem efeitos colaterais na importação (exceção: a instância `apiClient`).
+- Cobertura de 100% esperada: cada função com teste ao lado (`*.test.ts`).
+
+**Como testar**: de `frontend/`, `pnpm test -- --coverage`.
+
+**Leia também**: [../AGENTS.md](../AGENTS.md); [../../AGENTS.md](../../AGENTS.md).

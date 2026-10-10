@@ -20,6 +20,7 @@ dependencies = [
 [project.scripts]
 knobridge-api = "knobridge.api.app:serve"
 knobridge-worker = "knobridge.workers.worker:main"
+knobridge-openapi = "knobridge.api.openapi:main"
 
 [dependency-groups]
 dev = [

@@ -2,7 +2,7 @@
 
 **Função**: arquivos de tradução da interface, um JSON por idioma. `pt-BR.json` é a referência.
 
-**Entra aqui**: `<idioma>.json` (ex.: `pt-BR.json`), com chaves em inglês agrupadas por área (`app.*`, `nav.*`, `home.*`, `notFound.*`, depois uma por feature).
+**Entra aqui**: `<idioma>.json` (ex.: `pt-BR.json`), com chaves em inglês agrupadas por área (`app.*`, `nav.*`, `apiStatus.*`, `home.*`, `notFound.*`, depois uma por feature).
 **Não entra aqui**: código, textos que não aparecem na interface, mensagens de log (ficam em inglês no código).
 
 **Convenções locais**:

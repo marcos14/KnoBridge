@@ -5,6 +5,11 @@
   "nav": {
     "label": "Navegação principal"
   },
+  "apiStatus": {
+    "loading": "API: verificando…",
+    "ok": "API: disponível",
+    "unavailable": "API: indisponível"
+  },
   "home": {
     "title": "Início",
     "description": "Bem-vindo ao painel do KnoBridge."

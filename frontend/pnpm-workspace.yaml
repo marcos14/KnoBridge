@@ -1,0 +1,12 @@
+# pnpm settings for this package (single project, no workspace packages).
+
+allowBuilds:
+  # msw's postinstall only copies the browser Service Worker into public/; tests use msw/node,
+  # so the script is not needed.
+  msw: false
+
+peerDependencyRules:
+  allowedVersions:
+    # openapi-typescript 7 declares typescript ^5 but only uses the stable factory/printer API,
+    # which TypeScript 6 keeps; `pnpm check:api` proves the generated output on every CI run.
+    openapi-typescript>typescript: "6"

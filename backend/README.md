@@ -22,6 +22,16 @@ uv run uvicorn knobridge.api.app:create_app --factory --reload
 
 Teste rápido: `curl http://127.0.0.1:8000/v1/health/live` (processo de pé) e `curl http://127.0.0.1:8000/v1/health/ready` (banco respondendo; 503 se não). OpenAPI em `http://127.0.0.1:8000/docs`.
 
+## Contrato OpenAPI
+
+O OpenAPI da API é o contrato do frontend e fica versionado em [`docs/specs/openapi.json`](../docs/specs/openapi.json). Mudou rota ou schema, regenere e commite junto (não precisa de banco):
+
+```sh
+uv run knobridge-openapi                       # grava docs/specs/openapi.json
+uv run knobridge-openapi --output /tmp/oa.json # outro destino
+cd ../frontend && pnpm gen:api                 # atualiza os tipos do cliente
+```
+
 ## Banco e migrações
 
 A API usa Postgres 17 com pgvector, na URL de `KNOBRIDGE_DATABASE_URL` (driver `postgresql+asyncpg://`; o padrão aponta para `knobridge:knobridge@localhost:5432/knobridge`). Para um banco local descartável:

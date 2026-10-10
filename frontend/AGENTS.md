@@ -1,8 +1,8 @@
 # frontend/
 
-**Função**: painel administrativo do KnoBridge em React + TypeScript. Fontes e conectores, canvas de pipelines (React Flow), execuções, coleções, assistentes, canais, conversas, custos e configurações do workspace. Estado: app Vite com providers (roteador, TanStack Query, i18n pt-BR), layout vazio e gates (lint, typecheck, Vitest com cobertura ≥ 95). Sem telas de produto nem chamadas de API ainda.
+**Função**: painel administrativo do KnoBridge em React + TypeScript. Fontes e conectores, canvas de pipelines (React Flow), execuções, coleções, assistentes, canais, conversas, custos e configurações do workspace. Estado: app Vite com providers (roteador, TanStack Query, i18n pt-BR), Tailwind v4 + shadcn/ui, cliente tipado gerado do OpenAPI (`src/lib/api/`), indicador de status da API no cabeçalho, MSW nos testes, smoke E2E com Playwright e imagem nginx. Sem telas de produto ainda.
 
-**Entra aqui**: aplicação Vite em `src/`, testes ao lado dos arquivos (`*.test.tsx`) e E2E em `e2e/`, `package.json`, `pnpm-lock.yaml`, configs de ESLint, Prettier, Vitest e Playwright, `Dockerfile`, `README.md` curto.
+**Entra aqui**: aplicação Vite em `src/`, testes ao lado dos arquivos (`*.test.tsx`) e E2E em `e2e/`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml` (configurações do pnpm), `components.json` (shadcn), configs de ESLint, Prettier, Vitest e Playwright, `Dockerfile`, `nginx.conf`, `.dockerignore`, `README.md` curto.
 **Não entra aqui**: o widget embutível (vai para `widget/`), documentação (vai para `docs/`), lógica de negócio que pertence ao backend, dados reais.
 
 **Layout previsto** (crie cada pasta só quando for necessária, sempre com o seu `AGENTS.md`):
@@ -24,7 +24,9 @@ frontend/src/
 - Node LTS, `pnpm`. TypeScript `strict`; sem `any` sem comentário; sem `@ts-ignore` (use `@ts-expect-error` com motivo).
 - ESLint + Prettier. A CI falha com aviso.
 - Estado de servidor só via TanStack Query; estado local via hooks; store global só com necessidade demonstrada.
-- Cliente de API gerado do OpenAPI do backend. Nunca escrever tipos de resposta à mão. Toda chamada passa por `lib/api/`.
+- Cliente de API gerado do OpenAPI do backend. Nunca escrever tipos de resposta à mão. Toda chamada passa por `lib/api/`. Contrato em `docs/specs/openapi.json`; `pnpm gen:api` regenera `src/lib/api/schema.gen.ts` e `pnpm check:api` (CI) falha se ele estiver desatualizado.
+- A API é chamada na mesma origem, sob `/v1` (`VITE_API_BASE_URL`, padrão `/`): em desenvolvimento o proxy do Vite repassa para `127.0.0.1:8000`; na imagem, o `nginx.conf` repassa para o serviço `api` do compose.
+- Dependências com script de instalação precisam de decisão explícita em `allowBuilds` no `pnpm-workspace.yaml`; exceções de peer dependency ficam em `peerDependencyRules`, com comentário. `pnpm peers check` deve sair limpo.
 - Canvas: React Flow (xyflow). Nós e arestas tipados; o grafo salvo é o contrato com o backend (spec em `docs/specs/`).
 - Componentes de `features/` não conhecem `fetch`; recebem dados por hooks. Componentes pequenos; lógica em funções puras em `lib/`, testadas isoladamente.
 - Acessibilidade: elementos semânticos, foco visível, labels. Testes com Testing Library consultam por papel e texto, nunca por classe CSS.
@@ -36,10 +38,11 @@ frontend/src/
 ```sh
 pnpm lint && pnpm typecheck
 pnpm test -- --coverage        # Vitest; thresholds de 95 em lines, branches, functions e statements
+pnpm check:api                 # tipos do cliente em dia com docs/specs/openapi.json
 pnpm e2e                       # Playwright: fluxos críticos do canvas e do chat de teste
 ```
 
-- Vitest + Testing Library para componentes e hooks; MSW para a API (nunca mockar `fetch` à mão).
+- Vitest + Testing Library para componentes e hooks; MSW para a API (nunca mockar `fetch` à mão; handlers em `src/test/handlers.ts`). O Vitest lê só `src/**/*.test.{ts,tsx}`.
 - Playwright só para os poucos fluxos críticos; rodam na CI contra o backend em container.
 - Componentes de `components/ui/` gerados pelo shadcn podem ficar fora da medição de cobertura, com justificativa no `vitest.config.ts`.
 

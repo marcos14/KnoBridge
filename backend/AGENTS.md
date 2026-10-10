@@ -1,6 +1,6 @@
 # backend/
 
-**Função**: todo o código Python do KnoBridge. API REST e API compatível com OpenAI (FastAPI), workers e workflows (Temporal), conectores, engine incremental de pipelines, harness de mapeamento de código, parsing, recuperação (busca híbrida + reranker), assistentes, canais (Slack, Google Chat, widget, MCP, webhooks) e migrações. Estado: pacote `knobridge` com `core/` (settings, logging JSON, erros, engine e sessão async do banco) e `api/` (factory FastAPI, `GET /v1/health/live` e `/v1/health/ready`); `workers/` (worker Temporal `knobridge-worker` com o workflow de saúde `knobridge.health.v1`); `migrations/` com Alembic async e a migração que habilita pgvector; `Dockerfile` com a imagem única de api, worker e migrações; ainda sem tabelas ou workflows de domínio. Como instalar e rodar: [README.md](README.md).
+**Função**: todo o código Python do KnoBridge. API REST e API compatível com OpenAI (FastAPI), workers e workflows (Temporal), conectores, engine incremental de pipelines, harness de mapeamento de código, parsing, recuperação (busca híbrida + reranker), assistentes, canais (Slack, Google Chat, widget, MCP, webhooks) e migrações. Estado: pacote `knobridge` com `core/` (settings, logging JSON, erros, engine e sessão async do banco) e `api/` (factory FastAPI, `GET /v1/health/live` e `/v1/health/ready`, comando `knobridge-openapi` que exporta o contrato para `docs/specs/openapi.json`); `workers/` (worker Temporal `knobridge-worker` com o workflow de saúde `knobridge.health.v1`); `migrations/` com Alembic async e a migração que habilita pgvector; `Dockerfile` com a imagem única de api, worker e migrações; ainda sem tabelas ou workflows de domínio. Como instalar e rodar: [README.md](README.md).
 
 **Entra aqui**: código de produção em `src/knobridge/`, testes em `tests/`, migrações em `migrations/`, `pyproject.toml`, `uv.lock`, `.env.example`, `Dockerfile`, `README.md` curto (como rodar).
 **Não entra aqui**: documentação (vai para `docs/`), frontend e widget, Docker Compose e Helm (vão para `deploy/`), dados reais de clientes.
@@ -34,7 +34,7 @@ backend/
 **Convenções locais**
 - Python 3.12+, `uv` para tudo (`uv sync`, `uv run ...`). No Windows, rode com `PYTHONUTF8=1`.
 - `ruff` (lint + format, configurado no `pyproject.toml`) e `pyright` em modo strict. A CI falha com qualquer aviso.
-- FastAPI com um router por módulo; schemas Pydantic v2 na fronteira; nunca modelo ORM em resposta. Tudo sob `/v1`. O OpenAPI gerado é o contrato do frontend e vai para `docs/specs/` a cada mudança.
+- FastAPI com um router por módulo; schemas Pydantic v2 na fronteira; nunca modelo ORM em resposta. Tudo sob `/v1`. O OpenAPI gerado é o contrato do frontend e vai para `docs/specs/openapi.json` a cada mudança (`uv run knobridge-openapi`).
 - SQLAlchemy 2 tipado e async; uma sessão por requisição ou activity; `workspace_id` em toda tabela de dados; RLS ativada nas migrações; nenhuma consulta sem escopo de workspace (helper central obrigatório, lint próprio quando possível).
 - Alembic: uma migração por mudança de modelo, reversível, com teste de upgrade e downgrade.
 - Temporal: workflows determinísticos (sem IO), IO só em activities; activities idempotentes com política de retry explícita; nomes de workflow e activity estáveis (versione quando mudar).

@@ -49,7 +49,7 @@ fases:
         commit: eb66531
   - id: F3
     titulo: Frontend base
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F3.1
         titulo: App Vite com providers, i18n e gates
@@ -57,13 +57,13 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: 1cea461
       - id: F3.2
         titulo: shadcn/ui, cliente gerado do OpenAPI, MSW, Playwright e Dockerfile
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-10
+        concluida_em: 2026-10-10
         commit: null
   - id: F4
     titulo: Infra local e CI
@@ -167,6 +167,13 @@ decisoes:
     decisao: "Frontend: react 19, react-router 8, TanStack Query 5, i18next com chaves tipadas, Vite 8, Vitest 5 com cobertura sempre ligada; TypeScript 6.0 e ESLint 9 por compatibilidade de peers (typescript-eslint e jsx-a11y); AppProviders compartilhado entre App e testes."
     motivo: "Versões estáveis atuais com peers limpos; pnpm 11 repassa o '--' literalmente, então a cobertura precisa estar ligada no config."
     alternativas: "TypeScript 7 e ESLint 10 (peers quebrados); react-router 7."
+    adr: null
+  - id: D13
+    data: 2026-10-10
+    por: agente
+    decisao: "Contrato: knobridge-openapi gera docs/specs/openapi.json determinístico; frontend usa openapi-typescript (--check na CI) + openapi-fetch; API na mesma origem sob /v1 (proxy no Vite e no nginx); Tailwind v4 + shadcn; MSW 2.x (peer do Vitest); openapi-typescript liberado para TS 6 em peerDependencyRules."
+    motivo: "Mantém o frontend preso ao contrato gerado, sem CORS em produção e com peers limpos."
+    alternativas: "orval; MSW 3; chamar a API em outra origem com CORS."
     adr: null
 pendencias_usuario: []
 ---
@@ -309,6 +316,8 @@ Nenhuma no momento. A CI só roda de fato quando o repositório estiver no GitHu
 - 2026-10-10 — F2.3 concluída: 62 testes, cobertura 100%; docker build ok e entry points presentes na imagem (D11).
 - 2026-10-10 — F3.1 iniciada.
 - 2026-10-10 — F3.1 concluída: 11 testes, cobertura 100%; lint, typecheck e build ok (D12).
+- 2026-10-10 — F3.2 iniciada.
+- 2026-10-10 — F3.2 concluída: backend 68 testes 100%; frontend 27 testes 100%, e2e 1 ok, check:api ok, docker build ok (D13). Fora do escopo, para plano futuro: schema ErrorResponse no OpenAPI para tipar o formato de erro no frontend.
 
 ## 8. Encerramento
 
