@@ -1,10 +1,10 @@
 # backend/src/knobridge/email/
 
-**Função**: e-mail transacional em pt-BR (redefinição de senha, verificação de e-mail, convite para workspace e definição de senha inicial): a interface de envio, o adaptador SMTP e a renderização dos templates.
+**Função**: e-mail transacional em pt-BR (redefinição de senha, verificação de e-mail e convite para workspace; não há e-mail de senha inicial: no modelo só por convite, a senha é definida ao aceitar o convite): a interface de envio, o adaptador SMTP e a renderização dos templates.
 
 **Entra aqui**:
 - `sender.py`: `OutgoingEmail` (destinatário, assunto, texto e HTML), `EmailSender` (Protocol com `send`), `SmtpEmailSender` (`aiosmtplib`, uma conexão por mensagem, `from_settings`, cabeçalho `Date` pelo `Clock`) e `EmailDeliveryError` (502, código `email_delivery_failed`).
-- `rendering.py`: `EmailTemplate`, `SUBJECTS`, `LINK_PATHS` (rotas do painel que consomem cada token), `describe_duration` (validade em pt-BR) e `EmailComposer` (`password_reset`, `email_verification`, `invitation`, `initial_password`, `link`, `render`, `from_settings`).
+- `rendering.py`: `EmailTemplate`, `SUBJECTS`, `LINK_PATHS` (rotas do painel que consomem cada token), `describe_duration` (validade em pt-BR) e `EmailComposer` (`password_reset`, `email_verification`, `invitation`, `link`, `render`, `from_settings`).
 - `delivery.py`: `deliver_quietly(sender, compose, kind=)`, o envio "dispare e esqueça" usado pelas rotas (como `BackgroundTasks` do FastAPI): monta e envia o e-mail e, em qualquer falha, só registra `email_not_delivered` com `kind` e o tipo do erro.
 - `templates/`: os templates Jinja2, um `.txt` e um `.html` por e-mail.
 

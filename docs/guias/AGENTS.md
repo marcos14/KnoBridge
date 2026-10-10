@@ -4,6 +4,7 @@
 
 **Entra aqui**:
 - `subir-ambiente.md`: subir o ambiente de desenvolvimento completo com Docker Compose.
+- `primeiro-acesso.md`: da instância vazia ao primeiro chat: superadmin, workspace, convites, provedor (`fake` em dev ou real) e assistente, com os e-mails lidos no Mailpit.
 - Futuramente: conectar Slack ou Google Chat, rodar o harness de código, criar um conector, operar backups.
 
 **Não entra aqui**:

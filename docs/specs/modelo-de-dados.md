@@ -1,8 +1,26 @@
 # Modelo de dados
 
-> Rascunho v0.1 · 2026-10-10 · Em construção (plano 0002)
+> Rascunho v0.2 · 2026-10-10 · Em uso (plano 0002)
+>
+> **Mudanças da v0.2**: completo até a migração `0009` (plano 0002, F6.2): índice de migrações, resumo das políticas de RLS por tabela e restrições `CHECK` de `conversations` e `messages`.
 
-Tabelas do Postgres do KnoBridge, criadas pelas migrações em [`backend/migrations/`](../../backend/migrations/). Modelos ORM em `backend/src/knobridge/<módulo>/models.py`. Regras de tenancy e RLS no [ADR 0001](../adr/0001-tenancy-e-rls.md).
+Tabelas do Postgres do KnoBridge, criadas pelas migrações em [`backend/migrations/`](../../backend/migrations/AGENTS.md). Modelos ORM em `backend/src/knobridge/<módulo>/models.py`. Regras de tenancy e RLS no [ADR 0001](../adr/0001-tenancy-e-rls.md); sessão, tokens e limitação de login no [ADR 0002](../adr/0002-sessao-server-side.md); segredos cifrados no [ADR 0003](../adr/0003-segredos-cifrados.md). Autenticação e papéis em [autenticacao.md](autenticacao.md); chat em [chat.md](chat.md).
+
+## Migrações
+
+| Revisão | Arquivo | O que faz |
+|---|---|---|
+| `0001` | `20261010_0001_enable_pgvector.py` | Habilita a extensão `vector` (pgvector), para os índices vetoriais futuros. Nenhuma tabela usa vetor ainda. |
+| `0002` | `20261010_0002_tenancy.py` | `users`, `workspaces`, `memberships`; RLS forçada em `workspaces` e `memberships`. |
+| `0003` | `20261010_0003_sessions_and_user_tokens.py` | `sessions` e `user_tokens`, com RLS forçada pelo dono. |
+| `0004` | `20261010_0004_audit_events.py` | `audit_events`, append-only, com políticas separadas de leitura, inserção e exclusão. |
+| `0005` | `20261010_0005_login_attempts.py` | `login_attempts`, só em modo de sistema. |
+| `0006` | `20261010_0006_invitations.py` | `invitations`; `user_tokens.workspace_id` (só convites) e política `user_tokens_owner` ampliada ([emenda do ADR 0001](../adr/0001-tenancy-e-rls.md#emenda-2026-10-10-tokens-de-convite-com-workspace_id)). |
+| `0007` | `20261010_0007_provider_credentials.py` | `provider_credentials` (chave cifrada). |
+| `0008` | `20261010_0008_assistants.py` | `assistants`; único `(workspace_id, id)` em `provider_credentials`. |
+| `0009` | `20261010_0009_conversations.py` | `conversations`, `messages`, `feedback`; único `(workspace_id, id)` em `assistants`. |
+
+Toda migração tem `downgrade` que desfaz o `upgrade`; o teste `test_migrations_match_orm_models` compara as migrações com os modelos ORM.
 
 ## Convenções
 
@@ -21,6 +39,33 @@ Tabelas do Postgres do KnoBridge, criadas pelas migrações em [`backend/migrati
 | `app.system` = `on` | `system_session()` | Modo de sistema: setup, superadmin, login. |
 
 Sem nenhuma delas, as tabelas com RLS não retornam linhas. Exceção de modelo: `audit_events` aceita `workspace_id` nulo para eventos da instância, visíveis só em modo de sistema.
+
+As políticas leem as configurações com `NULLIF(current_setting('app.workspace_id', true), '')::uuid`, `NULLIF(current_setting('app.user_id', true), '')::uuid` e `coalesce(current_setting('app.system', true), '') = 'on'`. Abaixo, "workspace" é `workspace_id = app.workspace_id`, "usuário" é `user_id = app.user_id` e "sistema" é `app.system = 'on'`.
+
+### Resumo das políticas
+
+Todas as tabelas abaixo têm `ENABLE` + `FORCE ROW LEVEL SECURITY`. `users` é a única sem RLS (identidade da instância; ADR 0001, item 1).
+
+| Tabela | Política | Comando | Predicado |
+|---|---|---|---|
+| `workspaces` | `workspaces_select` | `SELECT` | `id` = workspace selecionado, ou o usuário tem membership nele, ou sistema |
+| `workspaces` | `workspaces_write` | `ALL` | `id` = workspace selecionado, ou sistema |
+| `memberships` | `memberships_select` | `SELECT` | workspace, ou usuário (as próprias memberships), ou sistema |
+| `memberships` | `memberships_write` | `ALL` | workspace, ou sistema |
+| `sessions` | `sessions_owner` | `ALL` | usuário, ou sistema |
+| `user_tokens` | `user_tokens_owner` | `ALL` | usuário, ou workspace (tokens de convite), ou sistema |
+| `audit_events` | `audit_events_select` | `SELECT` | workspace, ou sistema |
+| `audit_events` | `audit_events_insert` | `INSERT` | workspace, ou (`workspace_id` nulo e `actor_user_id` = `app.user_id`), ou sistema |
+| `audit_events` | `audit_events_delete` | `DELETE` | sistema |
+| `login_attempts` | `login_attempts_system` | `ALL` | sistema |
+| `invitations` | `invitations_workspace` | `ALL` | workspace, ou sistema |
+| `provider_credentials` | `provider_credentials_workspace` | `ALL` | workspace, ou sistema |
+| `assistants` | `assistants_select`, `assistants_insert`, `assistants_update`, `assistants_delete` | um por comando | workspace, ou sistema |
+| `conversations` | `conversations_workspace` | `ALL` | workspace, ou sistema |
+| `messages` | `messages_workspace` | `ALL` | workspace, ou sistema |
+| `feedback` | `feedback_workspace` | `ALL` | workspace, ou sistema |
+
+A RLS isola workspaces; regras dentro do workspace (papel mínimo, privacidade de conversa entre membros) são da aplicação ([autenticacao.md](autenticacao.md#matriz-de-permissões)). Cada consulta tem teste de isolamento contra Postgres real, junto dos testes do seu módulo (ex.: `backend/tests/tenancy/test_invitations_rls.py`).
 
 ## Diagrama
 
@@ -331,7 +376,7 @@ Conversa de um membro com um assistente (plano 0002, F4.4), em [`backend/src/kno
 | `assistant_id` | `uuid` | FK composta `(workspace_id, assistant_id)` → `assistants (workspace_id, id)` (`fk_conversations_workspace_id_assistants`), `ON DELETE CASCADE`. |
 | `user_id` | `uuid` | Dono da conversa. FK `users.id`, `ON DELETE CASCADE`. |
 | `title` | `varchar(200)` | Nulo até a primeira pergunta; depois, a pergunta numa linha, cortada em 80 caracteres (sem LLM). |
-| `channel` | `varchar(32)` | `panel` (outros canais depois). |
+| `channel` | `varchar(32)` | `panel` (`ck_conversations_channel`; outros canais depois). |
 
 Únicos e índices: `uq_conversations_workspace_id_id` (alvo da FK de `messages`) e `ix_conversations_workspace_id_user_id_updated_at` ("minhas conversas", da mais recente). `updated_at` muda a cada pergunta.
 
@@ -343,11 +388,11 @@ Pergunta ou resposta de uma conversa. RLS forçada, política `messages_workspac
 |---|---|---|
 | `workspace_id` | `uuid` | FK `workspaces.id`, `ON DELETE CASCADE`. |
 | `conversation_id` | `uuid` | FK composta `(workspace_id, conversation_id)` → `conversations (workspace_id, id)` (`fk_messages_workspace_id_conversations`), `ON DELETE CASCADE`. |
-| `position` | `integer` | Ordem na conversa a partir de 0, única por conversa (`uq_messages_conversation_id_position`); atribuída com a conversa travada (`FOR UPDATE`). |
-| `role` | `varchar(32)` | `user` ou `assistant`. |
+| `position` | `integer` | Ordem na conversa a partir de 0 (`ck_messages_position_not_negative`), única por conversa (`uq_messages_conversation_id_position`); atribuída com a conversa travada (`FOR UPDATE`). |
+| `role` | `varchar(32)` | `user` ou `assistant` (`ck_messages_role`). |
 | `content` | `text` | Texto; numa resposta interrompida ou com erro, o que chegou a ser gerado. |
 | `citations` | `jsonb` | Lista de `{index, title, uri, snippet, document_id}`; padrão `[]`. Vazia em perguntas e em `no_source`. |
-| `status` | `varchar(32)` | `streaming`, `completed`, `no_source`, `failed`, `interrupted` (ver [chat-sse.md](chat-sse.md)). Perguntas são `completed`. Uma resposta `streaming` com `updated_at` de mais de 5 minutos atrás é órfã (o processo morreu no meio do stream): as leituras a mostram como `interrupted`, e a próxima pergunta da conversa grava `interrupted` nela. |
+| `status` | `varchar(32)` | `streaming`, `completed`, `no_source`, `failed`, `interrupted` (`ck_messages_status`; ver [chat.md](chat.md#estados-das-mensagens)). Perguntas são `completed`. Uma resposta `streaming` com `updated_at` de mais de 5 minutos atrás é órfã (o processo morreu no meio do stream): as leituras a mostram como `interrupted`, e a próxima pergunta da conversa grava `interrupted` nela. |
 | `error_code` | `varchar(64)` | Código de domínio de uma resposta `failed` (ex.: `provider_unavailable`). |
 | `model` | `varchar(200)` | Modelo que respondeu; nulo em perguntas e em `no_source`. |
 | `input_tokens`, `output_tokens` | `integer` | Uso informado pelo provedor, quando há. |

@@ -4,7 +4,7 @@
 
 **Entra aqui**:
 - `_layout.html` e `_layout.txt`: estrutura comum (saudação, link, validade, aviso de "ignore", rodapé).
-- Um par `<nome>.html` + `<nome>.txt` por valor de `EmailTemplate` (`password_reset`, `email_verification`, `invitation`, `initial_password`), estendendo o layout correspondente.
+- Um par `<nome>.html` + `<nome>.txt` por valor de `EmailTemplate` (`password_reset`, `email_verification`, `invitation`), estendendo o layout correspondente.
 
 **Não entra aqui**: assunto (fica em `SUBJECTS`, em `rendering.py`), lógica de montagem de link, código Python.
 

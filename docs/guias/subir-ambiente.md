@@ -1,8 +1,10 @@
 # Subir o ambiente de desenvolvimento
 
-> Rascunho v0.1 · 2026-10-10 · Em uso
+> Rascunho v0.2 · 2026-10-10 · Em uso
+>
+> **Mudanças da v0.2**: o ambiente já traz a plataforma navegável do plano 0002 (autenticação, workspaces, painel admin e chat); o primeiro uso está em [primeiro-acesso.md](primeiro-acesso.md).
 
-Como subir o KnoBridge completo na sua máquina com Docker Compose: banco, Temporal, armazenamento de objetos, servidor de e-mail de desenvolvimento, migrações, API, worker e painel. Ainda não há funcionalidades de produto; o objetivo é ter a base rodando e saudável.
+Como subir o KnoBridge completo na sua máquina com Docker Compose: banco, Temporal, armazenamento de objetos, servidor de e-mail de desenvolvimento, migrações, API, worker e painel. Com o ambiente saudável, siga [primeiro-acesso.md](primeiro-acesso.md) para criar o superadmin, o primeiro workspace, um provedor de LLM e um assistente, e conversar com ele. A indexação de fontes (RAG) ainda não existe: por ora, o chat sempre responde com a mensagem de "sem fonte".
 
 ## Pré-requisitos
 
@@ -87,7 +89,7 @@ Todas as portas são publicadas só em `127.0.0.1` (variável `BIND_ADDRESS`).
 
 6. Console do MinIO: abra <http://localhost:9001> e entre com `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` (padrão de dev: `knobridge` / `knobridge-dev`).
 
-7. E-mails: abra <http://localhost:8025> (Mailpit). Todo e-mail transacional enviado pela API ou pelo worker (redefinição de senha, verificação de e-mail, convite, senha inicial) aparece ali, e nenhum sai para caixas reais. Os links apontam para `KNOBRIDGE_PUBLIC_BASE_URL` (padrão `http://localhost:5173`, o painel). Para conferir só o servidor:
+7. E-mails: abra <http://localhost:8025> (Mailpit). Todo e-mail transacional enviado pela API ou pelo worker (redefinição de senha, verificação de e-mail, convite) aparece ali, e nenhum sai para caixas reais. Os links apontam para `KNOBRIDGE_PUBLIC_BASE_URL` (padrão `http://localhost:5173`, o painel). Para conferir só o servidor:
 
    ```bash
    curl http://localhost:8025/api/v1/info
@@ -99,7 +101,7 @@ O compose passa para `api`, `worker` e `migrate` as variáveis abaixo, com defau
 
 | Variável | Padrão no compose | Para quê |
 |---|---|---|
-| `KNOBRIDGE_SECRET_KEY` | `dev-only-insecure-secret-key-change-me` | Assina os tokens CSRF. **Valor público, só para desenvolvimento**: fora da sua máquina, gere um com `python -c "import secrets; print(secrets.token_urlsafe(48))"` e ponha no `deploy/.env` |
+| `KNOBRIDGE_SECRET_KEY` | `dev-only-insecure-secret-key-change-me` | Assina os tokens CSRF e é a raiz das chaves que cifram as chaves de API dos provedores ([ADR 0003](../adr/0003-segredos-cifrados.md)); trocá-lo exige recadastrar essas chaves. **Valor público, só para desenvolvimento**: fora da sua máquina, gere um com `python -c "import secrets; print(secrets.token_urlsafe(48))"` e ponha no `deploy/.env` |
 | `KNOBRIDGE_PUBLIC_BASE_URL` | `http://localhost:${FRONTEND_PORT}` | Endereço do painel, como o navegador o vê, usado nos links dos e-mails |
 | `KNOBRIDGE_SMTP_FROM` | `KnoBridge <no-reply@knobridge.local>` | Remetente dos e-mails |
 | `KNOBRIDGE_SMTP_HOST` / `KNOBRIDGE_SMTP_PORT` | `mailpit` / `1025` | Fixos: neste ambiente o SMTP é sempre o Mailpit |

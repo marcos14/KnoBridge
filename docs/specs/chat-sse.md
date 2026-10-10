@@ -2,7 +2,7 @@
 
 > Rascunho v0.2 · 2026-10-10 · Plano 0002, F4.4 (v0.2, F4.5: resposta `streaming` órfã lida como `interrupted`)
 
-Contrato da resposta de `POST /v1/workspaces/{workspace_id}/conversations/{conversation_id}/messages`, que manda uma pergunta ao assistente da conversa e devolve a resposta como [Server-Sent Events](https://html.spec.whatwg.org/multipage/server-sent-events.html). Os schemas das rotas JSON (conversas, mensagens, feedback) estão no [`openapi.json`](openapi.json); lá, esta rota aparece com `200` em `text/event-stream`, e os eventos são descritos aqui. Implementação em [`backend/src/knobridge/conversations/`](../../backend/src/knobridge/conversations/AGENTS.md) e [`backend/src/knobridge/api/conversations.py`](../../backend/src/knobridge/api/AGENTS.md).
+Contrato da resposta de `POST /v1/workspaces/{workspace_id}/conversations/{conversation_id}/messages`, que manda uma pergunta ao assistente da conversa e devolve a resposta como [Server-Sent Events](https://html.spec.whatwg.org/multipage/server-sent-events.html). Os schemas das rotas JSON (conversas, mensagens, feedback) estão no [`openapi.json`](openapi.json); lá, esta rota aparece com `200` em `text/event-stream`, e os eventos são descritos aqui. O comportamento do chat além do fio (regra de citações, `Retriever`, fases da rodada, histórico, feedback e visão administrativa) está em [chat.md](chat.md). Implementação em [`backend/src/knobridge/conversations/`](../../backend/src/knobridge/conversations/AGENTS.md) e [`backend/src/knobridge/api/conversations.py`](../../backend/src/knobridge/api/AGENTS.md).
 
 ## Requisição
 

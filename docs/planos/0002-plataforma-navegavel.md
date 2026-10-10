@@ -198,10 +198,10 @@ fases:
         commit: 4b90393
       - id: F6.2
         titulo: "Specs, guias e documentação final"
-        status: em_execucao
+        status: concluida
         agente: claude-code
         iniciada_em: 2026-10-10
-        concluida_em: null
+        concluida_em: 2026-10-10
         commit: null
 decisoes:
   - id: D1
@@ -614,6 +614,7 @@ Nenhuma aberta.
 - 2026-10-10 — F6.1 concluída: Proxy headers restritos ao nginx, compose e2e, Playwright stack (setup→convites via Mailpit→recuperação de senha→provedor fake→chat sem fonte→revisão→tema), job e2e-stack na CI; orquestrador rodou do zero: 11 de 13 rodadas verdes (1 crash nativo do Node no Windows 0xC0000409, 1 sem detalhe), ~34 s para subir, ~18 s de teste. Achado: cabeçalho do chat mostra 'Conversa sem título' após a primeira resposta.
 - 2026-10-10 — F6.2 iniciada; em paralelo, correção do título da conversa no chat (achado da F6.1).
 - 2026-10-10 — Correção: título da conversa nova no cabeçalho do chat (corrida entre a primeira leitura do detalhe e a invalidação no fim do stream; cancelQueries antes de invalidar), com teste que reproduz.
+- 2026-10-10 — F6.2 concluída: Specs autenticacao.md (matrizes de permissão), chat.md, modelo-de-dados.md v0.2; guia primeiro-acesso.md; README, CHANGELOG e AGENTS.md raiz atualizados; links e Mermaid validados; template de senha inicial removido; texto de verificação aponta para Perfil.
 
 ## 8. Encerramento
 

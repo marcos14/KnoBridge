@@ -21,14 +21,12 @@ class EmailTemplate(StrEnum):
     PASSWORD_RESET = "password_reset"  # noqa: S105 - template name, not a secret
     EMAIL_VERIFICATION = "email_verification"
     INVITATION = "invitation"
-    INITIAL_PASSWORD = "initial_password"  # noqa: S105 - template name, not a secret
 
 
 SUBJECTS: dict[EmailTemplate, str] = {
     EmailTemplate.PASSWORD_RESET: "Redefinição de senha do KnoBridge",
     EmailTemplate.EMAIL_VERIFICATION: "Confirme seu e-mail no KnoBridge",
     EmailTemplate.INVITATION: "Você foi convidado para um workspace no KnoBridge",
-    EmailTemplate.INITIAL_PASSWORD: "Defina sua senha do KnoBridge",
 }
 
 # Admin panel pages that consume each token (frontend routes).
@@ -36,7 +34,6 @@ LINK_PATHS: dict[EmailTemplate, str] = {
     EmailTemplate.PASSWORD_RESET: "/reset-password",
     EmailTemplate.EMAIL_VERIFICATION: "/verify-email",
     EmailTemplate.INVITATION: "/accept-invitation",
-    EmailTemplate.INITIAL_PASSWORD: "/set-password",
 }
 
 _SECONDS_PER_UNIT: tuple[tuple[int, str, str], ...] = (
@@ -119,9 +116,6 @@ class EmailComposer:
             workspace_name=workspace_name,
             inviter_name=inviter_name,
         )
-
-    def initial_password(self, *, to: str, token: str, expires_in: timedelta) -> OutgoingEmail:
-        return self._compose(EmailTemplate.INITIAL_PASSWORD, to, token, expires_in)
 
     def _compose(
         self,

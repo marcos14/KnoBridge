@@ -41,9 +41,6 @@ def _compose_all(composer: EmailComposer) -> dict[EmailTemplate, OutgoingEmail]:
             workspace_name="Suporte",
             inviter_name="Bruno",
         ),
-        EmailTemplate.INITIAL_PASSWORD: composer.initial_password(
-            to=to, token=TOKEN, expires_in=expires
-        ),
     }
 
 
@@ -118,9 +115,9 @@ def test_render_rejects_missing_context(composer: EmailComposer) -> None:
 def test_composer_from_settings_uses_public_base_url() -> None:
     composer = EmailComposer.from_settings(Settings(public_base_url="https://painel.example"))
 
-    link = composer.link(EmailTemplate.INITIAL_PASSWORD, "t")
+    link = composer.link(EmailTemplate.EMAIL_VERIFICATION, "t")
 
-    assert link == "https://painel.example/set-password?token=t"
+    assert link == "https://painel.example/verify-email?token=t"
 
 
 @pytest.mark.parametrize(

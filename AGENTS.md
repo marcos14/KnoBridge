@@ -9,7 +9,7 @@ Se este arquivo e um `AGENTS.md` de pasta conflitarem, vale o mais específico (
 KnoBridge é uma plataforma open source (Apache 2.0) que conecta repositórios de código, sistemas de chamados e documentações, transforma tudo em índices para RAG por meio de pipelines visuais e incrementais, e entrega suporte em linguagem natural por API REST, API compatível com OpenAI, webhooks, MCP, Slack, Google Chat e widget embutível.
 
 - **Fonte da verdade sobre o produto**: [docs/01-visao-do-projeto.md](docs/01-visao-do-projeto.md). Escopo, arquitetura (seção 6), módulos (7), stack (8), decisões (9), roadmap (11) e perguntas em aberto (13).
-- **Status em 2026-10-10**: bootstrap do plano [0001](docs/planos/0001-bootstrap.md) concluído (esqueleto, gates e CI), sem funcionalidades de produto. O próximo trabalho é a Fase 0 do roadmap (seção 12 deste arquivo).
+- **Status em 2026-10-10**: bootstrap do plano [0001](docs/planos/0001-bootstrap.md) concluído (esqueleto, gates e CI) e plataforma navegável do plano [0002](docs/planos/0002-plataforma-navegavel.md) entregue: autenticação, multi-tenant com RLS, painel admin e chat com LLM, ainda sem RAG (sem fonte indexada, o assistente responde que não sabe). O próximo trabalho é a Fase 0 do roadmap (seção 12 deste arquivo).
 
 ## 2. Regras inegociáveis
 
@@ -195,7 +195,9 @@ Resumo; detalhes e layout em [frontend/AGENTS.md](frontend/AGENTS.md).
 - [ ] Nenhum segredo, nenhum dado real, nenhum `print`/`console.log` esquecido.
 - [ ] Há um comando que demonstra o resultado, descrito na entrega.
 
-## 12. Estado atual e bootstrap da Fase 0
+## 12. Estado atual
+
+### 12.1 Bootstrap (plano 0001)
 
 O bootstrap (plano [0001](docs/planos/0001-bootstrap.md)) montou o esqueleto e os gates desta página, ainda sem funcionalidades de produto:
 
@@ -206,7 +208,21 @@ O bootstrap (plano [0001](docs/planos/0001-bootstrap.md)) montou o esqueleto e o
 5. `scripts/check_agents_md.py` e `scripts/check_plans.py` (valida o frontmatter de `docs/planos/`), com testes.
 6. `.github/workflows/ci.yml`: gates de `scripts/`, `backend/` e `frontend/` (incluindo contrato OpenAPI e Playwright), varredura de segredos com gitleaks e validação do compose.
 
-Depois disso, siga o roadmap da visão: protótipo em linha de comando (repositório + chamados → pgvector → perguntas com citações), harness de código em 2 ou 3 módulos reais com Claude Code e com Codex, spike Temporal, comparação OpenAI x Gemini embedding em pt-BR.
+### 12.2 Plataforma navegável (plano 0002)
+
+O plano [0002](docs/planos/0002-plataforma-navegavel.md) entregou a base navegável do produto, ainda sem RAG:
+
+1. Multi-tenant com RLS forçada por `SET LOCAL`, usuários em N workspaces, papéis owner/admin/editor/viewer e superadmin da instância ([ADR 0001](docs/adr/0001-tenancy-e-rls.md)).
+2. Autenticação por e-mail e senha com sessão server-side, CSRF double-submit assinado, tokens de uso único por e-mail (redefinição de senha, verificação, convite), limitação de login e configuração inicial ([ADR 0002](docs/adr/0002-sessao-server-side.md); contrato em [docs/specs/autenticacao.md](docs/specs/autenticacao.md)). E-mails transacionais via SMTP, com Mailpit em dev.
+3. Trilha de auditoria por workspace e da instância; administração da instância (workspaces, usuários).
+4. Credenciais de provedores de LLM (OpenAI, Anthropic, OpenRouter e `fake` para dev e testes) cifradas com AES-256-GCM ([ADR 0003](docs/adr/0003-segredos-cifrados.md)), assistentes configuráveis e chat em streaming (SSE) com citações, feedback e visão administrativa das conversas ([docs/specs/chat.md](docs/specs/chat.md)). Sem indexação ainda, o `Retriever` de produção não encontra fonte e toda resposta é a de "sem fonte" (regra 8).
+5. Painel admin em React com shell por papel, seletor de workspace, telas de conta, membros e convites, provedores, assistentes, chat, conversas e auditoria; E2E da stack inteira contra o compose na CI.
+
+Modelo de dados em [docs/specs/modelo-de-dados.md](docs/specs/modelo-de-dados.md); primeiro uso em [docs/guias/primeiro-acesso.md](docs/guias/primeiro-acesso.md).
+
+### 12.3 Próximos passos
+
+Siga o roadmap da visão: protótipo em linha de comando (repositório + chamados → pgvector → perguntas com citações), harness de código em 2 ou 3 módulos reais com Claude Code e com Codex, spike Temporal, comparação OpenAI x Gemini embedding em pt-BR.
 
 ## 13. Template de `AGENTS.md` de pasta
 

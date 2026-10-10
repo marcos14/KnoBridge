@@ -154,7 +154,7 @@
       "verifying": "Verificando seu e-mail…",
       "done": "E-mail verificado. Obrigado!",
       "goToPanel": "Ir para o painel",
-      "invalid": "O link de verificação é inválido, expirou ou já foi usado. Entre na sua conta e peça um novo link em Segurança.",
+      "invalid": "O link de verificação é inválido, expirou ou já foi usado. Entre na sua conta e peça um novo link em Perfil.",
       "retry": "Tentar novamente"
     },
     "acceptInvitation": {
