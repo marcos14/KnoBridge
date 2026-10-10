@@ -123,7 +123,7 @@ fases:
         commit: 9088fa5
   - id: F4
     titulo: "Provedores de LLM, assistentes e conversas (backend)"
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F4.1
         titulo: "Segredos cifrados e credenciais de provedor"
@@ -159,17 +159,17 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: 720a472
   - id: F5
     titulo: "Assistentes, chat e conversas (frontend)"
-    status: pendente
+    status: em_execucao
     subfases:
       - id: F5.1
         titulo: "Telas de provedores e assistentes"
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-10
+        concluida_em: 2026-10-10
         commit: null
       - id: F5.2
         titulo: "Chat com streaming"
@@ -604,6 +604,8 @@ Nenhuma aberta.
 - 2026-10-10 — F4.4 concluída: Conversation/Message/Feedback com RLS (migração 0009), orquestrador com regra 8 sem chamar LLM, SSE citations/delta/done/error, erros no meio do stream mapeados, desconexão tratada, docs/specs/chat-sse.md; backend 598 testes, 100%. Pendente conhecido: marcador streaming órfão se o processo morrer (tratar na F4.5).
 - 2026-10-10 — F4.5 iniciada.
 - 2026-10-10 — F4.5 concluída: Listagem, detalhe e stats administrativos de conversas (owner/admin), sem N+1 (consultas constantes testadas), streaming órfão tratado como interrupted; backend 607 testes, 100%.
+- 2026-10-10 — F4 concluída; F5.1 iniciada.
+- 2026-10-10 — F5.1 concluída: Telas /w/:id/providers e /w/:id/assistants com testes de conexão, chave mascarada, confirmação de exclusão com aviso sobre conversas; 570 testes, 100/99,04. Bundle 847 kB (code-splitting na F5.3).
 
 ## 8. Encerramento
 

@@ -1,0 +1,21 @@
+# frontend/src/features/providers/
+
+**Função**: credenciais de provedores de LLM do workspace em `/w/:workspaceId/providers` (owner, admin e editor; viewer não vê o item de menu e recebe 403 na rota). Lista, cadastro, edição, teste de conexão e exclusão.
+
+**Entra aqui**:
+
+- `ProvidersPage.tsx`: `h1`, "Novo provedor", tabela paginada no navegador (20 por página; a lista inteira vem de `useProviders`) com nome, tipo, URL base (ou "Padrão do provedor"), chave mascarada (`key_hint`) e as ações "Testar conexão", "Editar" e "Excluir" (com `ConfirmDialog`). Sucesso em `role="status"`, falha no `FormAlert`.
+- `ProviderDialog.tsx`: diálogo de criar/editar com react-hook-form + zod: tipo (travado na edição, o backend não o muda), nome, URL base opcional e chave (campo de senha). Na edição a chave é opcional e a dica mostra só o `key_hint` atual.
+- `providerForm.ts`: schema, valores iniciais e corpos de `POST`/`PATCH` (funções puras, com teste).
+
+**Não entra aqui**: chamadas de API (`lib/api/providers.ts`), assistentes (`features/assistants/`), textos (`i18n/locales/`, chaves `providers.*`; erros em `apiErrors.*`).
+
+**Convenções locais**:
+
+- A chave nunca volta para a tela: o formulário é reiniciado ao abrir e ao fechar o diálogo, e depois de salvar só aparece o `key_hint` que a API devolve. Edição com a chave em branco não a envia (mantém a atual); URL base em branco na edição envia `null` (limpa).
+- O teste de conexão responde 200 com `{ok, error}`: a falha do provedor vira mensagem pelo `error.code` (`translateApiErrorCode`); erro da própria API (403, 404) vem por `translateApiError`.
+- Excluir provedor usado por assistente responde 409 `provider_in_use`, mostrado no `FormAlert`.
+
+**Como testar**: de `frontend/`, `pnpm test -- --coverage`. Pela árvore real (`renderWithProviders({ path: "/w/<id>/providers" })`) com MSW: `providerStore(initial, { inUse, testResults })` (mudanças persistem; `created`, `changes`, `deleted`, `tested`), `failedTest(code)`, `providersAs`, `providersServerError`, `createProviderFails`, `updateProviderFails`, `deleteProviderFails`, `testProviderFails`.
+
+**Leia também**: [../AGENTS.md](../AGENTS.md); [../../lib/api/AGENTS.md](../../lib/api/AGENTS.md); `docs/specs/openapi.json` (`/v1/workspaces/{workspace_id}/providers`).

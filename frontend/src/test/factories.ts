@@ -1,9 +1,11 @@
 import type { Session } from "@/lib/api/account";
 import type { AdminUser, AdminWorkspace } from "@/lib/api/admin";
+import type { Assistant } from "@/lib/api/assistants";
 import type { AuditEvent } from "@/lib/api/audit";
 import type { Me, UserWorkspace } from "@/lib/api/auth";
 import type { Invitation, InvitationPreview } from "@/lib/api/invites";
 import type { Member } from "@/lib/api/members";
+import type { Provider } from "@/lib/api/providers";
 
 /** Synthetic ids, fixed so tests can build URLs such as `/w/${WORKSPACE_ID}`. */
 export const USER_ID = "00000000-0000-4000-8000-000000000001";
@@ -292,5 +294,74 @@ export function makeAdminUsers(): AdminUser[] {
       email_verified_at: null,
       created_at: "2026-03-01T00:00:00Z",
     }),
+  ];
+}
+
+export const PROVIDER_ID = "00000000-0000-4000-8000-0000000000e1";
+export const OTHER_PROVIDER_ID = "00000000-0000-4000-8000-0000000000e2";
+
+/** One item of `GET /v1/workspaces/{id}/providers`: by default an OpenAI key ending in 1234. */
+export function makeProvider(overrides: Partial<Provider> = {}): Provider {
+  return {
+    id: PROVIDER_ID,
+    name: "OpenAI Produção",
+    kind: "openai",
+    base_url: null,
+    key_hint: "****1234",
+    created_at: "2026-10-01T10:00:00Z",
+    updated_at: "2026-10-01T10:00:00Z",
+    ...overrides,
+  };
+}
+
+/** The default providers, by name: Anthropic (key ****wxyz) and OpenAI Produção (****1234). */
+export function makeProviders(): Provider[] {
+  return [
+    makeProvider({
+      id: OTHER_PROVIDER_ID,
+      name: "Anthropic",
+      kind: "anthropic",
+      key_hint: "****wxyz",
+    }),
+    makeProvider(),
+  ];
+}
+
+export const ASSISTANT_ID = "00000000-0000-4000-8000-0000000000f1";
+export const OTHER_ASSISTANT_ID = "00000000-0000-4000-8000-0000000000f2";
+
+/** One item of `GET /v1/workspaces/{id}/assistants`: by default the active "Suporte ERP". */
+export function makeAssistant(overrides: Partial<Assistant> = {}): Assistant {
+  return {
+    id: ASSISTANT_ID,
+    name: "Suporte ERP",
+    description: "Dúvidas sobre o ERP.",
+    system_prompt: "Responda com base nas fontes.",
+    provider_id: PROVIDER_ID,
+    model: "gpt-4.1-mini",
+    temperature: 0.2,
+    language: "pt-BR",
+    tone: "neutral",
+    no_source_message: "Não encontrei isso nas fontes. Quer abrir um chamado?",
+    active: true,
+    created_at: "2026-10-02T10:00:00Z",
+    updated_at: "2026-10-02T10:00:00Z",
+    ...overrides,
+  };
+}
+
+/** The default assistants, by name: Rascunho (inactive, on Anthropic) and Suporte ERP (active). */
+export function makeAssistants(): Assistant[] {
+  return [
+    makeAssistant({
+      id: OTHER_ASSISTANT_ID,
+      name: "Rascunho",
+      description: "",
+      provider_id: OTHER_PROVIDER_ID,
+      model: "claude-sonnet",
+      tone: "friendly",
+      active: false,
+    }),
+    makeAssistant(),
   ];
 }

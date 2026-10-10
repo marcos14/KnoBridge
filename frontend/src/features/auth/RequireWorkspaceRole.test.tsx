@@ -40,6 +40,7 @@ describe("RequireWorkspaceRole", () => {
   it.each([
     ["viewer", "settings"],
     ["viewer", "assistants"],
+    ["viewer", "providers"],
     ["editor", "conversations"],
     ["editor", "audit"],
   ] as const)("test_require_workspace_role_%s_cannot_open_%s", async (role, area) => {

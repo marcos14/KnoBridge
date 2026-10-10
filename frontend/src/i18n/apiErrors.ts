@@ -28,3 +28,11 @@ export function apiErrorKey(error: unknown): `apiErrors.${ApiErrorKey}` {
 export function translateApiError(error: unknown, t: TFunction): string {
   return t(apiErrorKey(error));
 }
+
+/**
+ * User-facing message for an error `code` reported inside a successful answer (e.g. the result
+ * of a provider connection test); `unknown` when the interface does not know the code.
+ */
+export function translateApiErrorCode(code: string, t: TFunction): string {
+  return t(isKnownKey(code) ? `apiErrors.${code}` : "apiErrors.unknown");
+}

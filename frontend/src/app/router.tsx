@@ -5,6 +5,7 @@ import { ProfilePage } from "@/features/account/ProfilePage";
 import { SecurityPage } from "@/features/account/SecurityPage";
 import { AdminUsersPage } from "@/features/admin/AdminUsersPage";
 import { AdminWorkspacesPage } from "@/features/admin/AdminWorkspacesPage";
+import { AssistantsPage } from "@/features/assistants/AssistantsPage";
 import { InstanceAuditPage } from "@/features/audit/InstanceAuditPage";
 import { WorkspaceAuditPage } from "@/features/audit/WorkspaceAuditPage";
 import { AcceptInvitationPage } from "@/features/auth/AcceptInvitationPage";
@@ -19,6 +20,7 @@ import { ResetPasswordPage } from "@/features/auth/ResetPasswordPage";
 import { SetupPage } from "@/features/auth/SetupPage";
 import { VerifyEmailPage } from "@/features/auth/VerifyEmailPage";
 import { MembersPage } from "@/features/members/MembersPage";
+import { ProvidersPage } from "@/features/providers/ProvidersPage";
 import { WorkspaceSettingsPage } from "@/features/settings/WorkspaceSettingsPage";
 
 import { HomePage } from "./HomePage";
@@ -109,8 +111,8 @@ export const routes: RouteObject[] = [
                           { index: true, element: <HomePage /> },
                           workspaceArea("chat", <PlaceholderPage page="chat" />),
                           workspaceArea("conversations", <PlaceholderPage page="conversations" />),
-                          workspaceArea("assistants", <PlaceholderPage page="assistants" />),
-                          workspaceArea("providers", <PlaceholderPage page="providers" />),
+                          workspaceArea("assistants", <AssistantsPage />),
+                          workspaceArea("providers", <ProvidersPage />),
                           workspaceArea("sources", <AreaSkeletonPage area="sources" />),
                           workspaceArea("pipelines", <AreaSkeletonPage area="pipelines" />),
                           workspaceArea("collections", <AreaSkeletonPage area="collections" />),

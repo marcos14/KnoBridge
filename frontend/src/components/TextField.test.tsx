@@ -44,4 +44,26 @@ describe("TextField", () => {
     expect(screen.getByLabelText("Nome")).toHaveAttribute("aria-invalid", "true");
     expect(screen.getByText("Informe seu nome.")).toBeInTheDocument();
   });
+
+  it("test_text_field_with_rows_is_a_multiline_textarea", async () => {
+    const user = userEvent.setup();
+    function NotesForm() {
+      const form = useForm({ defaultValues: { notes: "", count: 0 } });
+      return (
+        <Form {...form}>
+          <form noValidate>
+            <TextField control={form.control} name="notes" label="Notas" rows={4} />
+          </form>
+        </Form>
+      );
+    }
+    render(<NotesForm />);
+    const notes = screen.getByRole("textbox", { name: "Notas" });
+
+    await user.type(notes, "linha 1{Enter}linha 2");
+
+    expect(notes.tagName).toBe("TEXTAREA");
+    expect(notes).toHaveAttribute("rows", "4");
+    expect(notes).toHaveValue("linha 1\nlinha 2");
+  });
 });

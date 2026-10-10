@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { ApiError } from "@/lib/api/client";
 
-import { apiErrorKey, translateApiError } from "./apiErrors";
+import { apiErrorKey, translateApiError, translateApiErrorCode } from "./apiErrors";
 import { i18n } from "./index";
 
 describe("apiErrorKey", () => {
@@ -75,5 +75,24 @@ describe("translateApiError", () => {
     expect(translateApiError(new ApiError(409, "assistant_inactive"), t)).toBe(
       "Este assistente está inativo e não aceita novas mensagens.",
     );
+  });
+});
+
+describe("translateApiErrorCode", () => {
+  it("test_translate_api_error_code_returns_known_message", () => {
+    const t = i18n.t.bind(i18n);
+
+    expect(translateApiErrorCode("provider_auth_failed", t)).toBe(
+      "O provedor de LLM recusou a chave de API. Confira a credencial.",
+    );
+    expect(translateApiErrorCode("provider_name_taken", t)).toBe(
+      "Já existe um provedor com este nome no workspace.",
+    );
+  });
+
+  it("test_translate_api_error_code_falls_back_to_unknown", () => {
+    const t = i18n.t.bind(i18n);
+
+    expect(translateApiErrorCode("teapot", t)).toBe("Algo deu errado. Tente novamente.");
   });
 });

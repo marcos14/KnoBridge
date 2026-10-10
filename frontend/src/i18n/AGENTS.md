@@ -2,7 +2,7 @@
 
 **Função**: internacionalização do painel com i18next. Instância única, idioma padrão pt-BR.
 
-**Entra aqui**: `index.ts` (cria e inicializa a instância `i18n`, exporta `resources`), `i18next.d.ts` (tipa as chaves a partir do pt-BR), `apiErrors.ts` (`apiErrorKey` e `translateApiError`: mensagem de erro da API pelo `code`, com `network` para falha de rede e `unknown` para o resto), `auditActions.ts` (`auditActionLabel`: rótulo da ação de auditoria, ou o código cru quando a interface não o conhece) e a pasta `locales/`.
+**Entra aqui**: `index.ts` (cria e inicializa a instância `i18n`, exporta `resources`), `i18next.d.ts` (tipa as chaves a partir do pt-BR), `apiErrors.ts` (`apiErrorKey` e `translateApiError`: mensagem de erro da API pelo `code`, com `network` para falha de rede e `unknown` para o resto; `translateApiErrorCode` para um `code` que chega dentro de uma resposta de sucesso, como o teste de conexão de provedor), `auditActions.ts` (`auditActionLabel`: rótulo da ação de auditoria, ou o código cru quando a interface não o conhece) e a pasta `locales/`.
 **Não entra aqui**: textos de tradução soltos em código (vão para `locales/*.json`), formatação de datas e números específica de feature (`lib/`).
 
 **Convenções locais**:
