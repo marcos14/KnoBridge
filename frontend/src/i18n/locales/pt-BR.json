@@ -18,5 +18,59 @@
     "title": "Página não encontrada",
     "description": "O endereço acessado não existe.",
     "backHome": "Voltar para o início"
+  },
+  "forbidden": {
+    "title": "Acesso negado",
+    "description": "Você não tem permissão para acessar esta página.",
+    "backHome": "Voltar para o início"
+  },
+  "authGuard": {
+    "loading": "Carregando…",
+    "loadFailed": "Não foi possível carregar a página. Verifique a conexão e tente novamente.",
+    "retry": "Tentar novamente"
+  },
+  "pages": {
+    "setup": "Configuração inicial",
+    "login": "Entrar",
+    "forgotPassword": "Recuperar senha",
+    "resetPassword": "Redefinir senha",
+    "verifyEmail": "Verificar e-mail",
+    "acceptInvitation": "Aceitar convite",
+    "account": "Minha conta",
+    "admin": "Administração da instância",
+    "workspace": "Workspace",
+    "workspaceSettings": "Configurações do workspace"
+  },
+  "apiErrors": {
+    "unknown": "Algo deu errado. Tente novamente.",
+    "network": "Não foi possível falar com o servidor. Verifique a conexão.",
+    "account_details_required": "Informe seu nome e uma senha para criar a conta.",
+    "already_member": "Esta pessoa já é membro do workspace.",
+    "cannot_suspend_self": "Você não pode suspender a própria conta.",
+    "conflict": "A operação conflita com o estado atual. Atualize a página e tente de novo.",
+    "csrf_failed": "Sua sessão precisa ser renovada. Recarregue a página e tente de novo.",
+    "email_already_verified": "Este e-mail já foi verificado.",
+    "email_delivery_failed": "Não foi possível enviar o e-mail. Tente novamente mais tarde.",
+    "forbidden": "Você não tem permissão para fazer isso.",
+    "internal_error": "Erro inesperado no servidor. Tente novamente.",
+    "invalid_credentials": "E-mail ou senha incorretos.",
+    "invalid_current_password": "A senha atual está incorreta.",
+    "invalid_token": "O link é inválido ou expirou.",
+    "invitation_email_mismatch": "Este convite foi enviado para outro e-mail.",
+    "invitation_pending": "Já existe um convite pendente para este e-mail.",
+    "last_owner": "O workspace precisa de ao menos um proprietário.",
+    "last_superadmin": "A instância precisa de ao menos um superadministrador ativo.",
+    "login_required": "Entre na sua conta para continuar.",
+    "not_found": "O item procurado não existe.",
+    "role_not_allowed": "Seu papel não permite atribuir este papel.",
+    "service_unavailable": "O serviço está indisponível no momento.",
+    "setup_already_completed": "A configuração inicial já foi feita.",
+    "slug_taken": "Este identificador já está em uso.",
+    "too_many_attempts": "Muitas tentativas. Aguarde alguns minutos e tente de novo.",
+    "too_many_requests": "Muitas requisições. Aguarde um pouco e tente de novo.",
+    "unauthenticated": "Sua sessão expirou. Entre novamente.",
+    "validation_error": "Confira os dados informados.",
+    "weak_password": "A senha é fraca demais. Use uma senha mais longa e difícil de adivinhar.",
+    "workspace_suspended": "Este workspace está suspenso."
   }
 }

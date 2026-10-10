@@ -5,11 +5,11 @@ import { describe, expect, it } from "vitest";
 import { renderWithProviders } from "@/test/renderWithProviders";
 
 describe("NotFoundPage", () => {
-  it("test_not_found_page_is_shown_for_unknown_route", () => {
+  it("test_not_found_page_is_shown_for_unknown_route", async () => {
     renderWithProviders({ path: "/does-not-exist" });
 
     expect(
-      screen.getByRole("heading", { level: 1, name: "Página não encontrada" }),
+      await screen.findByRole("heading", { level: 1, name: "Página não encontrada" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Voltar para o início" })).toHaveAttribute("href", "/");
   });
@@ -18,8 +18,8 @@ describe("NotFoundPage", () => {
     const user = userEvent.setup();
     renderWithProviders({ path: "/does-not-exist/deep" });
 
-    await user.click(screen.getByRole("link", { name: "Voltar para o início" }));
+    await user.click(await screen.findByRole("link", { name: "Voltar para o início" }));
 
-    expect(screen.getByRole("heading", { level: 1, name: "Início" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Início" })).toBeInTheDocument();
   });
 });

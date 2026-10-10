@@ -33,6 +33,3 @@ export const healthReadyPending = http.get(HEALTH_READY, async () => {
   await delay("infinite");
   return HttpResponse.json(null);
 });
-
-/** Default handlers: the happy path. Override per test with `server.use(...)`. */
-export const handlers = [healthReadyOk];

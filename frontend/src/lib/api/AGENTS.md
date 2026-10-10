@@ -5,17 +5,19 @@
 **Entra aqui**:
 
 - `schema.gen.ts`: tipos gerados por `openapi-typescript` a partir de `docs/specs/openapi.json`. **Nunca edite à mão.** Fora do lint, do Prettier e da cobertura (só tipos).
-- `client.ts`: `apiClient` (`openapi-fetch`), com `baseUrl` vindo de `VITE_API_BASE_URL` (padrão `/`, mesma origem; nginx e o proxy do Vite repassam `/v1` para a API), `createApiClient()` e `ApiError` (resposta não 2xx).
-- Um módulo por recurso com seus hooks e funções de busca (hoje `health.ts`: `useApiHealth`, `GET /v1/health/ready`).
+- `client.ts`: `apiClient` (`openapi-fetch`, `credentials: "include"`), com `baseUrl` vindo de `VITE_API_BASE_URL` (padrão `/`, mesma origem; nginx e o proxy do Vite repassam `/v1` para a API), `createApiClient()`, `ApiError` (status, `code` e `details` do corpo de erro padrão), `toApiError`, `unwrap` e o `authMiddleware`: copia o cookie `knobridge_csrf` no header `X-CSRF-Token` em métodos não seguros e avisa o handler registrado por `setUnauthorizedHandler` a cada 401 inesperado.
+- Um módulo por recurso com seus hooks e funções de busca: `health.ts` (`useApiHealth`), `auth.ts` (`useMe`, `useLogin`, `useLogout`, chaves `meQueryKey` e `setupStatusQueryKey`), `setup.ts` (`useSetupStatus`, `useRunSetup`).
 
-**Não entra aqui**: componentes (`components/`, `features/`), tipos de resposta escritos à mão, `fetch` direto.
+**Não entra aqui**: componentes (`components/`, `features/`), tipos de resposta escritos à mão, `fetch` direto, textos de erro (`i18n/apiErrors.ts`).
 
 **Convenções locais**:
 
 - Mudou o contrato no backend: `cd backend && uv run knobridge-openapi`, depois `pnpm gen:api`, e commite os dois arquivos juntos. A CI roda `pnpm check:api`, que falha se `schema.gen.ts` estiver desatualizado.
-- Hooks recebem o `signal` do TanStack Query e o repassam ao cliente; chaves de query exportadas como constantes (`apiHealthQueryKey`).
-- Erro HTTP vira `ApiError` com `status`; falha de rede chega como `TypeError` do `fetch`.
+- Hooks recebem o `signal` do TanStack Query e o repassam ao cliente; chaves de query exportadas como constantes (`apiHealthQueryKey`, `meQueryKey`).
+- Erro HTTP vira `ApiError` (use `unwrap`); falha de rede chega como `TypeError` do `fetch`.
+- 401 esperados não disparam o handler de sessão expirada: `GET /v1/me` anônimo (vira `data === null` no `useMe`), login com credencial errada e logout de sessão já encerrada. Endpoint novo com 401 esperado entra em `EXPECTED_UNAUTHORIZED`.
+- Login e setup respondem com o corpo de `/v1/me`: a mutação grava no cache do `useMe` em vez de buscar de novo. Logout deixa `me` como `null` e remove as queries do usuário (mantém `me`, status do setup e health).
 
-**Como testar**: de `frontend/`, `pnpm test -- --coverage`. A API é simulada com MSW (handlers em `src/test/handlers.ts`); nunca mocke `fetch` à mão.
+**Como testar**: de `frontend/`, `pnpm test -- --coverage`. A API é simulada com MSW (handlers por recurso em `src/test/handlers/`); nunca mocke `fetch` à mão. Hooks: `renderQueryHook` de `@/test/renderWithProviders`.
 
-**Leia também**: [../../../AGENTS.md](../../../AGENTS.md); [docs/specs/AGENTS.md](../../../../docs/specs/AGENTS.md).
+**Leia também**: [../../../AGENTS.md](../../../AGENTS.md); [docs/specs/AGENTS.md](../../../../docs/specs/AGENTS.md); `backend/src/knobridge/security/csrf.py` (nome do cookie e do header).

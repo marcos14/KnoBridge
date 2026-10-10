@@ -4,10 +4,10 @@ import { describe, expect, it } from "vitest";
 import { App } from "./App";
 
 describe("App", () => {
-  it("test_app_renders_without_error", () => {
+  it("test_app_renders_without_error", async () => {
     render(<App />);
 
     expect(screen.getByRole("banner")).toHaveTextContent("KnoBridge");
-    expect(screen.getByRole("heading", { level: 1, name: "Início" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Início" })).toBeInTheDocument();
   });
 });

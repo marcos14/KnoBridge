@@ -25,11 +25,11 @@ describe("Layout", () => {
     expect(screen.getByRole("banner")).toContainElement(screen.getByRole("status"));
   });
 
-  it("test_layout_renders_child_route_inside_main", () => {
+  it("test_layout_renders_child_route_inside_main", async () => {
     renderWithProviders();
 
     expect(screen.getByRole("main")).toContainElement(
-      screen.getByRole("heading", { level: 1, name: "Início" }),
+      await screen.findByRole("heading", { level: 1, name: "Início" }),
     );
   });
 });

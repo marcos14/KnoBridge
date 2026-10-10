@@ -1,25 +1,25 @@
 # frontend/src/test/
 
-**Função**: infraestrutura de testes do Vitest. Setup global, servidor MSW e helpers compartilhados entre os testes de componentes.
+**Função**: infraestrutura de testes do Vitest. Setup global, servidor MSW, handlers, fábricas de dados e helpers compartilhados entre os testes.
 
 **Entra aqui**:
 
 - `setup.ts`: matchers do jest-dom; sobe o servidor MSW antes da suíte (`onUnhandledRequest: "error"`), faz `cleanup` e `server.resetHandlers()` após cada teste e fecha o servidor no fim.
 - `server.ts`: `server` do `msw/node` com os handlers padrão.
-- `handlers.ts`: handlers MSW tipados pelo `schema.gen.ts`. Padrão: caminho feliz (`healthReadyOk`). Variações exportadas para `server.use(...)`: `healthReadyUnavailable` (503), `healthReadyNetworkError`, `healthReadyPending` (nunca responde).
-- `renderWithProviders.tsx`: renderiza rotas com os providers reais e router em memória.
-- Futuramente: fábricas de dados sintéticos.
+- `handlers/`: handlers MSW por recurso (ver o `AGENTS.md` da pasta); `@/test/handlers` reexporta todos.
+- `factories.ts`: dados sintéticos tipados pelo `schema.gen.ts` (`makeMe`, `makeWorkspace`) e ids fixos (`WORKSPACE_ID`, `OTHER_WORKSPACE_ID`, `USER_ID`).
+- `renderWithProviders.tsx`: `renderWithProviders({ path, routes })` renderiza rotas com os providers reais e router em memória e devolve também `router` e `queryClient`; `renderQueryHook(hook)` renderiza um hook com `QueryClient` novo; `createTestQueryClient()`.
 
 **Não entra aqui**: os testes em si (ficam ao lado do arquivo testado, `*.test.tsx`), mocks manuais de `fetch` (use MSW), dados reais.
 
 **Convenções locais**:
 
 - Pasta fora da medição de cobertura (é infraestrutura de teste, não produto); a justificativa está em `vitest.config.ts`.
-- Requisição sem handler falha o teste: endpoint novo ganha handler padrão aqui na mesma entrega.
-- Handlers casam qualquer origem (`*/v1/...`), para não depender da `baseUrl`.
+- Requisição sem handler falha o teste: endpoint novo ganha handler padrão em `handlers/` na mesma entrega.
 - Helpers usam a mesma pilha de providers do app (`AppProviders`) para que o teste renderize a árvore real.
-- Cada render cria um `QueryClient` novo: sem cache compartilhado entre testes.
+- Cada render cria um `QueryClient` novo, sem cache compartilhado entre testes e sem retentativa de query (falha aparece na hora, sem esperar o atraso do retry).
+- Para afirmar redirecionamentos, use `router.state.location` devolvido por `renderWithProviders`.
 
 **Como testar**: exercitada indiretamente por `pnpm test -- --coverage`, de `frontend/`.
 
-**Leia também**: [../AGENTS.md](../AGENTS.md); `AGENTS.md` da raiz, seção 5.
+**Leia também**: [handlers/AGENTS.md](handlers/AGENTS.md), [../AGENTS.md](../AGENTS.md); `AGENTS.md` da raiz, seção 5.

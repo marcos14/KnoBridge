@@ -4,10 +4,10 @@ import { describe, expect, it } from "vitest";
 import { renderWithProviders } from "@/test/renderWithProviders";
 
 describe("HomePage", () => {
-  it("test_home_page_is_shown_at_root_route", () => {
+  it("test_home_page_is_shown_at_root_route", async () => {
     renderWithProviders({ path: "/" });
 
-    expect(screen.getByRole("heading", { level: 1, name: "Início" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Início" })).toBeInTheDocument();
     expect(screen.getByText("Bem-vindo ao painel do KnoBridge.")).toBeInTheDocument();
   });
 });

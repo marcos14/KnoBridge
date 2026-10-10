@@ -1,0 +1,48 @@
+import { describe, expect, it } from "vitest";
+
+import { ApiError } from "@/lib/api/client";
+
+import { apiErrorKey, translateApiError } from "./apiErrors";
+import { i18n } from "./index";
+
+describe("apiErrorKey", () => {
+  it("test_api_error_key_uses_known_api_code", () => {
+    expect(apiErrorKey(new ApiError(401, "invalid_credentials"))).toBe(
+      "apiErrors.invalid_credentials",
+    );
+  });
+
+  it("test_api_error_key_falls_back_to_unknown_for_unmapped_code", () => {
+    expect(apiErrorKey(new ApiError(418, "teapot"))).toBe("apiErrors.unknown");
+  });
+
+  it("test_api_error_key_falls_back_to_unknown_without_code", () => {
+    expect(apiErrorKey(new ApiError(500))).toBe("apiErrors.unknown");
+  });
+
+  it("test_api_error_key_does_not_trust_inherited_properties", () => {
+    expect(apiErrorKey(new ApiError(400, "toString"))).toBe("apiErrors.unknown");
+  });
+
+  it("test_api_error_key_maps_failed_fetch_to_network", () => {
+    expect(apiErrorKey(new TypeError("Failed to fetch"))).toBe("apiErrors.network");
+  });
+
+  it("test_api_error_key_maps_anything_else_to_unknown", () => {
+    expect(apiErrorKey(new Error("boom"))).toBe("apiErrors.unknown");
+    expect(apiErrorKey("boom")).toBe("apiErrors.unknown");
+  });
+});
+
+describe("translateApiError", () => {
+  it("test_translate_api_error_returns_pt_br_message", () => {
+    const t = i18n.t.bind(i18n);
+
+    expect(translateApiError(new ApiError(401, "invalid_credentials"), t)).toBe(
+      "E-mail ou senha incorretos.",
+    );
+    expect(translateApiError(new TypeError("Failed to fetch"), t)).toBe(
+      "Não foi possível falar com o servidor. Verifique a conexão.",
+    );
+  });
+});

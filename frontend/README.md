@@ -36,6 +36,6 @@ docker build -t knobridge-frontend frontend      # da raiz do repositório
 docker run --rm -p 8080:80 knobridge-frontend    # http://localhost:8080
 ```
 
-Fora do compose não há serviço `api`, então o indicador de status mostra "indisponível".
+Fora do compose não há serviço `api`: o indicador de status mostra "indisponível" e as rotas, que consultam `/v1/setup/status` e `/v1/me` antes de abrir, mostram o aviso de falha com "Tentar novamente".
 
 Convenções em [AGENTS.md](AGENTS.md).

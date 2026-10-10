@@ -45,7 +45,7 @@ fases:
         commit: 30fa251
   - id: F2
     titulo: "API de autenticação, tenancy e administração (backend)"
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F2.1
         titulo: "Setup inicial, login, logout, sessão atual e RBAC"
@@ -74,17 +74,17 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: f6a4b69
   - id: F3
     titulo: "Shell navegável e telas de conta e administração (frontend)"
-    status: pendente
+    status: em_execucao
     subfases:
       - id: F3.1
         titulo: "Infraestrutura de autenticação no frontend"
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-10
+        concluida_em: 2026-10-10
         commit: null
       - id: F3.2
         titulo: "Shell: sidebar, menus, seletor de workspace, menu do usuário e tema"
@@ -581,6 +581,8 @@ Nenhuma aberta.
 - 2026-10-10 — F2.3 concluída: 376 testes, cobertura 100%; emenda ao ADR 0001 (D15).
 - 2026-10-10 — F2.4 iniciada.
 - 2026-10-10 — F2.4 concluída: 421 testes, cobertura 100% (D16).
+- 2026-10-10 — F3.1 iniciada.
+- 2026-10-10 — F3.1 concluída: 99 testes, cobertura 100%, e2e 2 ok (D17). Tratamento visual de workspace suspenso fica para F3.2.
 
 ## 8. Encerramento
 
