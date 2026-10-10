@@ -5,7 +5,7 @@
 **Entra aqui**:
 
 - `ProfilePage.tsx` (`EmailSection` + `ProfileForm`) e `SecurityPage.tsx` (`ChangePasswordForm` + `SessionsSection`, que lista cada sessão com `SessionItem`).
-- Peças: `AccountPage` (coluna com o `h1`), `AccountSection` (bloco com borda rotulado pelo `h2`, consultável como `region`), `ConfirmAction` (botão com `AlertDialog` de confirmação), `device.ts` (`deviceLabel`: "Chrome no Windows" a partir de `lib/userAgent.ts`).
+- Peças (confirmações com `components/ConfirmDialog.tsx`): `AccountPage` (coluna com o `h1`), `AccountSection` (bloco com borda rotulado pelo `h2`, consultável como `region`), `device.ts` (`deviceLabel`: "Chrome no Windows" a partir de `lib/userAgent.ts`).
 
 **Não entra aqui**: chamadas de API (`lib/api/account.ts` e `useUpdateProfile` de `lib/api/auth.ts`), formatação de datas (`lib/intl.ts`), campos e alertas de formulário compartilhados (`components/TextField.tsx`, `components/FormAlert.tsx`), regras de senha e nome (`lib/schemas.ts`), telas públicas (`features/auth/`), textos (`i18n/locales/`, chaves `account.*`).
 

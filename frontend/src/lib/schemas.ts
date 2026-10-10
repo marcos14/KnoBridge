@@ -17,6 +17,15 @@ export function nameField(t: TFunction) {
     .max(NAME_MAX_LENGTH, { error: t("auth.validation.tooLong", { max: NAME_MAX_LENGTH }) });
 }
 
+/** Display name of a workspace (the slug never changes with it). */
+export function workspaceNameField(t: TFunction) {
+  return z
+    .string()
+    .trim()
+    .min(1, { error: t("workspaceSettings.nameRequired") })
+    .max(NAME_MAX_LENGTH, { error: t("auth.validation.tooLong", { max: NAME_MAX_LENGTH }) });
+}
+
 /** Address typed by the user, checked for an e-mail shape. */
 export function emailField(t: TFunction) {
   return z

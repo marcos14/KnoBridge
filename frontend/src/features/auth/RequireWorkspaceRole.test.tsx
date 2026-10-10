@@ -38,7 +38,7 @@ describe("RequireWorkspaceRole", () => {
   });
 
   it.each([
-    ["viewer", "members"],
+    ["viewer", "settings"],
     ["viewer", "assistants"],
     ["editor", "conversations"],
     ["editor", "audit"],
@@ -53,7 +53,7 @@ describe("RequireWorkspaceRole", () => {
 
   it.each([
     ["editor", "providers", "Provedores"],
-    ["admin", "members", "Membros"],
+    ["viewer", "members", "Membros"],
     ["viewer", "chat", "Chat"],
   ] as const)("test_require_workspace_role_%s_opens_%s", async (role, area, title) => {
     asMemberWithRole(role);

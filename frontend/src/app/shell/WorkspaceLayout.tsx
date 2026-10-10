@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet } from "react-router";
 
-import { useCurrentWorkspace } from "@/features/auth/useCurrentWorkspace";
+import { useCurrentWorkspace } from "@/hooks/use-current-workspace";
 import { storeLastWorkspaceId } from "@/lib/lastWorkspace";
 
 import { useWorkspaceSuspendedSignal } from "./useWorkspaceSuspended";

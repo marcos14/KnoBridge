@@ -17,7 +17,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-import { hasRole } from "@/features/auth/roles";
+import { hasRole } from "@/lib/roles";
 import type { Role } from "@/lib/api/auth";
 
 export type WorkspaceArea =
@@ -62,7 +62,7 @@ export const WORKSPACE_AREAS: readonly WorkspaceAreaDefinition[] = [
   { key: "pipelines", path: "pipelines", minRole: "viewer", icon: Workflow },
   { key: "collections", path: "collections", minRole: "viewer", icon: Library },
   { key: "channels", path: "channels", minRole: "viewer", icon: Cable },
-  { key: "members", path: "members", minRole: "admin", icon: Users },
+  { key: "members", path: "members", minRole: "viewer", icon: Users },
   { key: "settings", path: "settings", minRole: "admin", icon: Settings },
   { key: "audit", path: "audit", minRole: "admin", icon: ScrollText },
 ];

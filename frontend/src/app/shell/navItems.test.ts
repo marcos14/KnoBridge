@@ -9,7 +9,7 @@ function keysFor(role: "owner" | "admin" | "editor" | "viewer") {
 }
 
 describe("workspaceNavItems", () => {
-  it("test_workspace_nav_items_for_viewer_hide_management_areas", () => {
+  it("test_workspace_nav_items_for_viewer_show_members_but_hide_management_areas", () => {
     expect(keysFor("viewer")).toEqual([
       "home",
       "chat",
@@ -17,6 +17,7 @@ describe("workspaceNavItems", () => {
       "pipelines",
       "collections",
       "channels",
+      "members",
     ]);
   });
 
@@ -30,6 +31,7 @@ describe("workspaceNavItems", () => {
       "pipelines",
       "collections",
       "channels",
+      "members",
     ]);
   });
 
@@ -72,7 +74,8 @@ describe("adminNavItems", () => {
 
 describe("areaMinRole", () => {
   it("test_area_min_role_reads_the_menu_table", () => {
-    expect(areaMinRole("members")).toBe("admin");
+    expect(areaMinRole("members")).toBe("viewer");
+    expect(areaMinRole("settings")).toBe("admin");
     expect(areaMinRole("assistants")).toBe("editor");
     expect(areaMinRole("sources")).toBe("viewer");
   });

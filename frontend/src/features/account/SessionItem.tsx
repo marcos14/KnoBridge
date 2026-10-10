@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useClock } from "@/hooks/use-clock";
@@ -7,7 +8,6 @@ import type { Session } from "@/lib/api/account";
 import { formatDateTime, formatRelativeTime } from "@/lib/intl";
 import { summarizeUserAgent } from "@/lib/userAgent";
 
-import { ConfirmAction } from "./ConfirmAction";
 import { deviceLabel } from "./device";
 
 interface SessionItemProps {
@@ -52,11 +52,15 @@ export function SessionItem({ session, onRevoke, disabled }: SessionItemProps) {
         </p>
       </div>
       {session.current ? (
-        <ConfirmAction
-          label={t("account.security.sessions.revokeCurrent")}
+        <ConfirmDialog
+          trigger={
+            <Button type="button" variant="outline" size="sm" disabled={disabled}>
+              {t("account.security.sessions.revokeCurrent")}
+            </Button>
+          }
           title={t("account.security.sessions.revokeCurrentTitle")}
           description={t("account.security.sessions.revokeCurrentDescription")}
-          disabled={disabled}
+          confirmLabel={t("account.security.sessions.revokeCurrent")}
           onConfirm={() => {
             onRevoke(session);
           }}

@@ -10,6 +10,7 @@ import {
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
   withMatchingPasswords,
+  workspaceNameField,
 } from "./schemas";
 
 const t = i18n.t;
@@ -61,5 +62,15 @@ describe("auth schemas", () => {
     expect(result.error?.issues).toEqual([
       expect.objectContaining({ path: ["confirmPassword"], message: "As senhas não conferem." }),
     ]);
+  });
+});
+
+describe("workspace schemas", () => {
+  it("test_workspace_name_field_trims_requires_and_limits", () => {
+    expect(workspaceNameField(t).parse("  Acme  ")).toBe("Acme");
+    expect(firstMessage(workspaceNameField(t).safeParse(" "))).toBe("Informe o nome do workspace.");
+    expect(firstMessage(workspaceNameField(t).safeParse("a".repeat(201)))).toBe(
+      "Use no máximo 200 caracteres.",
+    );
   });
 });

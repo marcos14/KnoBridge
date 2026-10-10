@@ -1,4 +1,10 @@
-import { skipToken, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  skipToken,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 
 import { storeSession } from "./auth";
 import { apiClient, unwrap } from "./client";
@@ -41,5 +47,85 @@ export function useAcceptInvitation() {
     onSuccess: (me) => {
       storeSession(queryClient, me);
     },
+  });
+}
+
+export type Invitation = components["schemas"]["InvitationOut"];
+export type InviteInput = components["schemas"]["InviteRequest"];
+
+export function workspaceInvitesQueryKey(workspaceId: string) {
+  return ["api", "workspaces", workspaceId, "invites"] as const;
+}
+
+export interface PageRequest {
+  limit: number;
+  offset: number;
+}
+
+/** One page of the workspace's pending invitations, newest first (expired ones marked). */
+export function useWorkspaceInvites(workspaceId: string, { limit, offset }: PageRequest) {
+  return useQuery({
+    queryKey: [...workspaceInvitesQueryKey(workspaceId), { limit, offset }],
+    queryFn: async ({ signal }) =>
+      unwrap(
+        await apiClient.GET("/v1/workspaces/{workspace_id}/invites", {
+          params: { path: { workspace_id: workspaceId }, query: { limit, offset } },
+          signal,
+        }),
+      ),
+    // Keeps the current page on screen while the next one loads.
+    placeholderData: keepPreviousData,
+  });
+}
+
+function useRefreshInvites(workspaceId: string) {
+  const queryClient = useQueryClient();
+  return () => queryClient.invalidateQueries({ queryKey: workspaceInvitesQueryKey(workspaceId) });
+}
+
+/**
+ * `POST /v1/workspaces/{id}/invites` (201). A pending invitation to the same address is replaced;
+ * 409 `already_member` / `invitation_pending`, 403 `role_not_allowed`.
+ */
+export function useCreateInvite(workspaceId: string) {
+  const refresh = useRefreshInvites(workspaceId);
+  return useMutation({
+    mutationFn: async (body: InviteInput) =>
+      unwrap(
+        await apiClient.POST("/v1/workspaces/{workspace_id}/invites", {
+          params: { path: { workspace_id: workspaceId } },
+          body,
+        }),
+      ),
+    onSuccess: refresh,
+  });
+}
+
+/** `DELETE /v1/workspaces/{id}/invites/{invitation_id}` (204): the link stops working. */
+export function useRevokeInvite(workspaceId: string) {
+  const refresh = useRefreshInvites(workspaceId);
+  return useMutation({
+    mutationFn: async (invitationId: string) => {
+      unwrap(
+        await apiClient.DELETE("/v1/workspaces/{workspace_id}/invites/{invitation_id}", {
+          params: { path: { workspace_id: workspaceId, invitation_id: invitationId } },
+        }),
+      );
+    },
+    onSuccess: refresh,
+  });
+}
+
+/** `POST /v1/workspaces/{id}/invites/{invitation_id}/resend`: new link, new validity window. */
+export function useResendInvite(workspaceId: string) {
+  const refresh = useRefreshInvites(workspaceId);
+  return useMutation({
+    mutationFn: async (invitationId: string) =>
+      unwrap(
+        await apiClient.POST("/v1/workspaces/{workspace_id}/invites/{invitation_id}/resend", {
+          params: { path: { workspace_id: workspaceId, invitation_id: invitationId } },
+        }),
+      ),
+    onSuccess: refresh,
   });
 }

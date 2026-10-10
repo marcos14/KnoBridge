@@ -14,6 +14,8 @@ import { RequireWorkspaceRole } from "@/features/auth/RequireWorkspaceRole";
 import { ResetPasswordPage } from "@/features/auth/ResetPasswordPage";
 import { SetupPage } from "@/features/auth/SetupPage";
 import { VerifyEmailPage } from "@/features/auth/VerifyEmailPage";
+import { MembersPage } from "@/features/members/MembersPage";
+import { WorkspaceSettingsPage } from "@/features/settings/WorkspaceSettingsPage";
 
 import { HomePage } from "./HomePage";
 import { Layout } from "./Layout";
@@ -109,8 +111,8 @@ export const routes: RouteObject[] = [
                           workspaceArea("pipelines", <AreaSkeletonPage area="pipelines" />),
                           workspaceArea("collections", <AreaSkeletonPage area="collections" />),
                           workspaceArea("channels", <AreaSkeletonPage area="channels" />),
-                          workspaceArea("members", <PlaceholderPage page="members" />),
-                          workspaceArea("settings", <PlaceholderPage page="workspaceSettings" />),
+                          workspaceArea("members", <MembersPage />),
+                          workspaceArea("settings", <WorkspaceSettingsPage />),
                           workspaceArea("audit", <PlaceholderPage page="audit" />),
                           { path: "*", element: <NotFoundPage /> },
                         ],

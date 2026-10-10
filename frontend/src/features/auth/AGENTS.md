@@ -10,7 +10,7 @@
 - `ForbiddenPage.tsx`: 403 renderizado no lugar, sem trocar a URL (nas rotas autenticadas, dentro do shell).
 - `GuardStatus.tsx`: carregando e falha com "Tentar novamente", usados pelos guardas e pela tela de convite.
 - `SessionExpiryHandler.tsx`: registra o handler de 401 do cliente; marca `me` como `null` e leva ao login preservando o destino.
-- `roles.ts` (`hasRole`, `findWorkspace`), `redirect.ts` (`loginPath`, `safeNextPath`, `LOGIN_PATH`, `SETUP_PATH`, `FORGOT_PASSWORD_PATH`, `ACCEPT_INVITATION_PATH`), `useCurrentWorkspace.ts`.
+- `redirect.ts` (`loginPath`, `safeNextPath`, `LOGIN_PATH`, `SETUP_PATH`, `FORGOT_PASSWORD_PATH`, `ACCEPT_INVITATION_PATH`). Papéis (`hasRole`, `findWorkspace`) ficam em `lib/roles.ts` e o workspace da URL em `hooks/use-current-workspace.ts`, porque outras áreas também os usam.
 
 **Não entra aqui**: chamadas de API e hooks (`lib/api/auth.ts`, `setup.ts`, `recovery.ts`, `invites.ts`), árvore de rotas (`app/router.tsx`), textos (`i18n/locales/`, chaves `auth.*`), telas da conta logada (perfil, segurança: `features/account/`).
 

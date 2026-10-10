@@ -1,8 +1,7 @@
 import { useParams } from "react-router";
 
 import { useMe, type UserWorkspace } from "@/lib/api/auth";
-
-import { findWorkspace } from "./roles";
+import { findWorkspace } from "@/lib/roles";
 
 export interface CurrentWorkspace {
   /** The `:workspaceId` of `/w/:workspaceId/...`, or `undefined` outside a workspace route. */

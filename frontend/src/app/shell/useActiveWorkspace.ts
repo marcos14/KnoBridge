@@ -1,4 +1,4 @@
-import { useCurrentWorkspace } from "@/features/auth/useCurrentWorkspace";
+import { useCurrentWorkspace } from "@/hooks/use-current-workspace";
 import { useMe, type UserWorkspace } from "@/lib/api/auth";
 import { pickWorkspace, readLastWorkspaceId } from "@/lib/lastWorkspace";
 

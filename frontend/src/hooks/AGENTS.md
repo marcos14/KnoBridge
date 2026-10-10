@@ -2,7 +2,7 @@
 
 **Função**: hooks React genéricos, sem relação com uma área do produto, no caminho que o shadcn/ui espera (alias `hooks` do `components.json`).
 
-**Entra aqui**: `use-mobile.ts` (`useIsMobile`, usado pelo `components/ui/sidebar.tsx`; reescrito com `useSyncExternalStore` porque a versão do shadcn chama `setState` dentro de efeito, o que o lint estrito proíbe); `use-clock.ts` (`useClock`, `ClockContext`, `systemClock`: o relógio do app, injetado pelo `AppProviders` e fixado nos testes, para datas relativas determinísticas).
+**Entra aqui**: `use-current-workspace.ts` (`useCurrentWorkspace`: o `:workspaceId` da URL e a membership do usuário nele, lida do `me`; usado pelos guardas, pelo shell e pelas telas de workspace); `use-mobile.ts` (`useIsMobile`, usado pelo `components/ui/sidebar.tsx`; reescrito com `useSyncExternalStore` porque a versão do shadcn chama `setState` dentro de efeito, o que o lint estrito proíbe); `use-clock.ts` (`useClock`, `ClockContext`, `systemClock`: o relógio do app, injetado pelo `AppProviders` e fixado nos testes, para datas relativas determinísticas).
 **Não entra aqui**: hooks de dados da API (`lib/api/`), hooks de uma feature (`features/<area>/`), funções puras (`lib/`).
 
 **Convenções locais**:

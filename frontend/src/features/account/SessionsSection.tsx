@@ -1,12 +1,13 @@
 import { useTranslation } from "react-i18next";
 
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { FormAlert } from "@/components/FormAlert";
 import { Button } from "@/components/ui/button";
 import { translateApiError } from "@/i18n/apiErrors";
 import { useRevokeOtherSessions, useRevokeSession, useSessions } from "@/lib/api/account";
 
 import { AccountSection } from "./AccountSection";
-import { ConfirmAction } from "./ConfirmAction";
+
 import { SessionItem } from "./SessionItem";
 
 /** Live sessions of the account: end one, or every one but this. */
@@ -24,11 +25,20 @@ export function SessionsSection() {
       description={t("account.security.sessions.description")}
       actions={
         sessions.isSuccess && (
-          <ConfirmAction
-            label={t("account.security.sessions.revokeOthers")}
+          <ConfirmDialog
+            trigger={
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={busy || othersCount === 0}
+              >
+                {t("account.security.sessions.revokeOthers")}
+              </Button>
+            }
             title={t("account.security.sessions.revokeOthersTitle")}
             description={t("account.security.sessions.revokeOthersDescription")}
-            disabled={busy || othersCount === 0}
+            confirmLabel={t("account.security.sessions.revokeOthers")}
             onConfirm={() => {
               revoke.reset();
               revokeOthers.mutate();

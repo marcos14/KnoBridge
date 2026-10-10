@@ -229,10 +229,100 @@
         "revokeOthersTitle": "Encerrar todas as outras sessões?",
         "revokeOthersDescription": "Todos os outros navegadores e aparelhos conectados à sua conta vão precisar entrar de novo. Esta sessão continua aberta.",
         "revokedOthers": "As outras sessões foram encerradas.",
-        "onlyCurrent": "Não há outras sessões abertas.",
-        "cancel": "Cancelar"
+        "onlyCurrent": "Não há outras sessões abertas."
       }
     }
+  },
+  "confirmDialog": {
+    "cancel": "Cancelar"
+  },
+  "dataTable": {
+    "pagination": "Paginação: {{label}}",
+    "range": "{{from}}–{{to}} de {{total}}",
+    "previous": "Anterior",
+    "next": "Próxima"
+  },
+  "members": {
+    "title": "Membros",
+    "description": "Pessoas com acesso a este workspace e o papel de cada uma.",
+    "tabs": {
+      "members": "Membros",
+      "invites": "Convites pendentes"
+    },
+    "search": "Buscar membros",
+    "searchPlaceholder": "Nome ou e-mail",
+    "tableLabel": "Membros do workspace",
+    "columns": {
+      "name": "Nome",
+      "email": "E-mail",
+      "role": "Papel",
+      "joinedAt": "Entrou em",
+      "actions": "Ações"
+    },
+    "you": "você",
+    "empty": "Nenhum membro encontrado.",
+    "loading": "Carregando membros…",
+    "loadFailed": "Não foi possível carregar os membros.",
+    "retry": "Tentar novamente",
+    "roleLabel": "Papel de {{name}}",
+    "roleChanged": "O papel de {{name}} agora é {{role}}.",
+    "remove": "Remover",
+    "removeLabel": "Remover {{name}}",
+    "removeTitle": "Remover {{name}} do workspace?",
+    "removeDescription": "{{name}} perde o acesso a este workspace. A conta continua existindo e pode ser convidada de novo.",
+    "leave": "Sair do workspace",
+    "leaveTitle": "Sair do workspace?",
+    "leaveDescription": "Você perde o acesso a este workspace até receber um novo convite.",
+    "removed": "{{name}} foi removido do workspace.",
+    "roleNames": {
+      "owner": "Proprietário",
+      "admin": "Administrador",
+      "editor": "Editor",
+      "viewer": "Leitor"
+    },
+    "invites": {
+      "tableLabel": "Convites pendentes",
+      "columns": {
+        "email": "E-mail",
+        "role": "Papel",
+        "expiresAt": "Validade",
+        "actions": "Ações"
+      },
+      "empty": "Nenhum convite pendente.",
+      "loading": "Carregando convites…",
+      "loadFailed": "Não foi possível carregar os convites.",
+      "expired": "Expirado",
+      "expiresAt": "Vence {{when}}",
+      "resend": "Reenviar",
+      "resendLabel": "Reenviar o convite para {{email}}",
+      "resent": "Enviamos um novo convite para {{email}}.",
+      "revoke": "Revogar",
+      "revokeLabel": "Revogar o convite para {{email}}",
+      "revokeTitle": "Revogar o convite para {{email}}?",
+      "revokeDescription": "O link enviado por e-mail deixa de funcionar.",
+      "revoked": "O convite para {{email}} foi revogado."
+    },
+    "invite": {
+      "open": "Convidar",
+      "title": "Convidar para o workspace",
+      "description": "Enviaremos um link por e-mail. Um convite pendente para o mesmo endereço é substituído.",
+      "role": "Papel",
+      "roleHint": "Você pode convidar com papéis até o seu.",
+      "submit": "Enviar convite",
+      "cancel": "Cancelar",
+      "sent": "Convite enviado para {{email}}."
+    }
+  },
+  "workspaceSettings": {
+    "title": "Configurações do workspace",
+    "description": "Dados gerais do workspace.",
+    "general": "Geral",
+    "name": "Nome do workspace",
+    "nameRequired": "Informe o nome do workspace.",
+    "slug": "Identificador",
+    "slugHint": "O identificador não muda quando o nome muda.",
+    "submit": "Salvar alterações",
+    "saved": "Workspace atualizado."
   },
   "roles": {
     "owner": "proprietário",
@@ -248,8 +338,6 @@
     "conversations": "Conversas",
     "assistants": "Assistentes",
     "providers": "Provedores",
-    "members": "Membros",
-    "workspaceSettings": "Configurações do workspace",
     "audit": "Auditoria"
   },
   "apiErrors": {
@@ -273,7 +361,7 @@
     "last_superadmin": "A instância precisa de ao menos um superadministrador ativo.",
     "login_required": "Entre na sua conta para continuar.",
     "not_found": "O item procurado não existe.",
-    "role_not_allowed": "Seu papel não permite atribuir este papel.",
+    "role_not_allowed": "Seu papel não permite atribuir este papel nem gerenciar quem o tem.",
     "service_unavailable": "O serviço está indisponível no momento.",
     "setup_already_completed": "A configuração inicial já foi feita.",
     "slug_taken": "Este identificador já está em uso.",

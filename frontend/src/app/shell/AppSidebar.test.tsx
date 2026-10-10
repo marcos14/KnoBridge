@@ -24,18 +24,26 @@ function linkNames(nav: HTMLElement): string[] {
 }
 
 describe("AppSidebar", () => {
-  it("test_app_sidebar_viewer_does_not_see_members_or_management", async () => {
+  it("test_app_sidebar_viewer_sees_members_but_not_management", async () => {
     const { nav } = await renderMenu("viewer");
 
-    expect(linkNames(nav)).toEqual(["Início", "Chat", "Fontes", "Pipelines", "Coleções", "Canais"]);
+    expect(linkNames(nav)).toEqual([
+      "Início",
+      "Chat",
+      "Fontes",
+      "Pipelines",
+      "Coleções",
+      "Canais",
+      "Membros",
+    ]);
   });
 
-  it("test_app_sidebar_editor_sees_assistants_and_providers_but_not_members", async () => {
+  it("test_app_sidebar_editor_sees_assistants_and_providers_but_not_settings", async () => {
     const { nav } = await renderMenu("editor");
 
     expect(within(nav).getByRole("link", { name: "Assistentes" })).toBeInTheDocument();
     expect(within(nav).getByRole("link", { name: "Provedores" })).toBeInTheDocument();
-    expect(within(nav).queryByRole("link", { name: "Membros" })).not.toBeInTheDocument();
+    expect(within(nav).queryByRole("link", { name: "Configurações" })).not.toBeInTheDocument();
     expect(within(nav).queryByRole("link", { name: "Conversas" })).not.toBeInTheDocument();
   });
 
@@ -106,7 +114,7 @@ describe("AppSidebar", () => {
       "href",
       `/w/${OTHER_WORKSPACE_ID}`,
     );
-    expect(within(nav).queryByRole("link", { name: "Membros" })).not.toBeInTheDocument();
+    expect(within(nav).queryByRole("link", { name: "Configurações" })).not.toBeInTheDocument();
   });
 
   it("test_app_sidebar_without_membership_in_url_workspace_shows_no_workspace_items", async () => {
