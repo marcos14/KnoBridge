@@ -59,6 +59,21 @@ class ConflictError(KnoBridgeError):
     status_code = HTTPStatus.CONFLICT
 
 
+class UnauthenticatedError(KnoBridgeError):
+    code = "unauthenticated"
+    status_code = HTTPStatus.UNAUTHORIZED
+
+
+class ForbiddenError(KnoBridgeError):
+    code = "forbidden"
+    status_code = HTTPStatus.FORBIDDEN
+
+
+class TooManyRequestsError(KnoBridgeError):
+    code = "too_many_requests"
+    status_code = HTTPStatus.TOO_MANY_REQUESTS
+
+
 class ServiceUnavailableError(KnoBridgeError):
     code = "service_unavailable"
     status_code = HTTPStatus.SERVICE_UNAVAILABLE

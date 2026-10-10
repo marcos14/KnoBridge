@@ -29,6 +29,7 @@ _TENANCY_TABLES = (
     "sessions",
     "user_tokens",
     "audit_events",
+    "login_attempts",
 )
 
 ALEMBIC_INI = Path(__file__).resolve().parents[2] / "alembic.ini"
@@ -109,6 +110,7 @@ def test_migration_upgrade_downgrade_tenancy(postgres_url: str) -> None:
         "sessions": (True, True, 1),
         "user_tokens": (True, True, 1),
         "audit_events": (True, True, 3),
+        "login_attempts": (True, True, 1),
     }
     assert after_downgrade == {}
 
@@ -140,6 +142,21 @@ def test_migration_upgrade_downgrade_audit_events(postgres_url: str) -> None:
 
     assert after_upgrade["audit_events"] == (True, True, 3)
     assert set(after_downgrade) == {"users", "workspaces", "memberships", "sessions", "user_tokens"}
+
+
+@pytest.mark.integration
+def test_migration_upgrade_downgrade_login_attempts(postgres_url: str) -> None:
+    config, _ = _alembic_config(postgres_url)
+
+    command.upgrade(config, "head")
+    after_upgrade = _tenancy_catalog(postgres_url)
+    command.downgrade(config, "0004")
+    after_downgrade = _tenancy_catalog(postgres_url)
+    command.downgrade(config, "base")
+
+    assert after_upgrade["login_attempts"] == (True, True, 1)
+    assert "login_attempts" not in after_downgrade
+    assert "audit_events" in after_downgrade
 
 
 def _schema_diff(connection: Connection) -> list[object]:

@@ -94,6 +94,9 @@ addopts = "--cov=knobridge --cov-branch --cov-report=term-missing --cov-fail-und
 
 [tool.coverage.run]
 branch = true
+# SQLAlchemy's async layer runs queries through greenlets and the TestClient serves the app
+# from a worker thread; without both, lines after an awaited query go unmeasured.
+concurrency = ["thread", "greenlet"]
 source = ["knobridge"]
 
 [tool.coverage.report]

@@ -22,6 +22,19 @@ uv run uvicorn knobridge.api.app:create_app --factory --reload
 
 Teste rápido: `curl http://127.0.0.1:8000/v1/health/live` (processo de pé) e `curl http://127.0.0.1:8000/v1/health/ready` (banco respondendo; 503 se não). OpenAPI em `http://127.0.0.1:8000/docs`.
 
+## Primeiro acesso
+
+Com o banco migrado e a API de pé, `GET /v1/setup/status` responde `{"needs_setup": true}` enquanto não existe nenhum usuário. O setup cria o superadmin e já devolve os cookies de sessão e CSRF:
+
+```sh
+curl -c cookies.txt -H 'Content-Type: application/json' \
+  -d '{"name":"Admin","email":"admin@example.com","password":"uma senha bem longa"}' \
+  http://localhost:8000/v1/setup
+curl -b cookies.txt http://localhost:8000/v1/me
+```
+
+Com `KNOBRIDGE_COOKIE_SECURE=true` (padrão), os cookies são `Secure`: o curl só os reenvia por HTTPS ou para `localhost` (por isso o exemplo usa `localhost`, não `127.0.0.1`). Login depois disso: `POST /v1/auth/login` com `email` e `password`. Rotas não seguras autenticadas (ex.: `POST /v1/auth/logout`) exigem o header `X-CSRF-Token` com o valor do cookie `knobridge_csrf`.
+
 ## Contrato OpenAPI
 
 O OpenAPI da API é o contrato do frontend e fica versionado em [`docs/specs/openapi.json`](../docs/specs/openapi.json). Mudou rota ou schema, regenere e commite junto (não precisa de banco):

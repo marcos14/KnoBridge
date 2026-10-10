@@ -13,7 +13,7 @@ branch: plano/0002-plataforma-navegavel
 fases:
   - id: F1
     titulo: "Fundação de dados, segurança e e-mail (backend)"
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F1.1
         titulo: "Modelos de tenancy e RLS"
@@ -42,17 +42,17 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: 30fa251
   - id: F2
     titulo: "API de autenticação, tenancy e administração (backend)"
-    status: pendente
+    status: em_execucao
     subfases:
       - id: F2.1
         titulo: "Setup inicial, login, logout, sessão atual e RBAC"
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-10
+        concluida_em: 2026-10-10
         commit: null
       - id: F2.2
         titulo: "Recuperação de senha, verificação de e-mail, perfil e sessões"
@@ -288,7 +288,15 @@ decisoes:
     motivo: "Investigação de abuso exige IP completo (interesse legítimo, LGPD art. 7 IX); ação nova sem migração."
     alternativas: "Prefixo de rede como nas sessões."
     adr: null
+  - id: D13
+    data: 2026-10-10
+    por: agente
+    decisao: "Auth: login e setup isentos de CSRF (sem sessão ainda) e emitem o cookie CSRF; limitação de login por SHA-256(email|ip) em tabela, 5 falhas/15 min, 429 com retry_after; 401 genérico com tempo constante; não membro recebe 404 e workspace suspenso 403; login/setup devolvem o corpo de /me; validação de e-mail por regex simples, sem email-validator."
+    motivo: "Alinhado ao ADR 0002; não vaza existência de conta nem de workspace; sem dados pessoais na tabela de tentativas."
+    alternativas: "CSRF também no login; email-validator."
+    adr: null
 pendencias_usuario: []
+# Ação interna anotada para F6.1: atrás do nginx do frontend o IP do cliente vira o do proxy; a API precisa rodar com proxy headers (forwarded_allow_ips restrito à rede do compose) para a limitação de login por IP funcionar.
 ---
 # Plano 0002 — Plataforma navegável: autenticação, multi-tenant, telas administrativas e chat
 
@@ -565,6 +573,8 @@ Nenhuma aberta.
 - 2026-10-10 — F1.3 concluída: 184 testes, cobertura 100%; Mailpit no compose verificado com envio real; secret_key e public_base_url no compose (D11).
 - 2026-10-10 — F1.4 iniciada.
 - 2026-10-10 — F1.4 concluída: 213 testes, cobertura 100% (D12).
+- 2026-10-10 — F2.1 iniciada.
+- 2026-10-10 — F2.1 concluída: 285 testes, cobertura 100%; frontend com tipos regenerados ok (D13). Pendência técnica para F6.1: proxy headers no uvicorn atrás do nginx.
 
 ## 8. Encerramento
 

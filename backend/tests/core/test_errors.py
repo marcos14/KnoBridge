@@ -9,9 +9,12 @@ from fastapi.testclient import TestClient
 
 from knobridge.core.errors import (
     ConflictError,
+    ForbiddenError,
     KnoBridgeError,
     NotFoundError,
     ServiceUnavailableError,
+    TooManyRequestsError,
+    UnauthenticatedError,
     ValidationError,
     register_error_handlers,
 )
@@ -87,6 +90,9 @@ def test_error_handler_honors_code_and_status_overrides(error_client: TestClient
         (ValidationError("x"), "validation_error", 422),
         (ConflictError("x"), "conflict", 409),
         (ServiceUnavailableError("x"), "service_unavailable", 503),
+        (UnauthenticatedError("x"), "unauthenticated", 401),
+        (ForbiddenError("x"), "forbidden", 403),
+        (TooManyRequestsError("x"), "too_many_requests", 429),
     ],
 )
 def test_domain_errors_have_default_code_and_status(

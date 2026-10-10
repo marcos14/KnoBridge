@@ -11,21 +11,31 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from knobridge import __version__
-from knobridge.api import health
+from knobridge.api import audit, auth, health, me, setup
+from knobridge.core.clock import Clock, SystemClock
 from knobridge.core.db import create_engine, create_session_factory
 from knobridge.core.errors import register_error_handlers
 from knobridge.core.logging import configure_logging
 from knobridge.core.settings import Settings, get_settings
+from knobridge.security.passwords import PasswordHasher
 
 API_PREFIX = "/v1"
 
 
-def create_app(settings: Settings | None = None, engine: AsyncEngine | None = None) -> FastAPI:
+def create_app(
+    settings: Settings | None = None,
+    engine: AsyncEngine | None = None,
+    *,
+    clock: Clock | None = None,
+    password_hasher: PasswordHasher | None = None,
+) -> FastAPI:
     """Build the API with logging, CORS, standard error handlers and every ``/v1`` router.
 
     The lifespan stores the database engine and session factory in ``app.state``. Without
     ``engine`` it builds one from ``settings`` and disposes it on shutdown; an injected
-    ``engine`` (tests) stays owned by the caller and is not disposed.
+    ``engine`` (tests) stays owned by the caller and is not disposed. ``clock`` and
+    ``password_hasher`` default to the real ones; tests inject a frozen clock and cheap
+    argon2 parameters. All of them are read by the dependencies in ``api/deps.py``.
     """
     resolved = settings if settings is not None else get_settings()
     configure_logging(resolved)
@@ -44,6 +54,8 @@ def create_app(settings: Settings | None = None, engine: AsyncEngine | None = No
     app = FastAPI(title="KnoBridge API", version=__version__, lifespan=lifespan)
     # Read by dependencies that need configuration per app (e.g. the CSRF check).
     app.state.settings = resolved
+    app.state.clock = clock if clock is not None else SystemClock()
+    app.state.password_hasher = password_hasher if password_hasher is not None else PasswordHasher()
     app.add_middleware(
         CORSMiddleware,
         allow_origins=resolved.cors_origins,
@@ -54,7 +66,8 @@ def create_app(settings: Settings | None = None, engine: AsyncEngine | None = No
     register_error_handlers(app)
 
     v1 = APIRouter(prefix=API_PREFIX)
-    v1.include_router(health.router)
+    for module in (health, setup, auth, me, audit):
+        v1.include_router(module.router)
     app.include_router(v1)
     return app
 

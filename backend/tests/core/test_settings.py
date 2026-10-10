@@ -134,6 +134,23 @@ def test_settings_reads_security_variables(monkeypatch: pytest.MonkeyPatch) -> N
     assert (settings.session_cookie_name, settings.cookie_secure) == ("kb_sid", False)
 
 
+def test_settings_login_throttle_defaults() -> None:
+    settings = Settings()
+
+    assert settings.login_max_attempts == 5
+    assert settings.login_attempt_window == timedelta(minutes=15)
+
+
+def test_settings_reads_login_throttle_variables(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("KNOBRIDGE_LOGIN_MAX_ATTEMPTS", "3")
+    monkeypatch.setenv("KNOBRIDGE_LOGIN_ATTEMPT_WINDOW", "PT5M")
+
+    settings = Settings()
+
+    assert settings.login_max_attempts == 3
+    assert settings.login_attempt_window == timedelta(minutes=5)
+
+
 def test_settings_rejects_short_secret_key(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("KNOBRIDGE_SECRET_KEY", "too-short")
 

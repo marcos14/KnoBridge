@@ -35,6 +35,8 @@ O painel admin autentica por e-mail e senha (decisão D12 da [visão](../01-visa
 
 - Toda rota autenticada valida o cookie de sessão a cada requisição (uma consulta por hash indexado e uma escrita para deslizar a expiração).
 - Rotas que usam o cookie de sessão e mudam estado incluem `Depends(require_csrf)`; o login entrega o cookie de sessão (`set_session_cookie`) e o cookie CSRF (`set_csrf_cookie`).
+- Nota de implementação (plano 0002, F2.1): `POST /v1/auth/login` e `POST /v1/setup` não exigem o header CSRF, porque não usam cookie de sessão (só fazem sentido antes de existir sessão); ambos emitem o cookie CSRF, e `GET /v1/auth/csrf` o renova. As demais rotas não seguras exigem.
+- Nota de implementação (plano 0002, F2.1): o login é limitado por e-mail + IP numa tabela `login_attempts` (janela fixa, contador por upsert atômico, só hashes), com `login_max_attempts` e `login_attempt_window` em `core/settings.py`. Senha errada, e-mail desconhecido e conta suspensa recebem a mesma resposta (401 `invalid_credentials`).
 - `create_app` guarda as `Settings` em `app.state.settings`, de onde as dependências leem a configuração.
 - Troca ou redefinição de senha deve chamar `revoke_all` para derrubar sessões abertas.
 - Modelo de dados em [docs/specs/modelo-de-dados.md](../specs/modelo-de-dados.md); código em `backend/src/knobridge/security/`.

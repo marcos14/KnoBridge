@@ -1,9 +1,10 @@
-"""Authentication records: login ``Session`` and single-use ``UserToken``.
+"""Authentication records: login ``Session``, single-use ``UserToken`` and ``LoginAttempt``.
 
 Both belong to the instance, not to a workspace (no ``workspace_id``). Their tables have
 forced row-level security keyed on the owning user: a transaction scoped to a user sees only
 that user's rows, and lookups by token (before the user is known) run in system mode. Only
-SHA-256 hashes of the tokens are stored. See docs/adr/0002-sessao-server-side.md.
+SHA-256 hashes of the tokens are stored. ``login_attempts`` has no owner yet (the caller is
+anonymous), so only system mode reaches it. See docs/adr/0002-sessao-server-side.md.
 """
 
 from __future__ import annotations
@@ -12,7 +13,7 @@ import uuid
 from datetime import datetime
 from enum import StrEnum
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String, Uuid
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Integer, String, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
 from knobridge.core.models import Base, TimestampMixin, UUIDPrimaryKeyMixin, str_enum
@@ -62,3 +63,16 @@ class UserToken(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     token_hash: Mapped[str] = mapped_column(String(TOKEN_HASH_LENGTH), nullable=False, unique=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class LoginAttempt(UUIDPrimaryKeyMixin, Base):
+    """Failed logins of one throttle key (hash of e-mail + client IP) inside the current window.
+
+    One row per key, so the table stays small; the key is a hash, so no e-mail or IP is kept.
+    """
+
+    __tablename__ = "login_attempts"
+
+    key_hash: Mapped[str] = mapped_column(String(TOKEN_HASH_LENGTH), nullable=False, unique=True)
+    failures: Mapped[int] = mapped_column(Integer, nullable=False)
+    window_started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

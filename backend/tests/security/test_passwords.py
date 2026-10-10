@@ -67,6 +67,15 @@ def test_password_verify_and_update_rejects_wrong_password() -> None:
     assert hasher.verify_and_update(current, "wrong password!!") == VerifyResult(valid=False)
 
 
+def test_password_verify_dummy_always_fails_and_reuses_hash() -> None:
+    hasher = PasswordHasher(CHEAP)
+
+    first = hasher.verify_dummy("knobridge-dummy-password-for-timing")
+    second = hasher.verify_dummy(PASSWORD)
+
+    assert (first, second) == (False, False)
+
+
 def test_password_hasher_defaults_to_rfc9106_low_memory_profile() -> None:
     assert PasswordHasher().needs_rehash(PasswordHasher(CHEAP).hash(PASSWORD)) is True
     assert Argon2Params() == Argon2Params(time_cost=3, memory_cost=65536, parallelism=4)

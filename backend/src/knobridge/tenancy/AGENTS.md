@@ -1,16 +1,21 @@
 # backend/src/knobridge/tenancy/
 
-**Função**: identidade e tenancy. Usuários da instância, workspaces e memberships (papel do usuário em cada workspace). Mais tarde: serviços de cadastro, convites, API keys e RBAC. As primitivas de autenticação (senha, tokens, sessões, CSRF) ficam em [`security/`](../security/AGENTS.md).
+**Função**: identidade e tenancy. Usuários da instância, workspaces e memberships (papel do usuário em cada workspace), o fluxo de autenticação por e-mail e senha, o setup inicial e o RBAC. Mais tarde: cadastro, convites e API keys. As primitivas de autenticação (senha, tokens, sessões, CSRF) ficam em [`security/`](../security/AGENTS.md).
 
 **Entra aqui**:
 - `models.py`: modelos ORM `User` (identidade da instância, sem `workspace_id` e sem RLS; e-mail único sem diferenciar maiúsculas pelo índice `uq_users_email_lower`), `Workspace` (slug único, status) e `Membership` (única por `workspace_id` + `user_id`, papel `owner`/`admin`/`editor`/`viewer`), e os `StrEnum` `AuthProvider`, `UserStatus`, `Theme`, `WorkspaceStatus`, `Role`.
-- Futuramente: serviços e repositórios de tenancy (sem routers, que ficam em `api/`).
+- `auth.py`: `AuthService(clock, hasher, AuthConfig)` com `authenticate` (cookie para `AuthenticatedUser`), `login` (limitação por e-mail + IP; `InvalidCredentialsError` genérico para senha errada, e-mail desconhecido ou conta suspensa; `TooManyLoginAttemptsError` 429; rehash transparente), `logout` e `logout_all`; `find_user_by_email` (sem diferenciar maiúsculas). Cada desfecho é auditado; falhas fazem commit do evento e do contador antes de levantar o erro.
+- `setup.py`: `needs_setup` e `SetupService.run` (advisory lock de transação `SETUP_LOCK_KEY`; cria o superadmin com e-mail verificado, audita `setup.completed` e `user.created` e abre sessão; `SetupAlreadyCompletedError` 409).
+- `queries.py`: `list_user_workspaces` e `get_workspace_access` (rodam em `scoped_session(user_id=...)`).
+- `rbac.py`: `role_at_least(role, minimum)` (owner > admin > editor > viewer).
+- Sem routers (ficam em `api/`).
 
 **Não entra aqui**: Base ORM e mixins (`core/models.py`), sessão de banco e escopo de RLS (`core/db.py`), routers e schemas da API (`api/`), migrações (`backend/migrations/`).
 
 **Convenções locais**:
 - `workspaces` e `memberships` têm RLS forçada (`ENABLE` + `FORCE`). Toda consulta a elas roda em `scoped_session(factory, workspace_id=, user_id=)`; `system_session` só para setup, superadmin e login. Regras das políticas no [ADR 0001](../../../../docs/adr/0001-tenancy-e-rls.md).
 - O `workspace_id` passado ao escopo só seleciona: quem chama já validou a membership do usuário autenticado.
+- Hash e verificação de senha (argon2, CPU) rodam em `asyncio.to_thread` para não travar o loop; e-mail desconhecido gasta o mesmo tempo de uma verificação real (`PasswordHasher.verify_dummy`).
 - Enums são gravados como `VARCHAR` + `CHECK` (`str_enum` de `core/models.py`); valor novo exige migração que troque o `CHECK`.
 - Mudou modelo: migração nova na mesma entrega e `docs/specs/modelo-de-dados.md` atualizado. O teste `test_migrations_match_orm_models` falha se modelo e migração divergirem.
 

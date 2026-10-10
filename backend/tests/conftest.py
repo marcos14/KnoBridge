@@ -7,6 +7,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import uuid
 from collections.abc import Generator
 from pathlib import Path
 
@@ -100,10 +101,7 @@ def app_database_url(postgres_url: str) -> Generator[str]:
     )
     # pgvector is not a trusted extension: the superuser creates it, as in deployment.
     asyncio.run(_run_as_superuser(app_admin_url, ["CREATE EXTENSION IF NOT EXISTS vector"]))
-    config = Config(str(ALEMBIC_INI))
-    config.attributes["configure_logger"] = False
-    config.attributes["database_url"] = app_url
-    command.upgrade(config, "head")
+    _migrate(app_url)
     yield app_url
     asyncio.run(
         _run_as_superuser(
@@ -111,6 +109,32 @@ def app_database_url(postgres_url: str) -> Generator[str]:
             [f"DROP DATABASE {APP_DATABASE} WITH (FORCE)", f"DROP ROLE {APP_ROLE}"],
         )
     )
+
+
+def _migrate(database_url: str) -> None:
+    config = Config(str(ALEMBIC_INI))
+    config.attributes["configure_logger"] = False
+    config.attributes["database_url"] = database_url
+    command.upgrade(config, "head")
+
+
+@pytest.fixture
+def empty_database_url(postgres_url: str, app_database_url: str) -> Generator[str]:
+    """Async DSN of a brand-new database migrated to head, owned by the application role.
+
+    For tests that need an instance with no data at all (e.g. the first setup, which only
+    runs while no user exists); the shared ``app_database_url`` always has users. Created
+    and dropped per test, so use it sparingly.
+    """
+    name = f"knobridge_empty_{uuid.uuid4().hex[:12]}"
+    admin_url = make_url(postgres_url)
+    database_admin_url = admin_url.set(database=name).render_as_string(hide_password=False)
+    url = make_url(app_database_url).set(database=name).render_as_string(hide_password=False)
+    asyncio.run(_run_as_superuser(postgres_url, [f"CREATE DATABASE {name} OWNER {APP_ROLE}"]))
+    asyncio.run(_run_as_superuser(database_admin_url, ["CREATE EXTENSION IF NOT EXISTS vector"]))
+    _migrate(url)
+    yield url
+    asyncio.run(_run_as_superuser(postgres_url, [f"DROP DATABASE {name} WITH (FORCE)"]))
 
 
 @pytest.fixture(scope="session")

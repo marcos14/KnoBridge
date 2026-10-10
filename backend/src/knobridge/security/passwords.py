@@ -65,6 +65,7 @@ class PasswordHasher:
             parallelism=resolved.parallelism,
             type=Type.ID,
         )
+        self._dummy_hash: str | None = None
 
     def hash(self, password: str) -> str:
         return self._hasher.hash(password)
@@ -75,6 +76,17 @@ class PasswordHasher:
             return self._hasher.verify(password_hash, password)
         except (VerificationError, InvalidHashError):
             return False
+
+    def verify_dummy(self, password: str) -> bool:
+        """Spend the time of a real verification and return ``False``.
+
+        Login calls it when the e-mail is unknown (or has no password), so the response time
+        does not reveal which e-mails have accounts. The dummy hash is built once per hasher.
+        """
+        if self._dummy_hash is None:
+            self._dummy_hash = self.hash("knobridge-dummy-password-for-timing")
+        self.verify(self._dummy_hash, password)
+        return False
 
     def needs_rehash(self, password_hash: str) -> bool:
         return self._hasher.check_needs_rehash(password_hash)

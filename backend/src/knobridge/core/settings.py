@@ -49,6 +49,10 @@ class Settings(BaseSettings):
     session_cookie_name: str = Field(default="knobridge_session", min_length=1)
     # Send cookies only over HTTPS. Browsers also accept Secure cookies on http://localhost.
     cookie_secure: bool = True
+    # Failed logins allowed per e-mail + client IP inside one window before login is refused.
+    login_max_attempts: int = Field(default=5, ge=1)
+    # Length of that window; it starts at the first failure and resets after it elapses.
+    login_attempt_window: timedelta = Field(default=timedelta(minutes=15), gt=timedelta(0))
     # Absolute URL of the admin panel; e-mail links (reset, verification, invitation) start here.
     public_base_url: str = Field(default="http://localhost:5173", pattern=r"^https?://[^/\s]+")
     # Outgoing SMTP server for transactional e-mail (Mailpit in development).

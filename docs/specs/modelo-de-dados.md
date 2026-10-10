@@ -32,6 +32,12 @@ erDiagram
     users |o--o{ user_tokens : "recebe"
     workspaces |o--o{ audit_events : "registra"
     users |o--o{ audit_events : "age"
+    login_attempts {
+        uuid id PK
+        varchar key_hash "único; SHA-256 de e-mail + IP"
+        integer failures
+        timestamptz window_started_at
+    }
     users {
         uuid id PK
         varchar email "único sem diferenciar maiúsculas"
@@ -176,3 +182,13 @@ Trilha de auditoria, append-only ([`backend/src/knobridge/audit/`](../../backend
 | `details` | `jsonb` | Metadados da ação, padrão `{}`. Nunca segredo; dado pessoal só o necessário (chaves com `password`, `secret`, `token`, `cookie`, `authorization`, `api_key` são recusadas). |
 | `ip_address` | `varchar(45)` | IP do chamador normalizado; opcional. |
 | `occurred_at` | `timestamptz` | Obrigatório; relógio injetado da aplicação. |
+
+### `login_attempts`
+
+Limitação de tentativas de login ([ADR 0002](../adr/0002-sessao-server-side.md)), em `backend/src/knobridge/security/throttle.py`. Uma linha por chave: o SHA-256 de `lower(email)|ip`, de modo que a tabela não guarda e-mail nem IP. Janela fixa contada da primeira falha (`login_attempt_window`, padrão 15 min); atingido `login_max_attempts` (padrão 5) dentro da janela, o login responde 429 até ela acabar, mesmo com a senha certa. Login bem-sucedido apaga a linha. Sem `created_at`/`updated_at`: as datas vêm do relógio da aplicação. RLS forçada com uma única política, `login_attempts_system` (só modo de sistema), porque quem tenta logar ainda é anônimo.
+
+| Coluna | Tipo | Regras |
+|---|---|---|
+| `key_hash` | `varchar(64)` | SHA-256 em hex da chave; único (`uq_login_attempts_key_hash`). |
+| `failures` | `integer` | Falhas na janela atual. |
+| `window_started_at` | `timestamptz` | Primeira falha da janela atual; janela vencida recomeça em 1 na próxima falha. |

@@ -1,8 +1,8 @@
 # backend/tests/security/
 
-**Função**: testes de `src/knobridge/security/`: senha, tokens, sessões, CSRF e o isolamento por RLS de `sessions` e `user_tokens`.
+**Função**: testes de `src/knobridge/security/`: senha, tokens, sessões, CSRF, limitação de login e o isolamento por RLS de `sessions`, `user_tokens` e `login_attempts`.
 
-**Entra aqui**: um `test_<módulo>.py` por módulo (`test_passwords.py`, `test_tokens.py`, `test_sessions.py`, `test_csrf.py`); `conftest.py` com as fixtures `run_db` (banco migrado, papel dono), `run_rls_db` (parametrizada: dono e não dono) e `clock` (`FrozenClock`); `security_support.py` com tipos e helpers compartilhados (`RunScenario`, `SessionFactory`, `START`, `create_user`), importado pelo nome porque o pytest põe esta pasta no `sys.path`.
+**Entra aqui**: um `test_<módulo>.py` por módulo (`test_passwords.py`, `test_tokens.py`, `test_sessions.py`, `test_csrf.py`, `test_throttle.py`); `conftest.py` com as fixtures `run_db` (banco migrado, papel dono), `run_rls_db` (parametrizada: dono e não dono) e `clock` (`FrozenClock`); `security_support.py` com tipos e helpers compartilhados (`RunScenario`, `SessionFactory`, `START`, `create_user`), importado pelo nome porque o pytest põe esta pasta no `sys.path`.
 **Não entra aqui**: testes das futuras rotas de autenticação (`tests/api/`), da cadeia de migrações (`tests/migrations/`), do `Clock` (`tests/core/test_clock.py`).
 
 **Convenções locais**:
