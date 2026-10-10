@@ -5,10 +5,10 @@ slug: bootstrap
 solicitado_por: usuario
 criado_em: 2026-10-10
 atualizado_em: 2026-10-10
-status: em_execucao
+status: concluido
 aprovado_em: 2026-10-10
 aprovado_por: usuario
-concluido_em: null
+concluido_em: 2026-10-10
 branch: plano/0001-bootstrap
 fases:
   - id: F1
@@ -82,7 +82,7 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: de79377
 decisoes:
   - id: D1
     data: 2026-10-10
@@ -213,12 +213,12 @@ pendencias_usuario: []
 
 ## 3. Critérios de aceite
 
-- [ ] `uv run pytest` no backend e em `scripts/` passa com cobertura ≥ 95% (linhas e branches); ruff e pyright strict limpos.
-- [ ] `pnpm lint && pnpm typecheck && pnpm test -- --coverage` no frontend passa com thresholds 95; `pnpm build` gera o bundle.
-- [ ] `docker compose -f deploy/docker-compose.yml up` sobe Postgres+pgvector, Temporal, Temporal UI, MinIO, api, worker e frontend; `GET /v1/health/ready` responde 200 com banco ok; a UI mostra o status da API.
-- [ ] `scripts/check_agents_md.py` e `scripts/check_plans.py` passam no repositório e falham nos casos de teste negativos.
-- [ ] `.github/workflows/ci.yml` roda todos os gates; `pre-commit run --all-files` limpo.
-- [ ] Toda pasta nova tem `AGENTS.md`; tabela da seção 4 e seção 12 do `AGENTS.md` da raiz atualizadas.
+- [x] `uv run pytest` no backend e em `scripts/` passa com cobertura ≥ 95% (linhas e branches); ruff e pyright strict limpos.
+- [x] `pnpm lint && pnpm typecheck && pnpm test -- --coverage` no frontend passa com thresholds 95; `pnpm build` gera o bundle.
+- [x] `docker compose -f deploy/docker-compose.yml up` sobe Postgres+pgvector, Temporal, Temporal UI, MinIO, api, worker e frontend; `GET /v1/health/ready` responde 200 com banco ok; a UI mostra o status da API.
+- [x] `scripts/check_agents_md.py` e `scripts/check_plans.py` passam no repositório e falham nos casos de teste negativos.
+- [x] `.github/workflows/ci.yml` roda todos os gates; `pre-commit run --all-files` limpo.
+- [x] Toda pasta nova tem `AGENTS.md`; tabela da seção 4 e seção 12 do `AGENTS.md` da raiz atualizadas.
 
 ## 4. Fases e subfases
 
@@ -336,7 +336,25 @@ Nenhuma no momento. A CI só roda de fato quando o repositório estiver no GitHu
 - 2026-10-10 — F4.1 concluída: compose verificado pelo agente e pelo orquestrador (todos os serviços saudáveis, ready 200 direto e via proxy do frontend, migrate exit 0) (D14).
 - 2026-10-10 — F4.2 iniciada.
 - 2026-10-10 — F4.2 concluída: actionlint ok, pre-commit limpo, gates de scripts, backend e frontend verdes; README, CHANGELOG e AGENTS.md da raiz atualizados (D15).
+- 2026-10-10 — plano concluído; checklist de pronto (seção 11) conferido.
 
 ## 8. Encerramento
 
-A preencher ao concluir.
+**Entregue** (8 subfases, uma por commit, `git log --grep "plano 0001"`):
+
+- Raiz: `.gitignore`, `.gitattributes`, `.editorconfig`, `CHANGELOG.md`, `.pre-commit-config.yaml`; `README.md` e `AGENTS.md` atualizados.
+- `scripts/`: `check_agents_md.py` e `check_plans.py` (55 testes, cobertura 100%).
+- `backend/`: pacote `knobridge` com settings, logging JSON, formato único de erro, engine async, `/v1/health/live` e `/v1/health/ready`, Alembic (migração 0001 habilita pgvector), worker Temporal com `HealthWorkflow`, exportação do OpenAPI e `Dockerfile` (68 testes, 5+ de integração reais, cobertura 100%).
+- `frontend/`: Vite + React 19 + TS strict, react-router 8, TanStack Query, i18n pt-BR, Tailwind + shadcn/ui, cliente gerado do OpenAPI, indicador de status da API, MSW, Playwright e `Dockerfile` (27 testes, cobertura 100%, 1 E2E).
+- `deploy/docker-compose.yml`: Postgres 17 + pgvector, Temporal + UI, MinIO, migrate, api, worker, frontend; guia em `docs/guias/subir-ambiente.md`.
+- `.github/workflows/ci.yml`: todos os gates, contrato OpenAPI, Playwright, gitleaks e validação do compose.
+
+**Fora do escopo** (por decisão do entendimento): modelos de domínio, autenticação, RLS de tabelas, conectores, pipelines, LLM, canais, widget, Helm. Ficaram anotados para planos futuros: schema `ErrorResponse` no OpenAPI, encerramento gracioso do worker por SIGTERM, subir a stack completa na CI, bucket inicial no MinIO. A CI só roda de fato quando o repositório estiver no GitHub.
+
+**Como demonstrar**:
+
+```sh
+docker compose -f deploy/docker-compose.yml up --build --wait
+curl http://localhost:8000/v1/health/ready   # {"status":"ok","checks":{"database":"ok"}}
+# painel em http://localhost:5173 mostra "API disponível"; Temporal UI em http://localhost:8080
+```
