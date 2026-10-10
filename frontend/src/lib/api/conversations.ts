@@ -134,13 +134,18 @@ export function useDeleteConversation(workspaceId: string) {
 }
 
 /** Reloads a conversation and the list (its title and position change with each question). */
-export function refreshConversation(
+export async function refreshConversation(
   queryClient: QueryClient,
   workspaceId: string,
   conversationId: string,
 ) {
+  const detailKey = conversationQueryKey(workspaceId, conversationId);
+  // A first load still in flight (a new conversation opened as its first question went) was read
+  // before the question named it; invalidating would join that read instead of starting a new
+  // one, because TanStack Query only cancels in-flight fetches of queries that already have data.
+  await queryClient.cancelQueries({ queryKey: detailKey });
   return Promise.all([
-    queryClient.invalidateQueries({ queryKey: conversationQueryKey(workspaceId, conversationId) }),
+    queryClient.invalidateQueries({ queryKey: detailKey }),
     queryClient.invalidateQueries({ queryKey: conversationListQueryKey(workspaceId) }),
   ]);
 }

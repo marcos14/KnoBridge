@@ -1,14 +1,17 @@
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
 import type { Role } from "@/lib/api/auth";
 import {
+  ASSISTANT_ID,
   CONVERSATION_ID,
   makeAssistant,
   makeAssistants,
   makeCitation,
   makeConversation,
+  makeConversationDetail,
   makeMe,
   makeMessage,
   makeQuestion,
@@ -152,6 +155,56 @@ describe("ChatPage", () => {
     await waitFor(() => {
       expect(within(thread).getAllByText("Como fecho o caixa?")).toHaveLength(1);
     });
+  });
+
+  it("test_chat_new_conversation_title_shows_when_first_load_ends_after_the_answer", async () => {
+    const source = controlledStream();
+    useStore({ reply: () => ({ body: source.stream }) });
+    // The first read of the new conversation is taken before the question names it and only
+    // arrives after the answer ended; the reload at the end must not reuse it.
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let firstRead = false;
+    server.use(
+      http.get(`*/v1/workspaces/:workspaceId/conversations/${NEW_CONVERSATION_ID}`, async () => {
+        if (firstRead) {
+          return undefined;
+        }
+        firstRead = true;
+        const untitled = makeConversation({
+          id: NEW_CONVERSATION_ID,
+          assistant_id: ASSISTANT_ID,
+          title: null,
+        });
+        await held;
+        return HttpResponse.json(makeConversationDetail(untitled, []));
+      }),
+    );
+    const { user } = await openChat();
+    await screen.findByRole("combobox", { name: "Assistente" });
+
+    await user.type(composer(), "Como fecho o caixa?{Enter}");
+    await waitFor(() => {
+      expect(firstRead).toBe(true);
+    });
+    act(() => {
+      source.push(answerFrames({ ...exchangeIds(1), deltas: ["Resposta."] }).join(""));
+      source.close();
+    });
+    const list = screen.getByRole("navigation", { name: "Suas conversas" });
+    await waitFor(() => {
+      expect(within(list).getAllByRole("link", { name: "Como fecho o caixa?" })).toHaveLength(2);
+    });
+    act(() => {
+      release();
+    });
+
+    expect(
+      await screen.findByRole("heading", { level: 2, name: "Como fecho o caixa?" }),
+    ).toBeVisible();
+    expect(screen.queryByRole("heading", { level: 2, name: "Conversa sem título" })).toBeNull();
   });
 
   it("test_chat_starts_with_the_chosen_assistant", async () => {
