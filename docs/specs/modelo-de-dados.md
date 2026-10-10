@@ -20,7 +20,7 @@ Tabelas do Postgres do KnoBridge, criadas pelas migrações em [`backend/migrati
 | `app.user_id` | `scoped_session(user_id=...)` | Usuário autenticado; libera as próprias memberships e os workspaces dele. |
 | `app.system` = `on` | `system_session()` | Modo de sistema: setup, superadmin, login. |
 
-Sem nenhuma delas, as tabelas com RLS não retornam linhas.
+Sem nenhuma delas, as tabelas com RLS não retornam linhas. Exceção de modelo: `audit_events` aceita `workspace_id` nulo para eventos da instância, visíveis só em modo de sistema.
 
 ## Diagrama
 
@@ -30,6 +30,8 @@ erDiagram
     workspaces ||--o{ memberships : "tem"
     users ||--o{ sessions : "abre"
     users |o--o{ user_tokens : "recebe"
+    workspaces |o--o{ audit_events : "registra"
+    users |o--o{ audit_events : "age"
     users {
         uuid id PK
         varchar email "único sem diferenciar maiúsculas"
@@ -71,6 +73,17 @@ erDiagram
         varchar token_hash "único; SHA-256"
         timestamptz expires_at
         timestamptz used_at
+    }
+    audit_events {
+        uuid id PK
+        uuid workspace_id FK "nulo para eventos da instância"
+        uuid actor_user_id FK "nulo para sistema ou anônimo"
+        varchar action "catálogo estável, ex.: auth.login.succeeded"
+        varchar target_type
+        varchar target_id
+        jsonb details "sem segredos"
+        varchar ip_address
+        timestamptz occurred_at
     }
 ```
 
@@ -143,3 +156,23 @@ Token de uso único enviado por e-mail. Dado da instância, com RLS forçada pel
 | `token_hash` | `varchar(64)` | SHA-256 em hex; único (`uq_user_tokens_token_hash`). |
 | `expires_at` | `timestamptz` | Após este instante o token é recusado. |
 | `used_at` | `timestamptz` | Preenchido no consumo; token usado é recusado. |
+
+### `audit_events`
+
+Trilha de auditoria, append-only ([`backend/src/knobridge/audit/`](../../backend/src/knobridge/audit/AGENTS.md)). Gravada pelo `AuditService.record` na mesma transação da mudança. Sem `created_at`/`updated_at`: a data é `occurred_at`, do relógio da aplicação. RLS forçada, com políticas separadas por comando:
+
+- `audit_events_select`: `workspace_id = app.workspace_id` ou sistema. Eventos da instância (`workspace_id` nulo) só são legíveis em modo de sistema (superadmin).
+- `audit_events_insert`: no workspace selecionado, evento da instância cujo ator é o `app.user_id`, ou sistema.
+- `audit_events_delete`: só sistema (retenção).
+- Sem política de UPDATE: nenhum evento é alterado, nem em modo de sistema.
+
+| Coluna | Tipo | Regras |
+|---|---|---|
+| `workspace_id` | `uuid` | FK `workspaces.id`, `ON DELETE CASCADE`; nulo para eventos da instância (setup, login, superadmin). Índice `ix_audit_events_workspace_id_occurred_at` (`workspace_id`, `occurred_at`). |
+| `actor_user_id` | `uuid` | FK `users.id`, `ON DELETE SET NULL`; nulo para o próprio sistema ou chamador anônimo (ex.: login falho). Índice `ix_audit_events_actor_user_id`. |
+| `action` | `varchar(64)` | Obrigatório; valor do catálogo `AuditAction` (sem `CHECK`, para ação nova não exigir migração). Índice `ix_audit_events_action`. |
+| `target_type` | `varchar(64)` | Tipo do alvo (ex.: `membership`); opcional. |
+| `target_id` | `varchar(64)` | Id do alvo; opcional. |
+| `details` | `jsonb` | Metadados da ação, padrão `{}`. Nunca segredo; dado pessoal só o necessário (chaves com `password`, `secret`, `token`, `cookie`, `authorization`, `api_key` são recusadas). |
+| `ip_address` | `varchar(45)` | IP do chamador normalizado; opcional. |
+| `occurred_at` | `timestamptz` | Obrigatório; relógio injetado da aplicação. |

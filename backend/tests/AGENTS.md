@@ -4,7 +4,7 @@
 
 **Entra aqui**:
 - `conftest.py` com as fixtures compartilhadas: `settings` (configuração de teste), `app` e `client` (TestClient sobre `create_app`), `postgres_url` (sessão inteira: DSN asyncpg de um container `pgvector/pgvector:pg17` via testcontainers, como superusuário), `app_database_url` (sessão inteira: banco próprio migrado até `head`, conectando como o papel de aplicação dono e não superusuário, igual ao deploy, para a RLS valer), `non_owner_database_url` (o mesmo banco como papel não dono, só com privilégios de tabela), e uma fixture automática que isola o estado global (variáveis `KNOBRIDGE_*` do host, `.env` local, cache de settings, configuração de logging).
-- Uma subpasta por módulo de `src/knobridge/`, com o seu `AGENTS.md` (hoje `core/`, `api/`, `tenancy/`, `security/`, `email/`, `workers/`), e `migrations/` para a cadeia do Alembic. Helpers compartilhados de uma subpasta ficam num módulo `<subpasta>_support.py` (nome único, importado pelo basename).
+- Uma subpasta por módulo de `src/knobridge/`, com o seu `AGENTS.md` (hoje `core/`, `api/`, `tenancy/`, `security/`, `audit/`, `email/`, `workers/`), e `migrations/` para a cadeia do Alembic. Helpers compartilhados de uma subpasta ficam num módulo `<subpasta>_support.py` (nome único, importado pelo basename).
 - `fakes/`: implementações falsas das interfaces externas, importadas como `fakes.<módulo>` (hoje `FakeEmailSender`; depois LLM, embeddings, reranker, conectores).
 - Futuramente: `fixtures/` (dados sintéticos e pequenos).
 

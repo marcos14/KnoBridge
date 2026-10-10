@@ -35,13 +35,13 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: 33b8614
       - id: F1.4
         titulo: "Auditoria: modelo, serviço e consulta"
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-10
+        concluida_em: 2026-10-10
         commit: null
   - id: F2
     titulo: "API de autenticação, tenancy e administração (backend)"
@@ -280,6 +280,13 @@ decisoes:
     decisao: "URLs do painel em inglês, definidas pelos links de e-mail (LINK_PATHS): /reset-password, /verify-email, /accept-invitation, /set-password (com ?token=); demais rotas também em inglês (/login, /setup, /forgot-password, /account/profile, /w/:id/members...). Prevalece sobre os nomes em português citados nas subfases F3.x; textos de interface seguem em pt-BR."
     motivo: "Identificadores em inglês (AGENTS.md 6.1) e um único contrato entre e-mail e frontend."
     alternativas: "Rotas em português."
+    adr: null
+  - id: D12
+    data: 2026-10-10
+    por: agente
+    decisao: "Auditoria: IP completo normalizado (trilha de segurança, diferente das sessões), ação validada em Python sem CHECK no banco, eventos imutáveis (sem política de UPDATE), DELETE só em modo de sistema, metadados com chaves de segredo recusados, evento da instância pode ser gravado pelo próprio ator."
+    motivo: "Investigação de abuso exige IP completo (interesse legítimo, LGPD art. 7 IX); ação nova sem migração."
+    alternativas: "Prefixo de rede como nas sessões."
     adr: null
 pendencias_usuario: []
 ---
@@ -556,6 +563,8 @@ Nenhuma aberta.
 - 2026-10-10 — F1.2 concluída: 153 testes, cobertura 100%; ADR 0002 (D10). KNOBRIDGE_SECRET_KEY no compose fica para F1.3/F6.1.
 - 2026-10-10 — F1.3 iniciada.
 - 2026-10-10 — F1.3 concluída: 184 testes, cobertura 100%; Mailpit no compose verificado com envio real; secret_key e public_base_url no compose (D11).
+- 2026-10-10 — F1.4 iniciada.
+- 2026-10-10 — F1.4 concluída: 213 testes, cobertura 100% (D12).
 
 ## 8. Encerramento
 

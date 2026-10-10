@@ -14,6 +14,7 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
+from knobridge.audit import models as audit_models
 from knobridge.core.models import Base
 from knobridge.core.settings import get_settings
 from knobridge.security import models as security_models
@@ -26,7 +27,7 @@ if config.config_file_name is not None and config.attributes.get("configure_logg
     fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 # Every module with ORM models is imported here so autogenerate sees its tables.
-_MODEL_MODULES = (tenancy_models, security_models)
+_MODEL_MODULES = (tenancy_models, security_models, audit_models)
 target_metadata = Base.metadata
 
 
