@@ -13,14 +13,14 @@ branch: plano/0001-bootstrap
 fases:
   - id: F1
     titulo: Fundação do repositório
-    status: pendente
+    status: concluida
     subfases:
       - id: F1.1
         titulo: Arquivos da raiz e scripts de checagem
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-10
+        concluida_em: 2026-10-10
         commit: null
   - id: F2
     titulo: Backend base
@@ -132,6 +132,13 @@ decisoes:
     decisao: A primeira migração Alembic só habilita a extensão vector; nenhuma tabela.
     motivo: Prova que a cadeia de migração funciona (upgrade e downgrade testados) sem antecipar modelo de domínio.
     alternativas: Migração vazia; já criar workspace.
+    adr: null
+  - id: D8
+    data: 2026-10-10
+    por: agente
+    decisao: check_plans.py também valida que campos de data são null ou AAAA-MM-DD válidos, e lê o YAML preservando ids e datas como texto.
+    motivo: Regra de datas absolutas do docs/planos/AGENTS.md; YAML padrão converte 0010 em octal e datas em objetos.
+    alternativas: Validar só os campos pedidos; usar yaml.safe_load puro.
     adr: null
 pendencias_usuario: []
 ---
@@ -264,6 +271,8 @@ Nenhuma no momento. A CI só roda de fato quando o repositório estiver no GitHu
 
 - 2026-10-10 — entendimento concluído (4 perguntas respondidas); plano criado; aguardando aprovação.
 - 2026-10-10 — plano aprovado pelo usuário; início da execução.
+- 2026-10-10 — F1.1 iniciada.
+- 2026-10-10 — F1.1 concluída: 55 testes, cobertura 100%; check_agents_md e check_plans passam no repo. Agente acrescentou validação de datas AAAA-MM-DD em check_plans (D8).
 
 ## 8. Encerramento
 
