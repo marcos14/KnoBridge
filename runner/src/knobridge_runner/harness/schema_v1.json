@@ -1,0 +1,132 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "objetivo", "regras", "mensagens", "fluxo_principal", "faq", "duvidas"],
+  "properties": {
+    "schema_version": {"type": "integer", "enum": [1]},
+    "objetivo": {"type": "string", "description": "2 a 4 frases sobre o que o módulo faz para o usuário."},
+    "regras": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["titulo", "enunciado", "quando", "mensagem", "resolucao", "parametros", "classificacao", "relevancia", "fontes"],
+        "properties": {
+          "titulo": {"type": "string"},
+          "enunciado": {"type": "string"},
+          "quando": {"type": "string"},
+          "mensagem": {"type": ["string", "null"]},
+          "resolucao": {"type": "string", "description": "Como o usuário resolve."},
+          "parametros": {"type": "array", "items": {"type": "string"}},
+          "classificacao": {"type": "string", "enum": ["observado", "intencional", "bug_conhecido"]},
+          "relevancia": {"type": "string", "enum": ["alta", "media", "baixa", "sistemica"]},
+          "fontes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["arquivo", "linha_inicial", "linha_final", "simbolo"],
+              "properties": {
+                "arquivo": {"type": "string"},
+                "linha_inicial": {"type": "integer"},
+                "linha_final": {"type": "integer"},
+                "simbolo": {"type": ["string", "null"]}
+              }
+            }
+          }
+        }
+      }
+    },
+    "mensagens": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["mensagem", "causa", "acao", "fontes"],
+        "properties": {
+          "mensagem": {"type": "string"},
+          "causa": {"type": "string"},
+          "acao": {"type": "string"},
+          "fontes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["arquivo", "linha_inicial", "linha_final", "simbolo"],
+              "properties": {
+                "arquivo": {"type": "string"},
+                "linha_inicial": {"type": "integer"},
+                "linha_final": {"type": "integer"},
+                "simbolo": {"type": ["string", "null"]}
+              }
+            }
+          }
+        }
+      }
+    },
+    "fluxo_principal": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ordem", "passo", "fontes"],
+        "properties": {
+          "ordem": {"type": "integer"},
+          "passo": {"type": "string"},
+          "fontes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["arquivo", "linha_inicial", "linha_final", "simbolo"],
+              "properties": {
+                "arquivo": {"type": "string"},
+                "linha_inicial": {"type": "integer"},
+                "linha_final": {"type": "integer"},
+                "simbolo": {"type": ["string", "null"]}
+              }
+            }
+          }
+        }
+      }
+    },
+    "faq": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["pergunta", "resposta", "fontes"],
+        "properties": {
+          "pergunta": {"type": "string"},
+          "resposta": {"type": "string"},
+          "fontes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["arquivo", "linha_inicial", "linha_final", "simbolo"],
+              "properties": {
+                "arquivo": {"type": "string"},
+                "linha_inicial": {"type": "integer"},
+                "linha_final": {"type": "integer"},
+                "simbolo": {"type": ["string", "null"]}
+              }
+            }
+          }
+        }
+      }
+    },
+    "duvidas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["pergunta", "contexto"],
+        "properties": {
+          "pergunta": {"type": "string"},
+          "contexto": {"type": "string"}
+        }
+      }
+    }
+  }
+}

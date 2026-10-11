@@ -1,6 +1,6 @@
 # runner/
 
-**Função**: o `knobridge-runner`, que roda na máquina do usuário (onde estão o checkout e o login do Claude Code ou do Codex), conversa com o servidor só por HTTPS de saída (`/v1/runner/*`) e executa o harness de código somente leitura. Projeto `uv` próprio, separado do backend para não levar FastAPI, SQLAlchemy, MarkItDown e tree-sitter à máquina do usuário ([ADR 0005](../docs/adr/0005-runner-local-do-harness.md), decisões D7 e D16 do [plano 0004](../docs/planos/0004-harness-runner-local.md)). Estado: configuração, cliente do protocolo com retentativas, laço principal com processador injetável e CLI `configure | run | doctor` (F3.1); camada 0 em `layer0/` (F3.2); executores e verificação vêm nas F3.3 e F3.4.
+**Função**: o `knobridge-runner`, que roda na máquina do usuário (onde estão o checkout e o login do Claude Code ou do Codex), conversa com o servidor só por HTTPS de saída (`/v1/runner/*`) e executa o harness de código somente leitura. Projeto `uv` próprio, separado do backend para não levar FastAPI, SQLAlchemy, MarkItDown e tree-sitter à máquina do usuário ([ADR 0005](../docs/adr/0005-runner-local-do-harness.md), decisões D7 e D16 do [plano 0004](../docs/planos/0004-harness-runner-local.md)). Estado: configuração, cliente do protocolo com retentativas, laço principal com processador injetável e CLI `configure | run | doctor` (F3.1); camada 0 em `layer0/` (F3.2); executores em `harness/` (F3.3); verificação e ciclo da tarefa vêm na F3.4.
 
 **Entra aqui**: código em `src/knobridge_runner/`, testes em `tests/`, `pyproject.toml`, `uv.lock`, `README.md` (instalar, configurar, rodar).
 **Não entra aqui**: código do servidor (fila, rotas e validação do resultado ficam em `backend/`), documentação e specs (vão para `docs/`, em especial [runner.md](../docs/specs/runner.md) e [harness.md](../docs/specs/harness.md)), checkouts ou código real de terceiros.
@@ -19,7 +19,8 @@
 uv sync
 uv run ruff check . && uv run ruff format --check . && uv run pyright
 uv run pytest            # inclui --cov --cov-branch --cov-fail-under=95
-KNOBRIDGE_RUNNER_REAL_HARNESS=1 uv run pytest -m real_harness --no-cov   # opt-in, CLIs reais (D17)
+KNOBRIDGE_RUNNER_REAL_HARNESS=1 uv run pytest -m real_harness --no-cov -s   # opt-in, CLIs reais (D17)
+# KNOBRIDGE_RUNNER_REAL_CODEX_MODEL=<modelo> quando o modelo padrão do ~/.codex não roda na versão instalada do CLI
 ```
 
 A suíte padrão não chama rede, LLM nem CLI real: servidor por `httpx.MockTransport`, executores e login por fakes, `git` real só em repositórios criados em `tmp_path`. Testes marcados `real_harness` são pulados sem a variável; a CI nunca a liga.

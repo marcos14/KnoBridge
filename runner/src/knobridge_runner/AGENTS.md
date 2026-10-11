@@ -9,9 +9,10 @@
 - `loop.py`: `Runner` (heartbeat do runner, laços de claim por concorrência, heartbeat da tarefa em segundo plano, entrega de resultado/falha/adiamento, Ctrl+C vira `fail` `interrupted` retentável); `processor.py`: interface `JobProcessor`, `JobContext` e os desfechos.
 - `commands.py` (comandos curtos sem shell, ambiente por allowlist), `executors.py` (executável, versão, login via `AuthChecker`), `git.py` (HEAD, branch, alterações locais), `status.py` (`MachineStatus`, com login reconferido a cada 5 min).
 - `layer0/`: camada 0 determinística (seleção, inventário, módulos e chaves, extrações, git, briefing, corpo do `report`); entradas `build_report` e `build_briefing`. Ver [layer0/AGENTS.md](layer0/AGENTS.md).
+- `harness/`: executores Claude Code e Codex somente leitura (prompt e schema versionados, timeout com kill da árvore, resgate, franquia e login, trava de ferramenta); ver [harness/AGENTS.md](harness/AGENTS.md).
 - `doctor.py` e `cli.py` (`configure | run | doctor`, códigos de saída em `errors.py`); `logs.py` (JSON em stderr e arquivo diário com retenção).
 
-**Não entra aqui**: código do servidor, testes (vão para `runner/tests/`), executáveis falsos (vão para `runner/tests/fakes/`, F3.3).
+**Não entra aqui**: código do servidor, testes (vão para `runner/tests/`), executáveis falsos (vão para `runner/tests/fakes/`).
 
 **Convenções locais**: tipos estritos (pyright strict); nada de `print` fora de `cli.py`; mensagens de `fail`/`defer` vêm de modelos fixos (nunca stderr, saída do agente ou caminho absoluto); toda espera passa pela `Sleep` injetada e toda hora pelo `Clock` injetado.
 

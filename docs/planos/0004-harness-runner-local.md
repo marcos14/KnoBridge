@@ -31,13 +31,13 @@ fases:
         commit: 656f934
   - id: F2
     titulo: Servidor
-    status: pendente
+    status: em_execucao
     subfases:
       - id: F2.1
         titulo: Cadastro de runners, token e autenticação do runner
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code
+        iniciada_em: 2026-10-11
         concluida_em: null
         commit: null
       - id: F2.2
@@ -78,13 +78,13 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-11
         concluida_em: 2026-10-11
-        commit: null
+        commit: 3ae72e7
       - id: F3.3
         titulo: Executores Claude Code e Codex, prompt, schema e executáveis falsos
-        status: em_execucao
+        status: concluida
         agente: claude-code
         iniciada_em: 2026-10-11
-        concluida_em: null
+        concluida_em: 2026-10-11
         commit: null
       - id: F3.4
         titulo: Verificação de evidências, excertos com redação de segredos e ciclo completo da tarefa
@@ -276,6 +276,13 @@ decisoes:
     decisao: "F3.2: padrões de módulo usam !*/** e !d/*/** (correção da spec: * sem barra casa em qualquer nível no gitwildmatch); módulo com mais de 50 padrões tenta a forma invertida e depois divide em partes (<pasta>/arquivos-2...); caracteres especiais de pasta viram ?; chave sem ASCII vira module-<8 hex>; changed_paths [] quando base = HEAD e null sem base, base ausente, erro ou mais de 20 000 arquivos"
     motivo: "Spec de F1.1 tinha padrões que não excluíam subpastas; casos-limite sem regra"
     alternativas: "Manter a spec original (módulos errados)"
+    adr: null
+  - id: D21
+    data: 2026-10-11
+    por: agente
+    decisao: "F3.3: interface run(task, checkout, limits, ...) com o executor montando prompt e schema (garante igualdade entre Claude Code e Codex); validador próprio do subconjunto estrito do schema (sem jsonschema); stdin binário UTF-8; tzdata só no Windows; trava de ferramenta mantida estrita — o mcp_tool_call interno list_mcp_resources do Codex também mata o processo (unsafe_tool_use), reavaliar no ensaio; custo do resgate do Claude somado às duas chamadas"
+    motivo: "Achados da suíte real (D17) contra claude 2.1.296 e codex 0.142.5"
+    alternativas: "Liberar ferramentas internas de recursos MCP do Codex"
     adr: null
 pendencias_usuario: []
 ---
@@ -530,6 +537,8 @@ Nenhuma aberta. Observação para a F5.2: a chave do OpenRouter cadastrada na st
 - 2026-10-11 — F3.2 e F3.3 iniciadas em paralelo.
 - 2026-10-11 — F1.2 concluída: migração 0014 (runners, harness_modules, harness_jobs, knowledge_items, harness_rejections; kinds runner e knowledge), RLS forçada, modelo de dados v0.6; 1175 testes, cobertura 99%. Observado um flaky isolado em test_admin_cannot_promote_to_owner_or_touch_owner (não reproduziu).
 - 2026-10-11 — F3.2 concluída: camada 0 em runner/layer0 (seleção, inventário, módulos, extrações, git, briefing, report) e correção dos padrões de módulo em harness.md; 202 testes, cobertura 99,8%.
+- 2026-10-11 — F2.1 iniciada.
+- 2026-10-11 — F3.3 concluída: executores Claude Code e Codex em runner/harness, falsos em tests/fakes e suíte opt-in real_harness verde contra os CLIs reais (Claude haiku ~US$ 0,005/30 s; Codex gpt-5.5 ~75 s; o modelo padrão do ~/.codex exige CLI mais novo); 284 testes, cobertura 99,9%.
 
 ## 8. Encerramento
 
