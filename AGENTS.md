@@ -9,7 +9,7 @@ Se este arquivo e um `AGENTS.md` de pasta conflitarem, vale o mais específico (
 KnoBridge é uma plataforma open source (Apache 2.0) que conecta repositórios de código, sistemas de chamados e documentações, transforma tudo em índices para RAG por meio de pipelines visuais e incrementais, e entrega suporte em linguagem natural por API REST, API compatível com OpenAI, webhooks, MCP, Slack, Google Chat e widget embutível.
 
 - **Fonte da verdade sobre o produto**: [docs/01-visao-do-projeto.md](docs/01-visao-do-projeto.md). Escopo, arquitetura (seção 6), módulos (7), stack (8), decisões (9), roadmap (11) e perguntas em aberto (13).
-- **Status em 2026-10-10**: bootstrap do plano [0001](docs/planos/0001-bootstrap.md) concluído (esqueleto, gates e CI) e plataforma navegável do plano [0002](docs/planos/0002-plataforma-navegavel.md) entregue: autenticação, multi-tenant com RLS, painel admin e chat com LLM, ainda sem RAG (sem fonte indexada, o assistente responde que não sabe). O próximo trabalho é a Fase 0 do roadmap (seção 12 deste arquivo).
+- **Status em 2026-10-11**: bootstrap ([0001](docs/planos/0001-bootstrap.md)) e plataforma navegável ([0002](docs/planos/0002-plataforma-navegavel.md)) concluídos; primeiro conhecimento ([0003](docs/planos/0003-primeiro-conhecimento.md)) entregue: fontes Git e pastas locais indexadas de forma incremental no Temporal, busca híbrida (pgvector + FTS) e chat com citações de arquivo, linhas e commit. Resumo e próximos passos na seção 12 deste arquivo.
 
 ## 2. Regras inegociáveis
 
@@ -215,14 +215,24 @@ O plano [0002](docs/planos/0002-plataforma-navegavel.md) entregou a base navegá
 1. Multi-tenant com RLS forçada por `SET LOCAL`, usuários em N workspaces, papéis owner/admin/editor/viewer e superadmin da instância ([ADR 0001](docs/adr/0001-tenancy-e-rls.md)).
 2. Autenticação por e-mail e senha com sessão server-side, CSRF double-submit assinado, tokens de uso único por e-mail (redefinição de senha, verificação, convite), limitação de login e configuração inicial ([ADR 0002](docs/adr/0002-sessao-server-side.md); contrato em [docs/specs/autenticacao.md](docs/specs/autenticacao.md)). E-mails transacionais via SMTP, com Mailpit em dev.
 3. Trilha de auditoria por workspace e da instância; administração da instância (workspaces, usuários).
-4. Credenciais de provedores de LLM (OpenAI, Anthropic, OpenRouter e `fake` para dev e testes) cifradas com AES-256-GCM ([ADR 0003](docs/adr/0003-segredos-cifrados.md)), assistentes configuráveis e chat em streaming (SSE) com citações, feedback e visão administrativa das conversas ([docs/specs/chat.md](docs/specs/chat.md)). Sem indexação ainda, o `Retriever` de produção não encontra fonte e toda resposta é a de "sem fonte" (regra 8).
+4. Credenciais de provedores de LLM (OpenAI, Anthropic, OpenRouter e `fake` para dev e testes) cifradas com AES-256-GCM ([ADR 0003](docs/adr/0003-segredos-cifrados.md)), assistentes configuráveis e chat em streaming (SSE) com citações, feedback e visão administrativa das conversas ([docs/specs/chat.md](docs/specs/chat.md)). Até o plano 0003, sem indexação, o `Retriever` de produção não encontrava fonte e toda resposta era a de "sem fonte" (regra 8).
 5. Painel admin em React com shell por papel, seletor de workspace, telas de conta, membros e convites, provedores, assistentes, chat, conversas e auditoria; E2E da stack inteira contra o compose na CI.
 
 Modelo de dados em [docs/specs/modelo-de-dados.md](docs/specs/modelo-de-dados.md); primeiro uso em [docs/guias/primeiro-acesso.md](docs/guias/primeiro-acesso.md).
 
-### 12.3 Próximos passos
+### 12.3 Primeiro conhecimento (plano 0003)
 
-Siga o roadmap da visão: protótipo em linha de comando (repositório + chamados → pgvector → perguntas com citações), harness de código em 2 ou 3 módulos reais com Claude Code e com Codex, spike Temporal, comparação OpenAI x Gemini embedding em pt-BR.
+O plano [0003](docs/planos/0003-primeiro-conhecimento.md) levou o primeiro conhecimento de ponta a ponta:
+
+1. Índice de conhecimento no Postgres: coleções (credencial e modelo de embedding), fontes, execuções, documentos e chunks com `vector(1536)` HNSW e `tsvector` gerado, todos com RLS ([ADR 0004](docs/adr/0004-indice-de-conhecimento.md)).
+2. Conectores de pasta local e Git (`backend/src/knobridge/connectors/`), com seleção de arquivos compartilhada, cursores versionados e suíte de contrato ([docs/specs/conectores.md](docs/specs/conectores.md)).
+3. Parsing para Markdown, chunking por títulos, AST (tree-sitter) e commit, embeddings em lote com cache por hash e o workflow `knobridge.ingestion.v1` no Temporal, manual ou por Temporal Schedule, com custo registrado por execução ([docs/specs/indexacao.md](docs/specs/indexacao.md)).
+4. Busca híbrida com RRF e similaridade mínima, `HybridRetriever` no chat com coleções por assistente e citações de arquivo, linhas e commit ([docs/specs/chat.md](docs/specs/chat.md)).
+5. Telas de coleções (com "testar busca") e fontes no painel, pasta de fontes `/sources` no compose e E2E de indexação contra a stack. Passo a passo em [docs/guias/indexar-uma-fonte.md](docs/guias/indexar-uma-fonte.md).
+
+### 12.4 Próximos passos
+
+Siga o roadmap da visão. Da Fase 0 ainda faltam: conector de chamados, harness de código em 2 ou 3 módulos reais com Claude Code e com Codex, e a comparação OpenAI x Gemini embedding em pt-BR.
 
 ## 13. Template de `AGENTS.md` de pasta
 

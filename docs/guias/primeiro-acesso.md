@@ -1,6 +1,8 @@
 # Primeiro acesso: da instância vazia ao primeiro chat
 
-> Rascunho v0.1 · 2026-10-10 · Em uso (plano 0002)
+> Rascunho v0.2 · 2026-10-11 · Em uso (planos 0002 e 0003)
+>
+> **Mudanças da v0.2** (plano 0003, F6.2): o chat responde com citações quando o assistente tem coleção indexada; o passo a passo da indexação está em [indexar-uma-fonte.md](indexar-uma-fonte.md).
 
 Passo a passo para quem acabou de subir o KnoBridge: criar o superadmin, criar um workspace, convidar pessoas, cadastrar um provedor de LLM e um assistente e conversar com ele. Em desenvolvimento, tudo funciona sem chave de API real, com o provedor `fake`, e os e-mails são lidos no Mailpit.
 
@@ -79,7 +81,7 @@ Precisa de papel editor ou acima.
 ### 7. Conversar
 
 1. Vá em **Chat**, escolha o assistente, escreva a pergunta e clique em **Enviar** (Enter envia; Shift+Enter quebra a linha).
-2. A resposta chega em streaming. **Hoje ela é sempre a mensagem de "sem fonte"**, marcada como "Respondida sem fonte: o assistente ofereceu abrir chamado.": ainda não existem fontes indexadas, e a regra do produto é não responder sem fonte ([chat.md](../specs/chat.md#estado-atual-sem-rag)). Nesse caso o LLM nem é chamado.
+2. A resposta chega em streaming. **Enquanto o assistente não tiver coleção indexada, ela é sempre a mensagem de "sem fonte"**, marcada como "Respondida sem fonte: o assistente ofereceu abrir chamado.": a regra do produto é não responder sem fonte ([chat.md](../specs/chat.md#regra-de-citações-regra-8-do-agentsmd)). Nesse caso o LLM nem é chamado. Para o assistente responder com citações, indexe uma fonte e ligue a coleção a ele, conforme [indexar-uma-fonte.md](indexar-uma-fonte.md).
 3. Avalie a resposta com **Resposta útil** ou **Resposta não ajudou** e, se quiser, um comentário.
 4. As suas conversas ficam na lista à esquerda do chat. Owner e administrador veem as conversas de todos os membros, com filtros e totais, em **Conversas**.
 
@@ -89,7 +91,7 @@ Precisa de papel editor ou acima.
 2. Clique em **Testar conexão**: o KnoBridge faz a chamada autenticada mais barata do provedor (listar modelos) e mostra o resultado. Erros comuns: chave recusada, limite de uso, provedor fora do ar.
 3. No assistente, troque o **Provedor** e informe o **Modelo** com o identificador exato usado pelo provedor (por exemplo, `gpt-4.1-mini` na OpenAI; para Anthropic e OpenRouter, o identificador da documentação deles).
 
-Enquanto não houver fontes indexadas, o chat continua respondendo "sem fonte" sem chamar o provedor; o teste de conexão é, por ora, a única chamada real. Use chaves reais só na sua máquina ou num ambiente protegido, e nunca as commite. Lembre que as chaves gravadas dependem de `KNOBRIDGE_SECRET_KEY`: trocar esse segredo exige recadastrar as chaves dos provedores ([ADR 0003](../adr/0003-segredos-cifrados.md)).
+Enquanto o assistente não tiver coleção com trechos relevantes, o chat continua respondendo "sem fonte" sem chamar o provedor. Para embeddings (coleções), use OpenAI ou OpenRouter: a Anthropic não oferece embeddings ([indexar-uma-fonte.md](indexar-uma-fonte.md)). Use chaves reais só na sua máquina ou num ambiente protegido, e nunca as commite. Lembre que as chaves gravadas dependem de `KNOBRIDGE_SECRET_KEY`: trocar esse segredo exige recadastrar as chaves dos provedores ([ADR 0003](../adr/0003-segredos-cifrados.md)).
 
 ## Como verificar
 

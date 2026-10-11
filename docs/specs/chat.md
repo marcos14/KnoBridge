@@ -2,7 +2,7 @@
 
 > Rascunho v0.2 · 2026-10-10 · Em uso (planos 0002 e 0003)
 >
-> **Mudanças da v0.2** (plano 0003, F4.2): o chat busca as fontes de verdade (`HybridRetriever` sobre as coleções do assistente, com a similaridade mínima dele), as citações ganham caminho, linhas, símbolo, linguagem e SHA, e as regras fixas do prompt passam a ser em pt-BR e mais estritas.
+> **Mudanças da v0.2** (plano 0003, F4.2): o chat busca as fontes de verdade (`HybridRetriever` sobre as coleções do assistente, com a similaridade mínima dele), as citações ganham caminho, linhas, símbolo, linguagem e SHA (e, na F6.1, autor e data dos commits), e as regras fixas do prompt passam a ser em pt-BR e mais estritas.
 
 Como o KnoBridge responde a uma pergunta feita a um assistente: regra de citações, busca de fontes (`Retriever`), orquestração da rodada, estados das mensagens, histórico enviado ao LLM, feedback e visão administrativa. O formato dos eventos no fio (Server-Sent Events) está em [chat-sse.md](chat-sse.md) e não se repete aqui; os schemas das rotas JSON estão no [`openapi.json`](openapi.json); as tabelas, em [modelo-de-dados.md](modelo-de-dados.md#conversations).
 
@@ -16,6 +16,8 @@ Cada assistente consulta as coleções ligadas a ele (`collection_ids` na API do
 2. Chama a busca híbrida (`SearchService.search`, `retrieval/search.py`) nessas coleções: vetorial (cosseno) + textual, fusão RRF, até 10 trechos. Um trecho entra se alcança `min_similarity` ou casa a busca textual (conjuntiva); pergunta sem relação volta vazia.
 3. Transforma cada trecho numa fonte (`retrieval/context.py`): o conteúdo é o corpo do trecho sem o cabeçalho `path:`/`symbol:`/`section:` usado no embedding (`chunks.meta.display`); o título é o caminho do arquivo ou o título do commit; a URI é `<caminho>#L<início>-L<fim>` (texto e código), `<caminho>` (documentos convertidos, sem linhas) ou `commit:<sha>`.
 4. Corta pelo orçamento de contexto: as fontes ficam na ordem da busca e param na primeira que estouraria `MAX_CONTEXT_TOKENS` (6000 tokens estimados por 4 caracteres/token, o estimador da ingestão; trechos têm até 800 tokens, então cabem de 7 a 15, sobrando espaço num modelo de 16k para as regras, o histórico e a resposta). Uma primeira fonte maior que o orçamento é truncada, para nunca se perder um acerto pelo tamanho. A numeração `[n]` do prompt e das citações gravadas é a posição nessa lista.
+
+Como os trechos chegam ao índice (parsing, chunking, embeddings) e os detalhes da busca híbrida estão em [indexacao.md](indexacao.md); a leitura das fontes, em [conectores.md](conectores.md).
 
 Excluir uma coleção remove o vínculo (cascata); assistente que ficou sem coleção volta a responder sempre "sem fonte". Falha do provedor de embedding sai como erro JSON antes do stream, sem gravar nada ([chat-sse.md](chat-sse.md#requisição)).
 

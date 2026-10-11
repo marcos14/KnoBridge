@@ -142,10 +142,10 @@ fases:
         commit: 32f3a37
       - id: F6.2
         titulo: Specs, guia de indexação e documentação
-        status: em_execucao
+        status: concluida
         agente: claude-code
         iniciada_em: 2026-10-11
-        concluida_em: null
+        concluida_em: 2026-10-10
         commit: null
       - id: F6.3
         titulo: Ensaio real com o Minski (local, fora da CI)
@@ -509,6 +509,7 @@ Ver `decisoes[]` no frontmatter. ADR previsto: 0004 (índice de conhecimento: di
 - 2026-10-11 — F5 concluída; F6.1 iniciada (inclui autor e data do commit na citação, pendente da F5.3).
 - 2026-10-10 — F6.1 concluída: Imagem com git (1,13 GB; era 473 MB antes do plano), compose com /sources somente leitura e volume de clones, E2E da stack da indexação (coleção, fonte de pasta, sincronizar, busca, chat com citação e sem fonte); orquestrador: stack do zero em 67 s, 2 de 2 rodadas verdes (33 s e 30 s); autor e data na citação de commit.
 - 2026-10-11 — F6.2 (agente) e F6.3 (orquestrador, ensaio com o Minski) iniciadas em paralelo.
+- 2026-10-10 — F6.2 concluída: Specs conectores.md e indexacao.md, guia indexar-uma-fonte.md, chat.md/primeiro-acesso.md/README/CHANGELOG/AGENTS raiz atualizados; links e Mermaid validados. Achado: lista de arquivos duplicada no Markdown dos commits (correção com teste em seguida).
 
 ## 8. Encerramento
 

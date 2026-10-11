@@ -8,6 +8,17 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ### Added
 
+Primeiro conhecimento (plano [0003](docs/planos/0003-primeiro-conhecimento.md)): fontes Git e pastas locais indexadas de forma incremental e consultadas pelo chat com citações.
+
+- Índice de conhecimento: coleções (credencial e modelo de embedding, `vector(1536)` fixo com HNSW cosseno e `tsvector` gerado), fontes, execuções, itens e erros por documento, documentos e chunks, todos com RLS ([ADR 0004](docs/adr/0004-indice-de-conhecimento.md)); migrações `0010` a `0012` ([modelo de dados](docs/specs/modelo-de-dados.md)).
+- Conectores ([contrato](docs/specs/conectores.md)): pasta local (incremental por hash, atalho por mtime) e Git (árvore do HEAD pelos objetos do Git, clone local somente leitura ou URL https em clone parcial, incremental por SHA com reconstrução após force-push, commits como documentos sem e-mail), com seleção de arquivos compartilhada (raiz permitida, `.gitignore` aninhado, binários, lockfiles, globs, limites, PDF e Office) e suíte de contrato.
+- Indexação ([spec](docs/specs/indexacao.md)): parsing para Markdown (MarkItDown para PDF, DOCX, XLSX, PPTX e HTML), chunking por títulos, por AST (tree-sitter para TypeScript, TSX, JavaScript e Go) e por commit, embeddings em lote com cache por hash (OpenAI, OpenRouter e `fake`), custo estimado por execução.
+- Execução no Temporal: workflow `knobridge.ingestion.v1` com activities idempotentes e lotes de 50 documentos, uma execução por fonte, cancelamento, cursor gravado só no sucesso; agendamento por cron (UTC) em Temporal Schedules, com reconciliação na subida do worker.
+- Busca híbrida (vetorial + textual em português e `simple`, fusão RRF, similaridade mínima, remoção de vizinhos) com rota "testar busca"; `HybridRetriever` no lugar do `NullRetriever`, com coleções e similaridade mínima por assistente e citações com caminho, linhas, símbolo, linguagem, SHA, autor e data.
+- Painel: telas de coleções (com "testar busca") e fontes (cadastro Git ou pasta com globs e cron, testar conexão, sincronizar, cancelar, execuções, erros e documentos), coleções no assistente e citações de código e commit no chat.
+- Deploy: pasta de fontes do host montada somente leitura em `/sources` (`KNOBRIDGE_SOURCES_DIR`), volume `source-clones` para clones por URL, `git` na imagem e E2E de indexação contra a stack.
+- Docs: specs de [conectores](docs/specs/conectores.md) e de [indexação e busca](docs/specs/indexacao.md), guia [indexar uma fonte](docs/guias/indexar-uma-fonte.md).
+
 Plataforma navegável (plano [0002](docs/planos/0002-plataforma-navegavel.md)): autenticação, multi-tenant, painel admin e chat com LLM, ainda sem RAG.
 
 - Tenancy: usuários da instância em N workspaces, papéis owner/admin/editor/viewer, superadmin, RLS forçada por `SET LOCAL` em toda tabela de workspace ([ADR 0001](docs/adr/0001-tenancy-e-rls.md)); migrações `0002` a `0009` ([modelo de dados](docs/specs/modelo-de-dados.md)).
