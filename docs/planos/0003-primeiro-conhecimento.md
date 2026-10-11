@@ -149,10 +149,10 @@ fases:
         commit: 76ce903
       - id: F6.3
         titulo: Ensaio real com o Minski (local, fora da CI)
-        status: em_execucao
+        status: concluida
         agente: claude-code
         iniciada_em: 2026-10-11
-        concluida_em: null
+        concluida_em: 2026-10-10
         commit: null
 decisoes:
   - id: D1
@@ -511,6 +511,7 @@ Ver `decisoes[]` no frontmatter. ADR previsto: 0004 (índice de conhecimento: di
 - 2026-10-11 — F6.2 (agente) e F6.3 (orquestrador, ensaio com o Minski) iniciadas em paralelo.
 - 2026-10-10 — F6.2 concluída: Specs conectores.md e indexacao.md, guia indexar-uma-fonte.md, chat.md/primeiro-acesso.md/README/CHANGELOG/AGENTS raiz atualizados; links e Mermaid validados. Achado: lista de arquivos duplicada no Markdown dos commits (correção com teste em seguida).
 - 2026-10-11 — Correção: documento de commit passa a conter só a mensagem (lista de arquivos e SHA não se repetem no Markdown; files_total preserva o aviso de truncamento), com teste que reproduz.
+- 2026-10-10 — F6.3 concluída: Ensaio real com o Minski: 2.433 documentos, 20.322 chunks, US$ 0,18 de embedding, 2ª sincronização sem reprocessar nada (12 s), 9/10 respostas com citação verificável e 1 recusa correta, limiar calibrado para 0,35, gasto total US$ 0,21; relatório em docs/pesquisa/0001-ensaio-minski.md; nenhum arquivo do Minski nem chave no repositório (git grep e gitleaks).
 
 ## 8. Encerramento
 
