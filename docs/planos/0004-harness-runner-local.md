@@ -13,14 +13,14 @@ branch: plano/0004-harness-runner-local
 fases:
   - id: F1
     titulo: Contrato e modelo de dados
-    status: pendente
+    status: em_execucao
     subfases:
       - id: F1.1
         titulo: ADR 0005, spec do protocolo do runner e spec do harness
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-11
+        concluida_em: 2026-10-11
         commit: null
       - id: F1.2
         titulo: Modelo de dados (runners, módulos, tarefas, itens de conhecimento) com RLS
@@ -255,6 +255,13 @@ decisoes:
     decisao: Os testes do runner (F3) podem usar os harness verdadeiros (claude e codex logados na máquina). Aplicação — suíte opt-in marcada real_harness, ligada por KNOBRIDGE_RUNNER_REAL_HARNESS=1, sobre um repositório sintético pequeno e com orçamento baixo; a suíte padrão e a CI continuam com os executáveis falsos e o gate de 95% não depende da opt-in
     motivo: Validar os argumentos, o formato real do JSONL e o resgate contra as versões instaladas dos CLIs, que os fakes não garantem; a CI não tem CLIs logados e a regra da seção 5 continua valendo para a suíte padrão
     alternativas: Só executáveis falsos (plano original); harness real na suíte padrão e na CI
+    adr: null
+  - id: D18
+    data: 2026-10-11
+    por: agente
+    decisao: "Detalhes do contrato fixados na F1.1 (runner.md e harness.md): token kbr_<8>_<32 urlsafe> com hash SHA-256 e busca por prefixo único na instância; cabeçalho KnoBridge-Runner-Protocol: 1 (426 se ausente); claim 204 sem tarefa; attempt ecoado como identidade da reserva; expiração preguiçosa (sem varredor); falha retentável volta com not_before 60 s x tentativas; auth_failed é adiamento (30 min); chaves <mod>.R<NNN> e <mod>.E<NNN> atribuídas pelo servidor; aprovados, descartados e editados sobrevivem à regeneração; evidence_changed a partir de changed_paths do runner; limites por resultado (30 regras, 40 mensagens, 15 FAQ, 5 fontes por item, excerto 8 KiB); schema no subconjunto estrito aceito pelos dois executores; Claude Code com --setting-sources user e --strict-mcp-config, Codex com -c mcp_servers={}; ferramenta fora de Read/Grep/Glob mata o processo; ambiente do executor por allowlist sem KNOBRIDGE_*; símbolo conferido até 50 linhas acima; arquivos sensíveis valem como evidência mas nunca têm excerto; editor lista runners, admin gerencia; exportação <modulo>/<chave>.md com gerado_por harness:<executor>:<modelo>"
+    motivo: "Specs precisas o bastante para servidor e runner em paralelo; detalhes completos nas specs"
+    alternativas: "Deixar cada subfase decidir (divergência entre servidor e runner)"
     adr: null
 pendencias_usuario: []
 ---
@@ -502,6 +509,8 @@ Nenhuma aberta. Observação para a F5.2: a chave do OpenRouter cadastrada na st
 
 - 2026-10-11 — perguntas respondidas em três rodadas (com replanejamento para o runner local); plano criado; aguardando aprovação.
 - 2026-10-11 — aprovado pelo usuário, com o ajuste de usar os harness verdadeiros nos testes do runner (D17: suíte opt-in); execução iniciada.
+- 2026-10-11 — F1.1 iniciada.
+- 2026-10-11 — F1.1 concluída: ADR 0005, specs runner.md e harness.md, visão v0.3 (7.1.1 e D10); detalhes do contrato em D18.
 
 ## 8. Encerramento
 
