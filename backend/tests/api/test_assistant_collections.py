@@ -7,9 +7,13 @@ import uuid
 
 import httpx2 as httpx
 import pytest
-from api_support import ApiEnv
+from api_support import ApiEnv, run_db
 from search_support import add_collection, build_search_world, delete_collection
+from sqlalchemy import select
 
+from knobridge.assistants.models import Assistant
+from knobridge.core.db import system_session
+from knobridge.tenancy.auth import SessionFactory
 from knobridge.tenancy.models import Role
 
 pytestmark = pytest.mark.integration
@@ -128,7 +132,7 @@ def test_assistant_min_similarity_range(api: ApiEnv) -> None:
     assert negative.status_code == 422
     assert edge.status_code == 201
     assert edge.json()["min_similarity"] == 1.0
-    assert nulled.json()["min_similarity"] == 0.3
+    assert nulled.json()["min_similarity"] == 0.35
 
 
 def test_deleting_a_collection_unbinds_it(api: ApiEnv) -> None:
@@ -147,3 +151,18 @@ def test_deleting_a_collection_unbinds_it(api: ApiEnv) -> None:
     current = api.client.get(_path(world.workspace_id, created.json()["id"]))
     assert current.status_code == 200
     assert current.json()["collection_ids"] == [str(world.collection_id)]
+
+
+def test_assistant_created_without_min_similarity_stores_035(api: ApiEnv) -> None:
+    world = build_search_world(api, Role.OWNER)
+
+    created = _create(api, world.workspace_id, world.provider_id)
+    assistant_id = uuid.UUID(created.json()["id"])
+
+    async def stored(factory: SessionFactory) -> float | None:
+        async with system_session(factory) as db:
+            query = select(Assistant.min_similarity).where(Assistant.id == assistant_id)
+            return await db.scalar(query)
+
+    assert created.status_code == 201
+    assert run_db(api.database_url, stored) == 0.35

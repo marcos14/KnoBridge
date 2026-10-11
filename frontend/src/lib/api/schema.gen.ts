@@ -2374,7 +2374,7 @@ export interface components {
             limit: number;
             /**
              * Min Similarity
-             * @default 0.3
+             * @default 0.35
              */
             min_similarity: number;
             /** Query */

@@ -16,7 +16,7 @@
 
 - Modelo sugerido pela credencial: `openai/text-embedding-3-small` (OpenRouter e Fake; o Fake aceita qualquer texto) e `text-embedding-3-small` (OpenAI direta). Trocar a credencial troca o modelo só se ele ainda for uma sugestão; modelo digitado fica.
 - Viewer não lê credenciais (a API responde 403): a lista mostra só o modelo e `useProviders` fica desligado (`enabled: false`).
-- Pontuações: fusão com 4 casas, vetorial com 2, texto com 3; `—` quando o braço não achou o trecho. A busca sempre envia `min_similarity` (em branco, 0,3, o padrão da API) e `limit` 10.
+- Pontuações: fusão com 4 casas, vetorial com 2, texto com 3; `—` quando o braço não achou o trecho. A busca sempre envia `min_similarity` (em branco, 0,35, o padrão da API, do [ensaio](../../../../docs/pesquisa/0001-ensaio-minski.md)) e `limit` 10.
 
 **Como testar**: de `frontend/`, `pnpm test -- --coverage`. Pela árvore real (`renderWithProviders({ path: "/w/<id>/collections" })`) com MSW: `collectionStore(initial)` (POST com 409 `collection_name_taken`, PATCH com 409 `collection_embedding_locked`, DELETE com 409 `collection_in_use` quando há fontes; `created`, `changes`, `deleted`), `collectionsAs`, `collectionsServerError`, `collectionServerError`, `createCollectionFails`, `searchRecorder(results)` (`bodies`), `searchFails`, `sourcesAs`, `sourcesServerError`, `providersAs`.
 

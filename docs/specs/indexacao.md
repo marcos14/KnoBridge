@@ -185,7 +185,7 @@ Cada execução guarda `embedding_tokens` (soma dos tokens das chamadas de embed
 
 ## Busca híbrida
 
-`SearchService.search` (`retrieval/search.py`) serve a rota "testar busca" (`POST .../collections/{id}/search`, qualquer membro; `query` até 2000 caracteres, `limit` padrão 10 e máximo 50, `min_similarity` padrão 0,3) e o `HybridRetriever` do chat.
+`SearchService.search` (`retrieval/search.py`) serve a rota "testar busca" (`POST .../collections/{id}/search`, qualquer membro; `query` até 2000 caracteres, `limit` padrão 10 e máximo 50, `min_similarity` padrão 0,35, calibrado pelo [ensaio com dados reais](../pesquisa/0001-ensaio-minski.md)) e o `HybridRetriever` do chat.
 
 1. **Coleções e credenciais** numa consulta. Coleção ausente ou de outro workspace: 404 `not_found`.
 2. **Embedding da pergunta**, um por par (credencial, modelo). Coleções com o mesmo modelo compartilham o vetor; vetores de modelos diferentes nunca se comparam.

@@ -61,7 +61,7 @@ describe("assistantForm", () => {
       noSourceMessage: "",
       active: true,
       collectionIds: [],
-      minSimilarity: "0.3",
+      minSimilarity: "0.35",
     });
   });
 

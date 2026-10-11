@@ -224,7 +224,8 @@ describe("AssistantsPage create", () => {
       ),
     ).not.toBeInTheDocument();
     const minSimilarity = within(dialog).getByLabelText("Similaridade mínima");
-    expect(minSimilarity).toHaveValue("0.3");
+    expect(minSimilarity).toHaveValue("0.35");
+    expect(minSimilarity).toHaveAccessibleDescription(/^De 0 a 1 \(padrão 0,35\)\./);
     await user.clear(minSimilarity);
     await user.type(minSimilarity, "0,45");
     await user.click(within(dialog).getByRole("checkbox", { name: "Ativo" }));
@@ -431,7 +432,7 @@ describe("AssistantsPage collections", () => {
         assistantId: ASSISTANT_ID,
         body: expect.objectContaining({
           collection_ids: [OTHER_COLLECTION_ID],
-          min_similarity: 0.3,
+          min_similarity: 0.35,
         }) as unknown,
       },
     ]);

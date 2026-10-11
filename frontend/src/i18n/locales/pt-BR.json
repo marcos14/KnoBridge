@@ -446,7 +446,7 @@
       "goToCollections": "Ir para coleções",
       "noCollections": "Nenhuma coleção selecionada: o assistente responderá sempre sem fonte.",
       "minSimilarity": "Similaridade mínima",
-      "minSimilarityHint": "De 0 a 1 (padrão 0,3). Mais alto é mais exigente: abaixo do limiar, o trecho não conta e, sem nenhum, o assistente responde \"sem fonte\".",
+      "minSimilarityHint": "De 0 a 1 (padrão 0,35). Mais alto é mais exigente: abaixo do limiar, o trecho não conta e, sem nenhum, o assistente responde \"sem fonte\".",
       "submit": "Salvar",
       "cancel": "Cancelar",
       "validation": {

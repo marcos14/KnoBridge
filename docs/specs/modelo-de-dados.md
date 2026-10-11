@@ -1,6 +1,8 @@
 # Modelo de dados
 
-> Rascunho v0.4 · 2026-10-10 · Em uso (planos 0002 e 0003)
+> Rascunho v0.5 · 2026-10-11 · Em uso (planos 0002 e 0003)
+>
+> **Mudanças da v0.5**: migração `0013`: padrão de `assistants.min_similarity` de 0,3 para 0,35 ([ensaio com dados reais](../pesquisa/0001-ensaio-minski.md)); valores gravados não mudam.
 >
 > **Mudanças da v0.4**: migração `0012` (plano 0003, F4.2): `assistant_collections` (coleções que cada assistente consulta) e `assistants.min_similarity` (limiar da busca do chat).
 >
@@ -24,6 +26,7 @@ Tabelas do Postgres do KnoBridge, criadas pelas migrações em [`backend/migrati
 | `0010` | `20261010_0010_knowledge_index.py` | Índice de conhecimento: `collections`, `sources`, `runs`, `run_errors`, `documents`, `chunks`; HNSW cosseno em `chunks.embedding` e GIN em `chunks.tsv` (gerado). |
 | `0011` | `20261010_0011_run_items.py` | `run_items` (documentos pendentes de uma execução, RLS forçada), `runs.pending_cursor` e `ix_chunks_collection_id_content_hash` (cache de embedding). |
 | `0012` | `20261010_0012_assistant_collections.py` | `assistant_collections` (vínculo N:N assistente ↔ coleção, RLS forçada) e `assistants.min_similarity` (0 a 1, padrão 0,3). |
+| `0013` | `20261011_0013_raise_min_similarity_default.py` | Padrão de `assistants.min_similarity` passa de 0,3 para 0,35; valores gravados ficam. |
 
 Toda migração tem `downgrade` que desfaz o `upgrade`; o teste `test_migrations_match_orm_models` compara as migrações com os modelos ORM.
 
@@ -470,7 +473,7 @@ Configuração de um assistente do workspace (plano 0002, F4.3), em [`backend/sr
 | `tone` | `varchar(32)` | `neutral`, `formal` ou `friendly`. |
 | `no_source_message` | `text` | Resposta quando não há fonte (regra 8 do AGENTS.md). Nunca vazia (`ck_assistants_no_source_message_not_empty`): vazio ou nulo na API grava a mensagem padrão em pt-BR, que diz que não sabe e oferece abrir chamado. |
 | `active` | `boolean` | Padrão `true`. Inativo some para viewer e não aceita conversa nova nem mensagem (409 `assistant_inactive`). |
-| `min_similarity` | `double precision` | Similaridade mínima (cosseno) para um chunk virar fonte no chat (decisão D12 do plano 0003): entra o chunk que alcança o limiar ou casa a busca textual. De 0 a 1 (`ck_assistants_min_similarity_range`); padrão 0,3, o mesmo da rota "testar busca" (com `text-embedding-3-small`, trechos relacionados em pt-BR ficam em 0,35 a 0,6 e os sem relação abaixo de 0,25), provisório até o ensaio com dados reais. |
+| `min_similarity` | `double precision` | Similaridade mínima (cosseno) para um chunk virar fonte no chat (decisão D12 do plano 0003): entra o chunk que alcança o limiar ou casa a busca textual. De 0 a 1 (`ck_assistants_min_similarity_range`); padrão 0,35 (migração `0013`), o mesmo da rota "testar busca": no [ensaio com dados reais](../pesquisa/0001-ensaio-minski.md), com `text-embedding-3-small`, a maior similaridade das perguntas relacionadas ficou entre 0,364 e 0,664 e a das sem relação entre 0,196 e 0,300. |
 
 Único extra `uq_assistants_workspace_id_id` (`workspace_id`, `id`), alvo das FKs compostas de `conversations` e `assistant_collections`. Excluir um assistente exclui as conversas dele (com mensagens e feedback); para preservar o histórico, desative-o.
 

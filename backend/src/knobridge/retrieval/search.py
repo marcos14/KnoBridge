@@ -52,9 +52,10 @@ from knobridge.retrieval.fusion import ChunkSpan, drop_neighbors, reciprocal_ran
 DEFAULT_LIMIT = 10
 MAX_LIMIT = 50
 # Default similarity floor of the search route. Assistants get their own (D12, plan 0003 F4.2).
-# OpenAI ``text-embedding-3-small`` puts related pt-BR passages around 0.35-0.6 and unrelated
-# ones below 0.25.
-DEFAULT_MIN_SIMILARITY = 0.3
+# Real-data trial (docs/pesquisa/0001-ensaio-minski.md, OpenAI ``text-embedding-3-small``):
+# the top similarity of related questions was 0.364-0.664 and of unrelated ones 0.196-0.300,
+# so 0.35 keeps the related ones and sends the unrelated ones to "no source".
+DEFAULT_MIN_SIMILARITY = 0.35
 # Each arm fetches more than ``limit`` so fusion and neighbor removal still fill the result.
 CANDIDATE_FACTOR = 4
 MIN_CANDIDATES = 40

@@ -136,13 +136,13 @@ O histórico do workflow `ingestion-<id da fonte>` fica na Temporal UI (<http://
    - as pontuações: fusão, vetorial e texto;
    - o trecho.
 
-Um trecho entra quando a similaridade vetorial alcança o limiar (padrão 0,3) **ou** quando ele contém todos os termos da busca. Nada é gravado. Use esta tela para calibrar a **Similaridade mínima** antes de ligar a coleção ao assistente: se perguntas relacionadas voltam vazias, baixe o limiar; se aparecem trechos sem relação, suba.
+Um trecho entra quando a similaridade vetorial alcança o limiar (padrão 0,35, calibrado pelo [ensaio com dados reais](../pesquisa/0001-ensaio-minski.md)) **ou** quando ele contém todos os termos da busca. Nada é gravado. Use esta tela para calibrar a **Similaridade mínima** antes de ligar a coleção ao assistente: se perguntas relacionadas voltam vazias, baixe o limiar; se aparecem trechos sem relação, suba.
 
 ### 8. Ligar a coleção ao assistente
 
 1. Vá em **Assistentes** e edite (ou crie) o assistente. Para usar o OpenRouter também no chat, escolha a credencial do passo 2 em **Provedor** e informe em **Modelo** o identificador do OpenRouter (com o prefixo do fornecedor, ex.: `openai/gpt-4.1-mini`).
 2. Em **Coleções**, marque a coleção do passo 3. Um assistente pode consultar várias coleções.
-3. Ajuste **Similaridade mínima** (padrão 0,3) com o que você viu no passo 7.
+3. Ajuste **Similaridade mínima** (padrão 0,35) com o que você viu no passo 7.
 4. Clique em **Salvar**.
 
 Sem nenhuma coleção marcada, o assistente responde sempre "sem fonte".

@@ -19,7 +19,7 @@ export const MAX_TEMPERATURE = 2;
 export const DEFAULT_TEMPERATURE = 0.2;
 export const DEFAULT_LANGUAGE = "pt-BR";
 export const MAX_MIN_SIMILARITY = 1;
-export const DEFAULT_MIN_SIMILARITY = 0.3;
+export const DEFAULT_MIN_SIMILARITY = 0.35;
 
 /**
  * Temperature typed as text, with a comma or a dot as decimal separator ("0,7", "1.5"); `null`

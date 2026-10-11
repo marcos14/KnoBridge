@@ -126,7 +126,7 @@ def test_create_assistant_requires_editor(api: ApiEnv) -> None:
     assert body["no_source_message"] == DEFAULT_NO_SOURCE_MESSAGE
     assert body["active"] is True
     assert body["collection_ids"] == []
-    assert body["min_similarity"] == 0.3
+    assert body["min_similarity"] == 0.35
     assert _assistant_events(api, workspace_id) == [
         (
             "assistant.created",

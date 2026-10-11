@@ -14,7 +14,7 @@ from fastapi import FastAPI
 from search_support import Passage, add_passages, build_search_world, search_path
 
 from fakes.embedding_provider import RecordingEmbeddingFactory, RecordingEmbeddingProvider
-from knobridge.api.deps import get_embedding_provider_factory
+from knobridge.api.deps import get_embedding_provider_factory, get_search_service
 from knobridge.llm.errors import ProviderRateLimitError
 from knobridge.tenancy.models import Role
 
@@ -253,3 +253,32 @@ def test_search_endpoint_uses_constant_statements(api: ApiEnv) -> None:
     assert len(first.json()["results"]) == 1
     assert len(second.json()["results"]) == 9
     assert len(one) == len(nine)
+
+
+class _SpySearch:
+    """Records the floor the route passes and finds nothing."""
+
+    def __init__(self) -> None:
+        self.min_similarity: object = None
+
+    async def search(self, db: object, **kwargs: object) -> list[object]:
+        self.min_similarity = kwargs["min_similarity"]
+        return []
+
+
+def test_search_endpoint_defaults_min_similarity_to_035(api: ApiEnv) -> None:
+    world = build_search_world(api, Role.OWNER)
+    app = cast(FastAPI, api.client.app)
+    spy = _SpySearch()
+    app.dependency_overrides[get_search_service] = lambda: spy
+    try:
+        response = api.client.post(
+            search_path(world.workspace_id, world.collection_id),
+            json={"query": QUERY},
+            headers=api.csrf_headers(),
+        )
+    finally:
+        app.dependency_overrides.pop(get_search_service, None)
+
+    assert response.status_code == 200, response.text
+    assert spy.min_similarity == 0.35

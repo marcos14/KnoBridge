@@ -78,7 +78,7 @@ export function SearchPanel({ workspaceId, collectionId }: SearchPanelProps) {
               inputMode="decimal"
               label={t("collections.search.minSimilarity")}
               description={t("collections.search.minSimilarityHint", {
-                default: formatScore(DEFAULT_MIN_SIMILARITY, 1, locale),
+                default: formatScore(DEFAULT_MIN_SIMILARITY, 2, locale),
               })}
             />
           </div>

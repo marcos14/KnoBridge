@@ -6,7 +6,7 @@ import type { SearchRequest, SearchResult } from "@/lib/api/collections";
 /** Limits and defaults of the search route (`api/search.py`, `retrieval/search.py`). */
 export const QUERY_MAX_LENGTH = 2000;
 export const SEARCH_LIMIT = 10;
-export const DEFAULT_MIN_SIMILARITY = 0.3;
+export const DEFAULT_MIN_SIMILARITY = 0.35;
 const SHORT_SHA_LENGTH = 7;
 
 /**

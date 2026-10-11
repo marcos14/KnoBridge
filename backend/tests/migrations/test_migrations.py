@@ -439,6 +439,38 @@ def test_migration_upgrade_downgrade_assistant_collections(postgres_url: str) ->
     assert after_downgrade["assistants"] == (True, True, 4)
 
 
+def _min_similarity_default(database_url: str) -> float:
+    async def query() -> float:
+        engine = create_async_engine(database_url, poolclass=NullPool)
+        try:
+            async with engine.connect() as connection:
+                result = await connection.execute(
+                    text(
+                        "SELECT column_default FROM information_schema.columns"
+                        " WHERE table_name = 'assistants' AND column_name = 'min_similarity'"
+                    )
+                )
+                return float(result.scalar_one())
+        finally:
+            await engine.dispose()
+
+    return asyncio.run(query())
+
+
+@pytest.mark.integration
+def test_migration_upgrade_downgrade_min_similarity_default(postgres_url: str) -> None:
+    config, _ = _alembic_config(postgres_url)
+
+    command.upgrade(config, "head")
+    default_after_upgrade = _min_similarity_default(postgres_url)
+    command.downgrade(config, "0012")
+    default_after_downgrade = _min_similarity_default(postgres_url)
+    command.downgrade(config, "base")
+
+    assert default_after_upgrade == 0.35
+    assert default_after_downgrade == 0.3
+
+
 def _schema_diff(connection: Connection) -> list[object]:
     diff: list[object] = compare_metadata(MigrationContext.configure(connection), Base.metadata)
     return diff

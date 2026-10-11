@@ -32,7 +32,7 @@ describe("searchResult", () => {
     expect(searchBody({ query: "caixa", minSimilarity: "" })).toEqual({
       query: "caixa",
       limit: 10,
-      min_similarity: 0.3,
+      min_similarity: 0.35,
     });
     expect(searchBody({ query: "caixa", minSimilarity: "0,6" }).min_similarity).toBe(0.6);
   });

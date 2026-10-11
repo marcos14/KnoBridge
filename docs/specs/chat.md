@@ -10,7 +10,7 @@ Código: [`backend/src/knobridge/conversations/`](../../backend/src/knobridge/co
 
 ## Recuperação de fontes
 
-Cada assistente consulta as coleções ligadas a ele (`collection_ids` na API do assistente, tabela `assistant_collections` em [modelo-de-dados.md](modelo-de-dados.md#assistant_collections)) com a sua similaridade mínima (`min_similarity`, padrão 0,3; decisão D12 do plano 0003). A produção usa o `HybridRetriever` (`retrieval/retriever.py`):
+Cada assistente consulta as coleções ligadas a ele (`collection_ids` na API do assistente, tabela `assistant_collections` em [modelo-de-dados.md](modelo-de-dados.md#assistant_collections)) com a sua similaridade mínima (`min_similarity`, padrão 0,35; decisão D12 do plano 0003, calibrado pelo [ensaio com dados reais](../pesquisa/0001-ensaio-minski.md)). A produção usa o `HybridRetriever` (`retrieval/retriever.py`):
 
 1. Lê, numa consulta, a similaridade mínima e as coleções do assistente. **Sem coleção, devolve vazio sem chamar o provedor de embedding** (e o chat responde "sem fonte" sem LLM).
 2. Chama a busca híbrida (`SearchService.search`, `retrieval/search.py`) nessas coleções: vetorial (cosseno) + textual, fusão RRF, até 10 trechos. Um trecho entra se alcança `min_similarity` ou casa a busca textual (conjuntiva); pergunta sem relação volta vazia.

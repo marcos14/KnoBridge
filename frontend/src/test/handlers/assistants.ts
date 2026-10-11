@@ -34,7 +34,7 @@ function storedNoSourceMessage(message: string | null | undefined): string {
 }
 
 /** Stored when the request omits them, like the backend defaults. */
-export const DEFAULT_MIN_SIMILARITY = 0.3;
+export const DEFAULT_MIN_SIMILARITY = 0.35;
 
 /** What the backend stores for a `POST` body: its defaults for the omitted fields. */
 function storedInput(body: AssistantInput): Partial<Assistant> {

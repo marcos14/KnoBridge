@@ -199,7 +199,7 @@ describe("CollectionDetail search", () => {
     expect(commit).toHaveTextContent("commit abcdef1");
     expect(commit).toHaveTextContent("Fusão 0,0161 · Vetorial — · Texto 0,250");
     expect(recorder.bodies).toEqual([
-      { query: "como fechar o caixa", limit: 10, min_similarity: 0.3 },
+      { query: "como fechar o caixa", limit: 10, min_similarity: 0.35 },
     ]);
   });
 
@@ -217,6 +217,14 @@ describe("CollectionDetail search", () => {
     expect(recorder.bodies).toEqual([
       { query: "previsão do tempo", limit: 10, min_similarity: 0.8 },
     ]);
+  });
+
+  it("test_search_hint_shows_default_threshold", async () => {
+    await renderDetail();
+
+    expect(screen.getByLabelText("Similaridade mínima (opcional)")).toHaveAccessibleDescription(
+      "De 0 a 1; em branco, 0,35. Trechos abaixo dela entram só se casarem com todos os termos da busca.",
+    );
   });
 
   it("test_search_validates_query_and_threshold", async () => {

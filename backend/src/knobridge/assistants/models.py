@@ -39,8 +39,8 @@ DEFAULT_TEMPERATURE = 0.2
 DEFAULT_LANGUAGE = "pt-BR"
 # Similarity floor of the chat's retrieval (decision D12 of plan 0003): a chunk only becomes a
 # source when its cosine similarity reaches it or it matches the full-text query. Same value
-# as the search route (0.3): with ``text-embedding-3-small`` related pt-BR passages score
-# about 0.35-0.6 and unrelated ones below 0.25. Provisional until the real-data trial.
+# as the search route (0.35), set by the real-data trial (docs/pesquisa/0001-ensaio-minski.md):
+# with ``text-embedding-3-small`` related questions topped 0.364-0.664, unrelated 0.196-0.300.
 MIN_SIMILARITY = 0.0
 MAX_SIMILARITY = 1.0
 DEFAULT_MIN_SIMILARITY = SEARCH_MIN_SIMILARITY
