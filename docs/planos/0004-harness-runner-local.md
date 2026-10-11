@@ -103,12 +103,12 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-11
         concluida_em: 2026-10-11
-        commit: null
+        commit: 4accf01
       - id: F4.2
         titulo: Módulos e tarefas na fonte do tipo runner
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-11
         concluida_em: null
         commit: null
       - id: F4.3
@@ -612,6 +612,7 @@ Nenhuma aberta. Observação para a F5.2: a chave do OpenRouter cadastrada na st
 - 2026-10-11 — F2.4 concluída: conector knowledge no workflow de ingestão, revisão e exportação, citação knowledge e sincronização pendente (migração 0015), mesclada sobre a F2.3; backend 1470 passed com 99% de cobertura, frontend 921, runner 427
 - 2026-10-11 — F4.1 iniciada (agente em worktree).
 - 2026-10-11 — F4.1 concluída: tela de runners (token uma vez, comandos copiáveis, revogar e excluir) e formulário da fonte runner; frontend 991 testes, 98,69% de branches
+- 2026-10-11 — F4.2 iniciada (agente em worktree).
 
 ## 8. Encerramento
 
