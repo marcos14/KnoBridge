@@ -4,11 +4,11 @@ titulo: Primeiro conhecimento de ponta a ponta — fontes Git e pasta, indexaç�
 slug: primeiro-conhecimento
 solicitado_por: usuario
 criado_em: 2026-10-10
-atualizado_em: 2026-10-10
-status: em_execucao
+atualizado_em: 2026-10-11
+status: concluido
 aprovado_em: 2026-10-10
 aprovado_por: usuario
-concluido_em: null
+concluido_em: 2026-10-11
 branch: plano/0003-primeiro-conhecimento
 fases:
   - id: F1
@@ -131,7 +131,7 @@ fases:
         commit: d56a334
   - id: F6
     titulo: Stack, documentação e ensaio real
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F6.1
         titulo: Compose, imagem e E2E da indexação contra a stack
@@ -153,7 +153,7 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-11
         concluida_em: 2026-10-10
-        commit: null
+        commit: 1e032ab
 decisoes:
   - id: D1
     data: 2026-10-10
@@ -278,15 +278,15 @@ pendencias_usuario:
 
 ## 3. Critérios de aceite
 
-- [ ] Coleção com credencial e modelo de embedding; fonte Git ou pasta local ligada a uma coleção, com globs, branch e agendamento; tudo com RLS e testes de isolamento.
-- [ ] "Sincronizar" roda um workflow Temporal incremental: só reprocessa o que mudou, remove do índice o que sumiu da fonte, registra a execução com contagens, tokens, custo, duração e erros por documento.
-- [ ] Código TypeScript/TSX/JavaScript e Go fatiado por função, classe e método com caminho, linguagem, símbolo e linhas; Markdown por títulos; PDF/DOCX/HTML convertidos; commits como documentos.
-- [ ] Busca híbrida (vetorial + FTS pt-BR, RRF) filtrada por workspace e coleção, com "testar busca" no painel.
-- [ ] Chat com fontes: o assistente consulta suas coleções, responde citando `[n]` com arquivo e linhas ou commit; sem chunk acima da similaridade mínima, mantém a resposta "sem fonte" sem chamar o LLM.
-- [ ] Agendamento por fonte via Temporal Schedules, editável e pausável pelo painel.
-- [ ] E2E contra a stack: fonte de pasta sintética → sincronizar → pergunta no chat com citação, usando provedor `fake` (LLM e embeddings determinísticos); rodando na CI.
-- [ ] Ensaio real local com o Minski e o modelo Luna, com métricas (documentos, chunks, tokens, custo, tempo, qualidade percebida em ~10 perguntas) em `docs/pesquisa/`.
-- [ ] Gates: cobertura ≥ 95%, lint, typecheck, `check_agents_md`, `check_plans`, OpenAPI atualizado; ADR 0004; specs de conectores e de indexação.
+- [x] Coleção com credencial e modelo de embedding; fonte Git ou pasta local ligada a uma coleção, com globs, branch e agendamento; tudo com RLS e testes de isolamento.
+- [x] "Sincronizar" roda um workflow Temporal incremental: só reprocessa o que mudou, remove do índice o que sumiu da fonte, registra a execução com contagens, tokens, custo, duração e erros por documento.
+- [x] Código TypeScript/TSX/JavaScript e Go fatiado por função, classe e método com caminho, linguagem, símbolo e linhas; Markdown por títulos; PDF/DOCX/HTML convertidos; commits como documentos.
+- [x] Busca híbrida (vetorial + FTS pt-BR, RRF) filtrada por workspace e coleção, com "testar busca" no painel.
+- [x] Chat com fontes: o assistente consulta suas coleções, responde citando `[n]` com arquivo e linhas ou commit; sem chunk acima da similaridade mínima, mantém a resposta "sem fonte" sem chamar o LLM.
+- [x] Agendamento por fonte via Temporal Schedules, editável e pausável pelo painel.
+- [x] E2E contra a stack: fonte de pasta sintética → sincronizar → pergunta no chat com citação, usando provedor `fake` (LLM e embeddings determinísticos); rodando na CI.
+- [x] Ensaio real local com o Minski e o modelo Luna, com métricas (documentos, chunks, tokens, custo, tempo, qualidade percebida em ~10 perguntas) em `docs/pesquisa/`.
+- [x] Gates: cobertura ≥ 95%, lint, typecheck, `check_agents_md`, `check_plans`, OpenAPI atualizado; ADR 0004; specs de conectores e de indexação.
 
 ## 4. Fases e subfases
 
@@ -512,7 +512,39 @@ Ver `decisoes[]` no frontmatter. ADR previsto: 0004 (índice de conhecimento: di
 - 2026-10-10 — F6.2 concluída: Specs conectores.md e indexacao.md, guia indexar-uma-fonte.md, chat.md/primeiro-acesso.md/README/CHANGELOG/AGENTS raiz atualizados; links e Mermaid validados. Achado: lista de arquivos duplicada no Markdown dos commits (correção com teste em seguida).
 - 2026-10-11 — Correção: documento de commit passa a conter só a mensagem (lista de arquivos e SHA não se repetem no Markdown; files_total preserva o aviso de truncamento), com teste que reproduz.
 - 2026-10-10 — F6.3 concluída: Ensaio real com o Minski: 2.433 documentos, 20.322 chunks, US$ 0,18 de embedding, 2ª sincronização sem reprocessar nada (12 s), 9/10 respostas com citação verificável e 1 recusa correta, limiar calibrado para 0,35, gasto total US$ 0,21; relatório em docs/pesquisa/0001-ensaio-minski.md; nenhum arquivo do Minski nem chave no repositório (git grep e gitleaks).
+- 2026-10-11 — Plano 0003 concluído.
 
 ## 8. Encerramento
 
-A preencher ao concluir.
+**Entregue** (17 subfases, F1.1 a F6.3, mais três correções com teste):
+
+- **Índice de conhecimento**: coleções (credencial e modelo de embedding), fontes, execuções, documentos e chunks com `vector(1536)` HNSW e FTS, tudo com RLS (migrações 0010 a 0013, ADR 0004).
+- **Conectores**: contrato comum com suíte de contrato; pasta local (incremental por hash) e Git (objetos do Git sem escrever na montagem, URL https em clone parcial, incremental por SHA, commits como documentos sem e-mail); seleção com `.gitignore`, binários, documentos parseáveis, limites, globs e raiz permitida.
+- **Processamento**: MarkItDown para PDF/DOCX/XLSX/PPTX/HTML, chunking por títulos, por AST (tree-sitter: TS/TSX/JS/Go) e por commit; embeddings OpenAI-compatíveis (OpenRouter) com cache por hash e custo registrado.
+- **Execução**: workflow Temporal `knobridge.ingestion.v1` incremental e idempotente, uma execução por fonte, cancelamento, agendamento por cron com Temporal Schedules e reconciliação.
+- **Busca e chat**: busca híbrida (cosseno + FTS pt-BR, RRF) com similaridade mínima (padrão 0,35, medido no ensaio); `HybridRetriever` no chat com citações de arquivo/linhas e de commit (autor e data); regra 8 preservada sem chamar o LLM.
+- **Painel**: telas de Coleções (com "Testar busca") e Fontes (formulário, cron, execuções ao vivo, erros, documentos); coleções e limiar no assistente; citações ricas no chat e nas conversas.
+- **Stack e qualidade**: imagem com `git`, `/sources` montado somente leitura, E2E da stack cobrindo indexação → busca → chat com citação e "sem fonte"; backend com 1.147 testes (99,95%), frontend com 921 testes.
+- **Docs**: specs `conectores.md`, `indexacao.md`, `chat.md`/`chat-sse.md` (v0.4), modelo de dados v0.5; guia `indexar-uma-fonte.md`; relatório `docs/pesquisa/0001-ensaio-minski.md`.
+- **Ensaio real (Minski + Luna)**: 2.433 documentos e 20.322 chunks por US$ 0,18; ressincronização sem mudanças em 12 s e custo zero; 9 de 10 perguntas respondidas com citação verificável e 1 recusa correta; pergunta sem relação em "sem fonte" sem chamar o LLM; gasto total US$ 0,21.
+
+**Ficou de fora, e por quê**:
+
+- Harness de código (Claude Code/Codex), canvas visual, reranker, conectores de chamados e wikis, upload pelo painel, repositórios privados remotos e ACL herdada: fora do escopo combinado.
+- Reconciliação de agendamentos só na subida do worker; conferência periódica é melhoria futura.
+- Ação "reindexar fonte": commits indexados antes da correção do rodapé mantêm o Markdown antigo até a fonte ser recriada.
+- Imagem do backend cresceu de 473 MB para 1,13 GB (MarkItDown e suas dependências, `git`); trocar o MarkItDown pelas bibliotecas de base reduziria, mas reabre a D11.
+- `ingestion/sources.py` com ~440 linhas, acima da referência de ~400; dividir num próximo toque.
+- Relatórios gerados (ex.: `docs/resumos` do Minski) inflam o índice; hoje a saída é `exclude_globs` por fonte.
+
+**Como demonstrar**:
+
+```bash
+export KNOBRIDGE_SOURCES_DIR=/caminho/da/pasta    # montada somente leitura em /sources
+docker compose -f deploy/docker-compose.yml up -d --build --wait
+# siga docs/guias/indexar-uma-fonte.md (painel em http://localhost:5173)
+
+docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.e2e.yml up -d --build --wait
+(cd frontend && pnpm e2e:stack)
+docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.e2e.yml down -v
+```
