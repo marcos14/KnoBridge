@@ -21,12 +21,12 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-11
         concluida_em: 2026-10-11
-        commit: null
+        commit: d38c790
       - id: F1.2
         titulo: Modelo de dados (runners, módulos, tarefas, itens de conhecimento) com RLS
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code
+        iniciada_em: 2026-10-11
         concluida_em: null
         commit: null
   - id: F2
@@ -63,14 +63,14 @@ fases:
         commit: null
   - id: F3
     titulo: Runner local (knobridge-runner)
-    status: pendente
+    status: em_execucao
     subfases:
       - id: F3.1
         titulo: Pacote runner, configuração, cliente HTTP com long-poll, CLI e CI
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-11
+        concluida_em: 2026-10-11
         commit: null
       - id: F3.2
         titulo: Camada 0 determinística (inventário, módulos sugeridos, briefing, mudanças por commit)
@@ -511,6 +511,8 @@ Nenhuma aberta. Observação para a F5.2: a chave do OpenRouter cadastrada na st
 - 2026-10-11 — aprovado pelo usuário, com o ajuste de usar os harness verdadeiros nos testes do runner (D17: suíte opt-in); execução iniciada.
 - 2026-10-11 — F1.1 iniciada.
 - 2026-10-11 — F1.1 concluída: ADR 0005, specs runner.md e harness.md, visão v0.3 (7.1.1 e D10); detalhes do contrato em D18.
+- 2026-10-11 — F1.2 e F3.1 iniciadas em paralelo.
+- 2026-10-11 — F3.1 concluída: pacote runner/ (config, cliente com long-poll e backoff, laço, CLI configure/run/doctor), job runner na CI; 151 testes, cobertura 100%.
 
 ## 8. Encerramento
 

@@ -1,0 +1,20 @@
+# runner/tests/
+
+**Função**: testes do runner, um arquivo por área do pacote `knobridge_runner` (`test_client.py`, `test_loop.py`, `test_config.py`, `test_cli.py`, `test_doctor.py`, `test_machine.py`, `test_protocol.py`, `test_logs.py`).
+
+**Entra aqui**:
+- `conftest.py`: pula os testes marcados `real_harness` sem `KNOBRIDGE_RUNNER_REAL_HARNESS=1` (D17) e restaura o logging depois de cada teste.
+- `runner_support.py`: fakes compartilhados, importados pelo basename: `FakeServer` (rotas de `/v1/runner/*` sobre `httpx.MockTransport`, com as requisições gravadas), `FakeClock`, `FakeSleep` (grava as esperas e avança o relógio sem esperar), `FakeCommandRunner`, `FakeAuth`, `make_client`, `make_config` e corpos de resposta de exemplo.
+- Depois: `fakes/` com os `claude`/`codex` falsos (F3.3) e `real_harness/` com a suíte opt-in, cada uma com o seu `AGENTS.md`.
+
+**Não entra aqui**: código de produção, chamadas de rede reais, LLM ou CLI real fora de `real_harness`, repositórios ou código reais.
+
+**Convenções locais**:
+- Nome `test_<unidade>_<comportamento>`, arrange / act / assert, um comportamento por teste.
+- Sem rede, sem `sleep` real, sem hora real, sem aleatoriedade sem semente. Código async roda com `asyncio.run` dentro do teste.
+- `git` real só em repositórios criados em `tmp_path`.
+- Sem `__init__.py`: basenames de arquivo de teste únicos.
+
+**Como testar**: de `runner/`, `uv run pytest` (cobertura de linhas e branches com `--cov-fail-under=95`).
+
+**Leia também**: seção 5 do [AGENTS.md da raiz](../../AGENTS.md); [runner/AGENTS.md](../AGENTS.md).

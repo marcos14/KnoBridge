@@ -1,0 +1,90 @@
+[project]
+name = "knobridge-runner"
+dynamic = ["version"]
+description = "KnoBridge local runner: runs the code harness on the user's machine and talks to the server."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "Apache-2.0"
+dependencies = [
+    "httpx>=0.28",
+    "pydantic>=2.9",
+]
+
+[project.scripts]
+knobridge-runner = "knobridge_runner.cli:entrypoint"
+
+[dependency-groups]
+dev = [
+    "pyright>=1.1.390",
+    "pytest>=8.3",
+    "pytest-cov>=6.0",
+    "ruff>=0.17.0,<0.18",
+]
+
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+# Single source of truth for the version, also exposed at runtime as knobridge_runner.__version__.
+path = "src/knobridge_runner/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/knobridge_runner"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",     # pycodestyle errors
+    "W",     # pycodestyle warnings
+    "F",     # pyflakes
+    "I",     # isort
+    "B",     # bugbear
+    "UP",    # pyupgrade
+    "SIM",   # simplify
+    "RUF",   # ruff-specific
+    "C4",    # comprehensions
+    "PTH",   # use pathlib
+    "PT",    # pytest style
+    "N",     # naming
+    "S",     # bandit (security)
+    "T20",   # print statements
+    "ANN",   # annotations
+    "ASYNC", # async pitfalls
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests use synthetic tokens, seeded randomness and git subprocesses on temporary folders.
+"tests/**" = ["S101", "S105", "S106", "S311", "S603", "S607"]
+# The CLI is the only place that writes to stdout (AGENTS.md, section 6.1).
+"src/knobridge_runner/cli.py" = ["T20"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.pyright]
+include = ["src", "tests"]
+exclude = [".venv", "**/__pycache__"]
+pythonVersion = "3.12"
+typeCheckingMode = "strict"
+venvPath = "."
+venv = ".venv"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "real_harness: calls the real claude/codex CLIs; skipped unless KNOBRIDGE_RUNNER_REAL_HARNESS=1",
+]
+addopts = "--cov=knobridge_runner --cov-branch --cov-report=term-missing --cov-fail-under=95"
+
+[tool.coverage.run]
+branch = true
+source = ["knobridge_runner"]
+
+[tool.coverage.report]
+show_missing = true
+exclude_also = ["if TYPE_CHECKING:"]

@@ -4,7 +4,7 @@
 
 # Generated files and lockfiles are never rewritten by hooks; plans in docs/planos/ are edited
 # only by the orchestrator of each plan.
-exclude: ^(frontend/src/lib/api/schema\.gen\.ts|docs/specs/openapi\.json|frontend/pnpm-lock\.yaml|(backend|scripts)/uv\.lock)$
+exclude: ^(frontend/src/lib/api/schema\.gen\.ts|docs/specs/openapi\.json|frontend/pnpm-lock\.yaml|(backend|runner|scripts)/uv\.lock)$
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -24,16 +24,16 @@ repos:
         # Windows scripts keep CRLF (.gitattributes).
         exclude: \.(bat|cmd|ps1)$
 
-  # Same version as ruff in backend/uv.lock and scripts/uv.lock. Ruff reads the nearest
-  # pyproject.toml of each file, so backend/ and scripts/ keep their own settings.
+  # Same version as ruff in backend/, runner/ and scripts/uv.lock. Ruff reads the nearest
+  # pyproject.toml of each file, so each Python project keeps its own settings.
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.17.0
     hooks:
       - id: ruff-check
         args: [--fix]
-        files: ^(backend|scripts)/
+        files: ^(backend|runner|scripts)/
       - id: ruff-format
-        files: ^(backend|scripts)/
+        files: ^(backend|runner|scripts)/
 
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.30.1

@@ -81,6 +81,7 @@ Antes de começar, leia este arquivo, o `AGENTS.md` de cada pasta que for tocar 
 | `docs/` | Toda documentação e planos: visão, plano, ADRs, especificações, guias, pesquisa | Existe |
 | `backend/` | Python: API REST e compatível com OpenAI (FastAPI), workers e workflows (Temporal), conectores, engine de pipelines, harness de código, recuperação, assistentes, canais, servidor MCP, migrações | Existe |
 | `frontend/` | Painel admin em React + TypeScript (canvas de pipelines, fontes, assistentes, canais, conversas) | Existe |
+| `runner/` | Python: `knobridge-runner`, runner local do harness de código na máquina do usuário (configuração, cliente do protocolo `/v1/runner/*`, laço principal, CLI `configure`/`run`/`doctor`); projeto uv separado que nunca importa o backend ([ADR 0005](docs/adr/0005-runner-local-do-harness.md)) | Existe |
 | `widget/` | Web Component do chat embutível (1 arquivo JS) | A criar |
 | `deploy/` | Docker Compose, Helm chart, scripts de infra | Existe |
 | `scripts/` | Automação do repositório (checagens de CI, geração de código) | Existe |

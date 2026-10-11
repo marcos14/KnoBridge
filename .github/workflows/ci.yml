@@ -69,6 +69,29 @@ jobs:
           uv run knobridge-openapi
           git diff --exit-code -- ../docs/specs/openapi.json
 
+  runner:
+    name: runner
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: runner
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: runner/uv.lock
+      - run: uv sync --frozen
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run pyright
+      # Real claude/codex tests (marker real_harness) stay skipped: KNOBRIDGE_RUNNER_REAL_HARNESS
+      # is never set in CI (decision D17 of plan 0004).
+      - run: uv run pytest
+
   frontend:
     name: frontend
     runs-on: ubuntu-24.04
