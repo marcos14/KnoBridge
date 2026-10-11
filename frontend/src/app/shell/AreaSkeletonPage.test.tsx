@@ -10,7 +10,6 @@ describe("AreaSkeletonPage", () => {
   it.each([
     ["sources", "Fontes", "repositórios de código"],
     ["pipelines", "Pipelines", "transformam o conteúdo"],
-    ["collections", "Coleções", "trechos indexados"],
     ["channels", "Canais", "widget embutível"],
   ])("test_area_skeleton_page_%s_shows_empty_state", async (path, title, explanation) => {
     server.use(meAs(makeMe({ workspaces: [makeWorkspace({ role: "viewer" })] })));

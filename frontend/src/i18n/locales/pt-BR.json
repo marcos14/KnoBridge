@@ -70,10 +70,6 @@
       "title": "Pipelines",
       "description": "Pipelines transformam o conteúdo das fontes em índices para busca, em etapas visuais e incrementais. Os pipelines do workspace aparecem aqui."
     },
-    "collections": {
-      "title": "Coleções",
-      "description": "Coleções guardam os trechos indexados pelos pipelines e são consultadas pelos assistentes. As coleções do workspace aparecem aqui."
-    },
     "channels": {
       "title": "Canais",
       "description": "Canais levam os assistentes até as pessoas: API, webhooks, MCP, Slack, Google Chat e o widget embutível. Os canais configurados aparecem aqui."
@@ -453,6 +449,108 @@
         "modelInvalid": "O identificador do modelo não pode ter espaços.",
         "temperatureInvalid": "Informe um número de 0 a 2.",
         "languageInvalid": "Informe um código de idioma válido, como pt-BR."
+      }
+    }
+  },
+  "collections": {
+    "title": "Coleções",
+    "description": "Coleções guardam os trechos indexados das fontes, com o modelo de embedding usado na busca. Os assistentes respondem a partir delas.",
+    "create": "Nova coleção",
+    "needProvider": "Cadastre uma credencial da OpenAI ou do OpenRouter antes de criar coleções: a Anthropic não oferece embeddings.",
+    "goToProviders": "Ir para provedores",
+    "tableLabel": "Coleções do workspace",
+    "columns": {
+      "name": "Nome",
+      "embedding": "Modelo de embedding",
+      "sources": "Fontes",
+      "documents": "Documentos",
+      "chunks": "Trechos",
+      "actions": "Ações"
+    },
+    "empty": "Nenhuma coleção cadastrada.",
+    "loading": "Carregando coleções…",
+    "loadFailed": "Não foi possível carregar as coleções.",
+    "retry": "Tentar novamente",
+    "edit": "Editar",
+    "editLabel": "Editar {{name}}",
+    "delete": "Excluir",
+    "deleteLabel": "Excluir {{name}}",
+    "deleteTitle": "Excluir a coleção {{name}}?",
+    "deleteDescription": "A coleção é apagada sem volta. Uma coleção que ainda tem fontes não pode ser excluída: exclua as fontes antes.",
+    "deleted": "A coleção {{name}} foi excluída.",
+    "created": "Coleção {{name}} criada.",
+    "updated": "Coleção {{name}} atualizada.",
+    "form": {
+      "createTitle": "Nova coleção",
+      "editTitle": "Editar coleção",
+      "description": "A credencial e o modelo de embedding transformam os trechos e as perguntas em vetores.",
+      "name": "Nome",
+      "summary": "Descrição",
+      "provider": "Credencial de embedding",
+      "providerPlaceholder": "Escolha uma credencial",
+      "providerHint": "Só aparecem credenciais com embeddings (OpenAI, OpenRouter e, em testes, Fake). A Anthropic não oferece embeddings.",
+      "model": "Modelo de embedding",
+      "modelHint": "Padrão: openai/text-embedding-3-small. No OpenRouter o nome leva o prefixo do fornecedor (openai/text-embedding-3-small); na OpenAI direta, não (text-embedding-3-small); o Fake aceita qualquer nome. O índice guarda vetores de 1536 dimensões.",
+      "lockedHint": "A coleção já tem documentos: a credencial e o modelo não mudam mais. Para usar outro modelo, crie outra coleção.",
+      "submit": "Salvar",
+      "cancel": "Cancelar",
+      "validation": {
+        "nameRequired": "Informe o nome da coleção.",
+        "providerRequired": "Escolha uma credencial de embedding.",
+        "modelRequired": "Informe o modelo de embedding.",
+        "modelInvalid": "O identificador do modelo não pode ter espaços."
+      }
+    },
+    "detail": {
+      "back": "Voltar para coleções",
+      "loading": "Carregando a coleção…",
+      "loadFailed": "Não foi possível carregar a coleção.",
+      "notFound": "Coleção não encontrada.",
+      "embedding": "Modelo de embedding: {{model}}",
+      "counts": "Fontes: {{sources}} · Documentos: {{documents}} · Trechos: {{chunks}}",
+      "sourcesTitle": "Fontes da coleção",
+      "sourcesTableLabel": "Fontes da coleção",
+      "sourcesEmpty": "Nenhuma fonte nesta coleção.",
+      "sourcesLoading": "Carregando fontes…",
+      "sourcesLoadFailed": "Não foi possível carregar as fontes.",
+      "sourcesHint": "As fontes são cadastradas e sincronizadas na área de fontes.",
+      "goToSources": "Ir para fontes",
+      "columns": {
+        "name": "Nome",
+        "kind": "Tipo",
+        "documents": "Documentos",
+        "lastRun": "Última sincronização"
+      },
+      "kinds": {
+        "git": "Repositório Git",
+        "folder": "Pasta"
+      },
+      "runStatus": {
+        "never": "Nunca sincronizada",
+        "queued": "Na fila",
+        "running": "Sincronizando",
+        "succeeded": "Concluída",
+        "failed": "Falhou",
+        "cancelled": "Cancelada"
+      }
+    },
+    "search": {
+      "title": "Testar busca",
+      "description": "Veja quais trechos a busca híbrida (vetorial + texto) devolve para uma pergunta, com as pontuações de cada um. Nada é gravado.",
+      "query": "Pergunta ou termos",
+      "minSimilarity": "Similaridade mínima (opcional)",
+      "minSimilarityHint": "De 0 a 1; em branco, {{default}}. Trechos abaixo dela entram só se casarem com todos os termos da busca.",
+      "submit": "Buscar",
+      "searching": "Buscando…",
+      "resultsLabel": "Resultados da busca",
+      "resultCount": "Trechos encontrados: {{count}}",
+      "empty": "Nenhum trecho passou do limiar de similaridade ({{threshold}}) nem casou com todos os termos da busca. Tente outras palavras ou baixe a similaridade mínima.",
+      "scores": "Fusão {{fused}} · Vetorial {{vector}} · Texto {{fts}}",
+      "symbol": "Símbolo: {{symbol}}",
+      "language": "Linguagem: {{language}}",
+      "validation": {
+        "queryRequired": "Digite o que deseja buscar.",
+        "minSimilarityInvalid": "Informe um número de 0 a 1."
       }
     }
   },

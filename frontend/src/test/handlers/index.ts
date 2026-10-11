@@ -3,6 +3,7 @@ import { adminHandlers } from "./admin";
 import { assistantsHandlers } from "./assistants";
 import { auditHandlers } from "./audit";
 import { authHandlers } from "./auth";
+import { collectionsHandlers } from "./collections";
 import { conversationsHandlers } from "./conversations";
 import { healthReadyOk } from "./health";
 import { invitesHandlers } from "./invites";
@@ -10,6 +11,7 @@ import { membersHandlers } from "./members";
 import { providersHandlers } from "./providers";
 import { recoveryHandlers } from "./recovery";
 import { setupHandlers } from "./setup";
+import { sourcesHandlers } from "./sources";
 import { workspaceConversationsHandlers } from "./workspaceConversations";
 
 export * from "./account";
@@ -17,6 +19,7 @@ export * from "./admin";
 export * from "./assistants";
 export * from "./audit";
 export * from "./auth";
+export * from "./collections";
 export * from "./conversations";
 export * from "./errors";
 export * from "./health";
@@ -27,6 +30,7 @@ export * from "./providers";
 export * from "./record";
 export * from "./recovery";
 export * from "./setup";
+export * from "./sources";
 export * from "./workspaceConversations";
 
 /**
@@ -45,6 +49,8 @@ export const handlers = [
   ...adminHandlers,
   ...providersHandlers,
   ...assistantsHandlers,
+  ...collectionsHandlers,
+  ...sourcesHandlers,
   ...conversationsHandlers,
   ...workspaceConversationsHandlers,
 ];

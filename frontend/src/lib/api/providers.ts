@@ -18,9 +18,11 @@ export function providersQueryKey(workspaceId: string) {
  * Every LLM provider credential of the workspace, ordered by name (owner, admin or editor; the
  * key comes only masked, in `key_hint`). A workspace has a handful: the screens page them locally.
  */
-export function useProviders(workspaceId: string) {
+export function useProviders(workspaceId: string, { enabled = true }: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: providersQueryKey(workspaceId),
+    // Off for viewers, whom the API refuses (403): a screen they share with editors skips it.
+    enabled,
     queryFn: ({ signal }) =>
       fetchAllPages(async (query) =>
         unwrap(

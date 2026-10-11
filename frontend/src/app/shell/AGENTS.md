@@ -12,7 +12,7 @@
 - `useActiveWorkspace.ts`: workspace da URL ou, fora de `/w/...`, o último usado.
 - `HomeRedirect.tsx`: `/` → último workspace usado (`lib/lastWorkspace.ts`) ou o primeiro; sem nenhum, a tela "você ainda não participa de nenhum workspace" (superadmin vê atalho para `/admin/workspaces`).
 - `WorkspaceLayout.tsx` + `useWorkspaceSuspended.ts`: guarda o último workspace e mostra "workspace suspenso" quando o `me` diz `suspended` ou quando qualquer query/mutação recebe 403 `workspace_suspended`.
-- `AreaSkeletonPage.tsx`: título e estado vazio explicativo de Fontes, Pipelines, Coleções e Canais.
+- `AreaSkeletonPage.tsx`: título e estado vazio explicativo de Fontes, Pipelines e Canais.
 
 **Não entra aqui**: telas de produto (vão para `features/<area>/` e substituem o esqueleto no `router.tsx`), guardas de rota (`features/auth/`), componentes shadcn (`components/ui/`), chamadas de API (`lib/api/`), textos (`i18n/locales/`).
 

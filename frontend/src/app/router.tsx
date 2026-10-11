@@ -56,6 +56,9 @@ const VerifyEmailPage = lazyPage(() =>
   import("@/features/auth/VerifyEmailPage").then((m) => m.VerifyEmailPage),
 );
 const ChatPage = lazyPage(() => import("@/features/chat/ChatPage").then((m) => m.ChatPage));
+const CollectionsPage = lazyPage(() =>
+  import("@/features/collections/CollectionsPage").then((m) => m.CollectionsPage),
+);
 const ConversationsPage = lazyPage(() =>
   import("@/features/conversations/ConversationsPage").then((m) => m.ConversationsPage),
 );
@@ -158,7 +161,7 @@ export const routes: RouteObject[] = [
                           workspaceArea("providers", ProvidersPage),
                           workspaceArea("sources", <AreaSkeletonPage area="sources" />),
                           workspaceArea("pipelines", <AreaSkeletonPage area="pipelines" />),
-                          workspaceArea("collections", <AreaSkeletonPage area="collections" />),
+                          workspaceArea("collections", CollectionsPage, [":collectionId"]),
                           workspaceArea("channels", <AreaSkeletonPage area="channels" />),
                           workspaceArea("members", MembersPage),
                           workspaceArea("settings", WorkspaceSettingsPage),

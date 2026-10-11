@@ -3,10 +3,12 @@ import type { AdminUser, AdminWorkspace } from "@/lib/api/admin";
 import type { Assistant } from "@/lib/api/assistants";
 import type { AuditEvent } from "@/lib/api/audit";
 import type { Me, UserWorkspace } from "@/lib/api/auth";
+import type { Collection, SearchResult } from "@/lib/api/collections";
 import type { Citation, Conversation, ConversationDetail, Message } from "@/lib/api/conversations";
 import type { Invitation, InvitationPreview } from "@/lib/api/invites";
 import type { Member } from "@/lib/api/members";
 import type { Provider } from "@/lib/api/providers";
+import type { Source } from "@/lib/api/sources";
 import type {
   ConversationStats,
   WorkspaceConversation,
@@ -597,4 +599,130 @@ export function makeConversationStats(
     period_end: "2026-10-10T12:00:00Z",
     ...overrides,
   };
+}
+
+export const COLLECTION_ID = "00000000-0000-4000-8000-0000000001a1";
+export const OTHER_COLLECTION_ID = "00000000-0000-4000-8000-0000000001a2";
+export const SOURCE_ID = "00000000-0000-4000-8000-0000000001b1";
+
+/** One item of `GET .../collections`: by default "Código ERP", indexed on OpenAI Produção. */
+export function makeCollection(overrides: Partial<Collection> = {}): Collection {
+  return {
+    id: COLLECTION_ID,
+    name: "Código ERP",
+    description: "Repositório do ERP e seus commits.",
+    provider_id: PROVIDER_ID,
+    embedding_model: "text-embedding-3-small",
+    embedding_dimension: 1536,
+    source_count: 1,
+    document_count: 42,
+    chunk_count: 310,
+    created_at: "2026-10-03T10:00:00Z",
+    updated_at: "2026-10-03T10:00:00Z",
+    ...overrides,
+  };
+}
+
+/** The default collections, by name: Código ERP (with documents) and Manuais (still empty). */
+export function makeCollections(): Collection[] {
+  return [
+    makeCollection(),
+    makeCollection({
+      id: OTHER_COLLECTION_ID,
+      name: "Manuais",
+      description: "",
+      source_count: 0,
+      document_count: 0,
+      chunk_count: 0,
+    }),
+  ];
+}
+
+/** One item of `GET .../sources`: by default the Git repository of Código ERP, synced. */
+export function makeSource(overrides: Partial<Source> = {}): Source {
+  return {
+    id: SOURCE_ID,
+    collection_id: COLLECTION_ID,
+    name: "erp-core",
+    kind: "git",
+    config: { url: "file:///repos/erp-core", branch: "main" },
+    include_globs: [],
+    exclude_globs: [],
+    active: true,
+    schedule_cron: null,
+    schedule_enabled: false,
+    document_count: 42,
+    last_run: {
+      id: "00000000-0000-4000-8000-0000000001c1",
+      source_id: SOURCE_ID,
+      status: "succeeded",
+      trigger: "manual",
+      documents_new: 42,
+      documents_changed: 0,
+      documents_removed: 0,
+      documents_failed: 0,
+      chunks_written: 310,
+      embedding_tokens: 51000,
+      cost_usd: 0.001,
+      error: null,
+      created_at: "2026-10-03T10:05:00Z",
+      started_at: "2026-10-03T10:05:01Z",
+      finished_at: "2026-10-03T10:06:00Z",
+    },
+    created_at: "2026-10-03T10:01:00Z",
+    updated_at: "2026-10-03T10:01:00Z",
+    ...overrides,
+  };
+}
+
+/** One hit of the search test: by default a Python function of `src/caixa.py`, lines 10–24. */
+export function makeSearchResult(overrides: Partial<SearchResult> = {}): SearchResult {
+  return {
+    chunk_id: "00000000-0000-4000-8000-0000000001d1",
+    position: 0,
+    path: "src/caixa.py",
+    symbol: "fechar_caixa",
+    start_line: 10,
+    end_line: 24,
+    snippet: "def fechar_caixa(dia):\n    return total(dia)",
+    meta: { language: "python", path: "src/caixa.py" },
+    scores: { vector: 0.5234, fts: 0.12, fused: 0.032787 },
+    document: {
+      id: "00000000-0000-4000-8000-0000000001e1",
+      source_id: SOURCE_ID,
+      kind: "file",
+      key: "src/caixa.py",
+      title: "src/caixa.py",
+      uri: "src/caixa.py",
+    },
+    ...overrides,
+  };
+}
+
+/** The default hits: the code chunk above and a commit found only by the full-text arm. */
+export function makeSearchResults(): SearchResult[] {
+  return [makeSearchResult(), makeCommitSearchResult()];
+}
+
+/** A commit hit ("Corrige o fechamento do caixa", `abcdef1…`) found only by the full-text arm. */
+export function makeCommitSearchResult(overrides: Partial<SearchResult> = {}): SearchResult {
+  return makeSearchResult({
+    chunk_id: "00000000-0000-4000-8000-0000000001d2",
+    path: null,
+    symbol: null,
+    start_line: null,
+    end_line: null,
+    snippet: "Corrige o fechamento do caixa",
+    meta: { sha: "abcdef1234567890", title: "Corrige o fechamento do caixa" },
+    scores: { vector: null, fts: 0.25, fused: 0.016129 },
+    document: {
+      id: "00000000-0000-4000-8000-0000000001e2",
+      source_id: SOURCE_ID,
+      kind: "commit",
+      key: "abcdef1234567890",
+      title: "Corrige o fechamento do caixa",
+      uri: "commit:abcdef1234567890",
+    },
+    ...overrides,
+  });
 }

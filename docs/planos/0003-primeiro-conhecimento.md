@@ -110,10 +110,10 @@ fases:
     subfases:
       - id: F5.1
         titulo: Tela de coleções com teste de busca
-        status: em_execucao
+        status: concluida
         agente: claude-code
         iniciada_em: 2026-10-10
-        concluida_em: null
+        concluida_em: 2026-10-10
         commit: null
       - id: F5.2
         titulo: Tela de fontes, execuções e agendamento
@@ -500,6 +500,7 @@ Ver `decisoes[]` no frontmatter. ADR previsto: 0004 (índice de conhecimento: di
 - 2026-10-10 — F4.2 concluída: HybridRetriever no chat, assistant_collections + min_similarity (migração 0012), citações com caminho/linhas/commit, prompt reforçado; regra 8 preservada; backend 1031 testes.
 - 2026-10-10 — F3.2 concluída: API de coleções, fontes (teste de conexão, sync, cancel), execuções e documentos; mesclada com a F4.2 (conflitos só em AGENTS.md; contrato regenerado); backend e frontend verdes.
 - 2026-10-10 — F3.3 e F5.1 iniciadas em paralelo.
+- 2026-10-10 — F5.1 concluída: Tela /w/:id/collections (lista, CRUD, detalhe com fontes e Testar busca); 759 testes.
 
 ## 8. Encerramento
 

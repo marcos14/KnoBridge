@@ -1,7 +1,7 @@
 import { Inbox } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-export type SkeletonArea = "sources" | "pipelines" | "collections" | "channels";
+export type SkeletonArea = "sources" | "pipelines" | "channels";
 
 interface AreaSkeletonPageProps {
   area: SkeletonArea;
