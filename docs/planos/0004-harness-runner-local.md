@@ -110,12 +110,12 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-11
         concluida_em: 2026-10-11
-        commit: null
+        commit: 1e61b95
       - id: F4.3
         titulo: Revisão do conhecimento, exportação e citações de conhecimento no chat
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-11
         concluida_em: null
         commit: null
   - id: F5
@@ -621,6 +621,7 @@ Nenhuma aberta. Observação para a F5.2: a chave do OpenRouter cadastrada na st
 - 2026-10-11 — F4.1 concluída: tela de runners (token uma vez, comandos copiáveis, revogar e excluir) e formulário da fonte runner; frontend 991 testes, 98,69% de branches
 - 2026-10-11 — F4.2 iniciada (agente em worktree).
 - 2026-10-11 — F4.2 concluída: abas Módulos, Tarefas e Indexação na fonte runner, com lote, polling, detalhe de rejeições e cancelamento; frontend 1062 testes, 98,68% de branches
+- 2026-10-11 — F4.3 iniciada (agente em worktree).
 
 ## 8. Encerramento
 
