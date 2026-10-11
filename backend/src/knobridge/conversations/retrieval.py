@@ -27,7 +27,8 @@ class Source:
 
     ``content`` is what the LLM reads (and the snippet's origin). The optional location
     fields let the panel show where it came from: ``kind`` is the document kind (``file`` or
-    ``commit``), lines are 1-based and only known for text and code.
+    ``commit``), lines are 1-based and only known for text and code; ``sha``, ``author`` and
+    ``date`` only for commits.
     """
 
     title: str
@@ -41,6 +42,9 @@ class Source:
     end_line: int | None = None
     language: str | None = None
     sha: str | None = None
+    # Commits only: the author's name (never the e-mail) and the ISO 8601 date.
+    author: str | None = None
+    date: str | None = None
 
 
 @dataclass(frozen=True)
@@ -77,4 +81,6 @@ def citation(index: int, source: Source) -> JSONValue:
         "end_line": source.end_line,
         "language": source.language,
         "sha": source.sha,
+        "author": source.author,
+        "date": source.date,
     }

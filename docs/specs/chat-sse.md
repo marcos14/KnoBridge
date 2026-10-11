@@ -1,6 +1,6 @@
 # Chat em streaming (SSE)
 
-> Rascunho v0.3 · 2026-10-10 · Plano 0002, F4.4 (v0.2, F4.5: resposta `streaming` órfã lida como `interrupted`; v0.3, plano 0003 F4.2: campos de localização nas citações e erros do provedor de embedding antes do stream)
+> Rascunho v0.4 · 2026-10-11 · Plano 0002, F4.4 (v0.2, F4.5: resposta `streaming` órfã lida como `interrupted`; v0.3, plano 0003 F4.2: campos de localização nas citações e erros do provedor de embedding antes do stream; v0.4, plano 0003 F6.1: autor e data nas citações de commit)
 
 Contrato da resposta de `POST /v1/workspaces/{workspace_id}/conversations/{conversation_id}/messages`, que manda uma pergunta ao assistente da conversa e devolve a resposta como [Server-Sent Events](https://html.spec.whatwg.org/multipage/server-sent-events.html). Os schemas das rotas JSON (conversas, mensagens, feedback) estão no [`openapi.json`](openapi.json); lá, esta rota aparece com `200` em `text/event-stream`, e os eventos são descritos aqui. O comportamento do chat além do fio (regra de citações, `Retriever`, fases da rodada, histórico, feedback e visão administrativa) está em [chat.md](chat.md). Implementação em [`backend/src/knobridge/conversations/`](../../backend/src/knobridge/conversations/AGENTS.md) e [`backend/src/knobridge/api/conversations.py`](../../backend/src/knobridge/api/AGENTS.md).
 
@@ -71,8 +71,10 @@ Cada citação:
 | `start_line`, `end_line` | inteiro ou `null` | Linhas do trecho, a partir de 1, inclusivas; `null` sem linhas (v0.3). |
 | `language` | texto ou `null` | Linguagem detectada (ex.: `typescript`, `markdown`) (v0.3). |
 | `sha` | texto ou `null` | SHA do commit; `null` em arquivo (v0.3). |
+| `author` | texto ou `null` | Nome do autor do commit (nunca o e-mail); `null` em arquivo (v0.4). |
+| `date` | texto ou `null` | Data de autoria do commit em ISO 8601, como o repositório informou (ex.: `2026-10-01T10:00:00-03:00`); `null` em arquivo (v0.4). |
 
-Os campos marcados com v0.3 são aditivos: respostas gravadas antes vêm com eles `null` em `GET .../conversations/{id}`. As mesmas citações ficam gravadas na mensagem (`citations` em `GET .../conversations/{id}`).
+Os campos marcados com v0.3 e v0.4 são aditivos e compatíveis: respostas gravadas antes vêm com eles `null` em `GET .../conversations/{id}`, e commits indexados antes da v0.4 vêm sem `author` e `date` até serem reindexados. As mesmas citações ficam gravadas na mensagem (`citations` em `GET .../conversations/{id}`).
 
 ### `delta`
 

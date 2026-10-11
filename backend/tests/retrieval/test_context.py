@@ -64,7 +64,13 @@ def test_citation_uri_for_code_and_commit() -> None:
     commit = source_from_hit(
         _hit(
             "# Corrige sangria\n\ncorpo",
-            {"sha": "abc123", "title": "Corrige sangria", "display": "# Corrige sangria"},
+            {
+                "sha": "abc123",
+                "title": "Corrige sangria",
+                "display": "# Corrige sangria",
+                "author": "Ana",
+                "date": "2026-10-01T10:00:00+00:00",
+            },
             kind=DocumentKind.COMMIT,
             key="commit:abc123",
             title="Corrige",
@@ -90,6 +96,8 @@ def test_citation_uri_for_code_and_commit() -> None:
         document_id=str(DOCUMENT_ID),
         kind="commit",
         sha="abc123",
+        author="Ana",
+        date="2026-10-01T10:00:00+00:00",
     )
 
 
@@ -115,6 +123,8 @@ def test_source_falls_back_to_the_document_fields() -> None:
     assert (file_source.title, file_source.uri) == ("README.md", "README.md")
     assert (commit_source.title, commit_source.uri) == ("Ajusta caixa", "commit:def456")
     assert commit_source.sha == "def456"
+    # Chunks indexed before author and date were recorded cite the commit without them.
+    assert (commit_source.author, commit_source.date) == (None, None)
 
 
 def test_citation_uri_missing_parts() -> None:

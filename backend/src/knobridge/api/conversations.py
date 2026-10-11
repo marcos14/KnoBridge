@@ -112,6 +112,9 @@ class CitationOut(BaseModel):
     end_line: int | None = None
     language: str | None = None
     sha: str | None = None
+    # Commits only (v0.4): the author's name (never the e-mail) and the ISO 8601 date.
+    author: str | None = None
+    date: str | None = None
 
 
 class FeedbackOut(BaseModel):

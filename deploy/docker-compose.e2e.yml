@@ -16,10 +16,18 @@ x-e2e-env: &e2e-env
   # non-production environment here even if the shell or deploy/.env says otherwise.
   KNOBRIDGE_ENV: local
 
+# Synthetic knowledge (two Markdown files and one TypeScript file) in place of deploy/sources/:
+# the tests index /sources/knowledge. Volumes merge by container path, so this replaces the mount.
+x-e2e-sources: &e2e-sources ../frontend/e2e/stack/fixtures:/sources:ro
+
 services:
   migrate:
     environment: *e2e-env
   api:
     environment: *e2e-env
+    volumes:
+      - *e2e-sources
   worker:
     environment: *e2e-env
+    volumes:
+      - *e2e-sources

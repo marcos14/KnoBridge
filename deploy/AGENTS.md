@@ -4,9 +4,10 @@
 
 **Entra aqui**:
 - `docker-compose.yml`: o ambiente de desenvolvimento; `docker compose -f deploy/docker-compose.yml up --build`.
-- `docker-compose.e2e.yml`: camada por cima do anterior para o E2E contra a stack (`frontend/e2e/stack/`): projeto próprio (`knobridge-e2e`) e ambiente não produtivo fixado, que aceita o provedor `fake`; sempre com `down -v` ao fim.
+- `docker-compose.e2e.yml`: camada por cima do anterior para o E2E contra a stack (`frontend/e2e/stack/`): projeto próprio (`knobridge-e2e`) e ambiente não produtivo fixado, que aceita o provedor `fake`; monta `frontend/e2e/stack/fixtures/` em `/sources` no lugar de `sources/`; sempre com `down -v` ao fim.
 - `.env.example`: todas as variáveis que o compose interpola, com defaults de desenvolvimento.
 - `postgres/`: scripts de inicialização do Postgres (bancos e papéis da aplicação e do Temporal).
+- `sources/`: pasta de fontes padrão (`KNOBRIDGE_SOURCES_DIR`), montada somente leitura em `/sources` na `api` e no `worker`; no repositório só o [AGENTS.md](sources/AGENTS.md) dela, o resto é ignorado pelo Git.
 - Futuramente: `helm/` (chart de Kubernetes) e scripts de infraestrutura.
 
 **Não entra aqui**:
@@ -22,6 +23,7 @@
 - Portas do host publicadas em `${BIND_ADDRESS:-127.0.0.1}` e configuráveis por variável (`*_PORT`).
 - Todo serviço de longa duração tem `healthcheck`; dependências usam `service_healthy` ou `service_completed_successfully` (caso do `migrate`).
 - Uma imagem de backend para `migrate`, `api` e `worker`; muda só o `command`. Variáveis `KNOBRIDGE_*` comuns aos três ficam na âncora `x-backend` (inclusive `KNOBRIDGE_SECRET_KEY`, com default público de dev, e o SMTP fixo no `mailpit`).
+- Fontes locais: a pasta do host `KNOBRIDGE_SOURCES_DIR` (padrão `./sources`) entra em `/sources` **somente leitura** na `api` (teste de conexão) e no `worker` (indexação), com `KNOBRIDGE_LOCAL_SOURCES_ROOT=/sources` fixo na âncora; clones de repositórios por URL https vão para o volume nomeado gravável `source-clones` (`KNOBRIDGE_GIT_WORKDIR`), só no `worker` (a `api` não clona).
 - Em dev, todo e-mail vai para o `mailpit` (UI em `MAILPIT_UI_PORT`); nada é entregue a caixas reais.
 - Em dev, cookies sem `Secure` (`KNOBRIDGE_COOKIE_SECURE=false`), porque o painel é HTTP puro.
 - Rede com sub-rede fixa (`COMPOSE_SUBNET`) e o `frontend` (nginx, proxy de `/v1`) em endereço fixo (`FRONTEND_IPV4`): é o único proxy cujo `X-Forwarded-For` a `api` aceita (`KNOBRIDGE_FORWARDED_ALLOW_IPS`), para a limitação de login contar o IP do cliente.

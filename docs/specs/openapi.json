@@ -1173,6 +1173,28 @@
       "CitationOut": {
         "description": "A numbered source of an answer (``docs/specs/chat-sse.md``). The location fields came\nwith the real retriever (v0.3); answers saved before have them as ``null``.",
         "properties": {
+          "author": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author"
+          },
+          "date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Date"
+          },
           "document_id": {
             "anyOf": [
               {

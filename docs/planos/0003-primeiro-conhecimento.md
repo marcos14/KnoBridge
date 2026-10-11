@@ -135,10 +135,10 @@ fases:
     subfases:
       - id: F6.1
         titulo: Compose, imagem e E2E da indexação contra a stack
-        status: em_execucao
+        status: concluida
         agente: claude-code
         iniciada_em: 2026-10-11
-        concluida_em: null
+        concluida_em: 2026-10-10
         commit: null
       - id: F6.2
         titulo: Specs, guia de indexação e documentação
@@ -507,6 +507,7 @@ Ver `decisoes[]` no frontmatter. ADR previsto: 0004 (índice de conhecimento: di
 - 2026-10-10 — F5.3 concluída: Coleções e similaridade mínima no formulário do assistente, citações de código/commit/documento no chat e conversas, dica de assistente sem coleção; 797 testes. Pendente: autor e data do commit na citação (F6.1).
 - 2026-10-10 — F5.2 concluída: Tela /w/:id/sources (formulário Git/pasta, cron com prévia e próxima execução, testar, sincronizar, cancelar, execuções ao vivo, erros, documentos); mesclada com a F5.3; 914 testes.
 - 2026-10-11 — F5 concluída; F6.1 iniciada (inclui autor e data do commit na citação, pendente da F5.3).
+- 2026-10-10 — F6.1 concluída: Imagem com git (1,13 GB; era 473 MB antes do plano), compose com /sources somente leitura e volume de clones, E2E da stack da indexação (coleção, fonte de pasta, sincronizar, busca, chat com citação e sem fonte); orquestrador: stack do zero em 67 s, 2 de 2 rodadas verdes (33 s e 30 s); autor e data na citação de commit.
 
 ## 8. Encerramento
 

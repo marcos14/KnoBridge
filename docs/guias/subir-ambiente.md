@@ -108,6 +108,18 @@ O compose passa para `api`, `worker` e `migrate` as variáveis abaixo, com defau
 | `KNOBRIDGE_ENV` | `local` | Ambiente do backend. Qualquer valor diferente de `production` aceita o provedor de LLM `fake` (sem rede, para testes) |
 | `KNOBRIDGE_COOKIE_SECURE` | `false` | **Só em desenvolvimento**: o painel aqui é HTTP puro, então os cookies não levam `Secure`. Com HTTPS, use `true` (o padrão da aplicação) |
 | `KNOBRIDGE_FORWARDED_ALLOW_IPS` (só `api`) | `${FRONTEND_IPV4}` (`10.213.57.10`) | Proxies cujo `X-Forwarded-For` a API aceita. O nginx do painel repassa `/v1` para a `api`; confiando só nele, o IP do cliente (usado na limitação de tentativas de login) é o do navegador, e não o do proxy |
+| `KNOBRIDGE_LOCAL_SOURCES_ROOT` | `/sources` | Fixo: fontes de pasta e repositórios Git locais precisam estar abaixo de `/sources`, onde `api` e `worker` montam a pasta do host (abaixo) |
+| `KNOBRIDGE_GIT_WORKDIR` | `/var/lib/knobridge/git` | Fixo: onde o `worker` guarda os clones parciais dos repositórios cadastrados por URL https (volume `source-clones`) |
+
+### Pasta de fontes
+
+Fontes de pasta e repositórios Git locais são lidos de uma pasta do host, montada **somente leitura** em `/sources` na `api` (para o "Testar conexão") e no `worker` (que indexa). O padrão é `deploy/sources/`, vazia no repositório e ignorada pelo Git (só o `AGENTS.md` dela é versionado), para o que você colocar ali nunca ir parar num commit.
+
+1. Ponha uma pasta ou um clone em `deploy/sources/` (ex.: `deploy/sources/manual/` ou `git clone ... deploy/sources/erp-core`), ou aponte `KNOBRIDGE_SOURCES_DIR` no `deploy/.env` para outra pasta do host (caminho absoluto, ou relativo a `deploy/`).
+2. Suba (ou recrie `api` e `worker` com `up -d`) e cadastre a fonte no painel com o caminho visto de dentro do contêiner: `/sources/manual`, `/sources/erp-core`. Cadastre a subpasta, não a raiz `/sources`.
+3. Confira a montagem: `docker compose -f deploy/docker-compose.yml exec worker ls /sources`.
+
+Repositórios por URL https não usam essa pasta: o `worker` clona no volume nomeado `source-clones`, que sobrevive a `down` e some com `down -v`. A imagem do backend traz o `git` e as dependências de parsing (MarkItDown com PDF/DOCX/XLSX/PPTX) e de tree-sitter; o build falha cedo se alguma delas não carregar.
 
 A rede do compose tem sub-rede fixa (`COMPOSE_SUBNET`, padrão `10.213.57.0/24`) e o `frontend` tem endereço fixo nela (`FRONTEND_IPV4`), para a `api` saber qual é o seu proxy. Requisições direto na porta da `api` (`API_PORT`) não passam pelo nginx e contam o IP de quem conectou.
 
@@ -119,7 +131,8 @@ Rodando o backend fora do Docker (`uv run knobridge-api`), os defaults de `backe
 # Para e remove os contêineres, mantendo os dados (volumes).
 docker compose -f deploy/docker-compose.yml down
 
-# Remove também os volumes: banco e MinIO voltam a ficar vazios.
+# Remove também os volumes: banco, MinIO e clones de repositórios voltam a ficar vazios
+# (a pasta de fontes do host, deploy/sources/, não é tocada).
 docker compose -f deploy/docker-compose.yml down -v
 ```
 
@@ -127,7 +140,9 @@ Depois de mudar código do backend ou do frontend, rode de novo com `--build` pa
 
 ## Rodar o E2E contra a stack
 
-Os testes Playwright de `frontend/e2e/stack/` exercitam o painel inteiro contra a API, o banco e o Mailpit reais: configuração inicial, login, criação de workspace com convite do proprietário (o link é lido pela API HTTP do Mailpit), convite de um leitor, "esqueci minha senha" e redefinição, provedor `fake` e assistente, chat com a resposta "sem fonte" e avaliação, a conversa na tela de conversas do proprietário e o tema que acompanha a conta. O `pnpm e2e` comum não os roda.
+Os testes Playwright de `frontend/e2e/stack/` exercitam o painel inteiro contra a API, o banco e o Mailpit reais: configuração inicial, login, criação de workspace com convite do proprietário (o link é lido pela API HTTP do Mailpit), convite de um leitor, "esqueci minha senha" e redefinição, provedor `fake` e assistente, chat com a resposta "sem fonte" e avaliação, a conversa na tela de conversas do proprietário, o tema que acompanha a conta e a indexação de ponta a ponta: coleção com embeddings do provedor `fake`, fonte de pasta em `/sources/knowledge`, teste de conexão, sincronização até a execução concluir, teste de busca, coleção ligada ao assistente, resposta citando o arquivo e uma pergunta sem relação que cai em "sem fonte". O `pnpm e2e` comum não os roda.
+
+A camada `deploy/docker-compose.e2e.yml` monta em `/sources`, no lugar de `deploy/sources/`, a pasta sintética `frontend/e2e/stack/fixtures/` (dois Markdown curtos em pt-BR e um arquivo TypeScript pequeno em `knowledge/`).
 
 Pré-requisitos, além do Docker: Node 24+ e `pnpm` em `frontend/`, com `pnpm install --frozen-lockfile` e `pnpm exec playwright install chromium` feitos uma vez.
 
@@ -173,6 +188,7 @@ Na CI, o job `e2e-stack` de `.github/workflows/ci.yml` faz os mesmos três passo
 - **E-mail não aparece no Mailpit**: confira se o `mailpit` está `healthy` (`docker compose -f deploy/docker-compose.yml ps mailpit`) e procure `email_delivery_failed` no log da `api` ou do `worker`. Fora do Docker, o backend precisa de `KNOBRIDGE_SMTP_HOST=localhost` e `KNOBRIDGE_SMTP_PORT` igual a `MAILPIT_SMTP_PORT`.
 - **Painel mostra "API: indisponível"**: confira se a `api` está `healthy` e se `curl http://localhost:5173/v1/health/ready` responde 200. Se responder 502, o nginx não alcança a `api`.
 - **`Pool overlaps with other one on this address space`** ao criar a rede: a sub-rede `COMPOSE_SUBNET` colide com outra rede Docker ou da sua máquina (ou com outra stack do KnoBridge rodando). Escolha outra no `deploy/.env` e ajuste `FRONTEND_IPV4` para um endereço dentro dela.
+- **Fonte de pasta falha com caminho fora da raiz ou inexistente**: o caminho cadastrado é o de dentro do contêiner (`/sources/<pasta>`), não o do host. Confira com `docker compose -f deploy/docker-compose.yml exec api ls /sources`; se `KNOBRIDGE_SOURCES_DIR` mudou, recrie `api` e `worker` com `up -d`. No Windows, a pasta precisa estar num disco compartilhado com o Docker Desktop.
 - **`init-databases.sh` falha com `$'\r': command not found`**: o arquivo foi salvo com fim de linha CRLF. O `.gitattributes` força LF; rode `git add --renormalize .` ou salve o arquivo com LF e faça `down -v`.
 
 ## Referências

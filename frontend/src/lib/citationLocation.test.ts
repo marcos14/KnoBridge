@@ -3,7 +3,12 @@ import { describe, expect, it } from "vitest";
 import type { Citation } from "@/lib/api/conversations";
 import { makeCitation } from "@/test/factories";
 
-import { citationLines, citationLocation, citationSource } from "./citationLocation";
+import {
+  citationLines,
+  citationLocation,
+  citationSource,
+  commitAuthorship,
+} from "./citationLocation";
 
 const SHA = "0123456789abcdef0123456789abcdef01234567";
 
@@ -60,6 +65,22 @@ describe("citationSource", () => {
       type: "commit",
       sha: SHA,
       shortSha: "0123456",
+      author: null,
+      date: null,
+    });
+  });
+
+  it("test_citation_source_reads_the_commit_author_and_date", () => {
+    const citation = makeCitation({
+      kind: "commit",
+      sha: SHA,
+      author: "Ana Souza",
+      date: "2026-10-01T15:00:00+00:00",
+    });
+
+    expect(citationSource(citation)).toMatchObject({
+      author: "Ana Souza",
+      date: "2026-10-01T15:00:00+00:00",
     });
   });
 
@@ -79,5 +100,28 @@ describe("citationLocation", () => {
     [{}, null],
   ])("test_citation_location_formats_%o", (overrides, expected) => {
     expect(citationLocation(makeCitation(overrides))).toBe(expected);
+  });
+});
+
+describe("commitAuthorship", () => {
+  const DATE = "2026-10-01T15:00:00+00:00";
+
+  it("test_commit_authorship_joins_author_and_date", () => {
+    expect(commitAuthorship("Ana Souza", DATE, "pt-BR", "UTC")).toBe(
+      "Ana Souza · 1 de out. de 2026",
+    );
+  });
+
+  it("test_commit_authorship_shows_the_part_it_has", () => {
+    expect(commitAuthorship("Ana Souza", null, "pt-BR", "UTC")).toBe("Ana Souza");
+    expect(commitAuthorship(null, DATE, "pt-BR", "UTC")).toBe("1 de out. de 2026");
+  });
+
+  it("test_commit_authorship_keeps_an_unparsable_date_as_it_came", () => {
+    expect(commitAuthorship("Ana", "ontem", "pt-BR")).toBe("Ana · ontem");
+  });
+
+  it("test_commit_authorship_is_null_without_author_and_date", () => {
+    expect(commitAuthorship(null, null, "pt-BR")).toBeNull();
   });
 });

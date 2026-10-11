@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/sheet";
 import type { Citation } from "@/lib/api/conversations";
 
-import { citationSource } from "@/lib/citationLocation";
+import { citationSource, commitAuthorship } from "@/lib/citationLocation";
 import { isWebUri } from "@/lib/citationMarkers";
 
 interface CitationSheetProps {
@@ -87,8 +87,10 @@ export function CitationSheet({ citation, onClose }: CitationSheetProps) {
  * before the location fields existed, the excerpt alone as a quote.
  */
 function CitationBody({ citation }: { citation: Citation }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const source = citationSource(citation);
+  const authorship =
+    source.type === "commit" ? commitAuthorship(source.author, source.date, i18n.language) : null;
 
   if (source.type === "legacy") {
     return (
@@ -101,9 +103,18 @@ function CitationBody({ citation }: { citation: Citation }) {
     <>
       <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
         {source.type === "commit" ? (
-          <Detail label={t("chat.citations.commit")}>
-            <code title={t("chat.citations.fullSha", { sha: source.sha })}>{source.shortSha}</code>
-          </Detail>
+          <>
+            <Detail label={t("chat.citations.commit")}>
+              <code title={t("chat.citations.fullSha", { sha: source.sha })}>
+                {source.shortSha}
+              </code>
+            </Detail>
+            {authorship !== null && (
+              <Detail label={t("chat.citations.authorship")}>
+                <span title={source.date ?? undefined}>{authorship}</span>
+              </Detail>
+            )}
+          </>
         ) : (
           <>
             <Detail label={t("chat.citations.path")}>

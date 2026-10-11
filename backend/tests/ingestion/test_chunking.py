@@ -152,7 +152,12 @@ def test_commit_chunk() -> None:
 
     assert len(result) == 1
     chunk = result[0]
-    assert chunk.meta == {"sha": "a" * 40, "title": "Corrige arredondamento da nota"}
+    assert chunk.meta == {
+        "sha": "a" * 40,
+        "title": "Corrige arredondamento da nota",
+        "author": "Ana",
+        "date": "2026-10-01T10:00:00Z",
+    }
     assert chunk.content.startswith("# Corrige arredondamento da nota")
     assert "O total usava float." in chunk.content
     assert "src/billing.ts" in chunk.content

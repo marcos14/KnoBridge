@@ -1,4 +1,4 @@
-# KnoBridge development environment: everything the product needs, nothing of its features yet.
+# KnoBridge development environment: the whole product on one machine.
 #
 #   cp deploy/.env.example deploy/.env      # optional: every variable has a dev default below
 #   docker compose -f deploy/docker-compose.yml up --build
@@ -6,6 +6,8 @@
 # Variables are interpolated from deploy/.env (compose reads the .env next to this file).
 # Defaults are DEVELOPMENT-ONLY credentials; never reuse them anywhere else.
 # Host ports bind to ${BIND_ADDRESS} (127.0.0.1 by default), so nothing is exposed to the network.
+# Sources to index: put folders and clones in deploy/sources/ (or point KNOBRIDGE_SOURCES_DIR at
+# another host folder); the panel sees them under /sources.
 # Guide: docs/guias/subir-ambiente.md
 
 name: knobridge
@@ -34,6 +36,11 @@ x-backend: &backend
     KNOBRIDGE_SMTP_PORT: 1025
     KNOBRIDGE_SMTP_FROM: ${KNOBRIDGE_SMTP_FROM:-KnoBridge <no-reply@knobridge.local>}
     KNOBRIDGE_SMTP_STARTTLS: "false"
+    # Folder and local repository sources must live under /sources, where the api and the worker
+    # mount the host folder KNOBRIDGE_SOURCES_DIR read-only (fixed: it is the mount point).
+    KNOBRIDGE_LOCAL_SOURCES_ROOT: /sources
+    # Where the worker clones repositories given by https URL (the named volume source-clones).
+    KNOBRIDGE_GIT_WORKDIR: /var/lib/knobridge/git
 
 services:
   postgres:
@@ -157,6 +164,10 @@ services:
       # The panel's nginx proxies /v1 here; trust its X-Forwarded-For (and only its), so login
       # throttling counts per real client IP instead of per proxy.
       KNOBRIDGE_FORWARDED_ALLOW_IPS: ${KNOBRIDGE_FORWARDED_ALLOW_IPS:-${FRONTEND_IPV4:-10.213.57.10}}
+    volumes:
+      # Read-only. The API only tests connections: it never clones (https checks use ls-remote),
+      # so it needs no clone volume.
+      - ${KNOBRIDGE_SOURCES_DIR:-./sources}:/sources:ro
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -180,6 +191,11 @@ services:
     <<: *backend
     command: [knobridge-worker]
     restart: unless-stopped
+    volumes:
+      # The same host folder as the api, read-only: indexing never writes to a source.
+      - ${KNOBRIDGE_SOURCES_DIR:-./sources}:/sources:ro
+      # Writable: partial clones of https repositories, reused between syncs.
+      - source-clones:/var/lib/knobridge/git
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -218,3 +234,4 @@ networks:
 volumes:
   postgres-data:
   minio-data:
+  source-clones:

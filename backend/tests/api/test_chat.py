@@ -43,6 +43,8 @@ _NO_LOCATION: dict[str, object] = {
     "end_line": None,
     "language": None,
     "sha": None,
+    "author": None,
+    "date": None,
 }
 
 

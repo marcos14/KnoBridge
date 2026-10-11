@@ -42,7 +42,13 @@ COMMIT = Passage(
     COMMIT_BODY,
     key="commit:abc123def",
     kind=DocumentKind.COMMIT,
-    meta={"sha": "abc123def", "title": "Corrige fechamento de caixa", "display": COMMIT_BODY},
+    meta={
+        "sha": "abc123def",
+        "title": "Corrige fechamento de caixa",
+        "display": COMMIT_BODY,
+        "author": "Ana",
+        "date": "2026-10-01T10:00:00+00:00",
+    },
 )
 NO_SOURCE = "Não achei nas fontes."
 
@@ -94,12 +100,15 @@ def test_chat_with_indexed_source_streams_and_cites(api: ApiEnv, chat: ChatOverr
         "end_line": 6,
         "language": "typescript",
         "sha": None,
+        "author": None,
+        "date": None,
     }
     assert (commit["title"], commit["uri"], commit["sha"]) == (
         "Corrige fechamento de caixa",
         "commit:abc123def",
         "abc123def",
     )
+    assert (commit["author"], commit["date"]) == ("Ana", "2026-10-01T10:00:00+00:00")
     assert commit["path"] is None
     (call,) = provider.calls
     context = call.messages[1].content

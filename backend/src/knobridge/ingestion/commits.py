@@ -89,14 +89,16 @@ def commit_files(value: JSONValue) -> list[CommitFile]:
     return [file for file in map(_commit_file, value) if file is not None]
 
 
-def _author(metadata: Mapping[str, JSONValue]) -> str | None:
+def commit_author(metadata: Mapping[str, JSONValue]) -> str | None:
+    """The author's name from the connector metadata (never the e-mail), or ``None``."""
     author = metadata.get("author")
     if isinstance(author, dict):
         return _string(author.get("name"))
     return _string(author) or _string(metadata.get("author_name"))
 
 
-def _date(metadata: Mapping[str, JSONValue]) -> str | None:
+def commit_date(metadata: Mapping[str, JSONValue]) -> str | None:
+    """The commit's ISO 8601 date as the connector gave it, or ``None``."""
     for key in ("date", "authored_at", "committed_at"):
         date = _string(metadata.get(key))
         if date is not None:
@@ -111,10 +113,10 @@ def render_commit(message: str, metadata: Mapping[str, JSONValue], key: str) -> 
     title = subject.strip() or f"Commit {sha[:12]}"
 
     lines = [f"# {title}", "", f"- Commit: `{sha}`"]
-    author = _author(metadata)
+    author = commit_author(metadata)
     if author is not None:
         lines.append(f"- Autor: {author}")
-    date = _date(metadata)
+    date = commit_date(metadata)
     if date is not None:
         lines.append(f"- Data: {date}")
     if body.strip():

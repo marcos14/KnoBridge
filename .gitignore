@@ -33,5 +33,9 @@ blob-report/
 .DS_Store
 Thumbs.db
 
+# Local sources mounted by Docker Compose (deploy/sources/AGENTS.md): never commit them
+/deploy/sources/*
+!/deploy/sources/AGENTS.md
+
 # Claude Code agent worktrees
 .claude/worktrees/

@@ -110,6 +110,8 @@ def test_citation_keeps_a_snippet() -> None:
         "end_line": None,
         "language": None,
         "sha": None,
+        "author": None,
+        "date": None,
     }
 
 
@@ -133,3 +135,25 @@ def test_citation_carries_the_location_fields() -> None:
     assert (stored["kind"], stored["path"], stored["symbol"]) == ("file", "src/caixa.ts", "fechar")
     assert (stored["start_line"], stored["end_line"], stored["language"]) == (3, 9, "typescript")
     assert stored["sha"] is None
+    assert (stored["author"], stored["date"]) == (None, None)
+
+
+def test_citation_carries_the_commit_author_and_date() -> None:
+    source = Source(
+        title="Corrige sangria",
+        content="# Corrige sangria",
+        uri="commit:abc123",
+        kind="commit",
+        sha="abc123",
+        author="Ana",
+        date="2026-10-01T10:00:00+00:00",
+    )
+
+    stored = citation(1, source)
+
+    assert isinstance(stored, dict)
+    assert (stored["sha"], stored["author"], stored["date"]) == (
+        "abc123",
+        "Ana",
+        "2026-10-01T10:00:00+00:00",
+    )

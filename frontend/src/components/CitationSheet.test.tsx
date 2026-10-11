@@ -71,6 +71,30 @@ describe("CitationSheet", () => {
     ).toBeVisible();
     expect(within(panel).queryByText("Arquivo")).not.toBeInTheDocument();
     expect(within(panel).queryByText(`commit:${SHA}`)).not.toBeInTheDocument();
+    // Saved before v0.4 (or indexed without them): no author and date row.
+    expect(within(panel).queryByText("Autor e data")).not.toBeInTheDocument();
+  });
+
+  it("test_citation_sheet_shows_commit_author_and_date", async () => {
+    const panel = await openSheet(
+      makeCitation({
+        title: "fix: arredondamento no fechamento do caixa",
+        uri: `commit:${SHA}`,
+        snippet: "Corrige o arredondamento do troco.",
+        kind: "commit",
+        path: null,
+        sha: SHA,
+        author: "Ana Souza",
+        // Midday UTC: the same calendar day in any time zone the tests may run in.
+        date: "2026-10-01T12:00:00+00:00",
+      }),
+    );
+
+    expect(detail(panel, "Autor e data")).toBe("Ana Souza · 1 de out. de 2026");
+    expect(within(panel).getByText("Ana Souza · 1 de out. de 2026")).toHaveAttribute(
+      "title",
+      "2026-10-01T12:00:00+00:00",
+    );
   });
 
   it("test_citation_sheet_shows_document_without_lines_by_path", async () => {

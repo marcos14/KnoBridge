@@ -35,6 +35,7 @@ from knobridge.ingestion.chunk_base import (
     window_pieces,
 )
 from knobridge.ingestion.code_chunking import chunk_code, chunk_lines, unfence
+from knobridge.ingestion.commits import commit_author, commit_date
 from knobridge.ingestion.parsing import ParsedDocument, ParsedKind
 from knobridge.llm.embeddings import estimate_tokens
 
@@ -103,6 +104,12 @@ def chunk_commit(doc: ParsedDocument) -> list[Piece]:
     sha = doc.metadata.get("sha")
     meta: dict[str, JSONValue] = {"sha": sha if isinstance(sha, str) else doc.ref.key}
     meta["title"] = doc.title
+    # Author name and date travel with the chunk so a citation can show them (never the e-mail).
+    author, date = commit_author(doc.metadata), commit_date(doc.metadata)
+    if author is not None:
+        meta["author"] = author
+    if date is not None:
+        meta["date"] = date
     text = doc.markdown.rstrip("\n")
     if estimate_tokens(text) <= MAX_TOKENS:
         return [Piece(text, text, meta)]

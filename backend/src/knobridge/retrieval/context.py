@@ -3,9 +3,11 @@
 Pure functions (no IO). A hit becomes a ``Source`` whose ``content`` is the chunk body without
 the embedding header (``meta["display"]``, written by the indexer), titled by its path (or the
 commit title) and pointing to ``<path>#L<start>-L<end>``, ``<path>`` (no line numbers, as in
-converted documents) or ``commit:<sha>``. The sources keep the search order and are cut when
-the estimated tokens of the numbered blocks would pass ``MAX_CONTEXT_TOKENS``; the numbering
-of the prompt and of the stored citations is the position in the kept list.
+converted documents) or ``commit:<sha>``; a commit also carries its author's name and date
+(chunk ``meta``, absent in chunks indexed before they were recorded). The sources keep the
+search order and are cut when the estimated tokens of the numbered blocks would pass
+``MAX_CONTEXT_TOKENS``; the numbering of the prompt and of the stored citations is the
+position in the kept list.
 """
 
 from __future__ import annotations
@@ -62,6 +64,8 @@ def source_from_hit(hit: SearchHit) -> Source:
             kind=document.kind.value,
             language=language,
             sha=sha,
+            author=_text(hit.meta.get("author")),
+            date=_text(hit.meta.get("date")),
         )
     path = hit.path or document.natural_key
     start_line, end_line = hit.start_line, hit.end_line

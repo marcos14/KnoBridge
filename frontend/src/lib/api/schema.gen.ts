@@ -1562,6 +1562,10 @@ export interface components {
          *     with the real retriever (v0.3); answers saved before have them as ``null``.
          */
         CitationOut: {
+            /** Author */
+            author?: string | null;
+            /** Date */
+            date?: string | null;
             /** Document Id */
             document_id: string | null;
             /** End Line */

@@ -837,7 +837,8 @@
       "symbol": "Símbolo",
       "language": "Linguagem",
       "commit": "Commit",
-      "fullSha": "SHA completo: {{sha}}"
+      "fullSha": "SHA completo: {{sha}}",
+      "authorship": "Autor e data"
     },
     "citationLabel": "Fonte {{index}}: {{title}}",
     "composer": {
