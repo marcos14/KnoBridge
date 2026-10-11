@@ -105,10 +105,27 @@ def _run(scope_headers: list[tuple[bytes, bytes]], messages: list[Message]) -> l
 
 def test_body_limit_tolerates_invalid_content_length() -> None:
     received = _run(
-        [(b"content-length", b"abc")], [{"type": "http.request", "body": b"{}", "more_body": False}]
+        [(b"content-length", b"abc")],
+        [{"type": "http.request", "body": b"{}", "more_body": False}, {"type": "http.disconnect"}],
     )
 
     assert received[0] == {"type": "http.request", "body": b"{}", "more_body": False}
+
+
+def test_body_limit_passes_later_client_messages_through() -> None:
+    later: Message = {"type": "http.disconnect", "marker": "from-client"}
+
+    received = _run([], [{"type": "http.request", "body": b"{}", "more_body": False}, later])
+
+    assert received[1] is later
+
+
+def test_body_limit_reports_disconnect_after_partial_body() -> None:
+    received = _run(
+        [],
+        [{"type": "http.request", "body": b"{", "more_body": True}, {"type": "http.disconnect"}],
+    )
+
     assert received[1] == {"type": "http.disconnect"}
 
 

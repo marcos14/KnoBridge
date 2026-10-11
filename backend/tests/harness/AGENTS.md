@@ -9,7 +9,10 @@
 - `test_harness_constraints.py`: fonte `runner` aceita e par `(runner_id, repository)` único no workspace; documentos e `run_items` `knowledge`; FKs compostas de módulo e runner; `SET NULL` só da coluna ao excluir runner (tarefa) e tarefa (item); chave de item única por fonte e com formato checado; padrões do item; formato do commit; módulo sem padrões; cascatas da fonte e do workspace.
 - `test_runner_tokens.py` (unitário): formato do token, prefixo de token bem formado e comparação do hash.
 - `test_runner_presence.py`: `authenticate_runner` com `last_seen_at` gravado no máximo a cada 10 s e nada achado fora do modo de sistema.
-- A seguir (plano 0004): fila, módulos e resultado. As rotas do runner e do painel de runners ficam em `tests/api/` (`test_runners.py`, `test_runner_heartbeat.py`).
+- `queue_support.py`: `queue_world` (workspace com runner, fonte `erp` com config extra e módulo), `add_source`, `add_module`, `add_job` (pela `enqueue`, com colunas sobrescritas), `in_scope` (transação no escopo do workspace, como as rotas), `claim_now`, `get_job`, `module_items` e o instante `NOW`.
+- `test_harness_queue.py`: ordem e filtros do claim, reserva expirada retomada, falha na terceira tentativa, adiamento até `not_before`, claims concorrentes que nunca dividem tarefa (Postgres real, `asyncio.gather`), espera da falha retentável, `expire_leases`, heartbeat, falha, adiamento e cancelamento.
+- `test_harness_results.py`: regeneração que preserva itens revisados e editados, chaves numeradas depois da maior preservada, `evidence_changed`, repetição idempotente e regras da fonte (`excerpt_max_lines`, executor).
+- `test_long_poll.py` e `test_job_metrics.py` (unitários): o laço do long-poll com o `ClockWaiter` e a soma das métricas. As rotas do runner e do painel de runners ficam em `tests/api/` (`test_runners.py`, `test_runner_heartbeat.py`).
 
 **Não entra aqui**: rotas (`tests/api/`), cadeia de migrações (`tests/migrations/`), o pacote `runner/` (testes próprios em `runner/tests/`).
 

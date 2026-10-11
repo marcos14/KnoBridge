@@ -1025,7 +1025,8 @@
     "runner_created": "Runner cadastrado",
     "runner_updated": "Runner atualizado",
     "runner_revoked": "Runner revogado",
-    "runner_deleted": "Runner excluído"
+    "runner_deleted": "Runner excluído",
+    "harness_job_cancelled": "Tarefa do harness cancelada"
   },
   "admin": {
     "search": "Buscar",

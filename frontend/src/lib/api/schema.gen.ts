@@ -454,6 +454,106 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/runner/jobs/claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Claim Job
+         * @description Lease the oldest eligible job, waiting up to ``wait_seconds`` for one (204 if none).
+         */
+        post: operations["claim_job_v1_runner_jobs_claim_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/runner/jobs/{job_id}/defer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Defer Job
+         * @description Set the job aside until ``not_before`` (60 s to 24 h); spends no attempt.
+         */
+        post: operations["defer_job_v1_runner_jobs__job_id__defer_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/runner/jobs/{job_id}/fail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Fail Job
+         * @description Back to the queue after ``60 s * attempts`` (retryable, attempts left) or ``failed``.
+         */
+        post: operations["fail_job_v1_runner_jobs__job_id__fail_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/runner/jobs/{job_id}/heartbeat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Job Heartbeat
+         * @description Renew the lease (``running``); ``cancelled`` tells the runner to drop the job.
+         */
+        post: operations["job_heartbeat_v1_runner_jobs__job_id__heartbeat_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/runner/jobs/{job_id}/result": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Job Result
+         * @description Store the result of the lease, then start the sync of the source.
+         */
+        post: operations["job_result_v1_runner_jobs__job_id__result_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/setup": {
         parameters: {
             query?: never;
@@ -798,6 +898,26 @@ export interface paths {
          * @description Rate an answer (thumbs up or down, optional comment); sending again replaces it.
          */
         post: operations["set_feedback_v1_workspaces__workspace_id__conversations__conversation_id__messages__message_id__feedback_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/harness-jobs/{job_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel Harness Job
+         * @description Cancel the job; the runner holding it is told on its next job heartbeat.
+         */
+        post: operations["cancel_harness_job_v1_workspaces__workspace_id__harness_jobs__job_id__cancel_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1579,7 +1699,7 @@ export interface components {
          * AuditAction
          * @enum {string}
          */
-        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted" | "provider.tested" | "assistant.created" | "assistant.updated" | "assistant.deleted" | "conversation.deleted" | "collection.created" | "collection.updated" | "collection.deleted" | "source.created" | "source.updated" | "source.deleted" | "source.tested" | "source.sync.started" | "source.sync.cancelled" | "runner.created" | "runner.updated" | "runner.revoked" | "runner.deleted";
+        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted" | "provider.tested" | "assistant.created" | "assistant.updated" | "assistant.deleted" | "conversation.deleted" | "collection.created" | "collection.updated" | "collection.deleted" | "source.created" | "source.updated" | "source.deleted" | "source.tested" | "source.sync.started" | "source.sync.cancelled" | "runner.created" | "runner.updated" | "runner.revoked" | "runner.deleted" | "harness_job.cancelled";
         /** AuditEventOut */
         AuditEventOut: {
             /** Action */
@@ -1922,6 +2042,15 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** FaqEntry */
+        FaqEntry: {
+            /** Evidencias */
+            evidencias: number[];
+            /** Pergunta */
+            pergunta: string;
+            /** Resposta */
+            resposta: string;
+        };
         /** FeedbackIn */
         FeedbackIn: {
             /**
@@ -1947,6 +2076,15 @@ export interface components {
          * @enum {string}
          */
         FeedbackRating: "up" | "down";
+        /** FlowStep */
+        FlowStep: {
+            /** Evidencias */
+            evidencias: number[];
+            /** Ordem */
+            ordem: number;
+            /** Passo */
+            passo: string;
+        };
         /** ForgotPasswordRequest */
         ForgotPasswordRequest: {
             /** Email */
@@ -1962,6 +2100,77 @@ export interface components {
          * @enum {string}
          */
         HarnessExecutor: "claude_code" | "codex";
+        /** HarnessJobOut */
+        HarnessJobOut: {
+            /** Attempts */
+            attempts: number;
+            /** Commit Sha */
+            commit_sha: string | null;
+            /** Cost Usd */
+            cost_usd: number | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Duration Ms */
+            duration_ms: number | null;
+            /** Error */
+            error: string | null;
+            executor: components["schemas"]["HarnessExecutor"];
+            /** Finished At */
+            finished_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Input Tokens */
+            input_tokens: number | null;
+            /** Items Accepted */
+            items_accepted: number;
+            /** Items Rejected */
+            items_rejected: number;
+            /** Lease Expires At */
+            lease_expires_at: string | null;
+            /** Model */
+            model: string | null;
+            /**
+             * Module Id
+             * Format: uuid
+             */
+            module_id: string;
+            /** Module Key */
+            module_key: string;
+            /** Module Title */
+            module_title: string;
+            /** Not Before */
+            not_before: string | null;
+            /** Output Tokens */
+            output_tokens: number | null;
+            /** Runner Id */
+            runner_id: string | null;
+            /**
+             * Source Id
+             * Format: uuid
+             */
+            source_id: string;
+            /** Started At */
+            started_at: string | null;
+            status: components["schemas"]["HarnessJobStatus"];
+            trigger: components["schemas"]["HarnessJobTrigger"];
+        };
+        /**
+         * HarnessJobStatus
+         * @description States of a job in the queue (docs/specs/runner.md, "Estados da tarefa").
+         * @enum {string}
+         */
+        HarnessJobStatus: "queued" | "leased" | "running" | "succeeded" | "failed" | "cancelled" | "deferred";
+        /**
+         * HarnessJobTrigger
+         * @enum {string}
+         */
+        HarnessJobTrigger: "manual" | "commit";
         /** InvitationOut */
         InvitationOut: {
             /**
@@ -2147,6 +2356,50 @@ export interface components {
          * @enum {string}
          */
         MessageStatus: "streaming" | "completed" | "no_source" | "failed" | "interrupted";
+        /** ModuleContent */
+        ModuleContent: {
+            /** Duvidas */
+            duvidas: components["schemas"]["OpenQuestion"][];
+            /** Faq */
+            faq: components["schemas"]["FaqEntry"][];
+            /** Fluxo Principal */
+            fluxo_principal: components["schemas"]["FlowStep"][];
+            /** Mensagens */
+            mensagens: components["schemas"]["ModuleMessage"][];
+            /** Objetivo */
+            objetivo: string;
+        };
+        /** ModuleItemIn */
+        ModuleItemIn: {
+            content: components["schemas"]["ModuleContent"];
+            /** Evidence */
+            evidence: components["schemas"]["RunnerEvidenceIn"][];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "module";
+            /** Title */
+            title: string;
+        };
+        /** ModuleMessage */
+        ModuleMessage: {
+            /** Acao */
+            acao: string;
+            /** Causa */
+            causa: string;
+            /** Evidencias */
+            evidencias: number[];
+            /** Mensagem */
+            mensagem: string;
+        };
+        /** OpenQuestion */
+        OpenQuestion: {
+            /** Contexto */
+            contexto: string;
+            /** Pergunta */
+            pergunta: string;
+        };
         /**
          * PathMatch
          * @enum {string}
@@ -2263,6 +2516,12 @@ export interface components {
              */
             status: "ok";
         };
+        /**
+         * RejectionBlock
+         * @description Block of the agent output a rejected item came from (keys of ``schema_version: 1``).
+         * @enum {string}
+         */
+        RejectionBlock: "regras" | "mensagens" | "fluxo_principal" | "faq" | "objetivo";
         /** ResetPasswordRequest */
         ResetPasswordRequest: {
             /** Password */
@@ -2279,6 +2538,42 @@ export interface components {
         /** RoleUpdate */
         RoleUpdate: {
             role: components["schemas"]["Role"];
+        };
+        /** RuleContent */
+        RuleContent: {
+            /**
+             * Classificacao
+             * @enum {string}
+             */
+            classificacao: "observado" | "intencional" | "bug_conhecido";
+            /** Enunciado */
+            enunciado: string;
+            /** Mensagem */
+            mensagem: string | null;
+            /** Parametros */
+            parametros: string[];
+            /** Quando */
+            quando: string;
+            /**
+             * Relevancia
+             * @enum {string}
+             */
+            relevancia: "alta" | "media" | "baixa" | "sistemica";
+            /** Resolucao */
+            resolucao: string;
+        };
+        /** RuleItemIn */
+        RuleItemIn: {
+            content: components["schemas"]["RuleContent"];
+            /** Evidence */
+            evidence: components["schemas"]["RunnerEvidenceIn"][];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "rule";
+            /** Title */
+            title: string;
         };
         /** RunDetailOut */
         RunDetailOut: {
@@ -2437,6 +2732,18 @@ export interface components {
              */
             repositories: components["schemas"]["RunnerRepositoryOut"][];
         };
+        /** RunnerClaimIn */
+        RunnerClaimIn: {
+            /** Executors */
+            executors: components["schemas"]["HarnessExecutor"][];
+            /** Repositories */
+            repositories: string[];
+            /**
+             * Wait Seconds
+             * @default 25
+             */
+            wait_seconds: number;
+        };
         /** RunnerCreate */
         RunnerCreate: {
             /** Name */
@@ -2447,6 +2754,31 @@ export interface components {
             runner: components["schemas"]["RunnerOut"];
             /** Token */
             token: string;
+        };
+        /** RunnerEvidenceIn */
+        RunnerEvidenceIn: {
+            /** End Line */
+            end_line: number;
+            /** Excerpt */
+            excerpt?: string | null;
+            /** Excerpt Omitted */
+            excerpt_omitted?: ("disabled" | "sensitive_file") | null;
+            /**
+             * Excerpt Truncated
+             * @default false
+             */
+            excerpt_truncated: boolean;
+            /** Path */
+            path: string;
+            /**
+             * Redacted
+             * @default false
+             */
+            redacted: boolean;
+            /** Start Line */
+            start_line: number;
+            /** Symbol */
+            symbol?: string | null;
         };
         /** RunnerExecutorInfo */
         RunnerExecutorInfo: {
@@ -2466,6 +2798,16 @@ export interface components {
             available: boolean;
             /** Name */
             name: string;
+            /** Version */
+            version?: string | null;
+        };
+        /** RunnerExecutorRun */
+        RunnerExecutorRun: {
+            /** Model */
+            model?: string | null;
+            name: components["schemas"]["HarnessExecutor"];
+            /** Session Id */
+            session_id?: string | null;
             /** Version */
             version?: string | null;
         };
@@ -2511,6 +2853,218 @@ export interface components {
              */
             workspace_id: string;
         };
+        /** RunnerJobDeferIn */
+        RunnerJobDeferIn: {
+            /** Attempt */
+            attempt: number;
+            /** Message */
+            message: string;
+            metrics?: components["schemas"]["RunnerJobMetrics"] | null;
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "quota_exhausted" | "auth_failed";
+            /** Retry After Seconds */
+            retry_after_seconds?: number | null;
+        };
+        /** RunnerJobFailIn */
+        RunnerJobFailIn: {
+            /** Attempt */
+            attempt: number;
+            /**
+             * Code
+             * @enum {string}
+             */
+            code: "executor_not_found" | "repository_unavailable" | "timeout" | "budget_exceeded" | "no_structured_output" | "invalid_output" | "unsafe_tool_use" | "executor_error" | "result_rejected" | "interrupted" | "internal_error";
+            /** Message */
+            message: string;
+            metrics?: components["schemas"]["RunnerJobMetrics"] | null;
+            /** Retryable */
+            retryable: boolean;
+        };
+        /** RunnerJobHeartbeatIn */
+        RunnerJobHeartbeatIn: {
+            /** Attempt */
+            attempt: number;
+            /** Elapsed Seconds */
+            elapsed_seconds: number;
+            /**
+             * Phase
+             * @enum {string}
+             */
+            phase: "preparing" | "briefing" | "executing" | "rescuing" | "verifying" | "uploading";
+            /** Tool Calls */
+            tool_calls: number;
+        };
+        /** RunnerJobHeartbeatOut */
+        RunnerJobHeartbeatOut: {
+            /** Cancel Requested */
+            cancel_requested: boolean;
+            /** Lease Expires At */
+            lease_expires_at: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "running" | "cancelled";
+        };
+        /** RunnerJobMetrics */
+        RunnerJobMetrics: {
+            /** Cached Input Tokens */
+            cached_input_tokens?: number | null;
+            /** Cost Usd */
+            cost_usd?: number | null;
+            /** Duration Ms */
+            duration_ms: number;
+            /** Input Tokens */
+            input_tokens?: number | null;
+            /**
+             * Items Truncated
+             * @default 0
+             */
+            items_truncated: number;
+            /** Num Turns */
+            num_turns?: number | null;
+            /** Output Tokens */
+            output_tokens?: number | null;
+            /**
+             * Redactions
+             * @default 0
+             */
+            redactions: number;
+            /**
+             * Rescued
+             * @default false
+             */
+            rescued: boolean;
+            /**
+             * Sources Invalid
+             * @default 0
+             */
+            sources_invalid: number;
+            /**
+             * Sources Valid
+             * @default 0
+             */
+            sources_valid: number;
+            /**
+             * Tool Calls
+             * @default 0
+             */
+            tool_calls: number;
+        };
+        /** RunnerJobModule */
+        RunnerJobModule: {
+            /** Key */
+            key: string;
+            /** Last Commit */
+            last_commit: string | null;
+            /** Paths */
+            paths: string[];
+            /** Title */
+            title: string;
+        };
+        /** RunnerJobOut */
+        RunnerJobOut: {
+            /** Attempt */
+            attempt: number;
+            /** Budget Usd */
+            budget_usd: number;
+            /** Commit Sha */
+            commit_sha: string | null;
+            /** Excerpt Max Lines */
+            excerpt_max_lines: number;
+            /** Exclude Globs */
+            exclude_globs: string[];
+            executor: components["schemas"]["HarnessExecutor"];
+            /** Heartbeat Interval Seconds */
+            heartbeat_interval_seconds: number;
+            /** Include Globs */
+            include_globs: string[];
+            /**
+             * Job Id
+             * Format: uuid
+             */
+            job_id: string;
+            /** Lease Seconds */
+            lease_seconds: number;
+            /** Max Attempts */
+            max_attempts: number;
+            /** Model */
+            model: string | null;
+            module: components["schemas"]["RunnerJobModule"];
+            /** Repository */
+            repository: string;
+            /** Schema Version */
+            schema_version: number;
+            /**
+             * Source Id
+             * Format: uuid
+             */
+            source_id: string;
+            /** Timeout Seconds */
+            timeout_seconds: number;
+            trigger: components["schemas"]["HarnessJobTrigger"];
+        };
+        /** RunnerJobResultIn */
+        RunnerJobResultIn: {
+            /** Attempt */
+            attempt: number;
+            /** Changed Paths */
+            changed_paths: string[] | null;
+            /** Commit Sha */
+            commit_sha: string;
+            executor: components["schemas"]["RunnerExecutorRun"];
+            /** Items */
+            items: components["schemas"]["RunnerKnowledgeItemIn"][];
+            metrics: components["schemas"]["RunnerJobMetrics"];
+            /** Rejections */
+            rejections: components["schemas"]["RunnerRejectionIn"][];
+        };
+        /** RunnerJobResultOut */
+        RunnerJobResultOut: {
+            /** Duplicate */
+            duplicate: boolean;
+            /** Items Accepted */
+            items_accepted: number;
+            /** Items Preserved */
+            items_preserved: number;
+            /** Items Rejected */
+            items_rejected: number;
+            /**
+             * Job Id
+             * Format: uuid
+             */
+            job_id: string;
+            /**
+             * Status
+             * @constant
+             */
+            status: "succeeded";
+            /** Sync Run Id */
+            sync_run_id: string | null;
+        };
+        /** RunnerJobStateOut */
+        RunnerJobStateOut: {
+            /** Attempts */
+            attempts: number;
+            /** Duplicate */
+            duplicate: boolean;
+            /**
+             * Job Id
+             * Format: uuid
+             */
+            job_id: string;
+            /** Not Before */
+            not_before: string | null;
+            status: components["schemas"]["HarnessJobStatus"];
+        };
+        /**
+         * RunnerKnowledgeItemIn
+         * @description A rule item or the module enrichment, told apart by ``kind``.
+         */
+        RunnerKnowledgeItemIn: components["schemas"]["RuleItemIn"] | components["schemas"]["ModuleItemIn"];
         /** RunnerOut */
         RunnerOut: {
             capabilities: components["schemas"]["RunnerCapabilitiesOut"];
@@ -2549,6 +3103,39 @@ export interface components {
             offset: number;
             /** Total */
             total: number;
+        };
+        /** RunnerRejectionIn */
+        RunnerRejectionIn: {
+            block: components["schemas"]["RejectionBlock"];
+            /**
+             * Code
+             * @enum {string}
+             */
+            code: "outside_checkout" | "file_not_found" | "bad_range" | "range_too_long" | "symbol_mismatch" | "no_valid_source";
+            /** Index */
+            index: number;
+            /** Label */
+            label: string;
+            /** Reason */
+            reason: string;
+            /** Sources */
+            sources: components["schemas"]["RunnerRejectionSource"][];
+        };
+        /** RunnerRejectionSource */
+        RunnerRejectionSource: {
+            /**
+             * Code
+             * @enum {string}
+             */
+            code: "outside_checkout" | "file_not_found" | "bad_range" | "range_too_long" | "symbol_mismatch" | "no_valid_source";
+            /** End Line */
+            end_line: number | null;
+            /** Path */
+            path: string | null;
+            /** Start Line */
+            start_line: number | null;
+            /** Symbol */
+            symbol: string | null;
         };
         /** RunnerRepositoryInfo */
         RunnerRepositoryInfo: {
@@ -4012,6 +4599,372 @@ export interface operations {
             };
         };
     };
+    claim_job_v1_runner_jobs_claim_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RunnerClaimIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunnerJobOut"];
+                };
+            };
+            /** @description No job within `wait_seconds`. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing, malformed, unknown or revoked token (`invalid_runner_token`). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace of the runner suspended (`workspace_suspended`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Body above the route limit (`payload_too_large`, `details.max_bytes`). */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Body outside the schema (`validation_error`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or unsupported protocol header (`runner_protocol_unsupported`). */
+            426: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    defer_job_v1_runner_jobs__job_id__defer_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RunnerJobDeferIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunnerJobStateOut"];
+                };
+            };
+            /** @description Missing, malformed, unknown or revoked token (`invalid_runner_token`). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace of the runner suspended (`workspace_suspended`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Job missing or of another runner's source (`job_not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not leased by this runner in this attempt (`job_not_leased`, `details.status`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Body above the route limit (`payload_too_large`, `details.max_bytes`). */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Body outside the schema (`validation_error`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or unsupported protocol header (`runner_protocol_unsupported`). */
+            426: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    fail_job_v1_runner_jobs__job_id__fail_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RunnerJobFailIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunnerJobStateOut"];
+                };
+            };
+            /** @description Missing, malformed, unknown or revoked token (`invalid_runner_token`). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace of the runner suspended (`workspace_suspended`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Job missing or of another runner's source (`job_not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not leased by this runner in this attempt (`job_not_leased`, `details.status`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Body above the route limit (`payload_too_large`, `details.max_bytes`). */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Body outside the schema (`validation_error`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or unsupported protocol header (`runner_protocol_unsupported`). */
+            426: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    job_heartbeat_v1_runner_jobs__job_id__heartbeat_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RunnerJobHeartbeatIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunnerJobHeartbeatOut"];
+                };
+            };
+            /** @description Missing, malformed, unknown or revoked token (`invalid_runner_token`). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace of the runner suspended (`workspace_suspended`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Job missing or of another runner's source (`job_not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not leased by this runner in this attempt (`job_not_leased`, `details.status`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Body above the route limit (`payload_too_large`, `details.max_bytes`). */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Body outside the schema (`validation_error`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or unsupported protocol header (`runner_protocol_unsupported`). */
+            426: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    job_result_v1_runner_jobs__job_id__result_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RunnerJobResultIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunnerJobResultOut"];
+                };
+            };
+            /** @description Missing, malformed, unknown or revoked token (`invalid_runner_token`). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace of the runner suspended (`workspace_suspended`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Job missing or of another runner's source (`job_not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not leased by this runner in this attempt (`job_not_leased`, `details.status`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Body above the route limit (`payload_too_large`, `details.max_bytes`). */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The result breaks the contract (`result_invalid`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or unsupported protocol header (`runner_protocol_unsupported`). */
+            426: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     run_setup_v1_setup_post: {
         parameters: {
             query?: never;
@@ -5337,6 +6290,66 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    cancel_harness_job_v1_workspaces__workspace_id__harness_jobs__job_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HarnessJobOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below editor, workspace suspended or CSRF failure. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or job not found (`job_not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The job has already finished (`job_finished`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

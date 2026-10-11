@@ -1037,7 +1037,8 @@
           "runner.created",
           "runner.updated",
           "runner.revoked",
-          "runner.deleted"
+          "runner.deleted",
+          "harness_job.cancelled"
         ],
         "title": "AuditAction",
         "type": "string"
@@ -1917,6 +1918,36 @@
         "title": "DocumentPage",
         "type": "object"
       },
+      "FaqEntry": {
+        "additionalProperties": false,
+        "properties": {
+          "evidencias": {
+            "items": {
+              "minimum": 0.0,
+              "type": "integer"
+            },
+            "title": "Evidencias",
+            "type": "array"
+          },
+          "pergunta": {
+            "maxLength": 300,
+            "title": "Pergunta",
+            "type": "string"
+          },
+          "resposta": {
+            "maxLength": 1000,
+            "title": "Resposta",
+            "type": "string"
+          }
+        },
+        "required": [
+          "pergunta",
+          "resposta",
+          "evidencias"
+        ],
+        "title": "FaqEntry",
+        "type": "object"
+      },
       "FeedbackIn": {
         "properties": {
           "comment": {
@@ -1966,6 +1997,35 @@
         "title": "FeedbackRating",
         "type": "string"
       },
+      "FlowStep": {
+        "additionalProperties": false,
+        "properties": {
+          "evidencias": {
+            "items": {
+              "minimum": 0.0,
+              "type": "integer"
+            },
+            "title": "Evidencias",
+            "type": "array"
+          },
+          "ordem": {
+            "title": "Ordem",
+            "type": "integer"
+          },
+          "passo": {
+            "maxLength": 1000,
+            "title": "Passo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ordem",
+          "passo",
+          "evidencias"
+        ],
+        "title": "FlowStep",
+        "type": "object"
+      },
       "ForgotPasswordRequest": {
         "properties": {
           "email": {
@@ -2000,6 +2060,246 @@
           "codex"
         ],
         "title": "HarnessExecutor",
+        "type": "string"
+      },
+      "HarnessJobOut": {
+        "properties": {
+          "attempts": {
+            "title": "Attempts",
+            "type": "integer"
+          },
+          "commit_sha": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commit Sha"
+          },
+          "cost_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Usd"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "duration_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Ms"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "executor": {
+            "$ref": "#/components/schemas/HarnessExecutor"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "input_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Tokens"
+          },
+          "items_accepted": {
+            "title": "Items Accepted",
+            "type": "integer"
+          },
+          "items_rejected": {
+            "title": "Items Rejected",
+            "type": "integer"
+          },
+          "lease_expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lease Expires At"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "module_id": {
+            "format": "uuid",
+            "title": "Module Id",
+            "type": "string"
+          },
+          "module_key": {
+            "title": "Module Key",
+            "type": "string"
+          },
+          "module_title": {
+            "title": "Module Title",
+            "type": "string"
+          },
+          "not_before": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Not Before"
+          },
+          "output_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Tokens"
+          },
+          "runner_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runner Id"
+          },
+          "source_id": {
+            "format": "uuid",
+            "title": "Source Id",
+            "type": "string"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/HarnessJobStatus"
+          },
+          "trigger": {
+            "$ref": "#/components/schemas/HarnessJobTrigger"
+          }
+        },
+        "required": [
+          "id",
+          "source_id",
+          "module_id",
+          "module_key",
+          "module_title",
+          "runner_id",
+          "executor",
+          "model",
+          "trigger",
+          "status",
+          "attempts",
+          "not_before",
+          "lease_expires_at",
+          "commit_sha",
+          "input_tokens",
+          "output_tokens",
+          "cost_usd",
+          "duration_ms",
+          "items_accepted",
+          "items_rejected",
+          "error",
+          "created_at",
+          "started_at",
+          "finished_at"
+        ],
+        "title": "HarnessJobOut",
+        "type": "object"
+      },
+      "HarnessJobStatus": {
+        "description": "States of a job in the queue (docs/specs/runner.md, \"Estados da tarefa\").",
+        "enum": [
+          "queued",
+          "leased",
+          "running",
+          "succeeded",
+          "failed",
+          "cancelled",
+          "deferred"
+        ],
+        "title": "HarnessJobStatus",
+        "type": "string"
+      },
+      "HarnessJobTrigger": {
+        "enum": [
+          "manual",
+          "commit"
+        ],
+        "title": "HarnessJobTrigger",
         "type": "string"
       },
       "InvitationOut": {
@@ -2480,6 +2780,149 @@
         "title": "MessageStatus",
         "type": "string"
       },
+      "ModuleContent": {
+        "additionalProperties": false,
+        "properties": {
+          "duvidas": {
+            "items": {
+              "$ref": "#/components/schemas/OpenQuestion"
+            },
+            "maxItems": 15,
+            "title": "Duvidas",
+            "type": "array"
+          },
+          "faq": {
+            "items": {
+              "$ref": "#/components/schemas/FaqEntry"
+            },
+            "maxItems": 15,
+            "title": "Faq",
+            "type": "array"
+          },
+          "fluxo_principal": {
+            "items": {
+              "$ref": "#/components/schemas/FlowStep"
+            },
+            "maxItems": 20,
+            "title": "Fluxo Principal",
+            "type": "array"
+          },
+          "mensagens": {
+            "items": {
+              "$ref": "#/components/schemas/ModuleMessage"
+            },
+            "maxItems": 40,
+            "title": "Mensagens",
+            "type": "array"
+          },
+          "objetivo": {
+            "maxLength": 1000,
+            "title": "Objetivo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "objetivo",
+          "fluxo_principal",
+          "mensagens",
+          "faq",
+          "duvidas"
+        ],
+        "title": "ModuleContent",
+        "type": "object"
+      },
+      "ModuleItemIn": {
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "$ref": "#/components/schemas/ModuleContent"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/RunnerEvidenceIn"
+            },
+            "maxItems": 375,
+            "minItems": 1,
+            "title": "Evidence",
+            "type": "array"
+          },
+          "kind": {
+            "const": "module",
+            "title": "Kind",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 200,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "title",
+          "content",
+          "evidence"
+        ],
+        "title": "ModuleItemIn",
+        "type": "object"
+      },
+      "ModuleMessage": {
+        "additionalProperties": false,
+        "properties": {
+          "acao": {
+            "maxLength": 1000,
+            "title": "Acao",
+            "type": "string"
+          },
+          "causa": {
+            "maxLength": 1000,
+            "title": "Causa",
+            "type": "string"
+          },
+          "evidencias": {
+            "items": {
+              "minimum": 0.0,
+              "type": "integer"
+            },
+            "title": "Evidencias",
+            "type": "array"
+          },
+          "mensagem": {
+            "maxLength": 500,
+            "title": "Mensagem",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mensagem",
+          "causa",
+          "acao",
+          "evidencias"
+        ],
+        "title": "ModuleMessage",
+        "type": "object"
+      },
+      "OpenQuestion": {
+        "additionalProperties": false,
+        "properties": {
+          "contexto": {
+            "maxLength": 1000,
+            "title": "Contexto",
+            "type": "string"
+          },
+          "pergunta": {
+            "maxLength": 300,
+            "title": "Pergunta",
+            "type": "string"
+          }
+        },
+        "required": [
+          "pergunta",
+          "contexto"
+        ],
+        "title": "OpenQuestion",
+        "type": "object"
+      },
       "PathMatch": {
         "enum": [
           "prefix",
@@ -2807,6 +3250,18 @@
         "title": "ReadyResponse",
         "type": "object"
       },
+      "RejectionBlock": {
+        "description": "Block of the agent output a rejected item came from (keys of ``schema_version: 1``).",
+        "enum": [
+          "regras",
+          "mensagens",
+          "fluxo_principal",
+          "faq",
+          "objetivo"
+        ],
+        "title": "RejectionBlock",
+        "type": "string"
+      },
       "ResetPasswordRequest": {
         "properties": {
           "password": {
@@ -2849,6 +3304,112 @@
           "role"
         ],
         "title": "RoleUpdate",
+        "type": "object"
+      },
+      "RuleContent": {
+        "additionalProperties": false,
+        "properties": {
+          "classificacao": {
+            "enum": [
+              "observado",
+              "intencional",
+              "bug_conhecido"
+            ],
+            "title": "Classificacao",
+            "type": "string"
+          },
+          "enunciado": {
+            "maxLength": 1000,
+            "title": "Enunciado",
+            "type": "string"
+          },
+          "mensagem": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mensagem"
+          },
+          "parametros": {
+            "items": {
+              "maxLength": 100,
+              "type": "string"
+            },
+            "maxItems": 10,
+            "title": "Parametros",
+            "type": "array"
+          },
+          "quando": {
+            "maxLength": 1000,
+            "title": "Quando",
+            "type": "string"
+          },
+          "relevancia": {
+            "enum": [
+              "alta",
+              "media",
+              "baixa",
+              "sistemica"
+            ],
+            "title": "Relevancia",
+            "type": "string"
+          },
+          "resolucao": {
+            "maxLength": 1000,
+            "title": "Resolucao",
+            "type": "string"
+          }
+        },
+        "required": [
+          "enunciado",
+          "quando",
+          "mensagem",
+          "resolucao",
+          "parametros",
+          "classificacao",
+          "relevancia"
+        ],
+        "title": "RuleContent",
+        "type": "object"
+      },
+      "RuleItemIn": {
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "$ref": "#/components/schemas/RuleContent"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/RunnerEvidenceIn"
+            },
+            "maxItems": 5,
+            "minItems": 1,
+            "title": "Evidence",
+            "type": "array"
+          },
+          "kind": {
+            "const": "rule",
+            "title": "Kind",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 200,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "title",
+          "content",
+          "evidence"
+        ],
+        "title": "RuleItemIn",
         "type": "object"
       },
       "RunDetailOut": {
@@ -3249,6 +3810,43 @@
         "title": "RunnerCapabilitiesOut",
         "type": "object"
       },
+      "RunnerClaimIn": {
+        "additionalProperties": false,
+        "properties": {
+          "executors": {
+            "items": {
+              "$ref": "#/components/schemas/HarnessExecutor"
+            },
+            "maxItems": 2,
+            "minItems": 1,
+            "title": "Executors",
+            "type": "array"
+          },
+          "repositories": {
+            "items": {
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$",
+              "type": "string"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Repositories",
+            "type": "array"
+          },
+          "wait_seconds": {
+            "default": 25,
+            "maximum": 25.0,
+            "minimum": 0.0,
+            "title": "Wait Seconds",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "executors",
+          "repositories"
+        ],
+        "title": "RunnerClaimIn",
+        "type": "object"
+      },
       "RunnerCreate": {
         "properties": {
           "name": {
@@ -3279,6 +3877,80 @@
           "token"
         ],
         "title": "RunnerCreated",
+        "type": "object"
+      },
+      "RunnerEvidenceIn": {
+        "additionalProperties": false,
+        "properties": {
+          "end_line": {
+            "minimum": 1.0,
+            "title": "End Line",
+            "type": "integer"
+          },
+          "excerpt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Excerpt"
+          },
+          "excerpt_omitted": {
+            "anyOf": [
+              {
+                "enum": [
+                  "disabled",
+                  "sensitive_file"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Excerpt Omitted"
+          },
+          "excerpt_truncated": {
+            "default": false,
+            "title": "Excerpt Truncated",
+            "type": "boolean"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "redacted": {
+            "default": false,
+            "title": "Redacted",
+            "type": "boolean"
+          },
+          "start_line": {
+            "minimum": 1.0,
+            "title": "Start Line",
+            "type": "integer"
+          },
+          "symbol": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Symbol"
+          }
+        },
+        "required": [
+          "path",
+          "start_line",
+          "end_line"
+        ],
+        "title": "RunnerEvidenceIn",
         "type": "object"
       },
       "RunnerExecutorInfo": {
@@ -3360,6 +4032,55 @@
           "available"
         ],
         "title": "RunnerExecutorOut",
+        "type": "object"
+      },
+      "RunnerExecutorRun": {
+        "additionalProperties": false,
+        "properties": {
+          "model": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9._:/-]{1,100}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "name": {
+            "$ref": "#/components/schemas/HarnessExecutor"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "RunnerExecutorRun",
         "type": "object"
       },
       "RunnerHeartbeatIn": {
@@ -3462,6 +4183,628 @@
         ],
         "title": "RunnerHeartbeatOut",
         "type": "object"
+      },
+      "RunnerJobDeferIn": {
+        "additionalProperties": false,
+        "properties": {
+          "attempt": {
+            "minimum": 1.0,
+            "title": "Attempt",
+            "type": "integer"
+          },
+          "message": {
+            "maxLength": 500,
+            "title": "Message",
+            "type": "string"
+          },
+          "metrics": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RunnerJobMetrics"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reason": {
+            "enum": [
+              "quota_exhausted",
+              "auth_failed"
+            ],
+            "title": "Reason",
+            "type": "string"
+          },
+          "retry_after_seconds": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retry After Seconds"
+          }
+        },
+        "required": [
+          "attempt",
+          "reason",
+          "message"
+        ],
+        "title": "RunnerJobDeferIn",
+        "type": "object"
+      },
+      "RunnerJobFailIn": {
+        "additionalProperties": false,
+        "properties": {
+          "attempt": {
+            "minimum": 1.0,
+            "title": "Attempt",
+            "type": "integer"
+          },
+          "code": {
+            "enum": [
+              "executor_not_found",
+              "repository_unavailable",
+              "timeout",
+              "budget_exceeded",
+              "no_structured_output",
+              "invalid_output",
+              "unsafe_tool_use",
+              "executor_error",
+              "result_rejected",
+              "interrupted",
+              "internal_error"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "maxLength": 500,
+            "title": "Message",
+            "type": "string"
+          },
+          "metrics": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RunnerJobMetrics"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "retryable": {
+            "title": "Retryable",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "attempt",
+          "code",
+          "retryable",
+          "message"
+        ],
+        "title": "RunnerJobFailIn",
+        "type": "object"
+      },
+      "RunnerJobHeartbeatIn": {
+        "additionalProperties": false,
+        "properties": {
+          "attempt": {
+            "minimum": 1.0,
+            "title": "Attempt",
+            "type": "integer"
+          },
+          "elapsed_seconds": {
+            "minimum": 0.0,
+            "title": "Elapsed Seconds",
+            "type": "integer"
+          },
+          "phase": {
+            "enum": [
+              "preparing",
+              "briefing",
+              "executing",
+              "rescuing",
+              "verifying",
+              "uploading"
+            ],
+            "title": "Phase",
+            "type": "string"
+          },
+          "tool_calls": {
+            "minimum": 0.0,
+            "title": "Tool Calls",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "attempt",
+          "phase",
+          "elapsed_seconds",
+          "tool_calls"
+        ],
+        "title": "RunnerJobHeartbeatIn",
+        "type": "object"
+      },
+      "RunnerJobHeartbeatOut": {
+        "properties": {
+          "cancel_requested": {
+            "title": "Cancel Requested",
+            "type": "boolean"
+          },
+          "lease_expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lease Expires At"
+          },
+          "status": {
+            "enum": [
+              "running",
+              "cancelled"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "lease_expires_at",
+          "cancel_requested"
+        ],
+        "title": "RunnerJobHeartbeatOut",
+        "type": "object"
+      },
+      "RunnerJobMetrics": {
+        "additionalProperties": false,
+        "properties": {
+          "cached_input_tokens": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cached Input Tokens"
+          },
+          "cost_usd": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Usd"
+          },
+          "duration_ms": {
+            "minimum": 0.0,
+            "title": "Duration Ms",
+            "type": "integer"
+          },
+          "input_tokens": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Tokens"
+          },
+          "items_truncated": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Items Truncated",
+            "type": "integer"
+          },
+          "num_turns": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Num Turns"
+          },
+          "output_tokens": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Tokens"
+          },
+          "redactions": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Redactions",
+            "type": "integer"
+          },
+          "rescued": {
+            "default": false,
+            "title": "Rescued",
+            "type": "boolean"
+          },
+          "sources_invalid": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Sources Invalid",
+            "type": "integer"
+          },
+          "sources_valid": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Sources Valid",
+            "type": "integer"
+          },
+          "tool_calls": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Tool Calls",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "duration_ms"
+        ],
+        "title": "RunnerJobMetrics",
+        "type": "object"
+      },
+      "RunnerJobModule": {
+        "properties": {
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "last_commit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Commit"
+          },
+          "paths": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Paths",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "title",
+          "paths",
+          "last_commit"
+        ],
+        "title": "RunnerJobModule",
+        "type": "object"
+      },
+      "RunnerJobOut": {
+        "properties": {
+          "attempt": {
+            "title": "Attempt",
+            "type": "integer"
+          },
+          "budget_usd": {
+            "title": "Budget Usd",
+            "type": "number"
+          },
+          "commit_sha": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commit Sha"
+          },
+          "excerpt_max_lines": {
+            "title": "Excerpt Max Lines",
+            "type": "integer"
+          },
+          "exclude_globs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Exclude Globs",
+            "type": "array"
+          },
+          "executor": {
+            "$ref": "#/components/schemas/HarnessExecutor"
+          },
+          "heartbeat_interval_seconds": {
+            "title": "Heartbeat Interval Seconds",
+            "type": "integer"
+          },
+          "include_globs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Include Globs",
+            "type": "array"
+          },
+          "job_id": {
+            "format": "uuid",
+            "title": "Job Id",
+            "type": "string"
+          },
+          "lease_seconds": {
+            "title": "Lease Seconds",
+            "type": "integer"
+          },
+          "max_attempts": {
+            "title": "Max Attempts",
+            "type": "integer"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "module": {
+            "$ref": "#/components/schemas/RunnerJobModule"
+          },
+          "repository": {
+            "title": "Repository",
+            "type": "string"
+          },
+          "schema_version": {
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "source_id": {
+            "format": "uuid",
+            "title": "Source Id",
+            "type": "string"
+          },
+          "timeout_seconds": {
+            "title": "Timeout Seconds",
+            "type": "integer"
+          },
+          "trigger": {
+            "$ref": "#/components/schemas/HarnessJobTrigger"
+          }
+        },
+        "required": [
+          "job_id",
+          "attempt",
+          "max_attempts",
+          "source_id",
+          "repository",
+          "module",
+          "executor",
+          "model",
+          "budget_usd",
+          "timeout_seconds",
+          "excerpt_max_lines",
+          "include_globs",
+          "exclude_globs",
+          "commit_sha",
+          "trigger",
+          "schema_version",
+          "lease_seconds",
+          "heartbeat_interval_seconds"
+        ],
+        "title": "RunnerJobOut",
+        "type": "object"
+      },
+      "RunnerJobResultIn": {
+        "additionalProperties": false,
+        "properties": {
+          "attempt": {
+            "minimum": 1.0,
+            "title": "Attempt",
+            "type": "integer"
+          },
+          "changed_paths": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 20000,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Changed Paths"
+          },
+          "commit_sha": {
+            "pattern": "^[0-9a-f]{40}([0-9a-f]{24})?$",
+            "title": "Commit Sha",
+            "type": "string"
+          },
+          "executor": {
+            "$ref": "#/components/schemas/RunnerExecutorRun"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RunnerKnowledgeItemIn"
+            },
+            "maxItems": 31,
+            "title": "Items",
+            "type": "array"
+          },
+          "metrics": {
+            "$ref": "#/components/schemas/RunnerJobMetrics"
+          },
+          "rejections": {
+            "items": {
+              "$ref": "#/components/schemas/RunnerRejectionIn"
+            },
+            "maxItems": 300,
+            "title": "Rejections",
+            "type": "array"
+          }
+        },
+        "required": [
+          "attempt",
+          "commit_sha",
+          "changed_paths",
+          "executor",
+          "metrics",
+          "items",
+          "rejections"
+        ],
+        "title": "RunnerJobResultIn",
+        "type": "object"
+      },
+      "RunnerJobResultOut": {
+        "properties": {
+          "duplicate": {
+            "title": "Duplicate",
+            "type": "boolean"
+          },
+          "items_accepted": {
+            "title": "Items Accepted",
+            "type": "integer"
+          },
+          "items_preserved": {
+            "title": "Items Preserved",
+            "type": "integer"
+          },
+          "items_rejected": {
+            "title": "Items Rejected",
+            "type": "integer"
+          },
+          "job_id": {
+            "format": "uuid",
+            "title": "Job Id",
+            "type": "string"
+          },
+          "status": {
+            "const": "succeeded",
+            "title": "Status",
+            "type": "string"
+          },
+          "sync_run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sync Run Id"
+          }
+        },
+        "required": [
+          "job_id",
+          "status",
+          "items_accepted",
+          "items_preserved",
+          "items_rejected",
+          "sync_run_id",
+          "duplicate"
+        ],
+        "title": "RunnerJobResultOut",
+        "type": "object"
+      },
+      "RunnerJobStateOut": {
+        "properties": {
+          "attempts": {
+            "title": "Attempts",
+            "type": "integer"
+          },
+          "duplicate": {
+            "title": "Duplicate",
+            "type": "boolean"
+          },
+          "job_id": {
+            "format": "uuid",
+            "title": "Job Id",
+            "type": "string"
+          },
+          "not_before": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Not Before"
+          },
+          "status": {
+            "$ref": "#/components/schemas/HarnessJobStatus"
+          }
+        },
+        "required": [
+          "job_id",
+          "status",
+          "attempts",
+          "not_before",
+          "duplicate"
+        ],
+        "title": "RunnerJobStateOut",
+        "type": "object"
+      },
+      "RunnerKnowledgeItemIn": {
+        "description": "A rule item or the module enrichment, told apart by ``kind``.",
+        "discriminator": {
+          "mapping": {
+            "module": "#/components/schemas/ModuleItemIn",
+            "rule": "#/components/schemas/RuleItemIn"
+          },
+          "propertyName": "kind"
+        },
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/RuleItemIn"
+          },
+          {
+            "$ref": "#/components/schemas/ModuleItemIn"
+          }
+        ],
+        "title": "RunnerKnowledgeItemIn"
       },
       "RunnerOut": {
         "properties": {
@@ -3582,6 +4925,131 @@
           "offset"
         ],
         "title": "RunnerPage",
+        "type": "object"
+      },
+      "RunnerRejectionIn": {
+        "additionalProperties": false,
+        "properties": {
+          "block": {
+            "$ref": "#/components/schemas/RejectionBlock"
+          },
+          "code": {
+            "enum": [
+              "outside_checkout",
+              "file_not_found",
+              "bad_range",
+              "range_too_long",
+              "symbol_mismatch",
+              "no_valid_source"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "index": {
+            "minimum": 0.0,
+            "title": "Index",
+            "type": "integer"
+          },
+          "label": {
+            "maxLength": 200,
+            "title": "Label",
+            "type": "string"
+          },
+          "reason": {
+            "maxLength": 500,
+            "title": "Reason",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/RunnerRejectionSource"
+            },
+            "maxItems": 5,
+            "title": "Sources",
+            "type": "array"
+          }
+        },
+        "required": [
+          "block",
+          "index",
+          "label",
+          "code",
+          "reason",
+          "sources"
+        ],
+        "title": "RunnerRejectionIn",
+        "type": "object"
+      },
+      "RunnerRejectionSource": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "enum": [
+              "outside_checkout",
+              "file_not_found",
+              "bad_range",
+              "range_too_long",
+              "symbol_mismatch",
+              "no_valid_source"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "end_line": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Line"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path"
+          },
+          "start_line": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Line"
+          },
+          "symbol": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Symbol"
+          }
+        },
+        "required": [
+          "path",
+          "start_line",
+          "end_line",
+          "symbol",
+          "code"
+        ],
+        "title": "RunnerRejectionSource",
         "type": "object"
       },
       "RunnerRepositoryInfo": {
@@ -5895,6 +7363,316 @@
         ]
       }
     },
+    "/v1/runner/jobs/claim": {
+      "post": {
+        "description": "Lease the oldest eligible job, waiting up to ``wait_seconds`` for one (204 if none).",
+        "operationId": "claim_job_v1_runner_jobs_claim_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunnerClaimIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunnerJobOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "204": {
+            "description": "No job within `wait_seconds`."
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked token (`invalid_runner_token`)."
+          },
+          "403": {
+            "description": "Workspace of the runner suspended (`workspace_suspended`)."
+          },
+          "413": {
+            "description": "Body above the route limit (`payload_too_large`, `details.max_bytes`)."
+          },
+          "422": {
+            "description": "Body outside the schema (`validation_error`)."
+          },
+          "426": {
+            "description": "Missing or unsupported protocol header (`runner_protocol_unsupported`)."
+          }
+        },
+        "summary": "Claim Job",
+        "tags": [
+          "runner"
+        ]
+      }
+    },
+    "/v1/runner/jobs/{job_id}/defer": {
+      "post": {
+        "description": "Set the job aside until ``not_before`` (60 s to 24 h); spends no attempt.",
+        "operationId": "defer_job_v1_runner_jobs__job_id__defer_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunnerJobDeferIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunnerJobStateOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked token (`invalid_runner_token`)."
+          },
+          "403": {
+            "description": "Workspace of the runner suspended (`workspace_suspended`)."
+          },
+          "404": {
+            "description": "Job missing or of another runner's source (`job_not_found`)."
+          },
+          "409": {
+            "description": "Not leased by this runner in this attempt (`job_not_leased`, `details.status`)."
+          },
+          "413": {
+            "description": "Body above the route limit (`payload_too_large`, `details.max_bytes`)."
+          },
+          "422": {
+            "description": "Body outside the schema (`validation_error`)."
+          },
+          "426": {
+            "description": "Missing or unsupported protocol header (`runner_protocol_unsupported`)."
+          }
+        },
+        "summary": "Defer Job",
+        "tags": [
+          "runner"
+        ]
+      }
+    },
+    "/v1/runner/jobs/{job_id}/fail": {
+      "post": {
+        "description": "Back to the queue after ``60 s * attempts`` (retryable, attempts left) or ``failed``.",
+        "operationId": "fail_job_v1_runner_jobs__job_id__fail_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunnerJobFailIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunnerJobStateOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked token (`invalid_runner_token`)."
+          },
+          "403": {
+            "description": "Workspace of the runner suspended (`workspace_suspended`)."
+          },
+          "404": {
+            "description": "Job missing or of another runner's source (`job_not_found`)."
+          },
+          "409": {
+            "description": "Not leased by this runner in this attempt (`job_not_leased`, `details.status`)."
+          },
+          "413": {
+            "description": "Body above the route limit (`payload_too_large`, `details.max_bytes`)."
+          },
+          "422": {
+            "description": "Body outside the schema (`validation_error`)."
+          },
+          "426": {
+            "description": "Missing or unsupported protocol header (`runner_protocol_unsupported`)."
+          }
+        },
+        "summary": "Fail Job",
+        "tags": [
+          "runner"
+        ]
+      }
+    },
+    "/v1/runner/jobs/{job_id}/heartbeat": {
+      "post": {
+        "description": "Renew the lease (``running``); ``cancelled`` tells the runner to drop the job.",
+        "operationId": "job_heartbeat_v1_runner_jobs__job_id__heartbeat_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunnerJobHeartbeatIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunnerJobHeartbeatOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked token (`invalid_runner_token`)."
+          },
+          "403": {
+            "description": "Workspace of the runner suspended (`workspace_suspended`)."
+          },
+          "404": {
+            "description": "Job missing or of another runner's source (`job_not_found`)."
+          },
+          "409": {
+            "description": "Not leased by this runner in this attempt (`job_not_leased`, `details.status`)."
+          },
+          "413": {
+            "description": "Body above the route limit (`payload_too_large`, `details.max_bytes`)."
+          },
+          "422": {
+            "description": "Body outside the schema (`validation_error`)."
+          },
+          "426": {
+            "description": "Missing or unsupported protocol header (`runner_protocol_unsupported`)."
+          }
+        },
+        "summary": "Job Heartbeat",
+        "tags": [
+          "runner"
+        ]
+      }
+    },
+    "/v1/runner/jobs/{job_id}/result": {
+      "post": {
+        "description": "Store the result of the lease, then start the sync of the source.",
+        "operationId": "job_result_v1_runner_jobs__job_id__result_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunnerJobResultIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunnerJobResultOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked token (`invalid_runner_token`)."
+          },
+          "403": {
+            "description": "Workspace of the runner suspended (`workspace_suspended`)."
+          },
+          "404": {
+            "description": "Job missing or of another runner's source (`job_not_found`)."
+          },
+          "409": {
+            "description": "Not leased by this runner in this attempt (`job_not_leased`, `details.status`)."
+          },
+          "413": {
+            "description": "Body above the route limit (`payload_too_large`, `details.max_bytes`)."
+          },
+          "422": {
+            "description": "The result breaks the contract (`result_invalid`)."
+          },
+          "426": {
+            "description": "Missing or unsupported protocol header (`runner_protocol_unsupported`)."
+          }
+        },
+        "summary": "Job Result",
+        "tags": [
+          "runner"
+        ]
+      }
+    },
     "/v1/setup": {
       "post": {
         "description": "Create the first superadmin (e-mail already verified) and log them in.",
@@ -7597,6 +9375,72 @@
         "summary": "Set Feedback",
         "tags": [
           "conversations"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/harness-jobs/{job_id}/cancel": {
+      "post": {
+        "description": "Cancel the job; the runner holding it is told on its next job heartbeat.",
+        "operationId": "cancel_harness_job_v1_workspaces__workspace_id__harness_jobs__job_id__cancel_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Job Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HarnessJobOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below editor, workspace suspended or CSRF failure."
+          },
+          "404": {
+            "description": "Workspace or job not found (`job_not_found`)."
+          },
+          "409": {
+            "description": "The job has already finished (`job_finished`)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cancel Harness Job",
+        "tags": [
+          "harness"
         ]
       }
     },

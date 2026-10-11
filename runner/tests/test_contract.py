@@ -26,9 +26,23 @@ OPENAPI = Path(__file__).resolve().parents[2] / "docs" / "specs" / "openapi.json
 # in parallel (plan 0004, F2); whoever lands them adds the names here, and
 # test_checked_schemas_follow_openapi fails until they do.
 CHECKED_SCHEMAS: tuple[str, ...] = (
+    "RunnerClaimIn",
+    "RunnerEvidenceIn",
     "RunnerExecutorInfo",
     "RunnerHeartbeatIn",
     "RunnerHeartbeatOut",
+    "RunnerJobDeferIn",
+    "RunnerJobFailIn",
+    "RunnerJobHeartbeatIn",
+    "RunnerJobHeartbeatOut",
+    "RunnerJobMetrics",
+    "RunnerJobModule",
+    "RunnerJobOut",
+    "RunnerJobResultIn",
+    "RunnerJobResultOut",
+    "RunnerJobStateOut",
+    "RunnerKnowledgeItemIn",
+    "RunnerRejectionIn",
     "RunnerRepositoryInfo",
     "RunnerSourceOut",
 )

@@ -53,11 +53,12 @@ class RunnerBodyLimitMiddleware:
             await self.app(scope, receive, send)
             return
         declared = _content_length(scope)
-        body = None if declared is not None and declared > limit else await _read(receive, limit)
-        if body is None:
+        read = None if declared is not None and declared > limit else await _read(receive, limit)
+        if read is None:
             await _too_large(scope, send, limit)
             return
-        await self.app(scope, _replay(body), send)
+        body, client_gone = read
+        await self.app(scope, _replay(body, None if client_gone else receive), send)
 
 
 def _content_length(scope: Scope) -> int | None:
@@ -70,31 +71,33 @@ def _content_length(scope: Scope) -> int | None:
     return None
 
 
-async def _read(receive: Receive, limit: int) -> bytes | None:
+async def _read(receive: Receive, limit: int) -> tuple[bytes, bool] | None:
+    """``(body, client_gone)``, or ``None`` as soon as the body passes ``limit``."""
     chunks: list[bytes] = []
     size = 0
     while True:
         message = await receive()
         if message["type"] != "http.request":
             # Client gone before the body ended: hand over what arrived; nobody reads the answer.
-            break
+            return b"".join(chunks), True
         chunk: bytes = message.get("body", b"")
         size += len(chunk)
         if size > limit:
             return None
         chunks.append(chunk)
         if not message.get("more_body", False):
-            break
-    return b"".join(chunks)
+            return b"".join(chunks), False
 
 
-def _replay(body: bytes) -> Receive:
+def _replay(body: bytes, then: Receive | None) -> Receive:
+    """The buffered body once; afterwards the client's own messages (``then``), so the
+    application still learns of a disconnect (the claim's long-poll stops on it)."""
     sent = False
 
     async def receive() -> Message:
         nonlocal sent
         if sent:
-            return {"type": "http.disconnect"}
+            return {"type": "http.disconnect"} if then is None else await then()
         sent = True
         return {"type": "http.request", "body": body, "more_body": False}
 
@@ -107,4 +110,4 @@ async def _too_large(scope: Scope, send: Send, limit: int) -> None:
         status_code=error.status_code, content=error_body(error.code, error.message, error.details)
     )
     # The rest of the body is never read: the response goes out and the connection closes.
-    await response(scope, _replay(b""), send)
+    await response(scope, _replay(b"", None), send)

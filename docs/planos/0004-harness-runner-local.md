@@ -42,10 +42,10 @@ fases:
         commit: 6c67d0a
       - id: F2.2
         titulo: Fila de tarefas com reserva (long-poll, heartbeat, resultado, adiamento)
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-11
+        concluida_em: 2026-10-11
         commit: null
       - id: F2.3
         titulo: Fonte do tipo runner, módulos sugeridos e disparo por commit novo
@@ -92,7 +92,7 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-11
         concluida_em: 2026-10-11
-        commit: null
+        commit: 13ee7f9
   - id: F4
     titulo: Painel
     status: pendente
@@ -294,9 +294,16 @@ decisoes:
   - id: D23
     data: 2026-10-11
     por: agente
-    decisao: "F3.4: report na subida e sempre que o HEAD muda (conferido a cada heartbeat e após cada tarefa); base do próximo report = HEAD do último report aceito; caminhos normalizados (segmentos vazios e . removidos); doctor avisa no Windows quando o checkout não é legível por BUILTIN\Users (sandbox do Codex); teste de contrato com lista explícita CHECKED_SCHEMAS e comparador que resolve enums referenciados"
+    decisao: "F3.4: report na subida e sempre que o HEAD muda (conferido a cada heartbeat e após cada tarefa); base do próximo report = HEAD do último report aceito; caminhos normalizados (segmentos vazios e . removidos); doctor avisa no Windows quando o checkout não é legível por BUILTIN\\Users (sandbox do Codex); teste de contrato com lista explícita CHECKED_SCHEMAS e comparador que resolve enums referenciados"
     motivo: "Sem a base local, o report logo após uma tarefa iria com changed_paths nulo e o disparo por commit nunca ocorreria"
     alternativas: "Esperar o heartbeat seguinte para a base"
+    adr: null
+  - id: D24
+    data: 2026-10-11
+    por: agente
+    decisao: "F2.2: sincronização após o resultado por SourceSync (start_sync com trigger manual; falha devolve sync_run_id null sem perder o resultado); 422 result_invalid para toda violação do resultado, inclusive de schema; attempt = attempts + 1; métricas somam entre tentativas; fail/defer repetidos devolvem duplicate; cancelar tarefa terminada dá 409 job_finished; middleware de limite de corpo passou a repassar as mensagens reais do cliente (necessário ao long-poll). Gatilho próprio harness para execuções e enfileirar sincronização quando já há uma em andamento ficam para a F2.4"
+    motivo: "Motor ainda não indexa fonte runner (conector knowledge é da F2.4)"
+    alternativas: "RunTrigger novo nesta subfase"
     adr: null
 pendencias_usuario: []
 ---
@@ -556,6 +563,8 @@ Nenhuma aberta. Observação para a F5.2: a chave do OpenRouter cadastrada na st
 - 2026-10-11 — F3.4 iniciada.
 - 2026-10-11 — F2.1 concluída: API de runners (token kbr_ uma vez, hash SHA-256, revogação, 409 runner_in_use), POST /v1/runner/heartbeat com protocolo e limite de corpo; 1250 testes, cobertura 99,96%.
 - 2026-10-11 — F3.4 concluída: verify, excerpt com redação, itens, HarnessJobProcessor ligado à CLI, reporter e teste de contrato contra o openapi (5 schemas do heartbeat); suíte real de ponta a ponta verde (Claude haiku 25 s/US$ 0,004; Codex gpt-5.5 70 s; 5 regras + 1 módulo, 0 rejeições em cada); 427 testes, cobertura 99,9%.
+- 2026-10-11 — F2.2 iniciada.
+- 2026-10-11 — F2.2 concluída: fila com reserva (claim long-poll, heartbeat, result, fail, defer, cancelamento), itens com chaves do servidor e revisados preservados; 14 schemas novos no contrato do runner sem divergência; 1324 testes, cobertura 99,8%. Corrigido YAML inválido na D23.
 
 ## 8. Encerramento
 

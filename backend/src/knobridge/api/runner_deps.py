@@ -21,7 +21,7 @@ from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from knobridge.api.deps import ClockDep, SessionFactoryDep
-from knobridge.core.db import apply_scope, apply_system_scope
+from knobridge.core.db import apply_scope, apply_system_scope, system_session
 from knobridge.core.errors import KnoBridgeError
 from knobridge.harness.models import Runner
 from knobridge.harness.presence import authenticate_runner, invalid_runner_token
@@ -83,6 +83,26 @@ async def runner_context(
 
 
 RunnerContextDep = Annotated[RunnerContext, Depends(runner_context, scope="function")]
+
+
+async def runner_identity(
+    request: Request,
+    factory: SessionFactoryDep,
+    clock: ClockDep,
+    _protocol: Annotated[int, Depends(require_runner_protocol)],
+) -> Runner:
+    """Authenticate the runner in a short transaction of its own, already committed.
+
+    For routes that open their own scoped transactions: the claim (one per long-poll try, so
+    no connection idles in a transaction for 25 s) and the result (the sync starts after its
+    commit).
+    """
+    token = bearer_token(request)
+    async with system_session(factory) as db:
+        return await authenticate_runner(db, token=token, now=clock.now())
+
+
+RunnerIdentityDep = Annotated[Runner, Depends(runner_identity)]
 
 
 def get_runner_service(clock: ClockDep) -> RunnerService:

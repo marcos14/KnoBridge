@@ -48,6 +48,7 @@ const ACTIONS: Record<AuditAction, true> = {
   "runner.updated": true,
   "runner.revoked": true,
   "runner.deleted": true,
+  "harness_job.cancelled": true,
   "workspace.created": true,
   "workspace.updated": true,
   "workspace.suspended": true,

@@ -66,3 +66,5 @@ class AuditAction(StrEnum):
     RUNNER_UPDATED = "runner.updated"
     RUNNER_REVOKED = "runner.revoked"
     RUNNER_DELETED = "runner.deleted"
+    # Harness jobs (module key and ids; never knowledge content).
+    HARNESS_JOB_CANCELLED = "harness_job.cancelled"

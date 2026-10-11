@@ -106,7 +106,7 @@ def rule_item(seeded: Seeded, key: str, job_id: uuid.UUID | None = None) -> Know
     )
 
 
-async def _base(db: AsyncSession) -> tuple[Workspace, Runner, Collection]:
+async def base_rows(db: AsyncSession) -> tuple[Workspace, Runner, Collection]:
     workspace = Workspace(name="W", slug=f"w-{uuid.uuid4().hex[:12]}")
     db.add(workspace)
     await db.flush()
@@ -135,7 +135,7 @@ async def _base(db: AsyncSession) -> tuple[Workspace, Runner, Collection]:
 async def seed(factory: SessionFactory) -> Seeded:
     """A new workspace with a runner source and one row in every harness table."""
     async with system_session(factory) as db:
-        workspace, runner, collection = await _base(db)
+        workspace, runner, collection = await base_rows(db)
         source = runner_source(workspace.id, collection.id, runner.id, "erp")
         db.add(source)
         await db.flush()

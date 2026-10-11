@@ -24,6 +24,7 @@
 | `collection.created`, `collection.updated`, `collection.deleted` (nome; na criação, `embedding_model` e `provider_id`; na alteração, `fields`) | workspace |
 | `source.created`, `source.updated`, `source.deleted`, `source.tested`, `source.sync.started`, `source.sync.cancelled` (nome, `kind`, `collection_id`, `fields`, `ok`/`error_code` do teste, `run_id`/`trigger` da sincronização, `documents` e `cancelled_run_id` na exclusão; nunca a `config`, com caminhos e URLs, nem conteúdo de documento; documento indexado não é auditado) | workspace |
 | `runner.created`, `runner.updated`, `runner.revoked`, `runner.deleted` (runners do harness: `name`, `prefix` (o prefixo público do token; a chave não pode conter `token`) e, na alteração, `fields`; nunca o token nem o hash) | workspace |
+| `harness_job.cancelled` (tarefa do harness cancelada no painel: `module_key` e `source_id`; nunca conteúdo de conhecimento) | workspace |
 
 **Convenções locais**:
 - **Nunca grave segredo** (senha, token, cookie, chave, cabeçalho `Authorization`) nem dado pessoal além do necessário em `metadata`. Prefira ids a e-mails e nomes. Chaves que contêm `password`, `secret`, `token`, `cookie`, `authorization` ou `api_key` são recusadas por `record`.
