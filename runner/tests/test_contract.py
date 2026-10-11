@@ -31,6 +31,7 @@ CHECKED_SCHEMAS: tuple[str, ...] = (
     "RunnerExecutorInfo",
     "RunnerHeartbeatIn",
     "RunnerHeartbeatOut",
+    "RunnerInventory",
     "RunnerJobDeferIn",
     "RunnerJobFailIn",
     "RunnerJobHeartbeatIn",
@@ -42,7 +43,10 @@ CHECKED_SCHEMAS: tuple[str, ...] = (
     "RunnerJobResultOut",
     "RunnerJobStateOut",
     "RunnerKnowledgeItemIn",
+    "RunnerModuleIn",
     "RunnerRejectionIn",
+    "RunnerReportIn",
+    "RunnerReportOut",
     "RunnerRepositoryInfo",
     "RunnerSourceOut",
 )

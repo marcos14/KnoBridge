@@ -7,26 +7,26 @@ exclude globs are not part of it: they are columns of ``sources``, shared by eve
 
 from __future__ import annotations
 
+import uuid
 from collections.abc import Mapping
 from enum import StrEnum
 from pathlib import Path
 from typing import Annotated, Self
 
-from pydantic import (
-    AfterValidator,
-    AnyUrl,
-    BaseModel,
-    ConfigDict,
-    Field,
-    ValidationError,
-    model_validator,
-)
-from pydantic_core import InitErrorDetails, PydanticCustomError
+from pydantic import AfterValidator, AnyUrl, BaseModel, ConfigDict, Field, model_validator
+
+from knobridge.harness.models import COMMIT_PATTERN, HarnessExecutor
 
 DEFAULT_INITIAL_COMMIT_LIMIT = 200
 MAX_INITIAL_COMMIT_LIMIT = 5000
 PATH_MAX_LENGTH = 1000
 BRANCH_MAX_LENGTH = 200
+# Runner sources (docs/specs/runner.md, "Fonte do tipo runner" and "Formatos validados").
+REPOSITORY_PATTERN = r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+MODEL_PATTERN = r"^[A-Za-z0-9._:/-]{1,100}$"
+DEFAULT_BUDGET_USD = 5.0
+DEFAULT_TIMEOUT_SECONDS = 1200
+DEFAULT_EXCERPT_MAX_LINES = 30
 
 
 class SourceKind(StrEnum):
@@ -104,27 +104,55 @@ class FolderSourceConfig(BaseModel):
     path: AbsolutePath
 
 
-type SourceConfig = GitSourceConfig | FolderSourceConfig
+type ModelName = Annotated[str, Field(pattern=MODEL_PATTERN)]
+type RepositoryName = Annotated[str, Field(pattern=REPOSITORY_PATTERN)]
+type CommitSha = Annotated[str, Field(pattern=COMMIT_PATTERN)]
 
-# A kind without a model here (``runner``, until plan 0004 F2.3) exists in the database but
-# cannot pass the config boundary yet: the API refuses to create such a source.
-_CONFIG_MODELS: dict[SourceKind, type[GitSourceConfig] | type[FolderSourceConfig]] = {
+
+class RunnerModels(BaseModel):
+    """Model per executor; ``None`` is the executor's default model."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    claude_code: ModelName | None = None
+    codex: ModelName | None = None
+
+    def for_executor(self, executor: HarnessExecutor) -> str | None:
+        return self.claude_code if executor is HarnessExecutor.CLAUDE_CODE else self.codex
+
+
+class RunnerSourceConfig(BaseModel):
+    """A repository on a user's machine, mapped by a ``knobridge-runner`` (ADR 0005).
+
+    Never an OpenAPI schema (the API takes and returns ``config`` as a plain object): the
+    heartbeat already publishes another ``RunnerSourceConfig``, the one the runner reads.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    runner_id: uuid.UUID
+    repository: RepositoryName
+    default_executor: HarnessExecutor = HarnessExecutor.CLAUDE_CODE
+    models: RunnerModels = Field(default_factory=RunnerModels)
+    budget_usd: float = Field(default=DEFAULT_BUDGET_USD, ge=0.1, le=100)
+    timeout_seconds: int = Field(default=DEFAULT_TIMEOUT_SECONDS, ge=60, le=7200)
+    auto_on_commit: bool = False
+    excerpt_max_lines: int = Field(default=DEFAULT_EXCERPT_MAX_LINES, ge=0, le=80)
+    # Read only: written by the runner's report; the panel's value is ignored.
+    head_commit: CommitSha | None = None
+
+
+type SourceConfig = GitSourceConfig | FolderSourceConfig | RunnerSourceConfig
+
+_CONFIG_MODELS: dict[
+    SourceKind, type[GitSourceConfig] | type[FolderSourceConfig] | type[RunnerSourceConfig]
+] = {
     SourceKind.GIT: GitSourceConfig,
     SourceKind.FOLDER: FolderSourceConfig,
+    SourceKind.RUNNER: RunnerSourceConfig,
 }
-
-
-def _unsupported_kind(kind: SourceKind) -> ValidationError:
-    error = PydanticCustomError(
-        "source_kind_unsupported", "source kind {kind} is not supported", {"kind": kind.value}
-    )
-    details: list[InitErrorDetails] = [{"type": error, "loc": ("kind",), "input": kind.value}]
-    return ValidationError.from_exception_data("SourceConfig", details)
 
 
 def parse_source_config(kind: SourceKind, data: Mapping[str, object]) -> SourceConfig:
     """Validate ``data`` against the model of ``kind``; raises ``pydantic.ValidationError``."""
-    model = _CONFIG_MODELS.get(kind)
-    if model is None:
-        raise _unsupported_kind(kind)
-    return model.model_validate(dict(data))
+    return _CONFIG_MODELS[kind].model_validate(dict(data))

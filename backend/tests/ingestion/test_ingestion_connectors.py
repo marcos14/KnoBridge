@@ -6,6 +6,9 @@ import asyncio
 import uuid
 from pathlib import Path
 
+import pytest
+
+from knobridge.connectors.errors import SourceUnavailableError
 from knobridge.connectors.folder.connector import FolderConnector
 from knobridge.connectors.git.connector import GitConnector
 from knobridge.core.settings import Settings
@@ -49,3 +52,13 @@ def test_connector_factory_builds_git_connector(tmp_path: Path) -> None:
     connector = factory(_source(SourceKind.GIT, {"url": "https://example.test/repo.git"}))
 
     assert isinstance(connector, GitConnector)
+
+
+def test_connector_factory_refuses_runner_source(tmp_path: Path) -> None:
+    factory = SettingsConnectorFactory(Settings(env="test", local_sources_root=tmp_path))
+    source = _source(SourceKind.RUNNER, {"runner_id": str(uuid.uuid4()), "repository": "erp"})
+
+    with pytest.raises(SourceUnavailableError) as raised:
+        factory(source)
+
+    assert raised.value.details == {"kind": "runner"}

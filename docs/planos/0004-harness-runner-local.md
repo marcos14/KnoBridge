@@ -46,19 +46,19 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-11
         concluida_em: 2026-10-11
-        commit: null
+        commit: 49063a0
       - id: F2.3
         titulo: Fonte do tipo runner, módulos sugeridos e disparo por commit novo
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-11
+        concluida_em: 2026-10-11
         commit: null
       - id: F2.4
         titulo: Conhecimento no índice, revisão, exportação .md e citações de conhecimento
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code
+        iniciada_em: 2026-10-11
         concluida_em: null
         commit: null
   - id: F3
@@ -304,6 +304,27 @@ decisoes:
     decisao: "F2.2: sincronização após o resultado por SourceSync (start_sync com trigger manual; falha devolve sync_run_id null sem perder o resultado); 422 result_invalid para toda violação do resultado, inclusive de schema; attempt = attempts + 1; métricas somam entre tentativas; fail/defer repetidos devolvem duplicate; cancelar tarefa terminada dá 409 job_finished; middleware de limite de corpo passou a repassar as mensagens reais do cliente (necessário ao long-poll). Gatilho próprio harness para execuções e enfileirar sincronização quando já há uma em andamento ficam para a F2.4"
     motivo: "Motor ainda não indexa fonte runner (conector knowledge é da F2.4)"
     alternativas: "RunTrigger novo nesta subfase"
+    adr: null
+  - id: D25
+    data: 2026-10-11
+    por: agente
+    decisao: "F2.3: teste de conexão de fonte runner responde 200 com ok:false e source_unavailable quando o runner está offline ou revogado; runner revogado ou inexistente na criação ou edição da fonte dá 422"
+    motivo: "o painel trata teste de conexão como diagnóstico, não erro de requisição; a referência inválida é erro de validação do corpo"
+    alternativas: "404 para runner inexistente; 409 para runner revogado"
+    adr: null
+  - id: D26
+    data: 2026-10-11
+    por: agente
+    decisao: "F2.3: RunnerSourceConfig não é publicado como variante do OpenAPI de fontes nesta subfase; head_commit vindo do painel é descartado (só o runner informa o commit pelo report)"
+    motivo: "o formulário da F4.1 define o contrato visível; o commit da fonte só pode vir de quem lê o checkout"
+    alternativas: "publicar já o schema; aceitar head_commit do painel"
+    adr: null
+  - id: D27
+    data: 2026-10-11
+    por: agente
+    decisao: "F2.3: report e edição de módulos travam a fonte com FOR UPDATE; jobs enfileirados por commit novo não geram auditoria (só o disparo manual audita harness_job.enqueued); chave de módulo repetida responde 409 module_key_taken"
+    motivo: "evita corrida entre report e edição; auditoria registra ações de pessoas, não reações automáticas"
+    alternativas: "lock otimista por versão; auditar todo enfileiramento; 422 para chave repetida"
     adr: null
 pendencias_usuario: []
 ---
@@ -565,6 +586,8 @@ Nenhuma aberta. Observação para a F5.2: a chave do OpenRouter cadastrada na st
 - 2026-10-11 — F3.4 concluída: verify, excerpt com redação, itens, HarnessJobProcessor ligado à CLI, reporter e teste de contrato contra o openapi (5 schemas do heartbeat); suíte real de ponta a ponta verde (Claude haiku 25 s/US$ 0,004; Codex gpt-5.5 70 s; 5 regras + 1 módulo, 0 rejeições em cada); 427 testes, cobertura 99,9%.
 - 2026-10-11 — F2.2 iniciada.
 - 2026-10-11 — F2.2 concluída: fila com reserva (claim long-poll, heartbeat, result, fail, defer, cancelamento), itens com chaves do servidor e revisados preservados; 14 schemas novos no contrato do runner sem divergência; 1324 testes, cobertura 99,8%. Corrigido YAML inválido na D23.
+- 2026-10-11 — F2.3 e F2.4 iniciadas em paralelo.
+- 2026-10-11 — F2.3 concluída: fonte do tipo runner, report de inventário, módulos editáveis e disparo manual e por commit; backend 1410 passed com 99,84% de cobertura (1 OSError de socket do Windows em test_members, verde ao rodar de novo), frontend 921, runner 427
 
 ## 8. Encerramento
 

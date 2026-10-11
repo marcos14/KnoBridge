@@ -1,6 +1,6 @@
 """Helpers for the runner route tests: runners created through the panel API, runner sources
-written straight to the database (the API accepts the ``runner`` kind only from plan 0004
-F2.3), the runner's request headers and a valid heartbeat body.
+written straight to the database (any stored config, also ones the API would refuse), the
+runner's request headers, valid heartbeat and report bodies.
 
 Not a test module (pytest only collects ``test_*.py``); imported by its basename.
 """
@@ -108,5 +108,57 @@ def stored_runner(api: ApiEnv, runner_id: str) -> Runner:
     async def scenario(factory: SessionFactory) -> Runner:
         async with system_session(factory) as db:
             return (await db.scalars(select(Runner).where(Runner.id == uuid.UUID(runner_id)))).one()
+
+    return run_db(api.database_url, scenario)
+
+
+def report_path(source_id: str) -> str:
+    return f"/v1/runner/sources/{source_id}/report"
+
+
+def inventory(files: int = 3, lines: int = 120) -> dict[str, Any]:
+    return {
+        "files": files,
+        "lines": lines,
+        "languages": {"typescript": {"files": files, "lines": lines}},
+    }
+
+
+def suggested(key: str, *paths: str, title: str | None = None, files: int = 3) -> dict[str, Any]:
+    """A suggested module whose folder is the key with ``-`` as ``/`` (``src-x`` = ``src/x``)."""
+    folder = key.replace("-", "/")
+    return {
+        "key": key,
+        "title": title or folder,
+        "paths": list(paths) or [f"{folder}/**"],
+        "inventory": inventory(files),
+    }
+
+
+def report_body(**fields: Any) -> dict[str, Any]:  # noqa: ANN401 - JSON test payload
+    body: dict[str, Any] = {
+        "repository": "erp",
+        "head_commit": COMMIT,
+        "branch": "main",
+        "base_commit": None,
+        "changed_paths": None,
+        "inventory": inventory(10, 900),
+        "modules": [suggested("src-faturamento"), suggested("src-estoque")],
+    }
+    body.update(fields)
+    return body
+
+
+def send_report(api: ApiEnv, token: str, source_id: str, **fields: Any) -> httpx.Response:  # noqa: ANN401
+    return api.client.post(
+        report_path(source_id), json=report_body(**fields), headers=runner_headers(token)
+    )
+
+
+def stored_source_config(api: ApiEnv, source_id: str) -> dict[str, Any]:
+    async def scenario(factory: SessionFactory) -> dict[str, Any]:
+        async with system_session(factory) as db:
+            source = await db.get_one(Source, uuid.UUID(source_id))
+            return dict(source.config)
 
     return run_db(api.database_url, scenario)

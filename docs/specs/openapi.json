@@ -1038,7 +1038,10 @@
           "runner.updated",
           "runner.revoked",
           "runner.deleted",
-          "harness_job.cancelled"
+          "harness_job.cancelled",
+          "harness_job.enqueued",
+          "harness_module.created",
+          "harness_module.updated"
         ],
         "title": "AuditAction",
         "type": "string"
@@ -2062,6 +2065,293 @@
         "title": "HarnessExecutor",
         "type": "string"
       },
+      "HarnessJobBatchIn": {
+        "properties": {
+          "executor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HarnessExecutor"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "model": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9._:/-]{1,100}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "module_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Module Ids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "module_ids"
+        ],
+        "title": "HarnessJobBatchIn",
+        "type": "object"
+      },
+      "HarnessJobBatchOut": {
+        "properties": {
+          "jobs": {
+            "items": {
+              "$ref": "#/components/schemas/HarnessJobOut"
+            },
+            "title": "Jobs",
+            "type": "array"
+          },
+          "skipped": {
+            "items": {
+              "$ref": "#/components/schemas/HarnessJobSkipped"
+            },
+            "title": "Skipped",
+            "type": "array"
+          }
+        },
+        "required": [
+          "jobs",
+          "skipped"
+        ],
+        "title": "HarnessJobBatchOut",
+        "type": "object"
+      },
+      "HarnessJobDetailOut": {
+        "properties": {
+          "attempts": {
+            "title": "Attempts",
+            "type": "integer"
+          },
+          "commit_sha": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commit Sha"
+          },
+          "cost_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Usd"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "duration_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Ms"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "executor": {
+            "$ref": "#/components/schemas/HarnessExecutor"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "input_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Tokens"
+          },
+          "items_accepted": {
+            "title": "Items Accepted",
+            "type": "integer"
+          },
+          "items_rejected": {
+            "title": "Items Rejected",
+            "type": "integer"
+          },
+          "lease_expires_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lease Expires At"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "module_id": {
+            "format": "uuid",
+            "title": "Module Id",
+            "type": "string"
+          },
+          "module_key": {
+            "title": "Module Key",
+            "type": "string"
+          },
+          "module_title": {
+            "title": "Module Title",
+            "type": "string"
+          },
+          "not_before": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Not Before"
+          },
+          "output_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Tokens"
+          },
+          "rejections": {
+            "$ref": "#/components/schemas/HarnessRejectionPage"
+          },
+          "runner_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runner Id"
+          },
+          "source_id": {
+            "format": "uuid",
+            "title": "Source Id",
+            "type": "string"
+          },
+          "started_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Started At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/HarnessJobStatus"
+          },
+          "trigger": {
+            "$ref": "#/components/schemas/HarnessJobTrigger"
+          }
+        },
+        "required": [
+          "id",
+          "source_id",
+          "module_id",
+          "module_key",
+          "module_title",
+          "runner_id",
+          "executor",
+          "model",
+          "trigger",
+          "status",
+          "attempts",
+          "not_before",
+          "lease_expires_at",
+          "commit_sha",
+          "input_tokens",
+          "output_tokens",
+          "cost_usd",
+          "duration_ms",
+          "items_accepted",
+          "items_rejected",
+          "error",
+          "created_at",
+          "started_at",
+          "finished_at",
+          "rejections"
+        ],
+        "title": "HarnessJobDetailOut",
+        "type": "object"
+      },
       "HarnessJobOut": {
         "properties": {
           "attempts": {
@@ -2280,6 +2570,56 @@
         "title": "HarnessJobOut",
         "type": "object"
       },
+      "HarnessJobPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/HarnessJobOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "HarnessJobPage",
+        "type": "object"
+      },
+      "HarnessJobSkipped": {
+        "properties": {
+          "module_id": {
+            "format": "uuid",
+            "title": "Module Id",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "module_id",
+          "reason"
+        ],
+        "title": "HarnessJobSkipped",
+        "type": "object"
+      },
       "HarnessJobStatus": {
         "description": "States of a job in the queue (docs/specs/runner.md, \"Estados da tarefa\").",
         "enum": [
@@ -2301,6 +2641,335 @@
         ],
         "title": "HarnessJobTrigger",
         "type": "string"
+      },
+      "HarnessLanguageCount": {
+        "properties": {
+          "files": {
+            "default": 0,
+            "title": "Files",
+            "type": "integer"
+          },
+          "lines": {
+            "default": 0,
+            "title": "Lines",
+            "type": "integer"
+          }
+        },
+        "title": "HarnessLanguageCount",
+        "type": "object"
+      },
+      "HarnessModuleCreate": {
+        "properties": {
+          "enabled": {
+            "default": true,
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "key": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Key"
+          },
+          "paths": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Paths",
+            "type": "array"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "paths"
+        ],
+        "title": "HarnessModuleCreate",
+        "type": "object"
+      },
+      "HarnessModuleInventory": {
+        "description": "Inventory of the last report; zeros for a manual module not reported yet.",
+        "properties": {
+          "files": {
+            "default": 0,
+            "title": "Files",
+            "type": "integer"
+          },
+          "languages": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/HarnessLanguageCount"
+            },
+            "title": "Languages",
+            "type": "object"
+          },
+          "lines": {
+            "default": 0,
+            "title": "Lines",
+            "type": "integer"
+          }
+        },
+        "title": "HarnessModuleInventory",
+        "type": "object"
+      },
+      "HarnessModuleOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "inventory": {
+            "$ref": "#/components/schemas/HarnessModuleInventory"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "last_commit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Commit"
+          },
+          "last_job_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HarnessJobStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "paths": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Paths",
+            "type": "array"
+          },
+          "source_id": {
+            "format": "uuid",
+            "title": "Source Id",
+            "type": "string"
+          },
+          "suggested": {
+            "title": "Suggested",
+            "type": "boolean"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "source_id",
+          "key",
+          "title",
+          "paths",
+          "suggested",
+          "enabled",
+          "inventory",
+          "last_commit",
+          "last_job_status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "HarnessModuleOut",
+        "type": "object"
+      },
+      "HarnessModulePage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/HarnessModuleOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "HarnessModulePage",
+        "type": "object"
+      },
+      "HarnessModuleUpdate": {
+        "description": "Fields to change; omitted or null fields stay.",
+        "properties": {
+          "enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enabled"
+          },
+          "paths": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 50,
+                "minItems": 1,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Paths"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "title": "HarnessModuleUpdate",
+        "type": "object"
+      },
+      "HarnessRejectionOut": {
+        "properties": {
+          "block": {
+            "$ref": "#/components/schemas/RejectionBlock"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "item_index": {
+            "title": "Item Index",
+            "type": "integer"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "sources": {
+            "items": {},
+            "title": "Sources",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "block",
+          "item_index",
+          "label",
+          "code",
+          "reason",
+          "sources",
+          "created_at"
+        ],
+        "title": "HarnessRejectionOut",
+        "type": "object"
+      },
+      "HarnessRejectionPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/HarnessRejectionOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "HarnessRejectionPage",
+        "type": "object"
       },
       "InvitationOut": {
         "properties": {
@@ -3879,6 +4548,25 @@
         "title": "RunnerCreated",
         "type": "object"
       },
+      "RunnerEnqueuedJob": {
+        "properties": {
+          "job_id": {
+            "format": "uuid",
+            "title": "Job Id",
+            "type": "string"
+          },
+          "module_key": {
+            "title": "Module Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id",
+          "module_key"
+        ],
+        "title": "RunnerEnqueuedJob",
+        "type": "object"
+      },
       "RunnerEvidenceIn": {
         "additionalProperties": false,
         "properties": {
@@ -4182,6 +4870,35 @@
           "sources"
         ],
         "title": "RunnerHeartbeatOut",
+        "type": "object"
+      },
+      "RunnerInventory": {
+        "additionalProperties": false,
+        "properties": {
+          "files": {
+            "minimum": 0.0,
+            "title": "Files",
+            "type": "integer"
+          },
+          "languages": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/RunnerLanguageCount"
+            },
+            "maxProperties": 100,
+            "title": "Languages",
+            "type": "object"
+          },
+          "lines": {
+            "minimum": 0.0,
+            "title": "Lines",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "files",
+          "lines"
+        ],
+        "title": "RunnerInventory",
         "type": "object"
       },
       "RunnerJobDeferIn": {
@@ -4806,6 +5523,63 @@
         ],
         "title": "RunnerKnowledgeItemIn"
       },
+      "RunnerLanguageCount": {
+        "additionalProperties": false,
+        "properties": {
+          "files": {
+            "minimum": 0.0,
+            "title": "Files",
+            "type": "integer"
+          },
+          "lines": {
+            "minimum": 0.0,
+            "title": "Lines",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "files",
+          "lines"
+        ],
+        "title": "RunnerLanguageCount",
+        "type": "object"
+      },
+      "RunnerModuleIn": {
+        "additionalProperties": false,
+        "properties": {
+          "inventory": {
+            "$ref": "#/components/schemas/RunnerInventory"
+          },
+          "key": {
+            "maxLength": 100,
+            "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+            "title": "Key",
+            "type": "string"
+          },
+          "paths": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Paths",
+            "type": "array"
+          },
+          "title": {
+            "maxLength": 200,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "title",
+          "paths",
+          "inventory"
+        ],
+        "title": "RunnerModuleIn",
+        "type": "object"
+      },
       "RunnerOut": {
         "properties": {
           "capabilities": {
@@ -5050,6 +5824,119 @@
           "code"
         ],
         "title": "RunnerRejectionSource",
+        "type": "object"
+      },
+      "RunnerReportIn": {
+        "additionalProperties": false,
+        "properties": {
+          "base_commit": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{40}([0-9a-f]{24})?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Commit"
+          },
+          "branch": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Branch"
+          },
+          "changed_paths": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 20000,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Changed Paths"
+          },
+          "head_commit": {
+            "pattern": "^[0-9a-f]{40}([0-9a-f]{24})?$",
+            "title": "Head Commit",
+            "type": "string"
+          },
+          "inventory": {
+            "$ref": "#/components/schemas/RunnerInventory"
+          },
+          "modules": {
+            "items": {
+              "$ref": "#/components/schemas/RunnerModuleIn"
+            },
+            "maxItems": 2000,
+            "title": "Modules",
+            "type": "array"
+          },
+          "repository": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$",
+            "title": "Repository",
+            "type": "string"
+          }
+        },
+        "required": [
+          "repository",
+          "head_commit",
+          "branch",
+          "base_commit",
+          "changed_paths",
+          "inventory",
+          "modules"
+        ],
+        "title": "RunnerReportIn",
+        "type": "object"
+      },
+      "RunnerReportOut": {
+        "properties": {
+          "head_commit": {
+            "title": "Head Commit",
+            "type": "string"
+          },
+          "jobs_enqueued": {
+            "items": {
+              "$ref": "#/components/schemas/RunnerEnqueuedJob"
+            },
+            "title": "Jobs Enqueued",
+            "type": "array"
+          },
+          "modules_total": {
+            "title": "Modules Total",
+            "type": "integer"
+          },
+          "modules_upserted": {
+            "title": "Modules Upserted",
+            "type": "integer"
+          },
+          "source_id": {
+            "format": "uuid",
+            "title": "Source Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_id",
+          "head_commit",
+          "modules_total",
+          "modules_upserted",
+          "jobs_enqueued"
+        ],
+        "title": "RunnerReportOut",
         "type": "object"
       },
       "RunnerRepositoryInfo": {
@@ -7673,6 +8560,71 @@
         ]
       }
     },
+    "/v1/runner/sources/{source_id}/report": {
+      "post": {
+        "description": "Upsert the suggested modules, record the HEAD and queue the modules a commit touched.",
+        "operationId": "report_v1_runner_sources__source_id__report_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Source Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunnerReportIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunnerReportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked token (`invalid_runner_token`)."
+          },
+          "403": {
+            "description": "Workspace of the runner suspended (`workspace_suspended`)."
+          },
+          "404": {
+            "description": "Not a source of this runner (`source_not_found`)."
+          },
+          "409": {
+            "description": "Another repository than the source's (`repository_mismatch`)."
+          },
+          "413": {
+            "description": "Body above the route limit (`payload_too_large`, `details.max_bytes`)."
+          },
+          "422": {
+            "description": "Body outside the schema (`validation_error`)."
+          },
+          "426": {
+            "description": "Missing or unsupported protocol header (`runner_protocol_unsupported`)."
+          }
+        },
+        "summary": "Report",
+        "tags": [
+          "runner"
+        ]
+      }
+    },
     "/v1/setup": {
       "post": {
         "description": "Create the first superadmin (e-mail already verified) and log them in.",
@@ -9375,6 +10327,92 @@
         "summary": "Set Feedback",
         "tags": [
           "conversations"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/harness-jobs/{job_id}": {
+      "get": {
+        "description": "One job with a page of the items the runner's verification rejected.",
+        "operationId": "get_harness_job_v1_workspaces__workspace_id__harness_jobs__job_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Job Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "rejections_limit",
+            "required": false,
+            "schema": {
+              "default": 300,
+              "maximum": 300,
+              "minimum": 1,
+              "title": "Rejections Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "rejections_offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Rejections Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HarnessJobDetailOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Workspace suspended."
+          },
+          "404": {
+            "description": "Workspace or job not found (`job_not_found`)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Harness Job",
+        "tags": [
+          "harness"
         ]
       }
     },
@@ -11167,6 +12205,402 @@
         "summary": "List Source Documents",
         "tags": [
           "runs"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/sources/{source_id}/harness-jobs": {
+      "get": {
+        "description": "Jobs of the source, most recent first.",
+        "operationId": "list_harness_jobs_v1_workspaces__workspace_id__sources__source_id__harness_jobs_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/HarnessJobStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HarnessJobPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Workspace suspended."
+          },
+          "404": {
+            "description": "Workspace or runner source not found (`source_not_found`)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Harness Jobs",
+        "tags": [
+          "harness"
+        ]
+      },
+      "post": {
+        "description": "Queue one manual job per enabled module without an active job.",
+        "operationId": "enqueue_harness_jobs_v1_workspaces__workspace_id__sources__source_id__harness_jobs_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HarnessJobBatchIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HarnessJobBatchOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below editor, workspace suspended or CSRF failure."
+          },
+          "404": {
+            "description": "Workspace, runner source (`source_not_found`) or module (`module_not_found`) not found."
+          },
+          "409": {
+            "description": "The source is inactive (`source_inactive`)."
+          },
+          "422": {
+            "description": "Invalid body (`validation_error`)."
+          }
+        },
+        "summary": "Enqueue Harness Jobs",
+        "tags": [
+          "harness"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/sources/{source_id}/modules": {
+      "get": {
+        "description": "Modules of the runner source by key.",
+        "operationId": "list_modules_v1_workspaces__workspace_id__sources__source_id__modules_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HarnessModulePage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Workspace suspended."
+          },
+          "404": {
+            "description": "Workspace or runner source (`source_not_found`) not found."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Modules",
+        "tags": [
+          "harness"
+        ]
+      },
+      "post": {
+        "operationId": "create_module_v1_workspaces__workspace_id__sources__source_id__modules_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HarnessModuleCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HarnessModuleOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below editor, workspace suspended or CSRF failure."
+          },
+          "404": {
+            "description": "Workspace, runner source (`source_not_found`) or module (`module_not_found`) not found."
+          },
+          "409": {
+            "description": "Key already used (`module_key_taken`)."
+          },
+          "422": {
+            "description": "Invalid body (`validation_error`)."
+          }
+        },
+        "summary": "Create Module",
+        "tags": [
+          "harness"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/sources/{source_id}/modules/{module_id}": {
+      "patch": {
+        "operationId": "update_module_v1_workspaces__workspace_id__sources__source_id__modules__module_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "module_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Module Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HarnessModuleUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HarnessModuleOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below editor, workspace suspended or CSRF failure."
+          },
+          "404": {
+            "description": "Workspace, runner source (`source_not_found`) or module (`module_not_found`) not found."
+          },
+          "422": {
+            "description": "Invalid body (`validation_error`)."
+          }
+        },
+        "summary": "Update Module",
+        "tags": [
+          "harness"
         ]
       }
     },

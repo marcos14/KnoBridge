@@ -7,11 +7,13 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
+from knobridge.harness.models import HarnessExecutor
 from knobridge.ingestion.models import Source
 from knobridge.ingestion.source_config import (
     DEFAULT_INITIAL_COMMIT_LIMIT,
     FolderSourceConfig,
     GitSourceConfig,
+    RunnerSourceConfig,
     SourceKind,
     parse_source_config,
 )
@@ -116,9 +118,60 @@ def test_source_typed_config_parses_stored_json(absolute_path: str) -> None:
     assert source.typed_config() == FolderSourceConfig(path=absolute_path)
 
 
-def test_source_config_runner_kind_not_supported_yet() -> None:
-    with pytest.raises(ValidationError, match="source kind runner is not supported") as raised:
-        parse_source_config(SourceKind.RUNNER, {"repository": "erp"})
+RUNNER_ID = "6f1c2d4e-8a0b-4c6d-9e2f-1a3b5c7d9e0f"
 
-    assert raised.value.errors()[0]["type"] == "source_kind_unsupported"
-    assert raised.value.errors()[0]["loc"] == ("kind",)
+
+def test_runner_source_config_validated() -> None:
+    parsed = parse_source_config(
+        SourceKind.RUNNER,
+        {"runner_id": RUNNER_ID, "repository": "erp", "models": {"codex": "gpt-5-codex"}},
+    )
+
+    assert isinstance(parsed, RunnerSourceConfig)
+    assert parsed.default_executor is HarnessExecutor.CLAUDE_CODE
+    assert (parsed.budget_usd, parsed.timeout_seconds, parsed.excerpt_max_lines) == (5.0, 1200, 30)
+    assert (parsed.auto_on_commit, parsed.head_commit) == (False, None)
+    assert parsed.models.for_executor(HarnessExecutor.CODEX) == "gpt-5-codex"
+    assert parsed.models.for_executor(HarnessExecutor.CLAUDE_CODE) is None
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("budget_usd", 0.09),
+        ("budget_usd", 100.01),
+        ("timeout_seconds", 59),
+        ("timeout_seconds", 7201),
+        ("excerpt_max_lines", -1),
+        ("excerpt_max_lines", 81),
+        ("repository", "-erp"),
+        ("repository", "a/b"),
+        ("head_commit", "ABC"),
+        ("default_executor", "gemini"),
+        ("models", {"claude_code": "with space"}),
+        ("runner_id", "not-a-uuid"),
+        ("path", "/srv/x"),
+    ],
+)
+def test_runner_source_config_ranges(field: str, value: object) -> None:
+    with pytest.raises(ValidationError, match=field):
+        parse_source_config(
+            SourceKind.RUNNER, {"runner_id": RUNNER_ID, "repository": "erp", field: value}
+        )
+
+
+def test_runner_source_config_limits_accepted() -> None:
+    parsed = parse_source_config(
+        SourceKind.RUNNER,
+        {
+            "runner_id": RUNNER_ID,
+            "repository": "erp.web_2",
+            "budget_usd": 0.1,
+            "timeout_seconds": 7200,
+            "excerpt_max_lines": 0,
+            "head_commit": "a" * 64,
+        },
+    )
+
+    assert isinstance(parsed, RunnerSourceConfig)
+    assert parsed.head_commit == "a" * 64

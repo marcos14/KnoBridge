@@ -1026,6 +1026,9 @@
     "runner_updated": "Runner atualizado",
     "runner_revoked": "Runner revogado",
     "runner_deleted": "Runner excluído",
+    "harness_module_created": "Módulo do harness criado",
+    "harness_module_updated": "Módulo do harness atualizado",
+    "harness_job_enqueued": "Tarefas do harness enfileiradas",
     "harness_job_cancelled": "Tarefa do harness cancelada"
   },
   "admin": {

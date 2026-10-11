@@ -173,7 +173,7 @@ Efeito, numa transação:
    - módulo existente com `suggested = false` (editado ou criado à mão) → só o inventário muda se a chave veio no relatório; título, padrões e `enabled` ficam;
    - módulo sugerido que não veio no relatório → continua existindo, com inventário zerado (`files = 0`, `lines = 0`); quem decide desligar é o usuário.
 2. `sources.config.head_commit` = `head_commit`.
-3. Se a fonte está ativa, `auto_on_commit` é `true`, `base_commit` é igual ao `head_commit` anterior da fonte e `changed_paths` não é `null`: para cada módulo `enabled` cujos `paths` casam (gitwildmatch) com algum caminho alterado e que não tem tarefa `queued` ou `deferred`, enfileira uma tarefa com `trigger = commit`, `executor = config.default_executor`, `model = config.models[executor]`, `commit_sha = head_commit`. Com `changed_paths = null`, nada é enfileirado automaticamente (sem gasto surpresa).
+3. Se a fonte está ativa, `auto_on_commit` é `true`, `base_commit` é igual ao `head_commit` anterior da fonte e `changed_paths` não é `null`: para cada módulo `enabled` cujos `paths` casam (gitwildmatch) com algum caminho alterado e que não tem tarefa `queued` ou `deferred`, enfileira uma tarefa com `trigger = commit`, `executor = config.default_executor`, `model = config.models[executor]`, `commit_sha = head_commit`. Com `changed_paths = null`, nada é enfileirado automaticamente (sem gasto surpresa). A fonte fica travada (`FOR UPDATE`) durante o relatório e durante o lote do painel, então os dois nunca enfileiram o mesmo módulo duas vezes. O enfileiramento por commit não gera evento de auditoria (não há usuário); o repositório inteiro (`inventory` do corpo) não é gravado.
 
 Resposta 200 (`RunnerReportOut`): `source_id`, `head_commit`, `modules_total` (inteiro), `modules_upserted` (inteiro), `jobs_enqueued` (lista de `{"job_id", "module_key"}`).
 
@@ -449,7 +449,8 @@ O servidor confere `Content-Length` e corta a leitura do corpo no limite (413 me
 | `head_commit` | `commit` ou `null` | Só leitura: gravado pelo `report`; ignorado se vier na escrita pelo painel. |
 
 - **Sincronizar** uma fonte `runner` (`POST .../sources/{id}/sync`) indexa os itens de conhecimento já existentes pelo conector interno `knowledge`; não fala com o runner.
-- **Testar conexão** (`POST .../sources/{id}/test`) responde sucesso se o runner está online e informou o repositório no último heartbeat; senão 502 `source_unavailable` com `details.reason` = `runner_offline`, `runner_revoked` ou `repository_not_served`.
+- **Testar conexão** (`POST .../sources/{id}/test`) responde `{"ok": true, "error": null}` se o runner está online e informou o repositório no último heartbeat; senão, como nas demais fontes, 200 `{"ok": false, "error": {"code": "source_unavailable", "details": {"reason"}}}` com `reason` = `runner_offline`, `runner_revoked` ou `repository_not_served` (auditado como `source.tested`).
+- Na criação e na alteração, o runner tem de ser do workspace e, quando escolhido, não revogado (senão 422 `source_config_invalid` com `loc = ["runner_id"]`); uma fonte que já usa um runner revogado pode ser editada. Mudar `runner_id` ou `repository` descarta o `head_commit` gravado.
 - Os globs da fonte (`include_globs`, `exclude_globs`) valem para a camada 0 do runner.
 
 ## API de sessão (painel)
@@ -462,12 +463,12 @@ Rotas com sessão e CSRF, sob `/v1/workspaces/{workspace_id}`, paginadas com `li
 | `POST /runners` | admin | `{"name"}` (1 a 200 caracteres, único no workspace, 409 `runner_name_taken`) → 201 `{"runner": RunnerOut, "token": "kbr_..."}`. |
 | `PATCH /runners/{id}` | admin | `{"name"?, "revoked"?}`. `revoked: true` grava `revoked_at`; revogar é irreversível (`revoked: false` em runner revogado → 422 `runner_revoked`). |
 | `DELETE /runners/{id}` | admin | 204; 409 `runner_in_use` se alguma fonte usa o runner. |
-| `GET /sources/{sid}/modules` | viewer | Módulos da fonte (chave, título, padrões, `suggested`, `enabled`, inventário, `last_commit`, status da última tarefa). |
+| `GET /sources/{sid}/modules` | viewer | Módulos da fonte por chave (chave, título, padrões, `suggested`, `enabled`, inventário (zeros antes do primeiro relatório), `last_commit`, `last_job_status`: status da tarefa mais recente ou `null`). Fonte que não é `runner` do workspace: 404 `source_not_found`; módulo de outra fonte: 404 `module_not_found`. |
 | `POST /sources/{sid}/modules` | editor | Módulo manual: `{"key"?, "title", "paths", "enabled"?}`; sem `key`, derivada do título; criado com `suggested = false`. 409 `module_key_taken`. |
 | `PATCH /sources/{sid}/modules/{module_id}` | editor | `{"title"?, "paths"?, "enabled"?}`. Mudar título ou padrões grava `suggested = false`; mudar só `enabled`, não. |
-| `POST /sources/{sid}/harness-jobs` | editor | `{"module_ids": [1 a 200], "executor"?: executor, "model"?: texto ou null}` → 202 `{"jobs": [...], "skipped": [{"module_id", "reason"}]}`. `reason`: `already_queued` (já há tarefa `queued`, `leased`, `running` ou `deferred` do módulo) ou `module_disabled`. 409 `source_inactive`. |
+| `POST /sources/{sid}/harness-jobs` | editor | `{"module_ids": [1 a 200], "executor"?: executor, "model"?: texto ou null}` → 202 `{"jobs": [...], "skipped": [{"module_id", "reason"}]}`. `reason`: `already_queued` (já há tarefa `queued`, `leased`, `running` ou `deferred` do módulo) ou `module_disabled`. 409 `source_inactive`; módulo que não é da fonte: 404 `module_not_found` (`details.module_ids`). Ids repetidos contam uma vez. Sem `executor`, o `default_executor` da fonte; sem `model`, o `models[executor]` da fonte (`null` explícito = padrão do executor); `commit_sha` = `head_commit` da fonte. |
 | `GET /sources/{sid}/harness-jobs` | viewer | Tarefas da fonte, mais recentes primeiro, filtro `status`. |
-| `GET /harness-jobs/{jid}` | viewer | Detalhe com as rejeições (paginadas em `rejections`, até 300). |
+| `GET /harness-jobs/{jid}` | viewer | Detalhe com as rejeições (`rejections`: `{items, total, limit, offset}`; `rejections_limit` de 1 a 300, padrão 300, e `rejections_offset`). |
 | `POST /harness-jobs/{jid}/cancel` | editor | 200 com a tarefa; 409 `job_finished` se já terminou. |
 | `GET /sources/{sid}/knowledge`, `PATCH /sources/{sid}/knowledge/{iid}`, `GET /sources/{sid}/knowledge/export` | viewer / editor / viewer | Revisão e exportação ([harness.md](harness.md#revisão-e-exportação)). |
 

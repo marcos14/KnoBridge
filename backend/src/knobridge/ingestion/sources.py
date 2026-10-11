@@ -7,6 +7,9 @@ normalized; the kind and the collection never change (the chunks carry the colle
 cursor belongs to the connector). The schedule is validated and stored, then mirrored on the
 ``ScheduleManager`` (``schedule.py``) after the change is flushed; with Temporal unreachable the
 source is still saved and the worker's reconciliation brings the schedule in line later.
+A ``runner`` source also has its runner, its unique ``(runner_id, repository)`` pair and its
+read-only ``head_commit`` checked, and is tested by the runner's presence instead of a
+connector (``harness/runner_sources.py``).
 Deleting a source first cancels its running synchronization, then the database cascades to
 runs, documents and chunks. Audit metadata carries names, kinds and changed fields, never the
 config itself (paths and URLs stay out of the trail).
@@ -30,6 +33,13 @@ from knobridge.audit.models import JSONValue
 from knobridge.audit.service import AuditService, AuditTarget
 from knobridge.core.clock import Clock
 from knobridge.core.errors import ConflictError, NotFoundError, ValidationError
+from knobridge.harness.runner_sources import (
+    UNIQUE_REPOSITORY_INDEX,
+    check_runner_binding,
+    repository_in_use,
+    runner_config_input,
+    runner_connection_failure,
+)
 from knobridge.ingestion.connectors import ConnectorFactory
 from knobridge.ingestion.errors import SyncNotRunningError
 from knobridge.ingestion.index_queries import active_run, document_count, last_runs
@@ -187,7 +197,7 @@ class SourceService:
         settings: SourceSettings,
         ip: str | None,
     ) -> SourceView:
-        config = normalized_config(settings.kind, settings.config)
+        config = await self._config(db, workspace_id, settings.kind, settings.config, None)
         cron = validate_schedule(settings.schedule_cron, enabled=settings.schedule_enabled)
         await self._lock_collection(db, workspace_id, settings.collection_id)
         source = Source(
@@ -239,7 +249,7 @@ class SourceService:
             "name": changes.name,
             "config": None
             if changes.config is None
-            else normalized_config(source.kind, changes.config),
+            else await self._config(db, workspace_id, source.kind, changes.config, source),
             "include_globs": None if changes.include_globs is None else list(changes.include_globs),
             "exclude_globs": None if changes.exclude_globs is None else list(changes.exclude_globs),
             "schedule_enabled": changes.schedule_enabled,
@@ -383,7 +393,10 @@ class SourceService:
         with ``ok`` and ``error_code``) commits with the request either way.
         """
         source = await self._get(db, workspace_id, source_id)
-        failure = await check_connection(source, connectors, limit_seconds=self._test_timeout)
+        if source.kind is SourceKind.RUNNER:
+            failure = await runner_connection_failure(db, source, now=self._clock.now())
+        else:
+            failure = await check_connection(source, connectors, limit_seconds=self._test_timeout)
         await self._audit.record(
             db,
             action=AuditAction.SOURCE_TESTED,
@@ -399,6 +412,22 @@ class SourceService:
             ip=ip,
         )
         return failure
+
+    @staticmethod
+    async def _config(
+        db: AsyncSession,
+        workspace_id: uuid.UUID,
+        kind: SourceKind,
+        data: Mapping[str, object],
+        current: Source | None,
+    ) -> dict[str, JSONValue]:
+        """The config to store; a runner source also has its runner and repository checked."""
+        if kind is not SourceKind.RUNNER:
+            return normalized_config(kind, data)
+        stored = None if current is None else current.config
+        config = normalized_config(kind, runner_config_input(data, stored))
+        await check_runner_binding(db, workspace_id=workspace_id, config=config, current=current)
+        return config
 
     @staticmethod
     async def _lock_collection(
@@ -434,7 +463,10 @@ class SourceService:
         try:
             await db.flush()
         except IntegrityError as exc:
-            # Collection checked and locked, config and schedule validated: only the name.
+            # Collection checked and locked, config and schedule validated: the name, or a
+            # concurrent request binding the same runner and repository.
+            if UNIQUE_REPOSITORY_INDEX in str(exc.orig):
+                raise repository_in_use() from exc
             raise SourceNameTakenError(
                 "A source with this name already exists in the workspace."
             ) from exc

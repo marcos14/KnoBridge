@@ -554,6 +554,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/runner/sources/{source_id}/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Report
+         * @description Upsert the suggested modules, record the HEAD and queue the modules a commit touched.
+         */
+        post: operations["report_v1_runner_sources__source_id__report_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/setup": {
         parameters: {
             query?: never;
@@ -898,6 +918,26 @@ export interface paths {
          * @description Rate an answer (thumbs up or down, optional comment); sending again replaces it.
          */
         post: operations["set_feedback_v1_workspaces__workspace_id__conversations__conversation_id__messages__message_id__feedback_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/harness-jobs/{job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Harness Job
+         * @description One job with a page of the items the runner's verification rejected.
+         */
+        get: operations["get_harness_job_v1_workspaces__workspace_id__harness_jobs__job_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1253,6 +1293,68 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/sources/{source_id}/harness-jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Harness Jobs
+         * @description Jobs of the source, most recent first.
+         */
+        get: operations["list_harness_jobs_v1_workspaces__workspace_id__sources__source_id__harness_jobs_get"];
+        put?: never;
+        /**
+         * Enqueue Harness Jobs
+         * @description Queue one manual job per enabled module without an active job.
+         */
+        post: operations["enqueue_harness_jobs_v1_workspaces__workspace_id__sources__source_id__harness_jobs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/sources/{source_id}/modules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Modules
+         * @description Modules of the runner source by key.
+         */
+        get: operations["list_modules_v1_workspaces__workspace_id__sources__source_id__modules_get"];
+        put?: never;
+        /** Create Module */
+        post: operations["create_module_v1_workspaces__workspace_id__sources__source_id__modules_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/sources/{source_id}/modules/{module_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Module */
+        patch: operations["update_module_v1_workspaces__workspace_id__sources__source_id__modules__module_id__patch"];
         trace?: never;
     };
     "/v1/workspaces/{workspace_id}/sources/{source_id}/runs": {
@@ -1699,7 +1801,7 @@ export interface components {
          * AuditAction
          * @enum {string}
          */
-        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted" | "provider.tested" | "assistant.created" | "assistant.updated" | "assistant.deleted" | "conversation.deleted" | "collection.created" | "collection.updated" | "collection.deleted" | "source.created" | "source.updated" | "source.deleted" | "source.tested" | "source.sync.started" | "source.sync.cancelled" | "runner.created" | "runner.updated" | "runner.revoked" | "runner.deleted" | "harness_job.cancelled";
+        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted" | "provider.tested" | "assistant.created" | "assistant.updated" | "assistant.deleted" | "conversation.deleted" | "collection.created" | "collection.updated" | "collection.deleted" | "source.created" | "source.updated" | "source.deleted" | "source.tested" | "source.sync.started" | "source.sync.cancelled" | "runner.created" | "runner.updated" | "runner.revoked" | "runner.deleted" | "harness_job.cancelled" | "harness_job.enqueued" | "harness_module.created" | "harness_module.updated";
         /** AuditEventOut */
         AuditEventOut: {
             /** Action */
@@ -2100,6 +2202,82 @@ export interface components {
          * @enum {string}
          */
         HarnessExecutor: "claude_code" | "codex";
+        /** HarnessJobBatchIn */
+        HarnessJobBatchIn: {
+            executor?: components["schemas"]["HarnessExecutor"] | null;
+            /** Model */
+            model?: string | null;
+            /** Module Ids */
+            module_ids: string[];
+        };
+        /** HarnessJobBatchOut */
+        HarnessJobBatchOut: {
+            /** Jobs */
+            jobs: components["schemas"]["HarnessJobOut"][];
+            /** Skipped */
+            skipped: components["schemas"]["HarnessJobSkipped"][];
+        };
+        /** HarnessJobDetailOut */
+        HarnessJobDetailOut: {
+            /** Attempts */
+            attempts: number;
+            /** Commit Sha */
+            commit_sha: string | null;
+            /** Cost Usd */
+            cost_usd: number | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Duration Ms */
+            duration_ms: number | null;
+            /** Error */
+            error: string | null;
+            executor: components["schemas"]["HarnessExecutor"];
+            /** Finished At */
+            finished_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Input Tokens */
+            input_tokens: number | null;
+            /** Items Accepted */
+            items_accepted: number;
+            /** Items Rejected */
+            items_rejected: number;
+            /** Lease Expires At */
+            lease_expires_at: string | null;
+            /** Model */
+            model: string | null;
+            /**
+             * Module Id
+             * Format: uuid
+             */
+            module_id: string;
+            /** Module Key */
+            module_key: string;
+            /** Module Title */
+            module_title: string;
+            /** Not Before */
+            not_before: string | null;
+            /** Output Tokens */
+            output_tokens: number | null;
+            rejections: components["schemas"]["HarnessRejectionPage"];
+            /** Runner Id */
+            runner_id: string | null;
+            /**
+             * Source Id
+             * Format: uuid
+             */
+            source_id: string;
+            /** Started At */
+            started_at: string | null;
+            status: components["schemas"]["HarnessJobStatus"];
+            trigger: components["schemas"]["HarnessJobTrigger"];
+        };
         /** HarnessJobOut */
         HarnessJobOut: {
             /** Attempts */
@@ -2160,6 +2338,27 @@ export interface components {
             status: components["schemas"]["HarnessJobStatus"];
             trigger: components["schemas"]["HarnessJobTrigger"];
         };
+        /** HarnessJobPage */
+        HarnessJobPage: {
+            /** Items */
+            items: components["schemas"]["HarnessJobOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Total */
+            total: number;
+        };
+        /** HarnessJobSkipped */
+        HarnessJobSkipped: {
+            /**
+             * Module Id
+             * Format: uuid
+             */
+            module_id: string;
+            /** Reason */
+            reason: string;
+        };
         /**
          * HarnessJobStatus
          * @description States of a job in the queue (docs/specs/runner.md, "Estados da tarefa").
@@ -2171,6 +2370,148 @@ export interface components {
          * @enum {string}
          */
         HarnessJobTrigger: "manual" | "commit";
+        /** HarnessLanguageCount */
+        HarnessLanguageCount: {
+            /**
+             * Files
+             * @default 0
+             */
+            files: number;
+            /**
+             * Lines
+             * @default 0
+             */
+            lines: number;
+        };
+        /** HarnessModuleCreate */
+        HarnessModuleCreate: {
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+            /** Key */
+            key?: string | null;
+            /** Paths */
+            paths: string[];
+            /** Title */
+            title: string;
+        };
+        /**
+         * HarnessModuleInventory
+         * @description Inventory of the last report; zeros for a manual module not reported yet.
+         */
+        HarnessModuleInventory: {
+            /**
+             * Files
+             * @default 0
+             */
+            files: number;
+            /** Languages */
+            languages?: {
+                [key: string]: components["schemas"]["HarnessLanguageCount"];
+            };
+            /**
+             * Lines
+             * @default 0
+             */
+            lines: number;
+        };
+        /** HarnessModuleOut */
+        HarnessModuleOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Enabled */
+            enabled: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            inventory: components["schemas"]["HarnessModuleInventory"];
+            /** Key */
+            key: string;
+            /** Last Commit */
+            last_commit: string | null;
+            last_job_status: components["schemas"]["HarnessJobStatus"] | null;
+            /** Paths */
+            paths: string[];
+            /**
+             * Source Id
+             * Format: uuid
+             */
+            source_id: string;
+            /** Suggested */
+            suggested: boolean;
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** HarnessModulePage */
+        HarnessModulePage: {
+            /** Items */
+            items: components["schemas"]["HarnessModuleOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Total */
+            total: number;
+        };
+        /**
+         * HarnessModuleUpdate
+         * @description Fields to change; omitted or null fields stay.
+         */
+        HarnessModuleUpdate: {
+            /** Enabled */
+            enabled?: boolean | null;
+            /** Paths */
+            paths?: string[] | null;
+            /** Title */
+            title?: string | null;
+        };
+        /** HarnessRejectionOut */
+        HarnessRejectionOut: {
+            block: components["schemas"]["RejectionBlock"];
+            /** Code */
+            code: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Item Index */
+            item_index: number;
+            /** Label */
+            label: string;
+            /** Reason */
+            reason: string;
+            /** Sources */
+            sources: unknown[];
+        };
+        /** HarnessRejectionPage */
+        HarnessRejectionPage: {
+            /** Items */
+            items: components["schemas"]["HarnessRejectionOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Total */
+            total: number;
+        };
         /** InvitationOut */
         InvitationOut: {
             /**
@@ -2755,6 +3096,16 @@ export interface components {
             /** Token */
             token: string;
         };
+        /** RunnerEnqueuedJob */
+        RunnerEnqueuedJob: {
+            /**
+             * Job Id
+             * Format: uuid
+             */
+            job_id: string;
+            /** Module Key */
+            module_key: string;
+        };
         /** RunnerEvidenceIn */
         RunnerEvidenceIn: {
             /** End Line */
@@ -2852,6 +3203,17 @@ export interface components {
              * Format: uuid
              */
             workspace_id: string;
+        };
+        /** RunnerInventory */
+        RunnerInventory: {
+            /** Files */
+            files: number;
+            /** Languages */
+            languages?: {
+                [key: string]: components["schemas"]["RunnerLanguageCount"];
+            };
+            /** Lines */
+            lines: number;
         };
         /** RunnerJobDeferIn */
         RunnerJobDeferIn: {
@@ -3065,6 +3427,23 @@ export interface components {
          * @description A rule item or the module enrichment, told apart by ``kind``.
          */
         RunnerKnowledgeItemIn: components["schemas"]["RuleItemIn"] | components["schemas"]["ModuleItemIn"];
+        /** RunnerLanguageCount */
+        RunnerLanguageCount: {
+            /** Files */
+            files: number;
+            /** Lines */
+            lines: number;
+        };
+        /** RunnerModuleIn */
+        RunnerModuleIn: {
+            inventory: components["schemas"]["RunnerInventory"];
+            /** Key */
+            key: string;
+            /** Paths */
+            paths: string[];
+            /** Title */
+            title: string;
+        };
         /** RunnerOut */
         RunnerOut: {
             capabilities: components["schemas"]["RunnerCapabilitiesOut"];
@@ -3136,6 +3515,38 @@ export interface components {
             start_line: number | null;
             /** Symbol */
             symbol: string | null;
+        };
+        /** RunnerReportIn */
+        RunnerReportIn: {
+            /** Base Commit */
+            base_commit: string | null;
+            /** Branch */
+            branch: string | null;
+            /** Changed Paths */
+            changed_paths: string[] | null;
+            /** Head Commit */
+            head_commit: string;
+            inventory: components["schemas"]["RunnerInventory"];
+            /** Modules */
+            modules: components["schemas"]["RunnerModuleIn"][];
+            /** Repository */
+            repository: string;
+        };
+        /** RunnerReportOut */
+        RunnerReportOut: {
+            /** Head Commit */
+            head_commit: string;
+            /** Jobs Enqueued */
+            jobs_enqueued: components["schemas"]["RunnerEnqueuedJob"][];
+            /** Modules Total */
+            modules_total: number;
+            /** Modules Upserted */
+            modules_upserted: number;
+            /**
+             * Source Id
+             * Format: uuid
+             */
+            source_id: string;
         };
         /** RunnerRepositoryInfo */
         RunnerRepositoryInfo: {
@@ -4965,6 +5376,81 @@ export interface operations {
             };
         };
     };
+    report_v1_runner_sources__source_id__report_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RunnerReportIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunnerReportOut"];
+                };
+            };
+            /** @description Missing, malformed, unknown or revoked token (`invalid_runner_token`). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace of the runner suspended (`workspace_suspended`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a source of this runner (`source_not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Another repository than the source's (`repository_mismatch`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Body above the route limit (`payload_too_large`, `details.max_bytes`). */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Body outside the schema (`validation_error`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or unsupported protocol header (`runner_protocol_unsupported`). */
+            426: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     run_setup_v1_setup_post: {
         parameters: {
             query?: never;
@@ -6290,6 +6776,62 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    get_harness_job_v1_workspaces__workspace_id__harness_jobs__job_id__get: {
+        parameters: {
+            query?: {
+                rejections_limit?: number;
+                rejections_offset?: number;
+            };
+            header?: never;
+            path: {
+                job_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HarnessJobDetailOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace suspended. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or job not found (`job_not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };
@@ -7799,6 +8341,299 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    list_harness_jobs_v1_workspaces__workspace_id__sources__source_id__harness_jobs_get: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["HarnessJobStatus"] | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                source_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HarnessJobPage"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace suspended. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or runner source not found (`source_not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    enqueue_harness_jobs_v1_workspaces__workspace_id__sources__source_id__harness_jobs_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HarnessJobBatchIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HarnessJobBatchOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below editor, workspace suspended or CSRF failure. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace, runner source (`source_not_found`) or module (`module_not_found`) not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The source is inactive (`source_inactive`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid body (`validation_error`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_modules_v1_workspaces__workspace_id__sources__source_id__modules_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                source_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HarnessModulePage"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace suspended. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or runner source (`source_not_found`) not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_module_v1_workspaces__workspace_id__sources__source_id__modules_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HarnessModuleCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HarnessModuleOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below editor, workspace suspended or CSRF failure. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace, runner source (`source_not_found`) or module (`module_not_found`) not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Key already used (`module_key_taken`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid body (`validation_error`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_module_v1_workspaces__workspace_id__sources__source_id__modules__module_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+                module_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HarnessModuleUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HarnessModuleOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below editor, workspace suspended or CSRF failure. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace, runner source (`source_not_found`) or module (`module_not_found`) not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid body (`validation_error`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

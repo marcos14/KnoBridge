@@ -9,11 +9,12 @@ from __future__ import annotations
 from typing import Protocol
 
 from knobridge.connectors.base import Connector
+from knobridge.connectors.errors import SourceUnavailableError
 from knobridge.connectors.folder.connector import create_folder_connector
 from knobridge.connectors.git.connector import create_git_connector
 from knobridge.core.settings import Settings
 from knobridge.ingestion.models import Source
-from knobridge.ingestion.source_config import FolderSourceConfig
+from knobridge.ingestion.source_config import FolderSourceConfig, GitSourceConfig
 
 
 class ConnectorFactory(Protocol):
@@ -34,4 +35,9 @@ class SettingsConnectorFactory:
         }
         if isinstance(config, FolderSourceConfig):
             return create_folder_connector(config, self._settings, **globs)
-        return create_git_connector(config, self._settings, **globs)
+        if isinstance(config, GitSourceConfig):
+            return create_git_connector(config, self._settings, **globs)
+        # A runner source is never read by the server: the runner reports to it.
+        raise SourceUnavailableError(
+            "This source kind has no server-side connector.", details={"kind": source.kind.value}
+        )

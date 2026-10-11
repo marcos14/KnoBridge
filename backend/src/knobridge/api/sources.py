@@ -90,7 +90,8 @@ class SourceCreate(BaseModel):
     kind: SourceKind
     name: Name
     # Shape depends on ``kind``: ``git`` {path | url, branch?, initial_commit_limit?},
-    # ``folder`` {path}.
+    # ``folder`` {path}, ``runner`` {runner_id, repository, default_executor?, models?,
+    # budget_usd?, timeout_seconds?, auto_on_commit?, excerpt_max_lines?}.
     config: dict[str, object]
     include_globs: Globs = Field(default_factory=list[Glob])
     exclude_globs: Globs = Field(default_factory=list[Glob])
