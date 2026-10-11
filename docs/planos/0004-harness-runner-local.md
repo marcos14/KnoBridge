@@ -60,7 +60,7 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-11
         concluida_em: 2026-10-11
-        commit: null
+        commit: 06194d7
   - id: F3
     titulo: Runner local (knobridge-runner)
     status: concluida
@@ -95,13 +95,13 @@ fases:
         commit: 13ee7f9
   - id: F4
     titulo: Painel
-    status: pendente
+    status: em_execucao
     subfases:
       - id: F4.1
         titulo: Tela de runners e formulário da fonte do tipo runner
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-11
         concluida_em: null
         commit: null
       - id: F4.2
@@ -603,6 +603,7 @@ Nenhuma aberta. Observação para a F5.2: a chave do OpenRouter cadastrada na st
 - 2026-10-11 — F2.3 e F2.4 iniciadas em paralelo.
 - 2026-10-11 — F2.3 concluída: fonte do tipo runner, report de inventário, módulos editáveis e disparo manual e por commit; backend 1410 passed com 99,84% de cobertura (1 OSError de socket do Windows em test_members, verde ao rodar de novo), frontend 921, runner 427
 - 2026-10-11 — F2.4 concluída: conector knowledge no workflow de ingestão, revisão e exportação, citação knowledge e sincronização pendente (migração 0015), mesclada sobre a F2.3; backend 1470 passed com 99% de cobertura, frontend 921, runner 427
+- 2026-10-11 — F4.1 iniciada (agente em worktree).
 
 ## 8. Encerramento
 
