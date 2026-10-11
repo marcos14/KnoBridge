@@ -78,12 +78,12 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: 12c325c
       - id: F3.3
         titulo: Agendamento por fonte (Temporal Schedules)
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code
+        iniciada_em: 2026-10-10
         concluida_em: null
         commit: null
   - id: F4
@@ -106,13 +106,13 @@ fases:
         commit: 6896294
   - id: F5
     titulo: Telas
-    status: pendente
+    status: em_execucao
     subfases:
       - id: F5.1
         titulo: Tela de coleções com teste de busca
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code
+        iniciada_em: 2026-10-10
         concluida_em: null
         commit: null
       - id: F5.2
@@ -499,6 +499,7 @@ Ver `decisoes[]` no frontmatter. ADR previsto: 0004 (índice de conhecimento: di
 - 2026-10-10 — F3.2 e F4.2 iniciadas em paralelo.
 - 2026-10-10 — F4.2 concluída: HybridRetriever no chat, assistant_collections + min_similarity (migração 0012), citações com caminho/linhas/commit, prompt reforçado; regra 8 preservada; backend 1031 testes.
 - 2026-10-10 — F3.2 concluída: API de coleções, fontes (teste de conexão, sync, cancel), execuções e documentos; mesclada com a F4.2 (conflitos só em AGENTS.md; contrato regenerado); backend e frontend verdes.
+- 2026-10-10 — F3.3 e F5.1 iniciadas em paralelo.
 
 ## 8. Encerramento
 
