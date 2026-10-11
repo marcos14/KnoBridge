@@ -9,6 +9,7 @@ import {
   MessageSquare,
   MessagesSquare,
   ScrollText,
+  Server,
   Settings,
   ShieldCheck,
   UserCog,
@@ -27,6 +28,7 @@ export type WorkspaceArea =
   | "assistants"
   | "providers"
   | "sources"
+  | "runners"
   | "pipelines"
   | "collections"
   | "channels"
@@ -59,6 +61,7 @@ export const WORKSPACE_AREAS: readonly WorkspaceAreaDefinition[] = [
   { key: "assistants", path: "assistants", minRole: "editor", icon: Bot },
   { key: "providers", path: "providers", minRole: "editor", icon: Cpu },
   { key: "sources", path: "sources", minRole: "viewer", icon: Database },
+  { key: "runners", path: "runners", minRole: "admin", icon: Server },
   { key: "pipelines", path: "pipelines", minRole: "viewer", icon: Workflow },
   { key: "collections", path: "collections", minRole: "viewer", icon: Library },
   { key: "channels", path: "channels", minRole: "viewer", icon: Cable },

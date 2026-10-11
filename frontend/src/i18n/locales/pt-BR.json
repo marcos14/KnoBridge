@@ -14,6 +14,7 @@
       "assistants": "Assistentes",
       "providers": "Provedores",
       "sources": "Fontes",
+      "runners": "Runners",
       "pipelines": "Pipelines",
       "collections": "Coleções",
       "channels": "Canais",
@@ -610,6 +611,11 @@
     "testing": "Testando…",
     "testOk": "A fonte {{name}} está acessível.",
     "testFailed": "A fonte {{name}} não respondeu: {{reason}}",
+    "testReasons": {
+      "runner_offline": "o runner está offline",
+      "runner_revoked": "o runner foi revogado",
+      "repository_not_served": "o runner não informou esse repositório no último contato"
+    },
     "runStatus": {
       "queued": "Na fila",
       "running": "Em execução",
@@ -675,6 +681,34 @@
       "branchHint": "Em branco, o branch padrão do repositório.",
       "commitLimit": "Commits indexados na primeira sincronização",
       "commitLimitHint": "De 0 a {{max}}. Os commits mais recentes viram documentos, com mensagem e arquivos alterados.",
+      "runner": "Runner",
+      "runnerPlaceholder": "Escolha um runner",
+      "runnerHint": "A máquina que tem o checkout. Runners revogados não aparecem para escolha.",
+      "runnerOffline": "{{name}} (offline)",
+      "runnerRevoked": "{{name}} (revogado)",
+      "runnersLoading": "Carregando runners…",
+      "runnersLoadFailed": "Não foi possível carregar os runners.",
+      "noRunners": "Nenhum runner disponível. Um owner ou admin cadastra em Runners.",
+      "repository": "Repositório",
+      "repositoryPlaceholder": "Escolha um repositório",
+      "repositoryHint": "Um dos repositórios que o runner informou no último contato.",
+      "repositoryTypeHint": "O runner está offline ou ainda não informou repositórios: digite o nome declarado na configuração dele.",
+      "defaultExecutor": "Executor padrão",
+      "executors": {
+        "claude_code": "Claude Code",
+        "codex": "Codex"
+      },
+      "claudeModel": "Modelo do Claude Code (opcional)",
+      "codexModel": "Modelo do Codex (opcional)",
+      "modelHint": "Em branco, o modelo padrão do executor.",
+      "budget": "Orçamento por tarefa (US$)",
+      "budgetHint": "De {{min}} a {{max}}. A tarefa para ao atingir o valor.",
+      "timeout": "Tempo limite por tarefa (segundos)",
+      "timeoutHint": "De {{min}} a {{max}}.",
+      "excerptMaxLines": "Linhas de excerto por evidência",
+      "excerptMaxLinesHint": "De 0 a {{max}}. Trecho do código enviado com cada evidência, com segredos redigidos; 0 não envia excerto.",
+      "autoOnCommit": "Gerar conhecimento a cada commit",
+      "autoOnCommitHint": "Quando o runner relata um commit novo, os módulos com arquivos alterados entram na fila.",
       "includeGlobs": "Incluir (um padrão por linha, opcional)",
       "includeGlobsHint": "Em branco, todos os arquivos. Ex.: src/**/*.py",
       "excludeGlobs": "Excluir (um padrão por linha, opcional)",
@@ -699,7 +733,14 @@
         "tooManyGlobs": "Use no máximo {{max}} padrões.",
         "globTooLong": "Cada padrão pode ter até {{max}} caracteres.",
         "cronRequired": "Informe o agendamento ou desmarque a sincronização automática.",
-        "cronInvalid": "Use uma expressão cron de cinco campos, como 0 3 * * *."
+        "cronInvalid": "Use uma expressão cron de cinco campos, como 0 3 * * *.",
+        "runnerRequired": "Escolha um runner.",
+        "repositoryRequired": "Informe o repositório.",
+        "repositoryInvalid": "Use até 64 letras, números, ponto, hífen ou sublinhado, começando por letra ou número (só o nome, nunca um caminho).",
+        "modelInvalid": "Use até 100 caracteres entre letras, números e . _ : / -",
+        "budgetInvalid": "Informe um valor de {{min, number}} a {{max, number}}.",
+        "timeoutInvalid": "Informe um número inteiro de {{min}} a {{max}}.",
+        "excerptInvalid": "Informe um número inteiro de 0 a {{max}}."
       }
     },
     "detail": {
@@ -709,6 +750,7 @@
       "notFound": "Fonte não encontrada.",
       "summary": "{{kind}} na coleção {{collection}}",
       "location": "Origem: {{location}}",
+      "repository": "Repositório: {{repository}}",
       "branch": "Branch: {{branch}}",
       "include": "Incluir: {{globs}}",
       "exclude": "Excluir: {{globs}}",
@@ -781,6 +823,77 @@
         "indexedAt": "Indexado em"
       },
       "notIndexed": "Ainda não indexado"
+    }
+  },
+  "runners": {
+    "title": "Runners",
+    "description": "Programas que rodam na máquina com o checkout do código e o Claude Code ou o Codex. O harness roda ali mesmo, somente leitura, e só o conhecimento gerado vem para o servidor.",
+    "create": "Novo runner",
+    "tableLabel": "Runners do workspace",
+    "columns": {
+      "name": "Nome",
+      "status": "Status",
+      "lastSeen": "Último contato",
+      "version": "Versão",
+      "executors": "Executores",
+      "repositories": "Repositórios",
+      "actions": "Ações"
+    },
+    "status": {
+      "online": "Online",
+      "offline": "Offline",
+      "revoked": "Revogado"
+    },
+    "tokenPrefix": "Token {{token}}",
+    "neverSeen": "Nunca conectou",
+    "noVersion": "—",
+    "noneReported": "Nenhum informado",
+    "executors": {
+      "claude_code": "Claude Code",
+      "codex": "Codex"
+    },
+    "executorStates": {
+      "notAuthenticated": "sem login",
+      "unavailable": "indisponível"
+    },
+    "repositoryDirty": "alterações locais",
+    "empty": "Nenhum runner cadastrado. Cadastre um para criar fontes do tipo runner.",
+    "loading": "Carregando runners…",
+    "loadFailed": "Não foi possível carregar os runners.",
+    "retry": "Tentar novamente",
+    "revoke": "Revogar",
+    "revokeLabel": "Revogar {{name}}",
+    "revokeTitle": "Revogar o runner {{name}}?",
+    "revokeDescription": "O token deixa de valer na hora e o runner para de receber tarefas. Não dá para desfazer: para voltar a usar a máquina, cadastre outro runner.",
+    "revoked": "O runner {{name}} foi revogado.",
+    "delete": "Excluir",
+    "deleteLabel": "Excluir {{name}}",
+    "deleteTitle": "Excluir o runner {{name}}?",
+    "deleteDescription": "O runner sai da lista e o token deixa de valer. Um runner usado por alguma fonte não pode ser excluído.",
+    "deleted": "O runner {{name}} foi excluído.",
+    "form": {
+      "createTitle": "Novo runner",
+      "description": "Dê um nome que identifique a máquina. O token aparece uma única vez, logo depois de criar.",
+      "name": "Nome",
+      "nameHint": "Ex.: notebook-ana ou servidor-build.",
+      "submit": "Criar runner",
+      "cancel": "Cancelar",
+      "validation": {
+        "nameRequired": "Informe o nome do runner."
+      }
+    },
+    "token": {
+      "title": "Runner {{name}} criado",
+      "description": "Copie o token agora: ele não aparece de novo. Se perder, exclua o runner e crie outro.",
+      "label": "Token do runner",
+      "copy": "Copiar token",
+      "commandsLabel": "Instalar e configurar",
+      "commandsHint": "Rode na máquina que tem o checkout, a partir de um clone do repositório do KnoBridge (requer uv; no Windows, exporte PYTHONUTF8=1). O configure pede o token no terminal; troque o nome e o caminho pelos do repositório local.",
+      "copyCommands": "Copiar comandos",
+      "copied": "Copiado.",
+      "copyFailed": "Não foi possível copiar. Selecione o texto e copie manualmente.",
+      "repoPlaceholder": "nome=/caminho/do/checkout",
+      "done": "Concluído"
     }
   },
   "chat": {
@@ -1196,6 +1309,11 @@
     "source_unavailable": "Não foi possível ler a fonte. Confira se o caminho ou o repositório existe e está acessível.",
     "sync_already_running": "Esta fonte já está sincronizando. Aguarde terminar.",
     "sync_not_running": "Não há sincronização em andamento nesta fonte.",
-    "sync_unavailable": "O serviço de sincronização está indisponível. Tente de novo em instantes."
+    "sync_unavailable": "O serviço de sincronização está indisponível. Tente de novo em instantes.",
+    "runner_in_use": "Este runner é usado por alguma fonte. Exclua a fonte ou troque o runner dela antes.",
+    "runner_name_taken": "Já existe um runner com esse nome.",
+    "runner_not_found": "Runner não encontrado.",
+    "runner_repository_in_use": "Já existe uma fonte para esse repositório nesse runner.",
+    "runner_revoked": "Este runner foi revogado e não pode ser reativado."
   }
 }

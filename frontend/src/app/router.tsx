@@ -68,6 +68,9 @@ const MembersPage = lazyPage(() =>
 const ProvidersPage = lazyPage(() =>
   import("@/features/providers/ProvidersPage").then((m) => m.ProvidersPage),
 );
+const RunnersPage = lazyPage(() =>
+  import("@/features/runners/RunnersPage").then((m) => m.RunnersPage),
+);
 const SourcesPage = lazyPage(() =>
   import("@/features/sources/SourcesPage").then((m) => m.SourcesPage),
 );
@@ -163,6 +166,7 @@ export const routes: RouteObject[] = [
                           workspaceArea("assistants", AssistantsPage),
                           workspaceArea("providers", ProvidersPage),
                           workspaceArea("sources", SourcesPage, [":sourceId"]),
+                          workspaceArea("runners", RunnersPage),
                           workspaceArea("pipelines", <AreaSkeletonPage area="pipelines" />),
                           workspaceArea("collections", CollectionsPage, [":collectionId"]),
                           workspaceArea("channels", <AreaSkeletonPage area="channels" />),

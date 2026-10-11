@@ -15,7 +15,7 @@ knobridge-runner --version
 
 ## Configurar
 
-Crie o runner no painel (Fontes → Runners) e copie o token `kbr_...`, mostrado uma única vez.
+Crie o runner no painel (menu Runners, para owner e admin) e copie o token `kbr_...`, mostrado uma única vez; a mesma tela mostra estes comandos prontos, com a URL do servidor.
 
 ```sh
 knobridge-runner configure --server-url https://knobridge.exemplo.com.br \

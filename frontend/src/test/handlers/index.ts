@@ -10,6 +10,7 @@ import { invitesHandlers } from "./invites";
 import { membersHandlers } from "./members";
 import { providersHandlers } from "./providers";
 import { recoveryHandlers } from "./recovery";
+import { runnersHandlers } from "./runners";
 import { setupHandlers } from "./setup";
 import { sourcesHandlers } from "./sources";
 import { workspaceConversationsHandlers } from "./workspaceConversations";
@@ -29,6 +30,7 @@ export * from "./page";
 export * from "./providers";
 export * from "./record";
 export * from "./recovery";
+export * from "./runners";
 export * from "./setup";
 export * from "./sources";
 export * from "./workspaceConversations";
@@ -50,6 +52,7 @@ export const handlers = [
   ...providersHandlers,
   ...assistantsHandlers,
   ...collectionsHandlers,
+  ...runnersHandlers,
   ...sourcesHandlers,
   ...conversationsHandlers,
   ...workspaceConversationsHandlers,

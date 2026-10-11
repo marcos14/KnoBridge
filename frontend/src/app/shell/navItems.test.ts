@@ -43,6 +43,7 @@ describe("workspaceNavItems", () => {
       "assistants",
       "providers",
       "sources",
+      "runners",
       "pipelines",
       "collections",
       "channels",
@@ -78,6 +79,7 @@ describe("areaMinRole", () => {
     expect(areaMinRole("settings")).toBe("admin");
     expect(areaMinRole("assistants")).toBe("editor");
     expect(areaMinRole("sources")).toBe("viewer");
+    expect(areaMinRole("runners")).toBe("admin");
   });
 
   it("test_area_min_role_rejects_unknown_area", () => {

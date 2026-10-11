@@ -5,7 +5,7 @@ import { Link } from "react-router";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { translateApiError, translateApiErrorCode } from "@/i18n/apiErrors";
+import { translateApiError } from "@/i18n/apiErrors";
 import { isApiErrorCode } from "@/lib/api/client";
 import { type Collection, useCollections } from "@/lib/api/collections";
 import { type Source, useSource, useTestSource } from "@/lib/api/sources";
@@ -15,6 +15,7 @@ import { type Feedback, FeedbackMessage } from "./Feedback";
 import { NextRun } from "./NextRun";
 import { RunsSection } from "./RunsSection";
 import { SourceDialog } from "./SourceDialog";
+import { testFailureReason } from "./format";
 import { sourceLocation } from "./sourceForm";
 import { SyncButton } from "./SyncButton";
 
@@ -104,7 +105,7 @@ function SourceHeader({ workspaceId, source, collections, canManage }: SourceHea
                 kind: "alert",
                 message: t("sources.testFailed", {
                   name: source.name,
-                  reason: translateApiErrorCode(error.code, t),
+                  reason: testFailureReason(error, t),
                 }),
               },
         );
@@ -132,7 +133,9 @@ function SourceHeader({ workspaceId, source, collections, canManage }: SourceHea
             })}
           </p>
           <p className="text-sm break-all">
-            {t("sources.detail.location", { location: sourceLocation(source) })}
+            {source.kind === "runner"
+              ? t("sources.detail.repository", { repository: sourceLocation(source) })
+              : t("sources.detail.location", { location: sourceLocation(source) })}
           </p>
           {typeof branch === "string" && (
             <p className="text-sm">{t("sources.detail.branch", { branch })}</p>

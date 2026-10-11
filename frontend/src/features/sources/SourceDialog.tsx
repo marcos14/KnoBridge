@@ -148,7 +148,7 @@ export function SourceDialog({
                 </FormItem>
               )}
             />
-            <LocationFields form={form} editing={editing} />
+            <LocationFields workspaceId={workspaceId} form={form} editing={editing} />
             <TextField
               control={form.control}
               name="includeGlobs"

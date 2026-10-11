@@ -99,10 +99,10 @@ fases:
     subfases:
       - id: F4.1
         titulo: Tela de runners e formulário da fonte do tipo runner
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-11
-        concluida_em: null
+        concluida_em: 2026-10-11
         commit: null
       - id: F4.2
         titulo: Módulos e tarefas na fonte do tipo runner
@@ -339,6 +339,13 @@ decisoes:
     decisao: "F2.4: o hash do documento knowledge cobre o Markdown e os metadados de citação (RawDocument.digest); a citação ganha o tipo knowledge com confiança e evidências (chat-sse v0.5); ingestion/ não importa harness/, a fábrica knowledge é injetada no SettingsConnectorFactory pela API e pelo worker"
     motivo: "mudar só a evidência ou a confiança precisa reindexar; a citação mostra de onde veio a regra; mantém as dependências apontando para baixo"
     alternativas: "hash só do Markdown; citação como arquivo comum; importar o conector direto"
+    adr: null
+  - id: D30
+    data: 2026-10-11
+    por: agente
+    decisao: "F4.1: config da fonte runner tipada no frontend (como Git e pasta), status online/offline calculado no navegador por last_seen_at com a janela de 90 s do servidor, comandos de instalação sem o token (o configure pede no terminal) e com window.location.origin como servidor; renomear runner fica fora da tela"
+    motivo: "sem mudar contrato; o status envelhece entre recargas; o token não vai para o histórico do shell"
+    alternativas: "publicar RunnerSourceSettings no OpenAPI; confiar no campo online da resposta; token embutido no comando"
     adr: null
 pendencias_usuario: []
 ---
@@ -604,6 +611,7 @@ Nenhuma aberta. Observação para a F5.2: a chave do OpenRouter cadastrada na st
 - 2026-10-11 — F2.3 concluída: fonte do tipo runner, report de inventário, módulos editáveis e disparo manual e por commit; backend 1410 passed com 99,84% de cobertura (1 OSError de socket do Windows em test_members, verde ao rodar de novo), frontend 921, runner 427
 - 2026-10-11 — F2.4 concluída: conector knowledge no workflow de ingestão, revisão e exportação, citação knowledge e sincronização pendente (migração 0015), mesclada sobre a F2.3; backend 1470 passed com 99% de cobertura, frontend 921, runner 427
 - 2026-10-11 — F4.1 iniciada (agente em worktree).
+- 2026-10-11 — F4.1 concluída: tela de runners (token uma vez, comandos copiáveis, revogar e excluir) e formulário da fonte runner; frontend 991 testes, 98,69% de branches
 
 ## 8. Encerramento
 

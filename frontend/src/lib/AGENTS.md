@@ -21,6 +21,7 @@
 - `citationLocation.ts`: onde uma citação aponta (`citationSource`: `commit` com SHA curto de 7, autor e data (v0.4, `null` antes), `file` com caminho, linhas, símbolo e linguagem, ou `legacy` para respostas gravadas antes da v0.3), `citationLines` (`L10–L20`, `L10`) , `citationLocation` (linha curta da lista de fontes) e `commitAuthorship` ("Ana Souza · 1 de out. de 2026", só a parte conhecida, data não reconhecida como veio).
 - `intl.ts`: `formatRelativeTime(date, now, locale)` ("há 5 minutos", "em 2 horas"), `formatDateTime(date, locale, timeZone?)`, `formatDate(date, locale, timeZone?)` (só o dia) e `languageName(tag, locale)`, com `Intl`. O "agora" é sempre parâmetro (nos componentes, de `useClock()`).
 - `userAgent.ts`: `summarizeUserAgent` (navegador e sistema de um `User-Agent`, ou `null`).
+- `runnerStatus.ts`: presença de um runner (`runnerStatus(runner, now)`: `revoked`, `online` com `last_seen_at` até `ONLINE_WINDOW_MS` (90 s, a janela do servidor) antes de `now`, senão `offline`), `isHarnessExecutor` e `executorState` (`ready`, `notAuthenticated`, `unavailable`). Usado pela tela de runners e pelo formulário da fonte runner.
 - `api/`: cliente gerado do OpenAPI e hooks TanStack Query (ver [api/AGENTS.md](api/AGENTS.md)).
 - Futuramente: funções puras de domínio usadas por várias features (formatação, validação, transformação do grafo do canvas).
 

@@ -1,5 +1,6 @@
 import type { TFunction } from "i18next";
 
+import { translateApiErrorCode } from "@/i18n/apiErrors";
 import type { Run } from "@/lib/api/sources";
 
 import { type CronDescription, describeCron, formatCronTime } from "./cron";
@@ -101,4 +102,31 @@ function describe(description: CronDescription, t: TFunction, locale: string): s
 export function cronText(cron: string, t: TFunction, locale: string): string {
   const description = describeCron(cron);
   return description === undefined ? t("sources.cron.custom") : describe(description, t, locale);
+}
+
+/** Why a runner source is unreachable (`details.reason` of `source_unavailable`). */
+const RUNNER_TEST_REASONS = ["runner_offline", "runner_revoked", "repository_not_served"] as const;
+
+type RunnerTestReason = (typeof RUNNER_TEST_REASONS)[number];
+
+function runnerTestReason(details: unknown): RunnerTestReason | undefined {
+  const reason =
+    typeof details === "object" && details !== null && "reason" in details
+      ? details.reason
+      : undefined;
+  return RUNNER_TEST_REASONS.find((item) => item === reason);
+}
+
+/**
+ * Reason shown when "Testar conexão" fails: the runner's own reason when `source_unavailable`
+ * carries one, otherwise the message of the error code.
+ */
+export function testFailureReason(
+  error: { code: string; details?: unknown },
+  t: TFunction,
+): string {
+  const reason = error.code === "source_unavailable" ? runnerTestReason(error.details) : undefined;
+  return reason === undefined
+    ? translateApiErrorCode(error.code, t)
+    : t(`sources.testReasons.${reason}`);
 }

@@ -3,7 +3,14 @@ import { describe, expect, it } from "vitest";
 import { i18n } from "@/i18n";
 import { makeRun } from "@/test/factories";
 
-import { cronText, formatCount, formatDuration, formatUsd, runDuration } from "./format";
+import {
+  cronText,
+  formatCount,
+  formatDuration,
+  formatUsd,
+  runDuration,
+  testFailureReason,
+} from "./format";
 
 const t = i18n.t.bind(i18n);
 // Intl separates currency and amount with a no-break space.
@@ -77,5 +84,31 @@ describe("cronText", () => {
     ["0 3 * 1 *", "Expressão personalizada: o servidor confere ao salvar."],
   ])("test_cron_text_of_%s", (cron, expected) => {
     expect(cronText(cron, t, "pt-BR")).toBe(expected);
+  });
+});
+
+describe("testFailureReason", () => {
+  it.each([
+    ["runner_offline", "o runner está offline"],
+    ["runner_revoked", "o runner foi revogado"],
+    ["repository_not_served", "o runner não informou esse repositório no último contato"],
+  ])("test_test_failure_reason_explains_runner_%s", (reason, expected) => {
+    expect(testFailureReason({ code: "source_unavailable", details: { reason } }, t)).toBe(
+      expected,
+    );
+  });
+
+  it("test_test_failure_reason_falls_back_to_the_error_code", () => {
+    const unavailable = t("apiErrors.source_unavailable");
+    const reasonOf = (details: unknown) =>
+      testFailureReason({ code: "source_unavailable", details }, t);
+
+    expect(reasonOf({ reason: "other" })).toBe(unavailable);
+    expect(reasonOf(null)).toBe(unavailable);
+    expect(reasonOf("x")).toBe(unavailable);
+    expect(reasonOf({})).toBe(unavailable);
+    expect(
+      testFailureReason({ code: "source_timeout", details: { reason: "runner_offline" } }, t),
+    ).toBe(t("apiErrors.source_timeout"));
   });
 });

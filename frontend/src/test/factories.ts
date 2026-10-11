@@ -8,6 +8,7 @@ import type { Citation, Conversation, ConversationDetail, Message } from "@/lib/
 import type { Invitation, InvitationPreview } from "@/lib/api/invites";
 import type { Member } from "@/lib/api/members";
 import type { Provider } from "@/lib/api/providers";
+import type { Runner } from "@/lib/api/runners";
 import type { Run, RunDetail, RunError, Source, SourceDocument } from "@/lib/api/sources";
 import type {
   ConversationStats,
@@ -851,6 +852,96 @@ export function makeFolderSource(overrides: Partial<Source> = {}): Source {
     schedule_cron: "0 3 * * *",
     schedule_enabled: true,
     next_run_at: "2026-10-11T03:00:00Z",
+    document_count: 0,
+    last_run: null,
+    ...overrides,
+  });
+}
+
+export const RUNNER_ID = "00000000-0000-4000-8000-0000000002a1";
+export const OTHER_RUNNER_ID = "00000000-0000-4000-8000-0000000002a2";
+export const REVOKED_RUNNER_ID = "00000000-0000-4000-8000-0000000002a3";
+export const RUNNER_SOURCE_ID = "00000000-0000-4000-8000-0000000001b3";
+/** A token in the real format (`kbr_<8>_<43>`), synthetic. */
+export const RUNNER_TOKEN = "kbr_ab12cd34_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
+
+/**
+ * One item of `GET .../runners`: by default "notebook-ana", seen 30 s before `TEST_NOW`, with
+ * Claude Code logged in, Codex not installed and the repositories erp-core and portal.
+ */
+export function makeRunner(overrides: Partial<Runner> = {}): Runner {
+  return {
+    id: RUNNER_ID,
+    name: "notebook-ana",
+    token_prefix: "ab12cd34",
+    online: true,
+    last_seen_at: "2026-10-10T11:59:30Z",
+    version: "0.1.0",
+    capabilities: {
+      platform: "windows",
+      executors: [
+        { name: "claude_code", available: true, version: "2.0.1", authenticated: true },
+        { name: "codex", available: false, version: null, authenticated: null },
+      ],
+      repositories: [
+        { name: "erp-core", head_commit: "a".repeat(40), branch: "main", dirty: false },
+        { name: "portal", head_commit: null, branch: "develop", dirty: true },
+      ],
+    },
+    revoked_at: null,
+    created_at: "2026-10-01T10:00:00Z",
+    created_by: USER_ID,
+    ...overrides,
+  };
+}
+
+/** A runner that never sent a heartbeat: no version, no executors, no repositories. */
+export function makeNewRunner(overrides: Partial<Runner> = {}): Runner {
+  return makeRunner({
+    id: OTHER_RUNNER_ID,
+    name: "servidor-build",
+    token_prefix: "ef56gh78",
+    online: false,
+    last_seen_at: null,
+    version: null,
+    capabilities: { platform: null, executors: [], repositories: [] },
+    ...overrides,
+  });
+}
+
+/** The default runners, by name: antigo (revoked), notebook-ana (online), servidor-build (new). */
+export function makeRunners(): Runner[] {
+  return [
+    makeRunner({
+      id: REVOKED_RUNNER_ID,
+      name: "antigo",
+      token_prefix: "zz99yy88",
+      online: false,
+      last_seen_at: "2026-10-09T12:00:00Z",
+      revoked_at: "2026-10-09T13:00:00Z",
+    }),
+    makeRunner(),
+    makeNewRunner(),
+  ];
+}
+
+/** "erp-local", a runner source of Código ERP on notebook-ana's erp-core, never synced. */
+export function makeRunnerSource(overrides: Partial<Source> = {}): Source {
+  return makeSource({
+    id: RUNNER_SOURCE_ID,
+    name: "erp-local",
+    kind: "runner",
+    config: {
+      runner_id: RUNNER_ID,
+      repository: "erp-core",
+      default_executor: "codex",
+      models: { claude_code: "claude-sonnet-4-5", codex: null },
+      budget_usd: 2.5,
+      timeout_seconds: 900,
+      auto_on_commit: true,
+      excerpt_max_lines: 20,
+      head_commit: "a".repeat(40),
+    },
     document_count: 0,
     last_run: null,
     ...overrides,

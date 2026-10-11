@@ -4,6 +4,14 @@ import { z } from "zod";
 import type { Source, SourceChanges, SourceInput, SourceKind } from "@/lib/api/sources";
 
 import { CRON_MAX_LENGTH, isCronShape } from "./cron";
+import {
+  HARNESS_EXECUTORS,
+  RUNNER_FORM_DEFAULTS,
+  runnerConfig,
+  runnerFieldIssues,
+  runnerFieldsFromConfig,
+  type RunnerFormFields,
+} from "./runnerSourceForm";
 
 /** Limits of the contract (`api/sources.py`, `ingestion/source_config.py`). */
 export const SOURCE_NAME_MAX_LENGTH = 200;
@@ -17,7 +25,7 @@ export const MAX_INITIAL_COMMIT_LIMIT = 5000;
 /** Where a Git source is read from: a clone on the server or a public https remote. */
 export type GitLocation = "path" | "url";
 
-export interface SourceFormValues {
+export interface SourceFormValues extends RunnerFormFields {
   name: string;
   collectionId: string;
   kind: SourceKind;
@@ -95,7 +103,6 @@ export function sourceFormSchema(t: TFunction) {
         .min(1, { error: t("sources.form.validation.nameRequired") })
         .max(SOURCE_NAME_MAX_LENGTH, tooLong(SOURCE_NAME_MAX_LENGTH)),
       collectionId: z.string().min(1, { error: t("sources.form.validation.collectionRequired") }),
-      // Every kind the API knows; the form itself only offers git and folder (LocationFields).
       kind: z.enum(["git", "folder", "runner"]),
       location: z.enum(["path", "url"]),
       path: z.string().trim().max(PATH_MAX_LENGTH, tooLong(PATH_MAX_LENGTH)),
@@ -107,10 +114,23 @@ export function sourceFormSchema(t: TFunction) {
       scheduleEnabled: z.boolean(),
       cron: z.string().trim().max(CRON_MAX_LENGTH, tooLong(CRON_MAX_LENGTH)),
       active: z.boolean(),
+      runnerId: z.string(),
+      repository: z.string().trim(),
+      defaultExecutor: z.enum(HARNESS_EXECUTORS),
+      claudeModel: z.string().trim(),
+      codexModel: z.string().trim(),
+      budget: z.string().trim(),
+      timeout: z.string().trim(),
+      excerptMaxLines: z.string().trim(),
+      autoOnCommit: z.boolean(),
     })
     .superRefine((values, ctx) => {
       const git = values.kind === "git";
-      if (!git || values.location === "path") {
+      if (values.kind === "runner") {
+        for (const [path, message] of runnerFieldIssues(values, t)) {
+          issue(ctx, path, message);
+        }
+      } else if (!git || values.location === "path") {
         if (values.path === "") {
           issue(ctx, "path", t("sources.form.validation.pathRequired"));
         } else if (!isAbsolutePath(values.path)) {
@@ -165,6 +185,7 @@ export function sourceFormDefaults(
       scheduleEnabled: false,
       cron: "",
       active: true,
+      ...RUNNER_FORM_DEFAULTS,
     };
   }
   const { config } = source;
@@ -183,17 +204,27 @@ export function sourceFormDefaults(
     scheduleEnabled: source.schedule_enabled,
     cron: source.schedule_cron ?? "",
     active: source.active,
+    ...runnerFieldsFromConfig(config),
   };
 }
 
-/** Where a stored source is read from: its URL or its path. */
+/** Where a stored source is read from: its URL, its path or, for a runner, its repository. */
 export function sourceLocation(source: Source): string {
-  const { url, path } = source.config;
+  const { url, path, repository } = source.config;
+  if (source.kind === "runner") {
+    return text(repository);
+  }
   return typeof url === "string" ? url : text(path);
 }
 
-/** `config` for the kind: Git `{path | url, branch?, initial_commit_limit}`, folder `{path}`. */
+/**
+ * `config` for the kind: Git `{path | url, branch?, initial_commit_limit}`, folder `{path}`,
+ * runner `runnerConfig`.
+ */
 export function sourceConfig(values: SourceFormValues): Record<string, unknown> {
+  if (values.kind === "runner") {
+    return runnerConfig(values);
+  }
   if (values.kind === "folder") {
     return { path: values.path };
   }
