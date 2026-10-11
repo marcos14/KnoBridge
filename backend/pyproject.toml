@@ -24,6 +24,11 @@ dependencies = [
     "pgvector>=0.5.1",
     "pathspec>=1.1.1",
     "markitdown[docx,pdf,pptx,xlsx]>=0.1.8",
+    # 0.26.0 frees the int behind Point.row too early (crash for rows above 256).
+    "tree-sitter>=0.25,<0.26",
+    "tree-sitter-typescript>=0.23.2",
+    "tree-sitter-javascript>=0.25",
+    "tree-sitter-go>=0.25",
 ]
 
 [project.scripts]

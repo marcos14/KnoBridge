@@ -13,7 +13,7 @@ branch: plano/0003-primeiro-conhecimento
 fases:
   - id: F1
     titulo: Fundação da indexação (backend)
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F1.1
         titulo: Modelo de dados do índice e ADR 0004
@@ -42,7 +42,7 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: f627b7c
   - id: F2
     titulo: Processamento de documentos
     status: em_execucao
@@ -56,10 +56,10 @@ fases:
         commit: d4ebe60
       - id: F2.2
         titulo: Chunking por estrutura, por AST (tree-sitter) e de commits
-        status: em_execucao
+        status: concluida
         agente: claude-code
         iniciada_em: 2026-10-10
-        concluida_em: null
+        concluida_em: 2026-10-10
         commit: null
   - id: F3
     titulo: Execução das sincronizações
@@ -491,6 +491,7 @@ Ver `decisoes[]` no frontmatter. ADR previsto: 0004 (índice de conhecimento: di
 - 2026-10-10 — F2.1 concluída: Parsing para Markdown (texto com detecção de encoding, código cercado, PDF/DOCX/XLSX/PPTX/HTML via MarkItDown, commits), erros unsupported_format/parse_failed; 819 testes. Dependências +216 MB.
 - 2026-10-10 — F2.2 iniciada (em paralelo com a F1.4).
 - 2026-10-10 — F1.4 concluída: Conector Git (caminho local por objetos, URL https em clone parcial, incremental por SHA com reconstrução, commits como documentos), suíte de contrato; 887 testes.
+- 2026-10-10 — F2.2 concluída: Chunking por títulos, AST (TS/TSX/JS/Go com tree-sitter <0.26), fallback por linhas e commits; ChunkDraft com metadados e hash; 918 testes.
 
 ## 8. Encerramento
 
