@@ -39,7 +39,7 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-11
         concluida_em: 2026-10-11
-        commit: null
+        commit: 6c67d0a
       - id: F2.2
         titulo: Fila de tarefas com reserva (long-poll, heartbeat, resultado, adiamento)
         status: pendente
@@ -63,7 +63,7 @@ fases:
         commit: null
   - id: F3
     titulo: Runner local (knobridge-runner)
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F3.1
         titulo: Pacote runner, configuração, cliente HTTP com long-poll, CLI e CI
@@ -88,10 +88,10 @@ fases:
         commit: ce5541d
       - id: F3.4
         titulo: Verificação de evidências, excertos com redação de segredos e ciclo completo da tarefa
-        status: em_execucao
+        status: concluida
         agente: claude-code
         iniciada_em: 2026-10-11
-        concluida_em: null
+        concluida_em: 2026-10-11
         commit: null
   - id: F4
     titulo: Painel
@@ -290,6 +290,13 @@ decisoes:
     decisao: "F2.1: ações de auditoria no passado (runner.created, harness_job.enqueued...), prefixo auditado como prefix; 404 runner_not_found; runner revogado nunca online; cabeçalho de protocolo conferido antes da autenticação; schemas do painel separados dos do fio; limite de corpo por rota em middleware ASGI (413 payload_too_large)"
     motivo: "Catálogo de auditoria exige passado e recusa chaves com token; evitar nomes -Input/-Output que quebrariam o contrato do runner"
     alternativas: "Nomes no presente como na spec original"
+    adr: null
+  - id: D23
+    data: 2026-10-11
+    por: agente
+    decisao: "F3.4: report na subida e sempre que o HEAD muda (conferido a cada heartbeat e após cada tarefa); base do próximo report = HEAD do último report aceito; caminhos normalizados (segmentos vazios e . removidos); doctor avisa no Windows quando o checkout não é legível por BUILTIN\Users (sandbox do Codex); teste de contrato com lista explícita CHECKED_SCHEMAS e comparador que resolve enums referenciados"
+    motivo: "Sem a base local, o report logo após uma tarefa iria com changed_paths nulo e o disparo por commit nunca ocorreria"
+    alternativas: "Esperar o heartbeat seguinte para a base"
     adr: null
 pendencias_usuario: []
 ---
@@ -548,6 +555,7 @@ Nenhuma aberta. Observação para a F5.2: a chave do OpenRouter cadastrada na st
 - 2026-10-11 — F3.3 concluída: executores Claude Code e Codex em runner/harness, falsos em tests/fakes e suíte opt-in real_harness verde contra os CLIs reais (Claude haiku ~US$ 0,005/30 s; Codex gpt-5.5 ~75 s; o modelo padrão do ~/.codex exige CLI mais novo); 284 testes, cobertura 99,9%.
 - 2026-10-11 — F3.4 iniciada.
 - 2026-10-11 — F2.1 concluída: API de runners (token kbr_ uma vez, hash SHA-256, revogação, 409 runner_in_use), POST /v1/runner/heartbeat com protocolo e limite de corpo; 1250 testes, cobertura 99,96%.
+- 2026-10-11 — F3.4 concluída: verify, excerpt com redação, itens, HarnessJobProcessor ligado à CLI, reporter e teste de contrato contra o openapi (5 schemas do heartbeat); suíte real de ponta a ponta verde (Claude haiku 25 s/US$ 0,004; Codex gpt-5.5 70 s; 5 regras + 1 módulo, 0 rejeições em cada); 427 testes, cobertura 99,9%.
 
 ## 8. Encerramento
 

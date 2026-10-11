@@ -130,8 +130,35 @@ def _within(inner: set[str], outer: set[str]) -> bool:
     return widened <= outer
 
 
-def compare(name: str, runner: Schema, server: Schema, direction: Direction) -> list[str]:
+def deref(schema: Schema, definitions: Schema) -> Schema:
+    """Inline a top-level or branch-level reference to a named enum or scalar schema."""
+    resolved = _resolve(schema, definitions) if "$ref" in schema else schema
+    if resolved.get("type") == "object" or "properties" in resolved:
+        return schema
+    branches = _branches(resolved)
+    if not branches:
+        return resolved
+    inlined: list[object] = []
+    for branch in branches:
+        target = _resolve(branch, definitions) if "$ref" in branch else branch
+        keep_ref = target.get("type") == "object" or "properties" in target
+        inlined.append(branch if keep_ref else target)
+    return {
+        **{k: v for k, v in resolved.items() if k not in ("anyOf", "oneOf", "allOf")},
+        "anyOf": inlined,
+    }
+
+
+def compare(
+    name: str,
+    runner: Schema,
+    server: Schema,
+    direction: Direction,
+    server_components: Schema | None = None,
+) -> list[str]:
     """Problems between the runner schema and the server schema of NAME (empty when they fit)."""
+    runner_defs = _dict(runner.get("$defs"))
+    server_defs = server_components or {}
     runner_props, server_props = _dict(runner.get("properties")), _dict(server.get("properties"))
     runner_required = {str(item) for item in _list(runner.get("required"))}
     server_required = {str(item) for item in _list(server.get("required"))}
@@ -150,7 +177,8 @@ def compare(name: str, runner: Schema, server: Schema, direction: Direction) -> 
             for f in runner_required - server_props.keys()
         ]
     for field in sorted(runner_props.keys() & server_props.keys()):
-        mine, theirs = _dict(runner_props[field]), _dict(server_props[field])
+        mine = deref(_dict(runner_props[field]), runner_defs)
+        theirs = deref(_dict(server_props[field]), server_defs)
         sent, accepted = (mine, theirs) if direction == "request" else (theirs, mine)
         sent_types, accepted_types = json_types(sent), json_types(accepted)
         if not _within(sent_types, accepted_types):
@@ -205,7 +233,7 @@ def check_schema(name: str, components: Schema) -> list[str]:
     if name == UNION_NAME:
         return compare_union(server, components)
     model, direction = RUNNER_MODELS[name]
-    return compare(name, runner_schema(model), server, direction)
+    return compare(name, runner_schema(model), server, direction, components)
 
 
 def synthetic_components() -> dict[str, object]:

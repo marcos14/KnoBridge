@@ -14,6 +14,7 @@ from contract_support import (
     UNION_NAME,
     check_schema,
     compare,
+    deref,
     enum_values,
     json_types,
     synthetic_components,
@@ -24,7 +25,13 @@ OPENAPI = Path(__file__).resolve().parents[2] / "docs" / "specs" / "openapi.json
 # Runner schemas present in docs/specs/openapi.json at this commit. The server routes are built
 # in parallel (plan 0004, F2); whoever lands them adds the names here, and
 # test_checked_schemas_follow_openapi fails until they do.
-CHECKED_SCHEMAS: tuple[str, ...] = ()
+CHECKED_SCHEMAS: tuple[str, ...] = (
+    "RunnerExecutorInfo",
+    "RunnerHeartbeatIn",
+    "RunnerHeartbeatOut",
+    "RunnerRepositoryInfo",
+    "RunnerSourceOut",
+)
 
 
 def openapi_components() -> dict[str, object]:
@@ -137,3 +144,38 @@ def test_integer_fits_number_and_any() -> None:
     server = {"properties": {"n": {"type": "number"}, "x": {}}}
 
     assert compare("M", request, server, "request") == []
+
+
+def test_comparator_resolves_named_enum_references() -> None:
+    components: dict[str, object] = {"Kind": {"enum": ["a", "b"], "type": "string"}}
+    runner = {"properties": {"kind": {"enum": ["a", "c"], "type": "string"}}, "required": ["kind"]}
+    server = {"properties": {"kind": {"$ref": "#/components/schemas/Kind"}}, "required": ["kind"]}
+
+    problems = compare("Demo", runner, server, "request", components)
+
+    assert problems == ["Demo.kind: values ['c'] not accepted"]
+
+
+def test_deref_inlines_scalar_branches_and_keeps_object_references() -> None:
+    definitions: dict[str, object] = {
+        "Kind": {"enum": ["a"], "type": "string"},
+        "Thing": {"type": "object", "properties": {"x": {"type": "string"}}},
+    }
+    schema = {
+        "anyOf": [
+            {"$ref": "#/components/schemas/Kind"},
+            {"$ref": "#/components/schemas/Thing"},
+            {"type": "null"},
+        ]
+    }
+
+    resolved = deref(schema, definitions)
+
+    assert resolved["anyOf"] == [
+        {"enum": ["a"], "type": "string"},
+        {"$ref": "#/components/schemas/Thing"},
+        {"type": "null"},
+    ]
+    assert deref({"$ref": "#/components/schemas/Thing"}, definitions) == {
+        "$ref": "#/components/schemas/Thing"
+    }
