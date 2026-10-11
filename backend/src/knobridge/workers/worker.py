@@ -7,17 +7,20 @@ import asyncio
 from collections.abc import Awaitable, Callable, Sequence
 from typing import Any, Protocol
 
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from temporalio.client import Client
 from temporalio.worker import Worker
 
+from knobridge.core.db import create_engine, create_session_factory
 from knobridge.core.logging import configure_logging, get_logger
 from knobridge.core.settings import Settings, get_settings
 from knobridge.workers.health import HealthWorkflow, ping
+from knobridge.workers.ingestion import IngestionWorkflow
+from knobridge.workers.ingestion_activities import IngestionActivities
 
-# Central registry: every workflow and activity the worker serves is listed here.
-WORKFLOWS: Sequence[type] = (HealthWorkflow,)
-# Activities have heterogeneous signatures, so the registry can only type them loosely.
-ACTIVITIES: Sequence[Callable[..., Any]] = (ping,)
+# Central registry: every workflow the worker serves is listed here, and every activity in
+# ``build_activities``.
+WORKFLOWS: Sequence[type] = (HealthWorkflow, IngestionWorkflow)
 
 logger = get_logger(__name__)
 
@@ -33,13 +36,26 @@ async def connect(settings: Settings) -> Client:
     return await Client.connect(settings.temporal_address, namespace=settings.temporal_namespace)
 
 
+def build_activities(
+    settings: Settings, factory: async_sessionmaker[AsyncSession]
+) -> list[Callable[..., Any]]:
+    """Every activity the worker serves. Activities have heterogeneous signatures, so the
+    registry can only type them loosely."""
+    return [ping, *IngestionActivities.from_settings(settings, factory).all()]
+
+
 def build_worker(client: Client, settings: Settings) -> Worker:
-    """Create a worker on ``temporal_task_queue`` serving the central registry."""
+    """Create a worker on ``temporal_task_queue`` serving the central registry.
+
+    The database engine is created here and lives as long as the worker process; it only
+    connects on the first query.
+    """
+    factory = create_session_factory(create_engine(settings))
     return Worker(
         client,
         task_queue=settings.temporal_task_queue,
         workflows=list(WORKFLOWS),
-        activities=list(ACTIVITIES),
+        activities=build_activities(settings, factory),
     )
 
 

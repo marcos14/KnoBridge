@@ -9,7 +9,6 @@ import pytest
 from retrieval_support import MODEL, ChunkSpec, Db, run_db
 
 from fakes.embedding_provider import (
-    FailingEmbeddingProvider,
     RecordingEmbeddingFactory,
     RecordingEmbeddingProvider,
 )
@@ -243,8 +242,8 @@ def test_search_embeds_once_per_model(app_database_url: str) -> None:
 
     hits = run_db(app_database_url, scenario)
 
-    assert sorted(model for _texts, model in provider.calls) == ["big", MODEL]
-    assert all(texts == [QUERY] for texts, _model in provider.calls)
+    assert sorted(provider.models) == ["big", MODEL]
+    assert provider.texts == [QUERY, QUERY]
     assert [call.api_key for call in factory.calls] == ["sk-fake-retrieval-2468"] * 2
     assert provider.closed
     assert len(hits) == 3
@@ -263,7 +262,7 @@ def test_vector_arm_skips_chunks_of_another_model(app_database_url: str) -> None
 def test_search_provider_error_propagates_and_closes_the_provider(
     app_database_url: str,
 ) -> None:
-    provider = FailingEmbeddingProvider(ProviderRateLimitError("Slow down.", provider="fake"))
+    provider = RecordingEmbeddingProvider(ProviderRateLimitError("Slow down.", provider="fake"))
 
     async def scenario(db: Db) -> None:
         space = await db.collection(await db.workspace())

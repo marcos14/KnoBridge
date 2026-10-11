@@ -67,10 +67,10 @@ fases:
     subfases:
       - id: F3.1
         titulo: Workflow de ingestão incremental no Temporal
-        status: em_execucao
+        status: concluida
         agente: claude-code
         iniciada_em: 2026-10-10
-        concluida_em: null
+        concluida_em: 2026-10-10
         commit: null
       - id: F3.2
         titulo: API de coleções, fontes e execuções
@@ -96,7 +96,7 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: 602e1d1
       - id: F4.2
         titulo: Retriever real, coleções do assistente e prompt com citações
         status: pendente
@@ -495,6 +495,7 @@ Ver `decisoes[]` no frontmatter. ADR previsto: 0004 (índice de conhecimento: di
 - 2026-10-10 — F1 e F2 concluídas; F3.1 iniciada.
 - 2026-10-10 — F4.1 iniciada em paralelo com a F3.1.
 - 2026-10-10 — F4.1 concluída: Busca híbrida (HNSW + FTS, RRF, limiar), Reranker como Protocol, rota POST .../collections/{cid}/search; backend 966 testes, frontend 704.
+- 2026-10-10 — F3.1 concluída: Workflow knobridge.ingestion.v1 (open_run/list_changes/process_batch/finish_run), run_items (migração 0011), cache de embedding por hash, start_sync/TemporalSyncStarter; fake de embeddings unificado com a F4.1; 1001 testes.
 
 ## 8. Encerramento
 

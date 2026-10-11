@@ -1,5 +1,5 @@
 """The indexed knowledge of a workspace: ``Collection``, ``Source``, ``Run``, ``RunError``,
-``Document`` and ``Chunk`` (``docs/adr/0004-indice-de-conhecimento.md``).
+``RunItem``, ``Document`` and ``Chunk`` (``docs/adr/0004-indice-de-conhecimento.md``).
 
 Workspace data with forced row-level security (``docs/adr/0001-tenancy-e-rls.md``). Every
 reference between these tables is composite, ``(workspace_id, <parent>_id)``, so the database
@@ -84,6 +84,13 @@ class RunErrorStage(StrEnum):
 class DocumentKind(StrEnum):
     FILE = "file"
     COMMIT = "commit"
+
+
+class RunItemChange(StrEnum):
+    """What a run does with a listed document: (re)index it or delete it."""
+
+    UPSERT = "upsert"
+    REMOVE = "remove"
 
 
 def _workspace_fk() -> Mapped[uuid.UUID]:
@@ -211,6 +218,8 @@ class Run(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     # Short summary of why the run failed (never a stack trace, a prompt or document content).
     error: Mapped[str | None] = mapped_column(String(RUN_ERROR_MESSAGE_MAX_LENGTH), nullable=True)
+    # Cursor produced by this run's listing; copied to ``sources.cursor`` only on success.
+    pending_cursor: Mapped[dict[str, JSONValue] | None] = mapped_column(JSONB, nullable=True)
 
 
 class RunError(UUIDPrimaryKeyMixin, TimestampMixin, Base):
@@ -233,6 +242,38 @@ class RunError(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     stage: Mapped[RunErrorStage] = mapped_column(str_enum(RunErrorStage, "stage"), nullable=False)
     code: Mapped[str] = mapped_column(String(64), nullable=False)
     message: Mapped[str] = mapped_column(String(RUN_ERROR_MESSAGE_MAX_LENGTH), nullable=False)
+
+
+class RunItem(Base):
+    """One listed document a run still has to process, in listing order (``ordinal``).
+
+    The change set of a source can hold thousands of documents, too many for the Temporal
+    history, so the listing activity stores it here and each batch activity reads a page.
+    ``done`` is set in the same transaction that writes the document, so a retried batch skips
+    what was already processed. Rows are deleted when the run finishes.
+    """
+
+    __tablename__ = "run_items"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["workspace_id", "run_id"],
+            ["runs.workspace_id", "runs.id"],
+            ondelete="CASCADE",
+        ),
+        CheckConstraint("ordinal >= 0", name="ordinal_not_negative"),
+    )
+
+    workspace_id: Mapped[uuid.UUID] = _workspace_fk()
+    run_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    ordinal: Mapped[int] = mapped_column(Integer, primary_key=True)
+    document_key: Mapped[str] = mapped_column(Text, nullable=False)
+    document_kind: Mapped[DocumentKind] = mapped_column(
+        str_enum(DocumentKind, "document_kind"), nullable=False
+    )
+    change: Mapped[RunItemChange] = mapped_column(str_enum(RunItemChange, "change"), nullable=False)
+    done: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=text("false")
+    )
 
 
 class Document(UUIDPrimaryKeyMixin, TimestampMixin, Base):
@@ -283,6 +324,8 @@ class Chunk(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         ),
         CheckConstraint("position >= 0", name="position_not_negative"),
         Index(None, "workspace_id", "collection_id"),
+        # Embedding cache lookup: a vector already computed for the same text in the collection.
+        Index(None, "collection_id", "content_hash"),
         Index(
             "ix_chunks_embedding_hnsw",
             "embedding",

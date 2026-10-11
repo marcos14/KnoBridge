@@ -2,7 +2,7 @@
 
 > Rascunho v0.3 · 2026-10-10 · Em uso (planos 0002 e 0003)
 >
-> **Mudanças da v0.3**: índice de conhecimento da migração `0010` (plano 0003, F1.1): `collections`, `sources`, `runs`, `run_errors`, `documents` e `chunks`, com `vector(1536)`, HNSW e `tsvector` gerado ([ADR 0004](../adr/0004-indice-de-conhecimento.md)).
+> **Mudanças da v0.3**: índice de conhecimento da migração `0010` (plano 0003, F1.1): `collections`, `sources`, `runs`, `run_errors`, `documents` e `chunks`, com `vector(1536)`, HNSW e `tsvector` gerado ([ADR 0004](../adr/0004-indice-de-conhecimento.md)). Migração `0011` (plano 0003, F3.1): `run_items` (trabalho pendente de uma execução), `runs.pending_cursor` e o índice do cache de embedding em `chunks`.
 
 Tabelas do Postgres do KnoBridge, criadas pelas migrações em [`backend/migrations/`](../../backend/migrations/AGENTS.md). Modelos ORM em `backend/src/knobridge/<módulo>/models.py`. Regras de tenancy e RLS no [ADR 0001](../adr/0001-tenancy-e-rls.md); sessão, tokens e limitação de login no [ADR 0002](../adr/0002-sessao-server-side.md); segredos cifrados no [ADR 0003](../adr/0003-segredos-cifrados.md); índice de conhecimento no [ADR 0004](../adr/0004-indice-de-conhecimento.md). Autenticação e papéis em [autenticacao.md](autenticacao.md); chat em [chat.md](chat.md).
 
@@ -20,6 +20,7 @@ Tabelas do Postgres do KnoBridge, criadas pelas migrações em [`backend/migrati
 | `0008` | `20261010_0008_assistants.py` | `assistants`; único `(workspace_id, id)` em `provider_credentials`. |
 | `0009` | `20261010_0009_conversations.py` | `conversations`, `messages`, `feedback`; único `(workspace_id, id)` em `assistants`. |
 | `0010` | `20261010_0010_knowledge_index.py` | Índice de conhecimento: `collections`, `sources`, `runs`, `run_errors`, `documents`, `chunks`; HNSW cosseno em `chunks.embedding` e GIN em `chunks.tsv` (gerado). |
+| `0011` | `20261010_0011_run_items.py` | `run_items` (documentos pendentes de uma execução, RLS forçada), `runs.pending_cursor` e `ix_chunks_collection_id_content_hash` (cache de embedding). |
 
 Toda migração tem `downgrade` que desfaz o `upgrade`; o teste `test_migrations_match_orm_models` compara as migrações com os modelos ORM.
 
@@ -71,6 +72,7 @@ Todas as tabelas abaixo têm `ENABLE` + `FORCE ROW LEVEL SECURITY`. `users` é a
 | `run_errors` | `run_errors_workspace` | `ALL` | workspace, ou sistema |
 | `documents` | `documents_workspace` | `ALL` | workspace, ou sistema |
 | `chunks` | `chunks_workspace` | `ALL` | workspace, ou sistema |
+| `run_items` | `run_items_workspace` | `ALL` | workspace, ou sistema |
 
 A RLS isola workspaces; regras dentro do workspace (papel mínimo, privacidade de conversa entre membros) são da aplicação ([autenticacao.md](autenticacao.md#matriz-de-permissões)). Cada consulta tem teste de isolamento contra Postgres real, junto dos testes do seu módulo (ex.: `backend/tests/tenancy/test_invitations_rls.py`).
 
@@ -186,6 +188,16 @@ erDiagram
         varchar error "resumo"
     }
     runs ||--o{ run_errors : "registra"
+    runs ||--o{ run_items : "pendente"
+    run_items {
+        uuid run_id PK "FK, mesmo workspace"
+        integer ordinal PK
+        uuid workspace_id FK
+        text document_key
+        varchar document_kind "file | commit"
+        varchar change "upsert | remove"
+        boolean done
+    }
     run_errors {
         uuid id PK
         uuid workspace_id FK
@@ -497,7 +509,7 @@ Avaliação (👍/👎 e comentário) de uma resposta do assistente por um usuá
 
 ## Índice de conhecimento
 
-Tabelas do conhecimento indexado (plano 0003, F1.1; [ADR 0004](../adr/0004-indice-de-conhecimento.md)), em [`backend/src/knobridge/ingestion/`](../../backend/src/knobridge/ingestion/AGENTS.md). As seis são dado de workspace com RLS forçada e uma política padrão por tabela (`<tabela>_workspace`, `USING` e `WITH CHECK`). Toda referência entre elas é composta, `(workspace_id, <pai>_id)` → `<pai> (workspace_id, id)`, e por isso cada pai tem o único `uq_<pai>_workspace_id_id`. Exclusões: credencial → coleção e coleção → fonte são `NO ACTION` (em uso não se exclui); da fonte para execuções, erros, documentos e chunks, `ON DELETE CASCADE`; excluir o workspace apaga tudo.
+Tabelas do conhecimento indexado (plano 0003, F1.1; [ADR 0004](../adr/0004-indice-de-conhecimento.md)), em [`backend/src/knobridge/ingestion/`](../../backend/src/knobridge/ingestion/AGENTS.md). As seis, mais `run_items` (`0011`), são dado de workspace com RLS forçada e uma política padrão por tabela (`<tabela>_workspace`, `USING` e `WITH CHECK`). Toda referência entre elas é composta, `(workspace_id, <pai>_id)` → `<pai> (workspace_id, id)`, e por isso cada pai tem o único `uq_<pai>_workspace_id_id`. Exclusões: credencial → coleção e coleção → fonte são `NO ACTION` (em uso não se exclui); da fonte para execuções, erros, documentos e chunks, `ON DELETE CASCADE`; excluir o workspace apaga tudo.
 
 ### `collections`
 
@@ -543,8 +555,23 @@ Uma execução da ingestão de uma fonte. `created_at` é o momento em que entro
 | `chunks_written` | `integer` | Chunks gravados, padrão 0. |
 | `embedding_tokens` | `integer` | Tokens enviados ao provedor de embedding, padrão 0. Todas as contagens ≥ 0 (`ck_runs_counts_not_negative`). |
 | `cost_usd` | `numeric(12,6)` | Custo estimado; nulo se o preço do modelo é desconhecido. |
-| `started_at`, `finished_at` | `timestamptz` | Nulos enquanto na fila ou rodando. |
-| `error` | `varchar(500)` | Resumo do motivo de uma execução `failed`; sem stack trace nem conteúdo. |
+| `started_at`, `finished_at` | `timestamptz` | `started_at` nulo enquanto na fila; `finished_at` nulo até a execução terminar (a duração é a diferença). |
+| `error` | `varchar(500)` | Resumo do motivo de uma execução `failed` (`<código>: <mensagem>`); sem stack trace nem conteúdo. |
+| `pending_cursor` | `jsonb` | Cursor produzido pela listagem desta execução; copiado para `sources.cursor` só quando ela termina com sucesso e limpo ao terminar (qualquer desfecho). |
+
+### `run_items`
+
+Documentos que uma execução ainda tem que processar, na ordem da listagem (plano 0003, F3.1). A listagem do conector pode ter milhares de documentos, demais para o histórico do Temporal (payloads de ~2 MB); por isso a activity de listagem grava aqui e cada lote lê uma página por `ordinal`. Linhas apagadas quando a execução termina. Chave primária `(run_id, ordinal)` (`pk_run_items`).
+
+| Coluna | Tipo | Regras |
+|---|---|---|
+| `workspace_id` | `uuid` | FK `workspaces.id`, `ON DELETE CASCADE`. |
+| `run_id` | `uuid` | FK composta → `runs (workspace_id, id)` (`fk_run_items_workspace_id_runs`), `ON DELETE CASCADE`. |
+| `ordinal` | `integer` | Posição na listagem, a partir de 0 (`ck_run_items_ordinal_not_negative`). |
+| `document_key` | `text` | Chave natural do documento. |
+| `document_kind` | `varchar(32)` | `file` ou `commit` (`ck_run_items_document_kind`). |
+| `change` | `varchar(32)` | `upsert` (novo ou alterado; commits do Git vêm sempre como novos) ou `remove` (`ck_run_items_change`). |
+| `done` | `boolean` | Padrão `false`; marcado na mesma transação que grava o documento, para um lote reexecutado pular o que já fez. |
 
 ### `run_errors`
 
@@ -578,7 +605,7 @@ Um arquivo ou commit de uma fonte, na versão indexada.
 
 ### `chunks`
 
-Um trecho indexado de um documento. Índices: `ix_chunks_workspace_id_collection_id` (filtro da busca), `ix_chunks_embedding_hnsw` (HNSW, `vector_cosine_ops`) e `ix_chunks_tsv_gin` (GIN).
+Um trecho indexado de um documento. Índices: `ix_chunks_workspace_id_collection_id` (filtro da busca), `ix_chunks_collection_id_content_hash` (cache de embedding: vetor já calculado para o mesmo texto na coleção, `0011`), `ix_chunks_embedding_hnsw` (HNSW, `vector_cosine_ops`) e `ix_chunks_tsv_gin` (GIN).
 
 | Coluna | Tipo | Regras |
 |---|---|---|
@@ -586,8 +613,8 @@ Um trecho indexado de um documento. Índices: `ix_chunks_workspace_id_collection
 | `document_id` | `uuid` | FK composta → `documents (workspace_id, id)` (`fk_chunks_workspace_id_documents`), `ON DELETE CASCADE`. |
 | `collection_id` | `uuid` | Coleção da fonte do documento, desnormalizada para a busca filtrar sem junção. FK composta → `collections (workspace_id, id)` (`fk_chunks_workspace_id_collections`), `ON DELETE CASCADE`. |
 | `position` | `integer` | Ordem no documento a partir de 0 (`ck_chunks_position_not_negative`); única por documento (`uq_chunks_document_id_position`). |
-| `content` | `text` | Texto do chunk. |
-| `meta` | `jsonb` | Dados da citação: `path`, `start_line`, `end_line`, `symbol`, `headings`. Padrão `{}`. |
+| `content` | `text` | Texto do chunk como foi embedado: cabeçalho curto de contexto (`path: …`, `symbol: …`, `section: …`) + corpo. |
+| `meta` | `jsonb` | Dados da citação: `path`, `start_line`, `end_line`, `symbol`, `headings` (e as demais chaves do chunking), mais `display`, o corpo sem o cabeçalho, para o trecho exibido na citação. Padrão `{}`. |
 | `content_hash` | `varchar(64)` | SHA-256 (hex) do conteúdo; chave do cache de embeddings. |
 | `embedding_model` | `varchar(200)` | Modelo que gerou o vetor; diferente do da coleção depois de uma troca de modelo, até reindexar. |
 | `embedding` | `vector(1536)` | Vetor (pgvector). |

@@ -13,7 +13,7 @@ from api_support import ApiEnv
 from fastapi import FastAPI
 from search_support import Passage, add_passages, build_search_world, search_path
 
-from fakes.embedding_provider import FailingEmbeddingProvider, RecordingEmbeddingFactory
+from fakes.embedding_provider import RecordingEmbeddingFactory, RecordingEmbeddingProvider
 from knobridge.api.deps import get_embedding_provider_factory
 from knobridge.llm.errors import ProviderRateLimitError
 from knobridge.tenancy.models import Role
@@ -37,9 +37,9 @@ CODE = Passage(
 
 
 @pytest.fixture
-def failing_embeddings(api: ApiEnv) -> Generator[FailingEmbeddingProvider]:
+def failing_embeddings(api: ApiEnv) -> Generator[RecordingEmbeddingProvider]:
     app = cast(FastAPI, api.client.app)
-    provider = FailingEmbeddingProvider(ProviderRateLimitError("Slow down.", provider="fake"))
+    provider = RecordingEmbeddingProvider(ProviderRateLimitError("Slow down.", provider="fake"))
     factory = RecordingEmbeddingFactory(provider)
     app.dependency_overrides[get_embedding_provider_factory] = lambda: factory
     yield provider
@@ -215,7 +215,7 @@ def test_search_endpoint_validates_body(api: ApiEnv, body: dict[str, object]) ->
 
 
 def test_search_endpoint_reports_provider_errors(
-    api: ApiEnv, failing_embeddings: FailingEmbeddingProvider
+    api: ApiEnv, failing_embeddings: RecordingEmbeddingProvider
 ) -> None:
     world = build_search_world(api, Role.OWNER)
 

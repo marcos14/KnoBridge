@@ -79,6 +79,8 @@ uv run knobridge-worker              # logs JSON em stderr; Ctrl+C encerra
 
 Teste rápido, com a CLI: `temporal workflow execute --type knobridge.health.v1 --task-queue knobridge` deve devolver `"ok"`.
 
+O worker também executa a ingestão incremental das fontes (`knobridge.ingestion.v1`, workflow `ingestion-<source_id>`), então precisa do banco (`KNOBRIDGE_DATABASE_URL`), da mesma `KNOBRIDGE_SECRET_KEY` da API (para decifrar a chave do provedor de embedding) e de `KNOBRIDGE_LOCAL_SOURCES_ROOT`/`KNOBRIDGE_GIT_WORKDIR` para ler as fontes.
+
 ## Imagem Docker
 
 Uma única imagem serve api, worker e migrações (o comando padrão é `knobridge-api`, escutando em `0.0.0.0:8000`):

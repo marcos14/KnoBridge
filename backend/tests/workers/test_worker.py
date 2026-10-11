@@ -13,6 +13,7 @@ from knobridge.core.logging import configure_logging
 from knobridge.core.settings import Settings
 from knobridge.workers import worker as worker_module
 from knobridge.workers.health import HealthWorkflow, ping
+from knobridge.workers.ingestion import IngestionWorkflow
 from knobridge.workers.worker import build_worker, connect, main, run
 
 # Stand-in for a real client: the fakes below never touch it.
@@ -47,8 +48,15 @@ def test_build_worker_registers_workflows_and_activities() -> None:
     config = asyncio.run(build())
 
     assert config["task_queue"] == "queue-test"
-    assert list(config["workflows"]) == [HealthWorkflow]
-    assert list(config["activities"]) == [ping]
+    assert list(config["workflows"]) == [HealthWorkflow, IngestionWorkflow]
+    activities = list(config["activities"])
+    assert activities[0] is ping
+    assert [activity.__name__ for activity in activities[1:]] == [
+        "open_run",
+        "list_changes",
+        "process_batch",
+        "finish_run",
+    ]
 
 
 def test_connect_uses_address_and_namespace(monkeypatch: pytest.MonkeyPatch) -> None:

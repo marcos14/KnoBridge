@@ -54,6 +54,7 @@ _TENANCY_TABLES = (
     "run_errors",
     "documents",
     "chunks",
+    "run_items",
 )
 _INDEX_TABLES = ("collections", "sources", "runs", "run_errors", "documents", "chunks")
 
@@ -143,6 +144,7 @@ def test_migration_upgrade_downgrade_tenancy(postgres_url: str) -> None:
         "messages": (True, True, 1),
         "feedback": (True, True, 1),
         **dict.fromkeys(_INDEX_TABLES, (True, True, 1)),
+        "run_items": (True, True, 1),
     }
     assert after_downgrade == {}
 
@@ -355,6 +357,47 @@ def test_migration_upgrade_downgrade_knowledge_index(postgres_url: str) -> None:
     assert not set(_INDEX_TABLES) & set(after_downgrade)
     assert after_downgrade["provider_credentials"] == (True, True, 1)
     assert indexes_after_downgrade == {}
+
+
+def _has_pending_cursor(database_url: str) -> bool:
+    async def query() -> bool:
+        engine = create_async_engine(database_url, poolclass=NullPool)
+        try:
+            async with engine.connect() as connection:
+                result = await connection.execute(
+                    text(
+                        "SELECT count(*) FROM information_schema.columns"
+                        " WHERE table_name = 'runs' AND column_name = 'pending_cursor'"
+                    )
+                )
+                return result.scalar_one() == 1
+        finally:
+            await engine.dispose()
+
+    return asyncio.run(query())
+
+
+@pytest.mark.integration
+def test_migration_upgrade_downgrade_run_items(postgres_url: str) -> None:
+    config, _ = _alembic_config(postgres_url)
+
+    command.upgrade(config, "head")
+    after_upgrade = _tenancy_catalog(postgres_url)
+    indexes_after_upgrade = _index_methods(postgres_url)
+    cursor_after_upgrade = _has_pending_cursor(postgres_url)
+    command.downgrade(config, "0010")
+    after_downgrade = _tenancy_catalog(postgres_url)
+    indexes_after_downgrade = _index_methods(postgres_url)
+    cursor_after_downgrade = _has_pending_cursor(postgres_url)
+    command.downgrade(config, "base")
+
+    assert after_upgrade["run_items"] == (True, True, 1)
+    assert indexes_after_upgrade["ix_chunks_collection_id_content_hash"] == "btree"
+    assert cursor_after_upgrade is True
+    assert "run_items" not in after_downgrade
+    assert "ix_chunks_collection_id_content_hash" not in indexes_after_downgrade
+    assert cursor_after_downgrade is False
+    assert after_downgrade["runs"] == (True, True, 1)
 
 
 def _schema_diff(connection: Connection) -> list[object]:

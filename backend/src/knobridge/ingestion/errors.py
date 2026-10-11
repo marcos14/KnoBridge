@@ -27,3 +27,24 @@ class ParseFailedError(IngestionError):
     """The format is supported but the content could not be converted (corrupt, no text)."""
 
     code = "parse_failed"
+
+
+class SyncAlreadyRunningError(KnoBridgeError):
+    """A run of the source is already queued or running; one at a time per source."""
+
+    code = "sync_already_running"
+    status_code = HTTPStatus.CONFLICT
+
+
+class SyncNotRunningError(KnoBridgeError):
+    """There is no running synchronization of the source to cancel."""
+
+    code = "sync_not_running"
+    status_code = HTTPStatus.CONFLICT
+
+
+class SourceInactiveError(KnoBridgeError):
+    """The source is deactivated, so it is not synchronized."""
+
+    code = "source_inactive"
+    status_code = HTTPStatus.CONFLICT

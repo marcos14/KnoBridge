@@ -1,9 +1,4 @@
-"""Fakes around ``EmbeddingProvider`` for search tests: a provider that always fails with a given
-domain error and an ``EmbeddingProviderFactory`` that records each provider it builds.
-
-The deterministic happy-path fake is production code
-(``knobridge.llm.fake_embeddings.FakeEmbeddingProvider``), used by the ``fake`` provider kind.
-"""
+"""``EmbeddingProvider`` variations: one that records what it embeds, one that fails."""
 
 from __future__ import annotations
 
@@ -16,33 +11,36 @@ from knobridge.llm.fake_embeddings import FakeEmbeddingProvider
 from knobridge.llm.models import ProviderKind
 
 
-@dataclass
-class FailingEmbeddingProvider:
-    """Every ``embed`` raises ``error``; ``closed`` tells whether ``aclose`` ran."""
-
-    error: LLMProviderError
-    closed: bool = False
-
-    async def embed(self, texts: Sequence[str], model: str) -> EmbeddingResult:
-        raise self.error
-
-    async def aclose(self) -> None:
-        self.closed = True
-
-
-@dataclass
 class RecordingEmbeddingProvider:
-    """``FakeEmbeddingProvider`` vectors, recording ``(texts, model)`` of each call."""
+    """Delegates to ``FakeEmbeddingProvider`` and records every text sent, in ``texts``.
 
-    calls: list[tuple[list[str], str]] = field(default_factory=lambda: [])
-    closed: bool = False
+    With ``error`` set, calls raise it instead (nothing is recorded): every call, or only the
+    next ``fail_times`` calls when that is given.
+    """
+
+    def __init__(
+        self, error: LLMProviderError | None = None, *, fail_times: int | None = None
+    ) -> None:
+        self._inner = FakeEmbeddingProvider()
+        self.error = error
+        self.fail_times = fail_times
+        self.calls = 0
+        self.texts: list[str] = []
+        self.models: list[str] = []
+        self.closed = 0
 
     async def embed(self, texts: Sequence[str], model: str) -> EmbeddingResult:
-        self.calls.append((list(texts), model))
-        return await FakeEmbeddingProvider().embed(texts, model)
+        self.calls += 1
+        if self.error is not None and (self.fail_times is None or self.fail_times > 0):
+            if self.fail_times is not None:
+                self.fail_times -= 1
+            raise self.error
+        self.texts.extend(texts)
+        self.models.append(model)
+        return await self._inner.embed(texts, model)
 
     async def aclose(self) -> None:
-        self.closed = True
+        self.closed += 1
 
 
 @dataclass(frozen=True)
@@ -54,10 +52,10 @@ class EmbeddingFactoryCall:
 
 @dataclass
 class RecordingEmbeddingFactory:
-    """An ``EmbeddingProviderFactory`` returning ``provider`` and recording each call."""
+    """``EmbeddingProviderFactory`` that always returns ``provider`` and records each call."""
 
-    provider: EmbeddingProvider
-    calls: list[EmbeddingFactoryCall] = field(default_factory=lambda: [])
+    provider: RecordingEmbeddingProvider = field(default_factory=RecordingEmbeddingProvider)
+    calls: list[EmbeddingFactoryCall] = field(default_factory=list[EmbeddingFactoryCall])
 
     def __call__(
         self, kind: ProviderKind, *, api_key: str, base_url: str | None
