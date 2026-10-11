@@ -74,10 +74,10 @@ fases:
         commit: 8529c83
       - id: F3.2
         titulo: API de coleções, fontes e execuções
-        status: em_execucao
+        status: concluida
         agente: claude-code
         iniciada_em: 2026-10-10
-        concluida_em: null
+        concluida_em: 2026-10-10
         commit: null
       - id: F3.3
         titulo: Agendamento por fonte (Temporal Schedules)
@@ -103,7 +103,7 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: 6896294
   - id: F5
     titulo: Telas
     status: pendente
@@ -498,6 +498,7 @@ Ver `decisoes[]` no frontmatter. ADR previsto: 0004 (índice de conhecimento: di
 - 2026-10-10 — F3.1 concluída: Workflow knobridge.ingestion.v1 (open_run/list_changes/process_batch/finish_run), run_items (migração 0011), cache de embedding por hash, start_sync/TemporalSyncStarter; fake de embeddings unificado com a F4.1; 1001 testes.
 - 2026-10-10 — F3.2 e F4.2 iniciadas em paralelo.
 - 2026-10-10 — F4.2 concluída: HybridRetriever no chat, assistant_collections + min_similarity (migração 0012), citações com caminho/linhas/commit, prompt reforçado; regra 8 preservada; backend 1031 testes.
+- 2026-10-10 — F3.2 concluída: API de coleções, fontes (teste de conexão, sync, cancel), execuções e documentos; mesclada com a F4.2 (conflitos só em AGENTS.md; contrato regenerado); backend e frontend verdes.
 
 ## 8. Encerramento
 

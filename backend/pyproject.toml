@@ -29,6 +29,7 @@ dependencies = [
     "tree-sitter-typescript>=0.23.2",
     "tree-sitter-javascript>=0.25",
     "tree-sitter-go>=0.25",
+    "croniter>=6.2.4",
 ]
 
 [project.scripts]
@@ -45,6 +46,7 @@ dev = [
     "pytest-cov>=6.0",
     "ruff>=0.8",
     "testcontainers[postgres]>=4.9",
+    "types-croniter>=6.2.4.20261006",
 ]
 
 [build-system]

@@ -50,3 +50,14 @@ class AuditAction(StrEnum):
     ASSISTANT_DELETED = "assistant.deleted"
     # Conversations: only the deletion is audited (no content: ids and counts only).
     CONVERSATION_DELETED = "conversation.deleted"
+    # Knowledge index configuration: collections, sources and their runs (names, kinds,
+    # changed fields and ids; never document content). Indexed documents are not audited.
+    COLLECTION_CREATED = "collection.created"
+    COLLECTION_UPDATED = "collection.updated"
+    COLLECTION_DELETED = "collection.deleted"
+    SOURCE_CREATED = "source.created"
+    SOURCE_UPDATED = "source.updated"
+    SOURCE_DELETED = "source.deleted"
+    SOURCE_TESTED = "source.tested"
+    SOURCE_SYNC_STARTED = "source.sync.started"
+    SOURCE_SYNC_CANCELLED = "source.sync.cancelled"

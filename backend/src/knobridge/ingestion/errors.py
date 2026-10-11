@@ -48,3 +48,10 @@ class SourceInactiveError(KnoBridgeError):
 
     code = "source_inactive"
     status_code = HTTPStatus.CONFLICT
+
+
+class SyncUnavailableError(KnoBridgeError):
+    """The workflow service (Temporal) cannot be reached, so nothing was started or cancelled."""
+
+    code = "sync_unavailable"
+    status_code = HTTPStatus.SERVICE_UNAVAILABLE

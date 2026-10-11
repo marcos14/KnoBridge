@@ -18,6 +18,7 @@ from knobridge.api import (
     assistants,
     audit,
     auth,
+    collections,
     conversations,
     health,
     invites,
@@ -25,8 +26,10 @@ from knobridge.api import (
     members,
     providers,
     recovery,
+    runs,
     search,
     setup,
+    sources,
 )
 from knobridge.core.clock import Clock, SystemClock
 from knobridge.core.db import create_engine, create_session_factory
@@ -36,6 +39,7 @@ from knobridge.core.settings import Settings, get_settings
 from knobridge.email.rendering import EmailComposer
 from knobridge.email.sender import EmailSender, SmtpEmailSender
 from knobridge.security.passwords import PasswordHasher
+from knobridge.workers.sync_client import LazyTemporalSyncStarter
 
 API_PREFIX = "/v1"
 
@@ -65,6 +69,8 @@ def create_app(
         db_engine = engine if engine is not None else create_engine(resolved)
         app.state.engine = db_engine
         app.state.session_factory = create_session_factory(db_engine)
+        # Connects on the first sync, so the API starts even with Temporal down.
+        app.state.sync_starter = LazyTemporalSyncStarter(resolved)
         try:
             yield
         finally:
@@ -108,6 +114,10 @@ def create_app(
         admin_conversations,
         search,
         admin,
+        # Knowledge index (plan 0003 F3.2).
+        collections,
+        sources,
+        runs,
     )
     for module in routers:
         v1.include_router(module.router)

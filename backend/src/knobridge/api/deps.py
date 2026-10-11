@@ -30,6 +30,10 @@ from knobridge.core.errors import ForbiddenError, NotFoundError, Unauthenticated
 from knobridge.core.settings import Settings
 from knobridge.email.rendering import EmailComposer
 from knobridge.email.sender import EmailSender
+from knobridge.ingestion.collections import CollectionService
+from knobridge.ingestion.connectors import ConnectorFactory, SettingsConnectorFactory
+from knobridge.ingestion.sources import SourceService
+from knobridge.ingestion.sync import SyncStarter
 from knobridge.llm.credentials import CREDENTIALS_KEY_INFO, ProviderCredentialService
 from knobridge.llm.factory import (
     EmbeddingProviderFactory,
@@ -338,3 +342,31 @@ def require_role(minimum: Role) -> Callable[[WorkspaceContext], WorkspaceContext
         return context
 
     return dependency
+
+
+# --- Knowledge index: collections, sources, runs (plan 0003 F3.2) -------------------------
+
+
+def get_sync_starter(request: Request) -> SyncStarter:
+    """The lazy Temporal starter created by the lifespan; tests override it with a fake."""
+    starter: SyncStarter = request.app.state.sync_starter
+    return starter
+
+
+def get_connector_factory(request: Request) -> ConnectorFactory:
+    """Builds the connector of a source (connection test); tests override it with fakes."""
+    return SettingsConnectorFactory(get_settings_from_app(request))
+
+
+def get_collection_service(request: Request) -> CollectionService:
+    return CollectionService(request.app.state.clock)
+
+
+def get_source_service(request: Request) -> SourceService:
+    return SourceService(request.app.state.clock)
+
+
+SyncStarterDep = Annotated[SyncStarter, Depends(get_sync_starter)]
+ConnectorFactoryDep = Annotated[ConnectorFactory, Depends(get_connector_factory)]
+CollectionServiceDep = Annotated[CollectionService, Depends(get_collection_service)]
+SourceServiceDep = Annotated[SourceService, Depends(get_source_service)]

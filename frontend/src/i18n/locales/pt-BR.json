@@ -678,7 +678,16 @@
     "workspace_updated": "Workspace atualizado",
     "workspace_suspended": "Workspace suspenso",
     "workspace_reactivated": "Workspace reativado",
-    "setup_completed": "Configuração inicial concluída"
+    "setup_completed": "Configuração inicial concluída",
+    "collection_created": "Coleção criada",
+    "collection_updated": "Coleção atualizada",
+    "collection_deleted": "Coleção excluída",
+    "source_created": "Fonte adicionada",
+    "source_updated": "Fonte atualizada",
+    "source_deleted": "Fonte excluída",
+    "source_tested": "Conexão com a fonte testada",
+    "source_sync_started": "Sincronização da fonte iniciada",
+    "source_sync_cancelled": "Sincronização da fonte cancelada"
   },
   "admin": {
     "search": "Buscar",
@@ -823,6 +832,25 @@
     "unauthenticated": "Sua sessão expirou. Entre novamente.",
     "validation_error": "Confira os dados informados.",
     "weak_password": "A senha é fraca demais. Use uma senha mais longa e difícil de adivinhar.",
-    "workspace_suspended": "Este workspace está suspenso."
+    "workspace_suspended": "Este workspace está suspenso.",
+    "branch_not_found": "O branch configurado não existe no repositório.",
+    "collection_embedding_locked": "A coleção já tem documentos: o provedor e o modelo de embedding não podem mudar. Crie outra coleção para usar outro modelo.",
+    "collection_in_use": "A coleção ainda tem fontes. Exclua as fontes antes de excluir a coleção.",
+    "collection_name_taken": "Já existe uma coleção com este nome no workspace.",
+    "collection_not_found": "A coleção não existe ou foi excluída.",
+    "collection_provider_invalid": "Escolha um provedor de embedding cadastrado neste workspace.",
+    "path_outside_root": "O caminho está fora da pasta liberada para fontes locais.",
+    "run_not_found": "A execução não existe ou foi excluída.",
+    "source_collection_invalid": "Escolha uma coleção deste workspace.",
+    "source_config_invalid": "A configuração da fonte é inválida. Confira o caminho ou a URL.",
+    "source_inactive": "A fonte está desativada. Ative-a para sincronizar.",
+    "source_name_taken": "Já existe uma fonte com este nome no workspace.",
+    "source_not_found": "A fonte não existe ou foi excluída.",
+    "source_schedule_invalid": "O agendamento deve ser uma expressão cron de cinco campos.",
+    "source_timeout": "A fonte não respondeu a tempo.",
+    "source_unavailable": "Não foi possível ler a fonte. Confira se o caminho ou o repositório existe e está acessível.",
+    "sync_already_running": "Esta fonte já está sincronizando. Aguarde terminar.",
+    "sync_not_running": "Não há sincronização em andamento nesta fonte.",
+    "sync_unavailable": "O serviço de sincronização está indisponível. Tente de novo em instantes."
   }
 }
