@@ -1,0 +1,10 @@
+# Synthetic test values flagged by the generic-api-key rule (reviewed 2026-10-11; none is a real key).
+# Fingerprint format: <commit>:<file>:<rule>:<line>. Prefer values that do not look like keys in new tests.
+7e1c548ce0b02fc6d3847e9fcacbc4689348eecd:backend/tests/llm/test_provider_credentials.py:generic-api-key:29
+737d1096790965f3793106e6ce49cf99b7d8c3b8:backend/tests/conversations/conversations_support.py:generic-api-key:28
+737d1096790965f3793106e6ce49cf99b7d8c3b8:backend/tests/conversations/conversations_support.py:generic-api-key:29
+602e1d1d62eb5c78fd5c43e8c5220b208fb8ba75:backend/tests/retrieval/retrieval_support.py:generic-api-key:41
+8529c8316cba07290e0f3d54d06d96f7cf871708:backend/tests/workers/ingestion_harness.py:generic-api-key:53
+8529c8316cba07290e0f3d54d06d96f7cf871708:backend/tests/workers/ingestion_harness.py:generic-api-key:54
+0a214dd7ae3738b7721464f2cccb1e9332dd9e27:frontend/src/test/factories.ts:generic-api-key:722
+18955847492b52b1679c7f03ff6397fb35b2128a:frontend/src/test/factories.ts:generic-api-key:831
