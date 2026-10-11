@@ -1,5 +1,18 @@
-import { type Browser, expect, type Page, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 
+import {
+  acceptInvitation,
+  adminLogin,
+  ask as askAssistant,
+  createCollection,
+  createFakeProvider,
+  createWorkspace,
+  login,
+  logout,
+  NO_SOURCE_ANSWER,
+  personPage,
+  pickOption,
+} from "./flows";
 import { emailedLink } from "./mailpit";
 
 // The navigable platform end to end, against the real stack (API, Postgres, Mailpit, nginx): the
@@ -14,11 +27,6 @@ import { emailedLink } from "./mailpit";
 // Every address is synthetic (@example.test). The superadmin is fixed: on a fresh database the
 // test runs the setup, on a used one it logs in with the same credentials. Everyone else gets a
 // per-run suffix, so a rerun never collides with what an earlier run left behind.
-const ADMIN = {
-  name: "Ana Admin",
-  email: process.env.E2E_ADMIN_EMAIL ?? "admin@example.test",
-  password: process.env.E2E_ADMIN_PASSWORD ?? "e2e-admin-password-1",
-};
 const RUN = Date.now().toString(36);
 const OWNER = {
   name: "Olga Owner",
@@ -35,7 +43,6 @@ const WORKSPACE = `Acme E2E ${RUN}`;
 const PROVIDER = "Fake E2E";
 const ASSISTANT = "Suporte E2E";
 const QUESTION = `Como emito a nota de devolução ${RUN}?`;
-const NO_SOURCE_ANSWER = "Não encontrei essa informação nas fontes que tenho disponíveis";
 
 // Knowledge: deploy/docker-compose.e2e.yml mounts e2e/stack/fixtures/ at /sources, so the
 // synthetic folder knowledge/ (two Markdown files and one TypeScript file) is /sources/knowledge.
@@ -52,63 +59,11 @@ const UNRELATED_QUESTION = `Previsão meteorológica para Júpiter ${RUN}`;
 // Indexing runs in the worker (Temporal): generous, but bounded.
 const SYNC_TIMEOUT = 120_000;
 
-const INVITATION_SUBJECT = "Você foi convidado para um workspace no KnoBridge";
 const RESET_SUBJECT = "Redefinição de senha do KnoBridge";
-
-/** A fresh browser context (own cookies and storage) for one person. */
-async function personPage(browser: Browser): Promise<Page> {
-  const context = await browser.newContext();
-  return context.newPage();
-}
-
-async function login(page: Page, email: string, password: string): Promise<void> {
-  await page.goto("/login");
-  await page.getByLabel("E-mail").fill(email);
-  await page.getByLabel("Senha", { exact: true }).fill(password);
-  await page.getByRole("button", { name: "Entrar" }).click();
-  await expect(page).not.toHaveURL(/\/login/);
-}
-
-async function logout(page: Page): Promise<void> {
-  await page.getByRole("button", { name: "Menu do usuário" }).click();
-  await page.getByRole("menuitem", { name: "Sair" }).click();
-  await expect(page.getByRole("heading", { level: 1, name: "Entrar" })).toBeVisible();
-}
-
-/** Opens the e-mailed invitation, creates the account and returns the workspace id. */
-async function acceptInvitation(
-  page: Page,
-  person: { name: string; email: string; password: string },
-): Promise<string> {
-  const link = await emailedLink(
-    page.request,
-    person.email,
-    INVITATION_SUBJECT,
-    "/accept-invitation",
-  );
-  await page.goto(link);
-  await expect(page.getByText(`Convite enviado para ${person.email}.`)).toBeVisible();
-  await page.getByLabel("Nome").fill(person.name);
-  await page.getByLabel("Senha", { exact: true }).fill(person.password);
-  await page.getByLabel("Confirme a senha").fill(person.password);
-  await page.getByRole("button", { name: "Criar conta e aceitar" }).click();
-  await expect(page).toHaveURL(/\/w\/[0-9a-f-]{36}/);
-  return String(/\/w\/([0-9a-f-]{36})/.exec(page.url())?.[1]);
-}
-
-async function pickOption(page: Page, combobox: string, option: string): Promise<void> {
-  await page.getByRole("combobox", { name: combobox }).click();
-  await page.getByRole("option", { name: option }).click();
-}
 
 /** Starts a new conversation with the only assistant and sends `question`. */
 async function ask(page: Page, workspaceId: string, question: string): Promise<void> {
-  await page.goto(`/w/${workspaceId}/chat`);
-  await expect(page.getByRole("combobox", { name: "Assistente" })).toHaveText(ASSISTANT);
-  const box = page.getByRole("textbox", { name: "Sua pergunta" });
-  await box.fill(question);
-  await box.press("Enter");
-  await expect(page).toHaveURL(/\/chat\/[0-9a-f-]{36}$/);
+  await askAssistant(page, workspaceId, ASSISTANT, question);
 }
 
 test("test_platform_flows_from_setup_to_conversation_review", async ({ browser, request }) => {
@@ -120,33 +75,11 @@ test("test_platform_flows_from_setup_to_conversation_review", async ({ browser, 
   let workspaceId = "";
 
   await test.step("setup creates the first superadmin, who logs out and back in", async () => {
-    const status = await request.get("/v1/setup/status");
-    const { needs_setup: needsSetup } = (await status.json()) as { needs_setup: boolean };
-    if (needsSetup) {
-      await admin.goto("/setup");
-      await admin.getByLabel("Nome").fill(ADMIN.name);
-      await admin.getByLabel("E-mail").fill(ADMIN.email);
-      await admin.getByLabel("Senha", { exact: true }).fill(ADMIN.password);
-      await admin.getByLabel("Confirme a senha").fill(ADMIN.password);
-      await admin.getByRole("button", { name: "Criar conta e entrar" }).click();
-      await expect(admin.getByRole("button", { name: "Menu do usuário" })).toBeVisible();
-      await logout(admin);
-    }
-    await login(admin, ADMIN.email, ADMIN.password);
+    await adminLogin(admin, request);
   });
 
   await test.step("superadmin creates a workspace and invites its owner", async () => {
-    await admin.goto("/admin/workspaces");
-    await admin.getByRole("button", { name: "Criar workspace" }).click();
-    const dialog = admin.getByRole("dialog", { name: "Criar workspace" });
-    await dialog.getByLabel("Nome").fill(WORKSPACE);
-    await dialog.getByLabel("E-mail do proprietário").fill(OWNER.email);
-    await dialog.getByRole("button", { name: "Criar" }).click();
-    await expect(
-      admin.getByText(
-        `Workspace ${WORKSPACE} criado. Enviamos o convite de proprietário para ${OWNER.email}.`,
-      ),
-    ).toBeVisible();
+    await createWorkspace(admin, WORKSPACE, OWNER.email);
   });
 
   await test.step("owner accepts the invitation from the e-mail", async () => {
@@ -185,14 +118,7 @@ test("test_platform_flows_from_setup_to_conversation_review", async ({ browser, 
   });
 
   await test.step("owner registers the fake provider and an assistant", async () => {
-    await owner.goto(`/w/${workspaceId}/providers`);
-    await owner.getByRole("button", { name: "Novo provedor" }).click();
-    const providerDialog = owner.getByRole("dialog", { name: "Novo provedor" });
-    await pickOption(owner, "Tipo", "Fake (testes, sem rede)");
-    await providerDialog.getByLabel("Nome").fill(PROVIDER);
-    await providerDialog.getByLabel("Chave de API").fill("fake-e2e-key");
-    await providerDialog.getByRole("button", { name: "Salvar" }).click();
-    await expect(owner.getByText(`Provedor ${PROVIDER} cadastrado.`)).toBeVisible();
+    await createFakeProvider(owner, workspaceId, PROVIDER);
 
     await owner.goto(`/w/${workspaceId}/assistants`);
     await owner.getByRole("button", { name: "Novo assistente" }).click();
@@ -250,16 +176,7 @@ test("test_platform_flows_from_setup_to_conversation_review", async ({ browser, 
   });
 
   await test.step("owner creates a collection embedded by the fake provider", async () => {
-    await owner.goto(`/w/${workspaceId}/collections`);
-    await owner.getByRole("button", { name: "Nova coleção" }).click();
-    const dialog = owner.getByRole("dialog", { name: "Nova coleção" });
-    await dialog.getByLabel("Nome").fill(COLLECTION);
-    // The only embedding credential comes preselected; the fake accepts the suggested model.
-    await expect(dialog.getByRole("combobox", { name: "Credencial de embedding" })).toHaveText(
-      PROVIDER,
-    );
-    await dialog.getByRole("button", { name: "Salvar" }).click();
-    await expect(owner.getByText(`Coleção ${COLLECTION} criada.`)).toBeVisible();
+    await createCollection(owner, workspaceId, COLLECTION, PROVIDER);
   });
 
   await test.step("owner adds the mounted folder as a source and tests it", async () => {

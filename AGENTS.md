@@ -9,7 +9,7 @@ Se este arquivo e um `AGENTS.md` de pasta conflitarem, vale o mais específico (
 KnoBridge é uma plataforma open source (Apache 2.0) que conecta repositórios de código, sistemas de chamados e documentações, transforma tudo em índices para RAG por meio de pipelines visuais e incrementais, e entrega suporte em linguagem natural por API REST, API compatível com OpenAI, webhooks, MCP, Slack, Google Chat e widget embutível.
 
 - **Fonte da verdade sobre o produto**: [docs/01-visao-do-projeto.md](docs/01-visao-do-projeto.md). Escopo, arquitetura (seção 6), módulos (7), stack (8), decisões (9), roadmap (11) e perguntas em aberto (13).
-- **Status em 2026-10-11**: bootstrap ([0001](docs/planos/0001-bootstrap.md)) e plataforma navegável ([0002](docs/planos/0002-plataforma-navegavel.md)) concluídos; primeiro conhecimento ([0003](docs/planos/0003-primeiro-conhecimento.md)) entregue: fontes Git e pastas locais indexadas de forma incremental no Temporal, busca híbrida (pgvector + FTS) e chat com citações de arquivo, linhas e commit. Resumo e próximos passos na seção 12 deste arquivo.
+- **Status em 2026-10-11**: bootstrap ([0001](docs/planos/0001-bootstrap.md)), plataforma navegável ([0002](docs/planos/0002-plataforma-navegavel.md)) e primeiro conhecimento ([0003](docs/planos/0003-primeiro-conhecimento.md)) concluídos; harness com runner local ([0004](docs/planos/0004-harness-runner-local.md)) entregue: o `knobridge-runner`, na máquina com o checkout, roda o Claude Code ou o Codex somente leitura por módulo, verifica as evidências `arquivo:linhas` e envia o conhecimento, revisado no painel, indexado e citado no chat. Resumo e próximos passos na seção 12 deste arquivo.
 
 ## 2. Regras inegociáveis
 
@@ -81,7 +81,7 @@ Antes de começar, leia este arquivo, o `AGENTS.md` de cada pasta que for tocar 
 | `docs/` | Toda documentação e planos: visão, plano, ADRs, especificações, guias, pesquisa | Existe |
 | `backend/` | Python: API REST e compatível com OpenAI (FastAPI), workers e workflows (Temporal), conectores, engine de pipelines, harness de código, recuperação, assistentes, canais, servidor MCP, migrações | Existe |
 | `frontend/` | Painel admin em React + TypeScript (canvas de pipelines, fontes, assistentes, canais, conversas) | Existe |
-| `runner/` | Python: `knobridge-runner`, runner local do harness de código na máquina do usuário (configuração, cliente do protocolo `/v1/runner/*`, laço principal, CLI `configure`/`run`/`doctor`); projeto uv separado que nunca importa o backend ([ADR 0005](docs/adr/0005-runner-local-do-harness.md)) | Existe |
+| `runner/` | Python: `knobridge-runner`, runner local do harness de código na máquina do usuário (CLI `configure`/`run`/`doctor`, cliente do protocolo `/v1/runner/*`, camada 0, executores Claude Code e Codex somente leitura, verificação de evidências e excertos); projeto uv separado que nunca importa o backend ([ADR 0005](docs/adr/0005-runner-local-do-harness.md); uso em [mapear-codigo-com-runner.md](docs/guias/mapear-codigo-com-runner.md)) | Existe |
 | `widget/` | Web Component do chat embutível (1 arquivo JS) | A criar |
 | `deploy/` | Docker Compose, Helm chart, scripts de infra | Existe |
 | `scripts/` | Automação do repositório (checagens de CI, geração de código) | Existe |
@@ -231,9 +231,18 @@ O plano [0003](docs/planos/0003-primeiro-conhecimento.md) levou o primeiro conhe
 4. Busca híbrida com RRF e similaridade mínima, `HybridRetriever` no chat com coleções por assistente e citações de arquivo, linhas e commit ([docs/specs/chat.md](docs/specs/chat.md)).
 5. Telas de coleções (com "testar busca") e fontes no painel, pasta de fontes `/sources` no compose e E2E de indexação contra a stack. Passo a passo em [docs/guias/indexar-uma-fonte.md](docs/guias/indexar-uma-fonte.md).
 
-### 12.4 Próximos passos
+### 12.4 Harness com runner local (plano 0004)
 
-Siga o roadmap da visão. Da Fase 0 ainda faltam: conector de chamados, harness de código em 2 ou 3 módulos reais com Claude Code e com Codex, e a comparação OpenAI x Gemini embedding em pt-BR.
+O plano [0004](docs/planos/0004-harness-runner-local.md) levou o harness de código de ponta a ponta, rodando na máquina de quem tem o código ([ADR 0005](docs/adr/0005-runner-local-do-harness.md)):
+
+1. Runners com token `kbr_...` (hash SHA-256, revogável), fila de tarefas no Postgres com reserva e claim por long-poll, módulos sugeridos pelo relatório do runner e editáveis, disparo manual ou por commit, adiamento por franquia ou login ([docs/specs/runner.md](docs/specs/runner.md)); tabelas `runners`, `harness_modules`, `harness_jobs`, `knowledge_items` e `harness_rejections` com RLS.
+2. `runner/` (`knobridge-runner`): `configure`, `doctor` e `run`; camada 0 determinística e briefing; Claude Code e Codex somente leitura, com trava de ferramenta, ambiente filtrado e resgate; verificação mecânica das evidências e excertos com segredos redigidos ([docs/specs/harness.md](docs/specs/harness.md)). Suíte padrão com executáveis falsos; suíte opt-in `real_harness` com os CLIs reais.
+3. Conhecimento revisável (aprovar, editar, descartar, reabrir) e exportável em `.md` com frontmatter; conector interno `knowledge` no workflow de ingestão, com sincronização pendente, e citação `knowledge` no chat com selo (inferido ou revisado) e evidências.
+4. Painel: tela de Runners, fonte do tipo runner com as abas Módulos, Tarefas, Conhecimento e Indexação; E2E da stack que sobe o runner no host com o `claude` falso. Passo a passo em [docs/guias/mapear-codigo-com-runner.md](docs/guias/mapear-codigo-com-runner.md).
+
+### 12.5 Próximos passos
+
+Siga o roadmap da visão. Da Fase 0 ainda faltam: conector de chamados e a comparação OpenAI x Gemini embedding em pt-BR.
 
 ## 13. Template de `AGENTS.md` de pasta
 

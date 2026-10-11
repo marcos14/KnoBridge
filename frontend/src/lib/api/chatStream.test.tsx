@@ -367,7 +367,12 @@ describe("useChatStream", () => {
 
     unmount();
 
-    expect(abort).toHaveBeenCalledTimes(1);
+    // The first call is the hook's own controller. Node's fetch (undici, Node 24.15+) then
+    // propagates that abort to its internal request controllers through the same prototype
+    // method, so the total count depends on the runtime: only the first call is ours.
+    expect(abort).toHaveBeenCalled();
+    const [own] = abort.mock.contexts as AbortController[];
+    expect(own?.signal.aborted).toBe(true);
     abort.mockRestore();
   });
 });

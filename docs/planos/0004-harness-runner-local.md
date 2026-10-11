@@ -124,10 +124,10 @@ fases:
     subfases:
       - id: F5.1
         titulo: E2E da stack com runner e executor falso, guia e documentação
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-11
-        concluida_em: null
+        concluida_em: 2026-10-11
         commit: null
       - id: F5.2
         titulo: Ensaio real com o Minski (3 módulos, Claude Code x Codex) e relatório
@@ -360,6 +360,13 @@ decisoes:
     decisao: "F4.3: a aba Conhecimento carrega todos os itens do módulo e filtra status e confiança no navegador; rejeitados vêm da tarefa concluída mais recente do módulo (entre as 200 últimas da fonte), sem rota nova; a edição do enriquecimento muda textos mas não inclui nem remove entradas nem troca referências de evidência; o PATCH leva só o que mudou; exportação só do módulo aberto"
     motivo: "poucos itens por módulo e cache único simplificam a atualização otimista; sem mudar contrato no fim do plano"
     alternativas: "filtros no servidor; rota de rejeições por módulo; editor livre de JSON"
+    adr: null
+  - id: D33
+    data: 2026-10-11
+    por: agente
+    decisao: "F5.1: o E2E da stack sobe o knobridge-runner no host com uv run --frozen sobre um repositório Git sintético; no Linux (CI) o claude falso dos fakes do runner vai no PATH, no Windows a config aponta o comando para o falso com o Python do runner/.venv; o falso roda o cenário success padrão porque as variáveis FAKE_HARNESS_* não passam pelo filtro de ambiente; só o executor Claude Code entra no E2E"
+    motivo: "prova o fluxo inteiro sem rede externa nem LLM e sem afrouxar o filtro de ambiente do runner"
+    alternativas: "runner dentro do compose; liberar FAKE_HARNESS_* no filtro; E2E com os dois executores"
     adr: null
 pendencias_usuario: []
 ---
@@ -631,6 +638,7 @@ Nenhuma aberta. Observação para a F5.2: a chave do OpenRouter cadastrada na st
 - 2026-10-11 — F4.3 iniciada (agente em worktree).
 - 2026-10-11 — F4.3 concluída: aba Conhecimento (filtros, editar, aprovar, descartar, reabrir, rejeitados, exportar) e citações knowledge no chat; o teste de abortar do chatStream passou a observar o AbortController do hook em vez do sinal da requisição interceptada, que propaga de forma assíncrona e falhava sob carga; frontend 1139 testes, 98,62% de branches
 - 2026-10-11 — F5.1 iniciada (agente em worktree).
+- 2026-10-11 — F5.1 concluída: E2E da stack com runner no host (duas rodadas verdes no compose), guia mapear-codigo-com-runner.md revisado pelo orquestrador, README, CHANGELOG, AGENTS.md raiz (1, 4, 12.4 e 12.5) e job e2e-stack da CI com uv; frontend 1139 testes (com 4 workers: na máquina carregada, com todos os workers, testes diferentes estouravam o tempo a cada rodada)
 
 ## 8. Encerramento
 

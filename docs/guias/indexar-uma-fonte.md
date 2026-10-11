@@ -4,6 +4,8 @@
 
 Passo a passo pelo painel para pôr conhecimento no KnoBridge: montar a pasta de fontes, cadastrar um provedor com embeddings (OpenRouter), criar uma coleção, cadastrar uma fonte Git ou de pasta, sincronizar, acompanhar as execuções, testar a busca e ligar a coleção a um assistente, até ver as citações no chat.
 
+Para gerar conhecimento a partir do código com o Claude Code ou o Codex, rodando na máquina que tem o checkout (fonte do tipo **Runner local**), siga [mapear-codigo-com-runner.md](mapear-codigo-com-runner.md); a coleção e o assistente são os mesmos deste guia.
+
 Como funciona por dentro: leitura das fontes em [conectores.md](../specs/conectores.md), indexação e busca em [indexacao.md](../specs/indexacao.md), chat em [chat.md](../specs/chat.md).
 
 ## Pré-requisitos
@@ -84,6 +86,7 @@ O índice guarda vetores de 1536 dimensões, o tamanho do `text-embedding-3-smal
      - **Branch (opcional)**: em branco, a branch padrão;
      - **Commits indexados na primeira sincronização**: padrão 200, de 0 a 5000. Os commits mais recentes viram documentos, com mensagem, autor (só o nome) e arquivos alterados; depois, cada sincronização indexa os commits novos.
    - **Pasta**: **Caminho da pasta** (ex.: `/sources/manual`).
+   - **Runner local**: o harness de código na máquina com o checkout; passo a passo em [mapear-codigo-com-runner.md](mapear-codigo-com-runner.md).
 3. **Incluir** e **Excluir** (opcionais): um padrão por linha, na sintaxe do `.gitignore`, relativos à raiz da fonte. Em branco, entra tudo que passa pelas regras padrão. Exemplos:
    - incluir `docs/**` e `*.md`;
    - excluir `**/testes/**` e `docs/rascunhos/**`.

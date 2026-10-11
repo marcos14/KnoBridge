@@ -715,7 +715,7 @@ A suíte padrão do runner nunca chama LLM, CLI real nem rede. `runner/tests/fak
 - emitem o JSONL do executor real (eventos acima) conforme `FAKE_HARNESS_SCENARIO`: `success`, `success_stdout_only` (Codex sem `--output-last-message`, saída só no `agent_message`), `no_json_then_rescue` (sem saída estruturada na primeira chamada, sucesso no `--resume`/`resume`), `no_json` (falha também no resgate), `no_json_no_session` (Claude Code sem `session_id`: sem resgate), `invalid_json` (JSON fora do schema), `auth`, `quota` (mensagem com horário de reset), `hang` (não termina e deixa um neto segurando o stdout, para o timeout e o kill da árvore), `unsafe_tool` (tenta `Edit`/`file_change` e não termina), `budget` (Claude Code), `crash` (erro sem franquia nem login → `executor_error`);
 - leem a saída de sucesso de um JSON indicado por `FAKE_HARNESS_OUTPUT` (padrão: uma saída mínima válida contra o schema).
 
-O mesmo par é empacotado para o E2E da stack (plano 0004, F5.1), no PATH do runner.
+O E2E da stack (`frontend/e2e/stack/runner.spec.ts`) usa o mesmo `claude` falso com o runner de verdade, no cenário `success` (as variáveis `FAKE_HARNESS_*` não passam pela allowlist do ambiente do subprocesso): no PATH no Linux, como comando explícito no Windows. A saída padrão cita `src/rules.py:1-2`, que o repositório sintético do teste tem, então a verificação mecânica do runner aceita os itens.
 
 ### Suíte opt-in `real_harness` (D17)
 

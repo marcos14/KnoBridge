@@ -499,7 +499,7 @@ O log local do runner (JSON, sem conteúdo de código) e os logs JSONL dos execu
 
 ## Configuração do runner (resumo)
 
-Detalhada em `runner/README.md` e no guia de uso (plano 0004, F5.1). Arquivo TOML na pasta de configuração do usuário (`%APPDATA%\knobridge-runner\config.toml` no Windows, `$XDG_CONFIG_HOME/knobridge-runner/config.toml` ou `~/.config/knobridge-runner/config.toml` nos demais), com sobreposição por variáveis de ambiente:
+Detalhada em `runner/README.md` e no guia [Mapear código com o runner](../guias/mapear-codigo-com-runner.md). Arquivo TOML na pasta de configuração do usuário (`%APPDATA%\knobridge-runner\config.toml` no Windows, `$XDG_CONFIG_HOME/knobridge-runner/config.toml` ou `~/.config/knobridge-runner/config.toml` nos demais), com sobreposição por variáveis de ambiente:
 
 | Chave | Variável | Descrição |
 |---|---|---|

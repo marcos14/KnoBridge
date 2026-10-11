@@ -140,11 +140,11 @@ Depois de mudar código do backend ou do frontend, rode de novo com `--build` pa
 
 ## Rodar o E2E contra a stack
 
-Os testes Playwright de `frontend/e2e/stack/` exercitam o painel inteiro contra a API, o banco e o Mailpit reais: configuração inicial, login, criação de workspace com convite do proprietário (o link é lido pela API HTTP do Mailpit), convite de um leitor, "esqueci minha senha" e redefinição, provedor `fake` e assistente, chat com a resposta "sem fonte" e avaliação, a conversa na tela de conversas do proprietário, o tema que acompanha a conta e a indexação de ponta a ponta: coleção com embeddings do provedor `fake`, fonte de pasta em `/sources/knowledge`, teste de conexão, sincronização até a execução concluir, teste de busca, coleção ligada ao assistente, resposta citando o arquivo e uma pergunta sem relação que cai em "sem fonte". O `pnpm e2e` comum não os roda.
+Os testes Playwright de `frontend/e2e/stack/` exercitam o painel inteiro contra a API, o banco e o Mailpit reais: configuração inicial, login, criação de workspace com convite do proprietário (o link é lido pela API HTTP do Mailpit), convite de um leitor, "esqueci minha senha" e redefinição, provedor `fake` e assistente, chat com a resposta "sem fonte" e avaliação, a conversa na tela de conversas do proprietário, o tema que acompanha a conta e a indexação de ponta a ponta: coleção com embeddings do provedor `fake`, fonte de pasta em `/sources/knowledge`, teste de conexão, sincronização até a execução concluir, teste de busca, coleção ligada ao assistente, resposta citando o arquivo e uma pergunta sem relação que cai em "sem fonte". Outro fluxo cobre o harness de código: o proprietário cria um runner no painel, o teste sobe o `knobridge-runner` de `runner/` na própria máquina (fora do compose) com o token, sobre um repositório Git sintético criado numa pasta temporária, e com o `claude` falso de `runner/tests/fakes/`; o runner fica online, a fonte runner recebe os módulos do relatório, um módulo roda, a regra aparece na aba Conhecimento, é aprovada, a sincronização do harness a indexa e o chat responde citando o item de conhecimento como revisado. O `pnpm e2e` comum não os roda.
 
 A camada `deploy/docker-compose.e2e.yml` monta em `/sources`, no lugar de `deploy/sources/`, a pasta sintética `frontend/e2e/stack/fixtures/` (dois Markdown curtos em pt-BR e um arquivo TypeScript pequeno em `knowledge/`).
 
-Pré-requisitos, além do Docker: Node 24+ e `pnpm` em `frontend/`, com `pnpm install --frozen-lockfile` e `pnpm exec playwright install chromium` feitos uma vez.
+Pré-requisitos, além do Docker: Node 24+ e `pnpm` em `frontend/`, com `pnpm install --frozen-lockfile` e `pnpm exec playwright install chromium` feitos uma vez; `git` e [uv](https://docs.astral.sh/uv/) no PATH, com `uv sync --frozen` feito uma vez em `runner/` (o teste do runner o roda com `uv run --frozen`). No Windows, onde o runner só acha `claude.exe` no PATH, o teste configura o `claude` falso como comando explícito, com o Python de `runner/.venv`.
 
 1. Suba a stack com o arquivo de E2E por cima (projeto próprio, `knobridge-e2e`, separado dos volumes do ambiente de desenvolvimento):
 
@@ -177,7 +177,7 @@ docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.e2e.yml up 
 (cd frontend && E2E_BASE_URL=http://localhost:15173 E2E_MAILPIT_URL=http://localhost:18025 pnpm e2e:stack)
 ```
 
-Na CI, o job `e2e-stack` de `.github/workflows/ci.yml` faz os mesmos três passos; quando falha, publica o relatório do Playwright e os logs dos contêineres como artefato.
+Na CI, o job `e2e-stack` de `.github/workflows/ci.yml` faz os mesmos três passos (mais o `uv sync --frozen` de `runner/`); quando falha, publica o relatório do Playwright (com o log do runner, `runner.log`, na pasta do teste) e os logs dos contêineres como artefato.
 
 ## Problemas comuns
 

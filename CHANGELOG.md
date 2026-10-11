@@ -8,6 +8,16 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ### Added
 
+Harness de código com runner local (plano [0004](docs/planos/0004-harness-runner-local.md)): o Claude Code ou o Codex rodam somente leitura na máquina que tem o checkout e o conhecimento gerado, com evidências `arquivo:linhas` verificadas, é revisado no painel e citado no chat.
+
+- Arquitetura ([ADR 0005](docs/adr/0005-runner-local-do-harness.md)): runner na máquina do usuário, credenciais dos CLIs só nela, HTTPS de saída com long-poll, fila de tarefas no Postgres com reserva, fonte do tipo `runner`; specs do [protocolo do runner](docs/specs/runner.md) e do [harness](docs/specs/harness.md).
+- Dados: tabelas `runners`, `harness_modules`, `harness_jobs`, `knowledge_items` e `harness_rejections` com RLS; migrações `0014` e `0015` ([modelo de dados](docs/specs/modelo-de-dados.md)).
+- Servidor: cadastro de runners com token `kbr_...` mostrado uma vez (hash SHA-256, revogação imediata), heartbeat, relatório de inventário com módulos sugeridos e editáveis, fila com claim por long-poll, heartbeat da tarefa, resultado, falha, adiamento por franquia ou login e expiração preguiçosa; disparo manual ou por commit; revisão (aprovar, editar, descartar, reabrir) e exportação `.md` com frontmatter em `.zip`; conector interno `knowledge` no workflow de ingestão, com sincronização pendente e citação `knowledge` no chat ([SSE v0.5](docs/specs/chat-sse.md)).
+- Runner (`runner/`, pacote `knobridge-runner`): `configure`, `doctor` e `run`; camada 0 determinística (seleção de arquivos, inventário, sugestão de módulos, briefing); executores Claude Code (`--tools Read,Grep,Glob`) e Codex (`--sandbox read-only`) com trava de ferramenta que mata a árvore de processos, ambiente filtrado, resgate e classificação de franquia e login; verificação mecânica das evidências, excertos com segredos redigidos; executáveis falsos para a suíte e suíte opt-in `real_harness`.
+- Painel: tela de Runners (presença, executores, repositórios, criar com token e comandos, revogar, excluir), formulário da fonte runner e abas Módulos, Tarefas (com rejeitados por motivo), Conhecimento (revisão, edição e exportação) e Indexação; citações de conhecimento com selo e evidências no chat.
+- CI e E2E: job `runner`; E2E da stack que cria o runner no painel, sobe o `knobridge-runner` no host com o `claude` falso sobre um repositório sintético, roda um módulo, aprova a regra e vê a citação de conhecimento no chat.
+- Docs: guia [mapear código com o runner](docs/guias/mapear-codigo-com-runner.md) (instalar, `configure`, `doctor`, assinatura x chave de API, segurança, o que sai da máquina, custos e fluxo no painel).
+
 Primeiro conhecimento (plano [0003](docs/planos/0003-primeiro-conhecimento.md)): fontes Git e pastas locais indexadas de forma incremental e consultadas pelo chat com citações.
 
 - Índice de conhecimento: coleções (credencial e modelo de embedding, `vector(1536)` fixo com HNSW cosseno e `tsvector` gerado), fontes, execuções, itens e erros por documento, documentos e chunks, todos com RLS ([ADR 0004](docs/adr/0004-indice-de-conhecimento.md)); migrações `0010` a `0012` ([modelo de dados](docs/specs/modelo-de-dados.md)).

@@ -194,6 +194,14 @@ jobs:
         working-directory: frontend
       - run: pnpm exec playwright install --with-deps chromium
         working-directory: frontend
+      # runner.spec.ts starts knobridge-runner on this host (outside the compose) with
+      # `uv run --frozen`, the fake claude of runner/tests/fakes on PATH.
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: runner/uv.lock
+      - run: uv sync --frozen
+        working-directory: runner
       # Fresh volumes on every run: the tests start from the initial setup.
       - name: Start the stack
         run: $COMPOSE up -d --build --wait --wait-timeout 600

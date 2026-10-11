@@ -6,7 +6,8 @@
 - `subir-ambiente.md`: subir o ambiente de desenvolvimento completo com Docker Compose.
 - `primeiro-acesso.md`: da instância vazia ao primeiro chat: superadmin, workspace, convites, provedor (`fake` em dev ou real) e assistente, com os e-mails lidos no Mailpit.
 - `indexar-uma-fonte.md`: da pasta montada em `/sources` (ou da URL de um repositório) às respostas com citação: provedor com embeddings (OpenRouter), coleção, fonte Git ou de pasta, sincronização, execuções e erros, teste de busca, coleção ligada ao assistente e problemas comuns.
-- Futuramente: conectar Slack ou Google Chat, rodar o harness de código, criar um conector, operar backups.
+- `mapear-codigo-com-runner.md`: do checkout local ao conhecimento citado no chat: criar o runner no painel, instalar, `configure`, `doctor`, login de assinatura x chave de API, `run`, fonte runner, módulos, tarefas, revisão e exportação, segurança (somente leitura, trava de ferramenta, ambiente filtrado), o que sai da máquina e custos.
+- Futuramente: conectar Slack ou Google Chat, criar um conector, operar backups.
 
 **Não entra aqui**:
 - Contratos (API, modelo de dados, protocolos): `docs/specs/`.

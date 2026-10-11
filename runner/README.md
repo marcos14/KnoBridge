@@ -4,6 +4,8 @@ O `knobridge-runner` roda na máquina que tem o checkout do código e o login do
 
 > Estado (plano 0004, F3.4): o `run` mantém o runner online (heartbeat), relata cada fonte ao iniciar e quando o HEAD muda (módulos sugeridos, arquivos alterados, contagens), pede tarefas e as executa: camada 0 e briefing, Claude Code ou Codex somente leitura, verificação mecânica das fontes, excertos com segredos redigidos e envio do resultado (ou falha ou adiamento).
 
+Guia de uso, do painel ao chat (login de assinatura x chave de API, segurança, o que sai da máquina, custos): [docs/guias/mapear-codigo-com-runner.md](../docs/guias/mapear-codigo-com-runner.md).
+
 ## Instalar
 
 Requer [uv](https://docs.astral.sh/uv/) (ele instala o Python 3.12 sozinho). No Windows, exporte `PYTHONUTF8=1`.

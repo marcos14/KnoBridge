@@ -1,6 +1,6 @@
 # runner/tests/fakes/
 
-**Função**: os `claude` e `codex` falsos que a suíte padrão (e a CI) usa no lugar dos CLIs reais: emitem o JSONL dos executores reais por cenário, sem modelo nem rede. O mesmo par vai para o E2E da stack (plano 0004, F5.1), no PATH do runner. Contrato em [harness.md](../../../docs/specs/harness.md#executáveis-falsos-suíte-padrão-e-ci).
+**Função**: os `claude` e `codex` falsos que a suíte padrão (e a CI) usa no lugar dos CLIs reais: emitem o JSONL dos executores reais por cenário, sem modelo nem rede. O `claude` falso também serve ao E2E da stack (`frontend/e2e/stack/runner.spec.ts`), com o runner de verdade: no PATH no Linux, como comando explícito no Windows; sempre no cenário `success` com a saída padrão (as variáveis `FAKE_HARNESS_*` não passam pela allowlist de ambiente do runner), então mudar `DEFAULT_OUTPUT` pede conferir o repositório sintético de `frontend/e2e/stack/localRunner.ts`. Contrato em [harness.md](../../../docs/specs/harness.md#executáveis-falsos-suíte-padrão-e-ci).
 
 **Entra aqui**:
 - `claude` e `codex`: scripts Python sem extensão, com shebang e bit de execução (Linux os acha no PATH; nos testes rodam como `[python, script]`). Só chamam `fake_harness.main`.
