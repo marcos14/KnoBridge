@@ -146,7 +146,7 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-11
         concluida_em: 2026-10-10
-        commit: null
+        commit: 76ce903
       - id: F6.3
         titulo: Ensaio real com o Minski (local, fora da CI)
         status: em_execucao
@@ -510,6 +510,7 @@ Ver `decisoes[]` no frontmatter. ADR previsto: 0004 (índice de conhecimento: di
 - 2026-10-10 — F6.1 concluída: Imagem com git (1,13 GB; era 473 MB antes do plano), compose com /sources somente leitura e volume de clones, E2E da stack da indexação (coleção, fonte de pasta, sincronizar, busca, chat com citação e sem fonte); orquestrador: stack do zero em 67 s, 2 de 2 rodadas verdes (33 s e 30 s); autor e data na citação de commit.
 - 2026-10-11 — F6.2 (agente) e F6.3 (orquestrador, ensaio com o Minski) iniciadas em paralelo.
 - 2026-10-10 — F6.2 concluída: Specs conectores.md e indexacao.md, guia indexar-uma-fonte.md, chat.md/primeiro-acesso.md/README/CHANGELOG/AGENTS raiz atualizados; links e Mermaid validados. Achado: lista de arquivos duplicada no Markdown dos commits (correção com teste em seguida).
+- 2026-10-11 — Correção: documento de commit passa a conter só a mensagem (lista de arquivos e SHA não se repetem no Markdown; files_total preserva o aviso de truncamento), com teste que reproduz.
 
 ## 8. Encerramento
 

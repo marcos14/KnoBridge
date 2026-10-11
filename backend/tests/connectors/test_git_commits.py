@@ -12,6 +12,7 @@ from knobridge.connectors.base import DocumentRef, RawDocument
 from knobridge.connectors.errors import DocumentNotFoundError
 from knobridge.connectors.git import GitConnector
 from knobridge.ingestion.models import DocumentKind
+from knobridge.ingestion.parsing import parse_document
 from knobridge.ingestion.source_config import GitSourceConfig
 
 
@@ -47,7 +48,7 @@ def test_git_fetch_commit_document(repo: GitRepo) -> None:
         "files_total": 1,
         "format": "text",
     }
-    assert document.text.startswith("Fix login\n\nThe session expired too early.\n\ncommit ")
+    assert document.text == "Fix login\n\nThe session expired too early.\n"
     assert "ana@example.test" not in document.text
 
 
@@ -81,7 +82,40 @@ def test_git_commit_document_truncates_files_and_untitled_message(
 
     assert document.title == f"commit {sha[:12]}"
     assert document.metadata["files_total"] == 3
-    assert "... 1 more files" in document.text
+    assert document.metadata["files"] == [
+        {"status": "A", "path": "a.md"},
+        {"status": "A", "path": "b.md"},
+    ]
+    markdown = asyncio.run(parse_document(document)).markdown
+    assert markdown.endswith("- `b.md` (adicionado)\n- … e mais 1 arquivos\n")
+
+
+def test_git_commit_renders_files_once_without_connector_footer(repo: GitRepo) -> None:
+    repo.write("billing/invoice.py")
+    repo.write("billing/tax.py")
+    sha = repo.commit("Fix invoice totals\n\nTotals now round half up.")
+
+    parsed = asyncio.run(parse_document(_fetch_commit(repo, f"commit:{sha}")))
+
+    markdown = parsed.markdown
+    assert markdown.count("billing/invoice.py") == 1
+    assert markdown.count("billing/tax.py") == 1
+    assert markdown.count(sha) == 1
+    assert "Totals now round half up." in markdown
+    assert "## Arquivos alterados" in markdown
+    for footer in ("commit ", "author:", "date:", "files:"):
+        assert footer not in markdown
+
+
+def test_git_commit_content_is_message_and_hash_is_deterministic(repo: GitRepo) -> None:
+    repo.write("a.md")
+    sha = repo.commit("Fix login\n\nThe session expired too early.")
+
+    first = _fetch_commit(repo, f"commit:{sha}")
+    second = _fetch_commit(repo, f"commit:{sha}")
+
+    assert first.text == "Fix login\n\nThe session expired too early.\n"
+    assert first.content_hash == second.content_hash
 
 
 @pytest.mark.parametrize("key", ["commit:xyz", "a.md", "commit:" + "f" * 40])

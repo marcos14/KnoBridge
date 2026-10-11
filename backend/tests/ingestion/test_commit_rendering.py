@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from knobridge.audit.models import JSONValue
 from knobridge.ingestion.commits import MAX_LISTED_FILES, CommitFile, commit_files, render_commit
 
@@ -58,6 +60,23 @@ def test_render_commit_truncates_long_file_lists() -> None:
     assert f"- `f{MAX_LISTED_FILES - 1}.py`" in markdown
     assert f"- `f{MAX_LISTED_FILES}.py`" not in markdown
     assert markdown.endswith("- … e mais 3 arquivos\n")
+
+
+def test_render_commit_counts_files_capped_by_the_connector() -> None:
+    metadata: dict[str, JSONValue] = {"files": ["a.py", "b.py"], "files_total": 5}
+
+    _, markdown = render_commit("Vendor deps", metadata, SHA)
+
+    assert markdown.endswith("- `a.py`\n- `b.py`\n- … e mais 3 arquivos\n")
+
+
+@pytest.mark.parametrize("total", [True, "9", 1, None])
+def test_render_commit_ignores_malformed_or_smaller_files_total(total: JSONValue) -> None:
+    metadata: dict[str, JSONValue] = {"files": ["a.py", "b.py"], "files_total": total}
+
+    _, markdown = render_commit("Small", metadata, SHA)
+
+    assert markdown.endswith("## Arquivos alterados\n\n- `a.py`\n- `b.py`\n")
 
 
 def test_commit_files_skips_malformed_entries() -> None:

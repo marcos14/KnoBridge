@@ -9,7 +9,12 @@ field degrades the rendering instead of failing the document. Expected keys (all
 - ``date``, ``authored_at`` or ``committed_at``: ISO 8601 string, rendered as given;
 - ``files``: list of paths, or of objects with ``path`` (or ``new_path``), ``status`` (a
   ``git --name-status`` letter such as ``M`` or ``R100``, or a word such as ``modified``) and
-  ``old_path`` for renames and copies. Entries without a path are skipped.
+  ``old_path`` for renames and copies. Entries without a path are skipped;
+- ``files_total``: how many files the commit touched when ``files`` was capped, so the
+  "e mais N arquivos" line counts the files the connector left out too.
+
+The document content is only the commit message (subject, then body); everything else comes
+from the metadata, so nothing is rendered twice.
 """
 
 from __future__ import annotations
@@ -106,6 +111,12 @@ def commit_date(metadata: Mapping[str, JSONValue]) -> str | None:
     return None
 
 
+def _files_total(metadata: Mapping[str, JSONValue]) -> int:
+    # The connector caps ``files`` and keeps the real count here; bool is an int, so skip it.
+    total = metadata.get("files_total")
+    return total if isinstance(total, int) and not isinstance(total, bool) else 0
+
+
 def render_commit(message: str, metadata: Mapping[str, JSONValue], key: str) -> tuple[str, str]:
     """Return ``(title, markdown)`` for a commit with ``message`` and connector ``metadata``."""
     sha = _string(metadata.get("sha")) or key
@@ -124,9 +135,10 @@ def render_commit(message: str, metadata: Mapping[str, JSONValue], key: str) -> 
 
     files = commit_files(metadata.get("files"))
     if files:
+        shown = files[:MAX_LISTED_FILES]
         lines += ["", "## Arquivos alterados", ""]
-        lines += [file.render() for file in files[:MAX_LISTED_FILES]]
-        hidden = len(files) - MAX_LISTED_FILES
+        lines += [file.render() for file in shown]
+        hidden = max(len(files), _files_total(metadata)) - len(shown)
         if hidden > 0:
             lines.append(f"- … e mais {hidden} arquivos")
     return title, "\n".join(lines) + "\n"

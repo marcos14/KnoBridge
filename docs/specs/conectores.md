@@ -146,9 +146,9 @@ Na listagem:
 
 - Chave e URI `commit:<sha>`, `DocumentKind.COMMIT`, sempre em `added` (um commit nunca muda).
 - Na primeira sincronização, ou quando o `commit` do cursor sumiu, só os `initial_commit_limit` mais recentes (`rev-list --max-count`); depois, todos os novos desde o `commit` do cursor (`rev-list <head> ^<commit>`).
-- Conteúdo (`commits.py`): mensagem completa, `commit <sha>`, `author: <nome>`, `date: <ISO 8601>` e `files:` com o status de cada arquivo tocado (`diff-tree -M`, com renomeações; merge comparado ao primeiro pai; até 500 arquivos, com "... N more files" no fim).
+- Conteúdo (`commits.py`): só a mensagem completa (assunto e corpo, com uma quebra de linha no fim). SHA, autor, data e arquivos ficam nos metadados, e `render_commit` monta o Markdown a partir deles ([indexacao.md](indexacao.md#parsing)); repeti-los no conteúdo duplicaria a lista no trecho embedado. O hash do conteúdo é o SHA-256 da mensagem: estável e determinístico, porque um commit nunca muda, e a chave `commit:<sha>` já distingue commits com a mesma mensagem.
 - `title` = primeira linha da mensagem (até 200 caracteres; vazia, `commit <sha12>`).
-- `metadata`: `sha`, `parents`, `author`, `authored_at`, `committed_at`, `files` (`status`, `path`, `old_path`), `files_total` e `format: "text"`.
+- `metadata`: `sha`, `parents`, `author`, `authored_at`, `committed_at`, `files` (`status`, `path`, `old_path`; `diff-tree -M`, com renomeações; merge comparado ao primeiro pai; até 500 arquivos), `files_total` (quantos arquivos o commit tocou, mesmo acima de 500) e `format: "text"`.
 - **Sem e-mail.** E-mail do autor e o committer ficam de fora (LGPD, minimização): o nome basta para citar e responder "quem mudou isto".
 - `fetch` de um commit que não é ancestral do HEAD da branch é `document_not_found`.
 

@@ -199,7 +199,7 @@ def test_git_incremental_by_sha_with_rename_and_delete(allowed: Path, repo: GitR
         {"status": "D", "path": "c.md"},
         {"status": "M", "path": "d.md"},
     ]
-    assert "R a.md -> b.md" in commit.text
+    assert commit.text == "Rename, delete and change\n"
 
 
 def test_git_listing_follows_gitignore_changes(allowed: Path, repo: GitRepo) -> None:

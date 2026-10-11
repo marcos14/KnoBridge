@@ -1,4 +1,9 @@
-"""Commits as documents: the message, who and when, and the files the commit touched.
+"""Commits as documents: the message as content; who, when and the touched files as metadata.
+
+The content is only the full message. The SHA, author, date and files live in the metadata,
+which ``ingestion.commits.render_commit`` turns into the Markdown; repeating them in the
+content would render them twice. A commit never changes, so hashing only the message is
+stable and deterministic, and the key (``commit:<sha>``) already tells commits apart.
 
 The author's e-mail is left out on purpose (LGPD data minimisation): the name is enough to
 cite a commit and answer "who changed this", and the index never needs an address. The
@@ -17,12 +22,6 @@ MAX_COMMIT_FILES = 500
 TITLE_MAX_CHARS = 200
 
 
-def _change_line(change: FileChange) -> str:
-    if change.old_path is not None:
-        return f"{change.status} {change.old_path} -> {change.path}"
-    return f"{change.status} {change.path}"
-
-
 def _change_metadata(change: FileChange) -> dict[str, JSONValue]:
     data: dict[str, JSONValue] = {"status": change.status, "path": change.path}
     if change.old_path is not None:
@@ -32,23 +31,12 @@ def _change_metadata(change: FileChange) -> dict[str, JSONValue]:
 
 def commit_document(ref: DocumentRef, commit: CommitInfo) -> RawDocument:
     files = commit.files[:MAX_COMMIT_FILES]
-    lines = [
-        commit.message,
-        "",
-        f"commit {commit.sha}",
-        f"author: {commit.author}",
-        f"date: {commit.authored_at}",
-        "files:",
-        *(_change_line(change) for change in files),
-    ]
-    if len(commit.files) > len(files):
-        lines.append(f"... {len(commit.files) - len(files)} more files")
     subject = commit.message.partition("\n")[0].strip()
     return RawDocument(
         ref=ref,
         title=subject[:TITLE_MAX_CHARS] or f"commit {commit.sha[:12]}",
         uri=f"{COMMIT_KEY_PREFIX}{commit.sha}",
-        content=("\n".join(lines) + "\n").encode("utf-8"),
+        content=f"{commit.message}\n".encode(),
         metadata={
             "sha": commit.sha,
             "parents": list(commit.parents),
