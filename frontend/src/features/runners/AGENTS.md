@@ -5,11 +5,9 @@
 **Entra aqui**:
 
 - `RunnersPage.tsx`: `h1`, "Novo runner", tabela paginada no navegador (20 por página; a lista inteira vem de `useRunners`, que recarrega a cada 30 s) com nome e prefixo do token (`kbr_<prefixo>_…`), status (`runnerStatus` de `lib/runnerStatus.ts`: online, offline ou revogado), último contato (tempo relativo ou "Nunca conectou"), versão, executores (versão; "sem login" ou "indisponível"; nome desconhecido aparece como veio), repositórios (branch e "alterações locais") e as ações "Revogar" (só runner ativo) e "Excluir", ambas com `ConfirmDialog`.
-- `CreateRunnerDialog.tsx`: nome (react-hook-form + zod, 1 a 200 caracteres) e, depois do `POST`, a visão do token: o token, os comandos de instalação e configuração (`runnerSetup.ts`, com `window.location.origin` como URL do servidor) e um `CopyButton` para cada um.
-- `CopyButton.tsx`: copia pelo `navigator.clipboard` e diz "Copiado." ou pede a cópia manual quando o navegador bloqueia.
-- `runnerSetup.ts`: `runnerSetupCommands(serverUrl, repository)` (função pura, com teste).
+- `CreateRunnerDialog.tsx`: nome (react-hook-form + zod, 1 a 200 caracteres) e, depois do `POST`, a visão do token: o token, os comandos de instalação e configuração (`runnerSetupCommands` de `lib/runnerSetup.ts`, com `window.location.origin` como URL do servidor) e um `CopyButton` (`components/`) para cada um.
 
-**Não entra aqui**: chamadas de API (`lib/api/runners.ts`), presença e estado dos executores, que a fonte também usa (`lib/runnerStatus.ts`), o formulário da fonte do tipo runner (`features/sources/`), textos (`i18n/locales/`, chaves `runners.*`; erros em `apiErrors.*`).
+**Não entra aqui**: chamadas de API (`lib/api/runners.ts`), presença e estado dos executores, que a fonte também usa (`lib/runnerStatus.ts`), comandos de instalação (`lib/runnerSetup.ts`) e o botão de copiar (`components/CopyButton.tsx`), também usados pelo estado vazio da fonte runner, o formulário da fonte do tipo runner (`features/sources/`), textos (`i18n/locales/`, chaves `runners.*`; erros em `apiErrors.*`).
 
 **Convenções locais**:
 

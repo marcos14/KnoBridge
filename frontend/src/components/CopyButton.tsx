@@ -33,7 +33,7 @@ export function CopyButton({ text, label }: { text: string; label: string }) {
       </Button>
       {result !== null && (
         <span role="status" className="text-muted-foreground text-sm">
-          {result === "copied" ? t("runners.token.copied") : t("runners.token.copyFailed")}
+          {result === "copied" ? t("copyButton.copied") : t("copyButton.failed")}
         </span>
       )}
     </div>

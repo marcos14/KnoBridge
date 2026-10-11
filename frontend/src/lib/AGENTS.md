@@ -22,6 +22,7 @@
 - `intl.ts`: `formatRelativeTime(date, now, locale)` ("há 5 minutos", "em 2 horas"), `formatDateTime(date, locale, timeZone?)`, `formatDate(date, locale, timeZone?)` (só o dia) e `languageName(tag, locale)`, com `Intl`. O "agora" é sempre parâmetro (nos componentes, de `useClock()`).
 - `userAgent.ts`: `summarizeUserAgent` (navegador e sistema de um `User-Agent`, ou `null`).
 - `runnerStatus.ts`: presença de um runner (`runnerStatus(runner, now)`: `revoked`, `online` com `last_seen_at` até `ONLINE_WINDOW_MS` (90 s, a janela do servidor) antes de `now`, senão `offline`), `isHarnessExecutor` e `executorState` (`ready`, `notAuthenticated`, `unavailable`). Usado pela tela de runners e pelo formulário da fonte runner.
+- `runnerSetup.ts`: `runnerSetupCommands(serverUrl, repository)`, as linhas que instalam e configuram o runner (sem o token), usadas pelo cadastro de runner e pelo estado vazio da fonte runner.
 - `api/`: cliente gerado do OpenAPI e hooks TanStack Query (ver [api/AGENTS.md](api/AGENTS.md)).
 - Futuramente: funções puras de domínio usadas por várias features (formatação, validação, transformação do grafo do canvas).
 

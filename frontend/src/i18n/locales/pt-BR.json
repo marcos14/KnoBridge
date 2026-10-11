@@ -227,6 +227,10 @@
       }
     }
   },
+  "copyButton": {
+    "copied": "Copiado.",
+    "failed": "Não foi possível copiar. Selecione o texto e copie manualmente."
+  },
   "confirmDialog": {
     "cancel": "Cancelar"
   },
@@ -825,6 +829,206 @@
       "notIndexed": "Ainda não indexado"
     }
   },
+  "harness": {
+    "tabs": {
+      "label": "Seções da fonte",
+      "modules": "Módulos",
+      "jobs": "Tarefas",
+      "indexing": "Indexação"
+    },
+    "jobStatus": {
+      "queued": "Na fila",
+      "leased": "Reservada",
+      "running": "Em execução",
+      "deferred": "Adiada",
+      "succeeded": "Concluída",
+      "failed": "Falhou",
+      "cancelled": "Cancelada"
+    },
+    "triggers": {
+      "manual": "Manual",
+      "commit": "Commit"
+    },
+    "modules": {
+      "title": "Módulos",
+      "description": "Partes do repositório que o harness lê de uma vez. O runner sugere os módulos pelas pastas; você pode editar, criar à mão e escolher quais rodar.",
+      "create": "Novo módulo",
+      "created": "Módulo {{title}} criado.",
+      "updated": "Módulo {{title}} atualizado.",
+      "enabledOn": "Módulo {{title}} ligado.",
+      "enabledOff": "Módulo {{title}} desligado: ele não roda nem a cada commit.",
+      "loading": "Carregando módulos…",
+      "loadFailed": "Não foi possível carregar os módulos.",
+      "empty": "Nenhum módulo ainda. O runner sugere os módulos quando envia o primeiro relatório do repositório, ao iniciar; você também pode criar um à mão.",
+      "noMatch": "Nenhum módulo corresponde ao filtro.",
+      "tableLabel": "Módulos da fonte",
+      "filter": "Filtrar por título, chave ou padrão",
+      "selectVisible": "Selecionar os ligados do filtro",
+      "clearSelection": "Limpar seleção",
+      "selectedCount_zero": "Nenhum módulo selecionado",
+      "selectedCount_one": "{{count}} módulo selecionado",
+      "selectedCount_other": "{{count}} módulos selecionados",
+      "selectLabel": "Selecionar {{title}}",
+      "suggested": "Sugerido",
+      "manual": "Manual",
+      "morePatterns_one": "+{{count}} padrão",
+      "morePatterns_other": "+{{count}} padrões",
+      "inventory": "{{files}} arquivos · {{lines}} linhas",
+      "neverRan": "Nunca rodou",
+      "on": "Ligado",
+      "off": "Desligado",
+      "enable": "Ligar",
+      "disable": "Desligar",
+      "enableLabel": "Ligar {{title}}",
+      "disableLabel": "Desligar {{title}}",
+      "edit": "Editar",
+      "editLabel": "Editar o módulo {{title}}",
+      "columns": {
+        "select": "Rodar",
+        "module": "Módulo",
+        "paths": "Padrões",
+        "inventory": "Tamanho",
+        "lastCommit": "Último commit",
+        "lastJob": "Última tarefa",
+        "enabled": "Ligado",
+        "actions": "Ações"
+      }
+    },
+    "moduleForm": {
+      "createTitle": "Novo módulo",
+      "editTitle": "Editar módulo",
+      "createDescription": "Um módulo manual não é alterado pelos relatórios do runner.",
+      "editDescription": "Mudanças valem a partir da próxima tarefa do módulo.",
+      "editSuggestedDescription": "Este módulo foi sugerido pelo runner. Mudar o título ou os padrões o torna manual: os próximos relatórios deixam de alterá-lo.",
+      "title": "Título",
+      "key": "Chave (opcional)",
+      "keyHint": "Letras minúsculas, números e hífens. Em branco, vem do título. Não muda depois.",
+      "paths": "Padrões",
+      "pathsHint": "Um por linha, como num .gitignore, relativos à raiz do repositório (ex.: src/faturamento/**). Comece com ! para excluir; vale o último padrão que casa.",
+      "enabled": "Ligado",
+      "enabledHint": "Módulos desligados não rodam, nem a cada commit.",
+      "submit": "Salvar",
+      "cancel": "Cancelar",
+      "validation": {
+        "titleRequired": "Informe o título.",
+        "titleTooLong": "Use até {{max}} caracteres.",
+        "keyInvalid": "Use até 100 caracteres entre letras minúsculas, números e hífens, sem hífen nas pontas.",
+        "pathsRequired": "Informe ao menos um padrão.",
+        "pathsTooMany": "Use até {{max}} padrões.",
+        "pathsInvalid": "Cada padrão tem até 300 caracteres e é relativo à raiz: sem / no início, letra de drive, \\, . ou .. como pasta."
+      }
+    },
+    "run": {
+      "label": "Rodar módulos selecionados",
+      "executor": "Executor",
+      "sourceExecutor": "Padrão da fonte ({{executor}})",
+      "model": "Modelo (opcional)",
+      "modelHint": "Em branco, usa o modelo da fonte para o executor escolhido.",
+      "submit_zero": "Rodar módulos",
+      "submit_one": "Rodar {{count}} módulo",
+      "submit_other": "Rodar {{count}} módulos",
+      "running": "Enfileirando…",
+      "queued_zero": "Nenhuma tarefa na fila.",
+      "queued_one": "{{count}} tarefa na fila.",
+      "queued_other": "{{count}} tarefas na fila.",
+      "skipped_one": "{{count}} módulo pulado:",
+      "skipped_other": "{{count}} módulos pulados:",
+      "skippedItem": "{{title}}: {{reason}}",
+      "skipReasons": {
+        "already_queued": "já tem tarefa na fila ou em execução",
+        "module_disabled": "está desligado"
+      },
+      "sourceInactive": "A fonte está desativada. Ative-a para rodar módulos."
+    },
+    "jobs": {
+      "title": "Tarefas",
+      "description": "Cada tarefa roda um módulo no runner, somente leitura. A lista se atualiza sozinha enquanto houver tarefa ativa.",
+      "loading": "Carregando tarefas…",
+      "loadFailed": "Não foi possível carregar as tarefas.",
+      "empty": "Nenhuma tarefa ainda. Escolha módulos na aba Módulos e rode; as tarefas esperam na fila até o runner estar online.",
+      "emptyPage": "Nenhuma tarefa nesta página.",
+      "tableLabel": "Tarefas da fonte",
+      "defaultModel": "modelo padrão",
+      "show": "Detalhes",
+      "showLabel": "Detalhes da tarefa de {{title}} de {{when}}",
+      "selected": "Selecionada",
+      "cancel": "Cancelar",
+      "cancelLabel": "Cancelar a tarefa de {{title}}",
+      "cancelTitle": "Cancelar a tarefa de {{title}}?",
+      "cancelDescription": "A tarefa para na hora no painel; se já estiver no runner, ele interrompe o executor no próximo contato. O que ela tiver gerado até ali é descartado.",
+      "cancelConfirm": "Cancelar tarefa",
+      "cancelled": "Tarefa de {{title}} cancelada.",
+      "columns": {
+        "module": "Módulo",
+        "status": "Status",
+        "trigger": "Gatilho",
+        "executor": "Executor e modelo",
+        "createdAt": "Criada em",
+        "duration": "Duração",
+        "cost": "Custo",
+        "tokens": "Tokens (entrada / saída)",
+        "items": "Aceitos / rejeitados",
+        "actions": "Ações"
+      }
+    },
+    "jobDetail": {
+      "title": "Tarefa de {{title}} de {{when}}",
+      "loading": "Carregando a tarefa…",
+      "loadFailed": "Não foi possível carregar a tarefa.",
+      "status": "Status",
+      "executor": "Executor",
+      "commit": "Commit",
+      "attempts": "Tentativas",
+      "startedAt": "Início",
+      "finishedAt": "Fim",
+      "notBefore": "Não antes de",
+      "error": "Erro: {{error}}"
+    },
+    "rejections": {
+      "title_zero": "Nenhum item rejeitado",
+      "title_one": "{{count}} item rejeitado",
+      "title_other": "{{count}} itens rejeitados",
+      "byReason": "Rejeições por motivo",
+      "group": "{{reason}} ({{count}})",
+      "tableLabel": "Itens rejeitados",
+      "empty": "Nenhum item rejeitado: tudo o que o agente citou foi conferido no checkout.",
+      "noSources": "Nenhuma fonte citada",
+      "unsafePath": "caminho fora do checkout",
+      "columns": {
+        "reason": "Motivo",
+        "block": "Bloco",
+        "item": "Item",
+        "sources": "Fontes citadas"
+      }
+    },
+    "blocks": {
+      "regras": "Regras",
+      "mensagens": "Mensagens",
+      "fluxo_principal": "Fluxo principal",
+      "faq": "Perguntas frequentes",
+      "objetivo": "Objetivo"
+    },
+    "rejectionCodes": {
+      "file_not_found": "arquivo não encontrado",
+      "outside_checkout": "fora do checkout",
+      "bad_range": "intervalo inválido",
+      "range_too_long": "intervalo longo demais",
+      "symbol_mismatch": "símbolo não encontrado",
+      "no_valid_source": "nenhuma fonte válida"
+    },
+    "setup": {
+      "runner": {
+        "online": "O runner {{name}} está online.",
+        "offline": "O runner {{name}} está offline: as tarefas esperam na fila até ele voltar.",
+        "revoked": "O runner {{name}} foi revogado. Edite a fonte e escolha outro runner."
+      },
+      "title": "Como subir o runner",
+      "hint": "Na máquina com o checkout de {{repository}}, a partir de um clone do repositório do KnoBridge (requer uv; no Windows, exporte PYTHONUTF8=1). O configure pede o token no terminal; troque o caminho pelo do checkout.",
+      "commandsLabel": "Comandos para subir o runner",
+      "copy": "Copiar comandos",
+      "checkoutPlaceholder": "/caminho/do/checkout"
+    }
+  },
   "runners": {
     "title": "Runners",
     "description": "Programas que rodam na máquina com o checkout do código e o Claude Code ou o Codex. O harness roda ali mesmo, somente leitura, e só o conhecimento gerado vem para o servidor.",
@@ -890,8 +1094,6 @@
       "commandsLabel": "Instalar e configurar",
       "commandsHint": "Rode na máquina que tem o checkout, a partir de um clone do repositório do KnoBridge (requer uv; no Windows, exporte PYTHONUTF8=1). O configure pede o token no terminal; troque o nome e o caminho pelos do repositório local.",
       "copyCommands": "Copiar comandos",
-      "copied": "Copiado.",
-      "copyFailed": "Não foi possível copiar. Selecione o texto e copie manualmente.",
       "repoPlaceholder": "nome=/caminho/do/checkout",
       "done": "Concluído"
     }
@@ -1314,6 +1516,10 @@
     "runner_name_taken": "Já existe um runner com esse nome.",
     "runner_not_found": "Runner não encontrado.",
     "runner_repository_in_use": "Já existe uma fonte para esse repositório nesse runner.",
-    "runner_revoked": "Este runner foi revogado e não pode ser reativado."
+    "runner_revoked": "Este runner foi revogado e não pode ser reativado.",
+    "module_key_taken": "Já existe um módulo com essa chave nesta fonte.",
+    "module_not_found": "Módulo não encontrado. A lista foi atualizada.",
+    "job_not_found": "Tarefa não encontrada.",
+    "job_finished": "A tarefa já terminou e não pode ser cancelada."
   }
 }

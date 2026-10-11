@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
 
+import { CopyButton } from "@/components/CopyButton";
 import { FormAlert } from "@/components/FormAlert";
 import { TextField } from "@/components/TextField";
 import { Button } from "@/components/ui/button";
@@ -21,9 +22,7 @@ import {
 import { Form } from "@/components/ui/form";
 import { translateApiError } from "@/i18n/apiErrors";
 import { type RunnerCreated, useCreateRunner } from "@/lib/api/runners";
-
-import { CopyButton } from "./CopyButton";
-import { runnerSetupCommands } from "./runnerSetup";
+import { runnerSetupCommands } from "@/lib/runnerSetup";
 
 /** Limit of the contract (`RunnerCreate.name`). */
 export const RUNNER_NAME_MAX_LENGTH = 200;

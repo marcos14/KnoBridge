@@ -106,10 +106,10 @@ fases:
         commit: 4accf01
       - id: F4.2
         titulo: Módulos e tarefas na fonte do tipo runner
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-11
-        concluida_em: null
+        concluida_em: 2026-10-11
         commit: null
       - id: F4.3
         titulo: Revisão do conhecimento, exportação e citações de conhecimento no chat
@@ -346,6 +346,13 @@ decisoes:
     decisao: "F4.1: config da fonte runner tipada no frontend (como Git e pasta), status online/offline calculado no navegador por last_seen_at com a janela de 90 s do servidor, comandos de instalação sem o token (o configure pede no terminal) e com window.location.origin como servidor; renomear runner fica fora da tela"
     motivo: "sem mudar contrato; o status envelhece entre recargas; o token não vai para o histórico do shell"
     alternativas: "publicar RunnerSourceSettings no OpenAPI; confiar no campo online da resposta; token embutido no comando"
+    adr: null
+  - id: D31
+    data: 2026-10-11
+    por: agente
+    decisao: "F4.2: a fonte runner ganha as abas Módulos, Tarefas e Indexação (execuções e documentos), em features/sources/harness/; polling de 5 s enquanto houver tarefa queued, leased, running ou deferred; só módulos habilitados entram na seleção; CopyButton e runnerSetupCommands foram para components/ e lib/ para o estado vazio reaproveitar"
+    motivo: "uma área não importa a outra; a aba Conhecimento da F4.3 entra com um id e um case; a fila ativa é o mesmo conjunto que o servidor usa em already_queued"
+    alternativas: "página separada para módulos; polling só com running; duplicar o botão de copiar"
     adr: null
 pendencias_usuario: []
 ---
@@ -613,6 +620,7 @@ Nenhuma aberta. Observação para a F5.2: a chave do OpenRouter cadastrada na st
 - 2026-10-11 — F4.1 iniciada (agente em worktree).
 - 2026-10-11 — F4.1 concluída: tela de runners (token uma vez, comandos copiáveis, revogar e excluir) e formulário da fonte runner; frontend 991 testes, 98,69% de branches
 - 2026-10-11 — F4.2 iniciada (agente em worktree).
+- 2026-10-11 — F4.2 concluída: abas Módulos, Tarefas e Indexação na fonte runner, com lote, polling, detalhe de rejeições e cancelamento; frontend 1062 testes, 98,68% de branches
 
 ## 8. Encerramento
 

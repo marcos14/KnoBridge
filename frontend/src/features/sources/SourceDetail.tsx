@@ -12,6 +12,7 @@ import { type Source, useSource, useTestSource } from "@/lib/api/sources";
 
 import { DocumentsSection } from "./DocumentsSection";
 import { type Feedback, FeedbackMessage } from "./Feedback";
+import { RunnerSourceTabs } from "./harness/RunnerSourceTabs";
 import { NextRun } from "./NextRun";
 import { RunsSection } from "./RunsSection";
 import { SourceDialog } from "./SourceDialog";
@@ -25,7 +26,10 @@ interface SourceDetailProps {
   canManage: boolean;
 }
 
-/** One source: its settings and actions, its runs with the errors of one of them, its documents. */
+/**
+ * One source: its settings and actions, then its runs with the errors of one of them and its
+ * documents; a runner source shows them in tabs, next to its modules and harness jobs.
+ */
 export function SourceDetail({ workspaceId, sourceId, canManage }: SourceDetailProps) {
   const { t } = useTranslation();
   const source = useSource(workspaceId, sourceId);
@@ -49,8 +53,18 @@ export function SourceDetail({ workspaceId, sourceId, canManage }: SourceDetailP
             collections={collections.data}
             canManage={canManage}
           />
-          <RunsSection workspaceId={workspaceId} sourceId={sourceId} />
-          <DocumentsSection workspaceId={workspaceId} sourceId={sourceId} />
+          {source.data.kind === "runner" ? (
+            <RunnerSourceTabs
+              workspaceId={workspaceId}
+              source={source.data}
+              canManage={canManage}
+            />
+          ) : (
+            <>
+              <RunsSection workspaceId={workspaceId} sourceId={sourceId} />
+              <DocumentsSection workspaceId={workspaceId} sourceId={sourceId} />
+            </>
+          )}
         </>
       ) : source.isPending || collections.isPending ? (
         <p role="status" className="text-sm">
