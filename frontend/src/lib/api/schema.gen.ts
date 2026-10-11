@@ -633,6 +633,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/workspaces/{workspace_id}/collections/{collection_id}/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Search Collection
+         * @description The chunks of the collection that best answer ``query``, best first; may be empty.
+         */
+        post: operations["search_collection_v1_workspaces__workspace_id__collections__collection_id__search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/workspaces/{workspace_id}/conversations": {
         parameters: {
             query?: never;
@@ -1467,6 +1487,11 @@ export interface components {
             /** Csrf Token */
             csrf_token: string;
         };
+        /**
+         * DocumentKind
+         * @enum {string}
+         */
+        DocumentKind: "file" | "commit";
         /** FeedbackIn */
         FeedbackIn: {
             /**
@@ -1814,6 +1839,81 @@ export interface components {
         /** RoleUpdate */
         RoleUpdate: {
             role: components["schemas"]["Role"];
+        };
+        /** SearchDocument */
+        SearchDocument: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Key */
+            key: string;
+            kind: components["schemas"]["DocumentKind"];
+            /**
+             * Source Id
+             * Format: uuid
+             */
+            source_id: string;
+            /** Title */
+            title: string;
+            /** Uri */
+            uri: string;
+        };
+        /** SearchRequest */
+        SearchRequest: {
+            /**
+             * Limit
+             * @default 10
+             */
+            limit: number;
+            /**
+             * Min Similarity
+             * @default 0.3
+             */
+            min_similarity: number;
+            /** Query */
+            query: string;
+        };
+        /** SearchResponse */
+        SearchResponse: {
+            /** Results */
+            results: components["schemas"]["SearchResult"][];
+        };
+        /** SearchResult */
+        SearchResult: {
+            /**
+             * Chunk Id
+             * Format: uuid
+             */
+            chunk_id: string;
+            document: components["schemas"]["SearchDocument"];
+            /** End Line */
+            end_line: number | null;
+            /** Meta */
+            meta: {
+                [key: string]: unknown;
+            };
+            /** Path */
+            path: string | null;
+            /** Position */
+            position: number;
+            scores: components["schemas"]["SearchScores"];
+            /** Snippet */
+            snippet: string;
+            /** Start Line */
+            start_line: number | null;
+            /** Symbol */
+            symbol: string | null;
+        };
+        /** SearchScores */
+        SearchScores: {
+            /** Fts */
+            fts: number | null;
+            /** Fused */
+            fused: number;
+            /** Vector */
+            vector: number | null;
         };
         /** SessionOut */
         SessionOut: {
@@ -3538,6 +3638,82 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    search_collection_v1_workspaces__workspace_id__collections__collection_id__search_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SearchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchResponse"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or collection not found, or caller is not a member. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid body, or the collection's provider has no embeddings (`provider_embeddings_unsupported`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Provider rate limit (`provider_rate_limited`). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Provider refused the key or the request (`provider_auth_failed`, `provider_request_failed`) or answered badly (`embedding_invalid_response`, `embedding_dimension_mismatch`). */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Provider unreachable (`provider_unavailable`). */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

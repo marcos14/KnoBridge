@@ -78,6 +78,24 @@ describe("translateApiError", () => {
   });
 });
 
+describe("translateApiError for search", () => {
+  it("test_translate_api_error_explains_embedding_errors", () => {
+    const t = i18n.t.bind(i18n);
+    const codes = [
+      "embedding_dimension_mismatch",
+      "embedding_invalid_response",
+      "provider_embeddings_unsupported",
+    ];
+
+    for (const code of codes) {
+      expect(apiErrorKey(new ApiError(502, code))).toBe(`apiErrors.${code}`);
+    }
+    expect(translateApiError(new ApiError(422, "provider_embeddings_unsupported"), t)).toBe(
+      "Este provedor não oferece embeddings. Use uma credencial da OpenAI ou do OpenRouter na coleção.",
+    );
+  });
+});
+
 describe("translateApiErrorCode", () => {
   it("test_translate_api_error_code_returns_known_message", () => {
     const t = i18n.t.bind(i18n);

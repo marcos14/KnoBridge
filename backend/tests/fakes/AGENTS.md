@@ -8,7 +8,8 @@
 - `retriever.py`: `StaticRetriever` (implementa `Retriever`; devolve as fontes dadas e grava cada consulta em `queries`), para trocar `api.deps.get_retriever`.
 - `connector.py`: `FakeConnector` (implementa `Connector` em memória: `files` chave → bytes, `put`/`delete`, `available = False` quebra a fonte; cursor `{"fake": {chave: sha256}}`), a referência da suíte de contrato de `tests/connectors/contract/`.
 - O fake de caminho feliz de `EmbeddingProvider` também é produção (`knobridge.llm.fake_embeddings.FakeEmbeddingProvider`, usado pelo tipo `fake`).
-- Futuramente: fakes de `Reranker` e canais e variações de `EmbeddingProvider` (falha, roteirizado) quando um teste precisar, um módulo por interface.
+- `embedding_provider.py`: `FailingEmbeddingProvider` (todo `embed` levanta o `LLMProviderError` dado; `closed`), `RecordingEmbeddingProvider` (vetores do `FakeEmbeddingProvider`, grava `(textos, modelo)` em `calls`) e `RecordingEmbeddingFactory` (`EmbeddingProviderFactory` que devolve o provedor dado e grava `EmbeddingFactoryCall(kind, api_key, base_url)`), para trocar `api.deps.get_embedding_provider_factory` ou passar ao `SearchService`.
+- Futuramente: fakes de `Reranker` e canais quando um teste precisar, um módulo por interface.
 
 **Não entra aqui**: testes (`test_*.py` ficam na pasta do módulo testado), fixtures de dados (`tests/fixtures/`), servidores de protocolo de apoio usados por um único módulo de teste (ficam no `<subpasta>_support.py` da pasta, como o SMTP de `tests/email/`).
 

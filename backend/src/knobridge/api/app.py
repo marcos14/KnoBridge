@@ -25,6 +25,7 @@ from knobridge.api import (
     members,
     providers,
     recovery,
+    search,
     setup,
 )
 from knobridge.core.clock import Clock, SystemClock
@@ -105,6 +106,7 @@ def create_app(
         assistants,
         conversations,
         admin_conversations,
+        search,
         admin,
     )
     for module in routers:

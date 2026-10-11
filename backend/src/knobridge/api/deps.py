@@ -31,7 +31,13 @@ from knobridge.core.settings import Settings
 from knobridge.email.rendering import EmailComposer
 from knobridge.email.sender import EmailSender
 from knobridge.llm.credentials import CREDENTIALS_KEY_INFO, ProviderCredentialService
-from knobridge.llm.factory import ProviderFactory, create_provider
+from knobridge.llm.factory import (
+    EmbeddingProviderFactory,
+    ProviderFactory,
+    create_embedding_provider,
+    create_provider,
+)
+from knobridge.retrieval.search import SearchService
 from knobridge.security.passwords import PasswordHasher
 from knobridge.security.sessions import InvalidSessionError
 from knobridge.tenancy.acceptance import InvitationAcceptance
@@ -178,6 +184,25 @@ def get_retriever() -> Retriever:
 
 
 RetrieverDep = Annotated[Retriever, Depends(get_retriever)]
+
+
+def get_embedding_provider_factory() -> EmbeddingProviderFactory:
+    """Builds embedding adapters from credentials; tests override it to return fakes."""
+    return create_embedding_provider
+
+
+EmbeddingProviderFactoryDep = Annotated[
+    EmbeddingProviderFactory, Depends(get_embedding_provider_factory)
+]
+
+
+def get_search_service(
+    credentials: ProviderCredentialServiceDep, factory: EmbeddingProviderFactoryDep
+) -> SearchService:
+    return SearchService(credentials, factory)
+
+
+SearchServiceDep = Annotated[SearchService, Depends(get_search_service)]
 
 
 def get_conversation_service(request: Request) -> ConversationService:

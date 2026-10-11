@@ -1428,6 +1428,14 @@
         "title": "CsrfResponse",
         "type": "object"
       },
+      "DocumentKind": {
+        "enum": [
+          "file",
+          "commit"
+        ],
+        "title": "DocumentKind",
+        "type": "string"
+      },
       "FeedbackIn": {
         "properties": {
           "comment": {
@@ -2344,6 +2352,213 @@
           "role"
         ],
         "title": "RoleUpdate",
+        "type": "object"
+      },
+      "SearchDocument": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/DocumentKind"
+          },
+          "source_id": {
+            "format": "uuid",
+            "title": "Source Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "uri": {
+            "title": "Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "source_id",
+          "kind",
+          "key",
+          "title",
+          "uri"
+        ],
+        "title": "SearchDocument",
+        "type": "object"
+      },
+      "SearchRequest": {
+        "properties": {
+          "limit": {
+            "default": 10,
+            "maximum": 50.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "type": "integer"
+          },
+          "min_similarity": {
+            "default": 0.3,
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Min Similarity",
+            "type": "number"
+          },
+          "query": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Query",
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "title": "SearchRequest",
+        "type": "object"
+      },
+      "SearchResponse": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/SearchResult"
+            },
+            "title": "Results",
+            "type": "array"
+          }
+        },
+        "required": [
+          "results"
+        ],
+        "title": "SearchResponse",
+        "type": "object"
+      },
+      "SearchResult": {
+        "properties": {
+          "chunk_id": {
+            "format": "uuid",
+            "title": "Chunk Id",
+            "type": "string"
+          },
+          "document": {
+            "$ref": "#/components/schemas/SearchDocument"
+          },
+          "end_line": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Line"
+          },
+          "meta": {
+            "additionalProperties": true,
+            "title": "Meta",
+            "type": "object"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path"
+          },
+          "position": {
+            "title": "Position",
+            "type": "integer"
+          },
+          "scores": {
+            "$ref": "#/components/schemas/SearchScores"
+          },
+          "snippet": {
+            "title": "Snippet",
+            "type": "string"
+          },
+          "start_line": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Line"
+          },
+          "symbol": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Symbol"
+          }
+        },
+        "required": [
+          "chunk_id",
+          "position",
+          "path",
+          "symbol",
+          "start_line",
+          "end_line",
+          "snippet",
+          "meta",
+          "scores",
+          "document"
+        ],
+        "title": "SearchResult",
+        "type": "object"
+      },
+      "SearchScores": {
+        "properties": {
+          "fts": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fts"
+          },
+          "fused": {
+            "title": "Fused",
+            "type": "number"
+          },
+          "vector": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vector"
+          }
+        },
+        "required": [
+          "vector",
+          "fts",
+          "fused"
+        ],
+        "title": "SearchScores",
         "type": "object"
       },
       "SessionOut": {
@@ -4681,6 +4896,81 @@
         "summary": "List Workspace Audit",
         "tags": [
           "audit"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/collections/{collection_id}/search": {
+      "post": {
+        "description": "The chunks of the collection that best answer ``query``, best first; may be empty.",
+        "operationId": "search_collection_v1_workspaces__workspace_id__collections__collection_id__search_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "collection_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Collection Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Workspace suspended or CSRF failure (`csrf_failed`)."
+          },
+          "404": {
+            "description": "Workspace or collection not found, or caller is not a member."
+          },
+          "422": {
+            "description": "Invalid body, or the collection's provider has no embeddings (`provider_embeddings_unsupported`)."
+          },
+          "429": {
+            "description": "Provider rate limit (`provider_rate_limited`)."
+          },
+          "502": {
+            "description": "Provider refused the key or the request (`provider_auth_failed`, `provider_request_failed`) or answered badly (`embedding_invalid_response`, `embedding_dimension_mismatch`)."
+          },
+          "503": {
+            "description": "Provider unreachable (`provider_unavailable`)."
+          }
+        },
+        "summary": "Search Collection",
+        "tags": [
+          "search"
         ]
       }
     },

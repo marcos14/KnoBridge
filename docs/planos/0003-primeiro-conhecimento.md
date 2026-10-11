@@ -92,10 +92,10 @@ fases:
     subfases:
       - id: F4.1
         titulo: Busca híbrida (vetorial + FTS, RRF) e rota de teste de busca
-        status: em_execucao
+        status: concluida
         agente: claude-code
         iniciada_em: 2026-10-10
-        concluida_em: null
+        concluida_em: 2026-10-10
         commit: null
       - id: F4.2
         titulo: Retriever real, coleções do assistente e prompt com citações
@@ -494,6 +494,7 @@ Ver `decisoes[]` no frontmatter. ADR previsto: 0004 (índice de conhecimento: di
 - 2026-10-10 — F2.2 concluída: Chunking por títulos, AST (TS/TSX/JS/Go com tree-sitter <0.26), fallback por linhas e commits; ChunkDraft com metadados e hash; 918 testes.
 - 2026-10-10 — F1 e F2 concluídas; F3.1 iniciada.
 - 2026-10-10 — F4.1 iniciada em paralelo com a F3.1.
+- 2026-10-10 — F4.1 concluída: Busca híbrida (HNSW + FTS, RRF, limiar), Reranker como Protocol, rota POST .../collections/{cid}/search; backend 966 testes, frontend 704.
 
 ## 8. Encerramento
 
