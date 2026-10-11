@@ -45,7 +45,7 @@ fases:
         commit: f627b7c
   - id: F2
     titulo: Processamento de documentos
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F2.1
         titulo: Parsing de documentos para Markdown
@@ -60,16 +60,16 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: 0fa9788
   - id: F3
     titulo: Execução das sincronizações
-    status: pendente
+    status: em_execucao
     subfases:
       - id: F3.1
         titulo: Workflow de ingestão incremental no Temporal
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code
+        iniciada_em: 2026-10-10
         concluida_em: null
         commit: null
       - id: F3.2
@@ -88,13 +88,13 @@ fases:
         commit: null
   - id: F4
     titulo: Recuperação e chat com fontes
-    status: pendente
+    status: em_execucao
     subfases:
       - id: F4.1
         titulo: Busca híbrida (vetorial + FTS, RRF) e rota de teste de busca
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code
+        iniciada_em: 2026-10-10
         concluida_em: null
         commit: null
       - id: F4.2
@@ -492,6 +492,8 @@ Ver `decisoes[]` no frontmatter. ADR previsto: 0004 (índice de conhecimento: di
 - 2026-10-10 — F2.2 iniciada (em paralelo com a F1.4).
 - 2026-10-10 — F1.4 concluída: Conector Git (caminho local por objetos, URL https em clone parcial, incremental por SHA com reconstrução, commits como documentos), suíte de contrato; 887 testes.
 - 2026-10-10 — F2.2 concluída: Chunking por títulos, AST (TS/TSX/JS/Go com tree-sitter <0.26), fallback por linhas e commits; ChunkDraft com metadados e hash; 918 testes.
+- 2026-10-10 — F1 e F2 concluídas; F3.1 iniciada.
+- 2026-10-10 — F4.1 iniciada em paralelo com a F3.1.
 
 ## 8. Encerramento
 
