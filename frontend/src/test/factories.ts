@@ -8,7 +8,7 @@ import type { Citation, Conversation, ConversationDetail, Message } from "@/lib/
 import type { Invitation, InvitationPreview } from "@/lib/api/invites";
 import type { Member } from "@/lib/api/members";
 import type { Provider } from "@/lib/api/providers";
-import type { Source } from "@/lib/api/sources";
+import type { Run, RunDetail, RunError, Source, SourceDocument } from "@/lib/api/sources";
 import type {
   ConversationStats,
   WorkspaceConversation,
@@ -646,7 +646,7 @@ export function makeSource(overrides: Partial<Source> = {}): Source {
     collection_id: COLLECTION_ID,
     name: "erp-core",
     kind: "git",
-    config: { url: "file:///repos/erp-core", branch: "main" },
+    config: { path: "/sources/erp-core", branch: "main" },
     include_globs: [],
     exclude_globs: [],
     active: true,
@@ -725,6 +725,134 @@ export function makeCommitSearchResult(overrides: Partial<SearchResult> = {}): S
       title: "Corrige o fechamento do caixa",
       uri: "commit:abcdef1234567890",
     },
+    ...overrides,
+  });
+}
+
+// --- Sources, runs and documents (plan 0003, F5.2) ---
+
+export const FOLDER_SOURCE_ID = "00000000-0000-4000-8000-0000000001b2";
+export const RUN_ID = "00000000-0000-4000-8000-0000000001c1";
+export const OTHER_RUN_ID = "00000000-0000-4000-8000-0000000001c2";
+
+/** A run of erp-core: by default the finished manual one of `makeSource`. */
+export function makeRun(overrides: Partial<Run> = {}): Run {
+  return {
+    id: RUN_ID,
+    source_id: SOURCE_ID,
+    status: "succeeded",
+    trigger: "manual",
+    documents_new: 42,
+    documents_changed: 0,
+    documents_removed: 0,
+    documents_failed: 0,
+    chunks_written: 310,
+    embedding_tokens: 51000,
+    cost_usd: 0.001,
+    error: null,
+    created_at: "2026-10-03T10:05:00Z",
+    started_at: "2026-10-03T10:05:01Z",
+    finished_at: "2026-10-03T10:06:00Z",
+    ...overrides,
+  };
+}
+
+/** The runs of erp-core, newest first: a scheduled one with two failed documents, then the first. */
+export function makeRuns(): Run[] {
+  return [
+    makeRun({
+      id: OTHER_RUN_ID,
+      trigger: "schedule",
+      documents_new: 1,
+      documents_changed: 3,
+      documents_removed: 1,
+      documents_failed: 2,
+      chunks_written: 12,
+      embedding_tokens: 2400,
+      cost_usd: 0.000048,
+      created_at: "2026-10-10T03:00:00Z",
+      started_at: "2026-10-10T03:00:02Z",
+      finished_at: "2026-10-10T03:00:47Z",
+    }),
+    makeRun(),
+  ];
+}
+
+/** A per-document error of a run: by default `src/nota.py` failing to parse. */
+export function makeRunError(overrides: Partial<RunError> = {}): RunError {
+  return {
+    id: "00000000-0000-4000-8000-0000000001f1",
+    document_key: "src/nota.py",
+    stage: "parse",
+    code: "parse_failed",
+    message: "Unexpected indentation at line 12.",
+    created_at: "2026-10-10T03:00:30Z",
+    ...overrides,
+  };
+}
+
+/** `run` with a page of `errors` (default: none). */
+export function makeRunDetail(run: Run = makeRun(), errors: RunError[] = []): RunDetail {
+  return { ...run, errors: { items: errors, total: errors.length, limit: 20, offset: 0 } };
+}
+
+/** A document indexed from erp-core: by default `src/caixa.py`, with 4 chunks. */
+export function makeSourceDocument(overrides: Partial<SourceDocument> = {}): SourceDocument {
+  return {
+    id: "00000000-0000-4000-8000-0000000001e1",
+    key: "src/caixa.py",
+    kind: "file",
+    title: "src/caixa.py",
+    uri: "src/caixa.py",
+    language: "python",
+    content_hash: "3f2a",
+    chunk_count: 4,
+    indexed_at: "2026-10-03T10:05:40Z",
+    created_at: "2026-10-03T10:05:40Z",
+    updated_at: "2026-10-03T10:05:40Z",
+    ...overrides,
+  };
+}
+
+/** The documents of erp-core: two files and a commit. */
+export function makeSourceDocuments(): SourceDocument[] {
+  return [
+    makeSourceDocument(),
+    makeSourceDocument({
+      id: "00000000-0000-4000-8000-0000000001e3",
+      key: "docs/fechamento.md",
+      title: "Fechamento do caixa",
+      uri: "docs/fechamento.md",
+      language: "markdown",
+      chunk_count: 2,
+    }),
+    makeSourceDocument({
+      id: "00000000-0000-4000-8000-0000000001e2",
+      key: "abcdef1234567890",
+      kind: "commit",
+      title: "Corrige o fechamento do caixa",
+      uri: "commit:abcdef1234567890",
+      language: null,
+      chunk_count: 1,
+    }),
+  ];
+}
+
+/** "manuais", a folder source of Manuais, scheduled daily at 03:00 UTC and never synced. */
+export function makeFolderSource(overrides: Partial<Source> = {}): Source {
+  return makeSource({
+    id: FOLDER_SOURCE_ID,
+    collection_id: OTHER_COLLECTION_ID,
+    name: "manuais",
+    kind: "folder",
+    config: { path: "/sources/manuais" },
+    include_globs: ["**/*.md"],
+    exclude_globs: ["rascunhos/**"],
+    schedule_cron: "0 3 * * *",
+    schedule_enabled: true,
+    next_run_at: "2026-10-11T03:00:00Z",
+    document_count: 0,
+    last_run: null,
     ...overrides,
   });
 }

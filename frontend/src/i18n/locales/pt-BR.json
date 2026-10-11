@@ -62,10 +62,6 @@
   },
   "areas": {
     "emptyTitle": "Nada por aqui ainda",
-    "sources": {
-      "title": "Fontes",
-      "description": "Fontes são os lugares de onde o KnoBridge lê conhecimento: repositórios de código, sistemas de chamados e documentações. Quando você conectar a primeira, ela aparece aqui."
-    },
     "pipelines": {
       "title": "Pipelines",
       "description": "Pipelines transformam o conteúdo das fontes em índices para busca, em etapas visuais e incrementais. Os pipelines do workspace aparecem aqui."
@@ -564,6 +560,223 @@
         "queryRequired": "Digite o que deseja buscar.",
         "minSimilarityInvalid": "Informe um número de 0 a 1."
       }
+    }
+  },
+  "sources": {
+    "title": "Fontes",
+    "description": "Fontes são os lugares de onde o KnoBridge lê conhecimento: repositórios Git e pastas de documentos. Cada sincronização indexa só o que mudou na coleção da fonte.",
+    "create": "Nova fonte",
+    "needCollection": "Crie uma coleção antes de cadastrar fontes: é nela que os trechos indexados ficam.",
+    "goToCollections": "Ir para coleções",
+    "tableLabel": "Fontes do workspace",
+    "columns": {
+      "name": "Nome",
+      "kind": "Tipo",
+      "collection": "Coleção",
+      "lastRun": "Última execução",
+      "nextRun": "Próxima agendada",
+      "actions": "Ações"
+    },
+    "kinds": {
+      "git": "Repositório Git",
+      "folder": "Pasta"
+    },
+    "inactive": "Desativada",
+    "noSchedule": "Sem agendamento",
+    "schedulePaused": "Agendamento pausado",
+    "neverSynced": "Nunca sincronizada",
+    "empty": "Nenhuma fonte cadastrada.",
+    "loading": "Carregando fontes…",
+    "loadFailed": "Não foi possível carregar as fontes.",
+    "retry": "Tentar novamente",
+    "edit": "Editar",
+    "editLabel": "Editar {{name}}",
+    "delete": "Excluir",
+    "deleteLabel": "Excluir {{name}}",
+    "deleteTitle": "Excluir a fonte {{name}}?",
+    "deleteDescription": "A fonte, seus documentos e trechos indexados são apagados sem volta. Uma sincronização em andamento é cancelada.",
+    "deleted": "A fonte {{name}} foi excluída.",
+    "created": "Fonte {{name}} criada. Use \"Sincronizar agora\" para indexá-la.",
+    "updated": "Fonte {{name}} atualizada.",
+    "sync": "Sincronizar agora",
+    "syncLabel": "Sincronizar {{name}} agora",
+    "syncStarted": "Sincronização de {{name}} na fila.",
+    "cancel": "Cancelar sincronização",
+    "cancelLabel": "Cancelar a sincronização de {{name}}",
+    "cancelRequested": "Cancelamento da sincronização de {{name}} pedido.",
+    "test": "Testar conexão",
+    "testing": "Testando…",
+    "testOk": "A fonte {{name}} está acessível.",
+    "testFailed": "A fonte {{name}} não respondeu: {{reason}}",
+    "runStatus": {
+      "queued": "Na fila",
+      "running": "Em execução",
+      "succeeded": "Concluída",
+      "failed": "Falhou",
+      "cancelled": "Cancelada"
+    },
+    "triggers": {
+      "manual": "Manual",
+      "schedule": "Agendada"
+    },
+    "cron": {
+      "everyMinute": "A cada minuto",
+      "everyMinutes_one": "A cada minuto",
+      "everyMinutes_other": "A cada {{count}} minutos",
+      "hourly": "A cada hora, no minuto {{minute}}",
+      "everyHours_one": "A cada hora, no minuto {{minute}}",
+      "everyHours_other": "A cada {{count}} horas, no minuto {{minute}}",
+      "daily": "Todos os dias às {{time}} (UTC)",
+      "weekdayRange": "De {{from}} a {{to}} às {{time}} (UTC)",
+      "weekly": "Toda semana: {{days}}, às {{time}} (UTC)",
+      "monthly": "Todo dia {{day}} do mês às {{time}} (UTC)",
+      "custom": "Expressão personalizada: o servidor confere ao salvar.",
+      "days": {
+        "0": "domingo",
+        "1": "segunda",
+        "2": "terça",
+        "3": "quarta",
+        "4": "quinta",
+        "5": "sexta",
+        "6": "sábado"
+      },
+      "presets": {
+        "hourly": "A cada hora",
+        "every6Hours": "A cada 6 horas",
+        "daily3": "Diariamente às 3h (UTC)",
+        "weekdays6": "Dias úteis às 6h (UTC)",
+        "sunday2": "Domingos às 2h (UTC)"
+      }
+    },
+    "form": {
+      "createTitle": "Nova fonte",
+      "editTitle": "Editar fonte",
+      "description": "A fonte é lida pelo servidor, que indexa os arquivos na coleção escolhida.",
+      "name": "Nome",
+      "collection": "Coleção",
+      "collectionPlaceholder": "Escolha uma coleção",
+      "collectionLockedHint": "A coleção não muda depois de criada a fonte.",
+      "kind": "Tipo",
+      "kindLockedHint": "O tipo não muda depois de criada a fonte.",
+      "location": "Onde está o repositório",
+      "locations": {
+        "path": "Clone no servidor",
+        "url": "URL pública (https)"
+      },
+      "gitPath": "Caminho do clone",
+      "folderPath": "Caminho da pasta",
+      "pathHint": "Caminho absoluto no servidor, dentro da pasta liberada para fontes locais. No Docker Compose essa pasta é /sources (ex.: /sources/erp-core).",
+      "url": "URL do repositório",
+      "urlHint": "Só repositórios públicos, por https, sem usuário ou senha na URL.",
+      "branch": "Branch (opcional)",
+      "branchHint": "Em branco, o branch padrão do repositório.",
+      "commitLimit": "Commits indexados na primeira sincronização",
+      "commitLimitHint": "De 0 a {{max}}. Os commits mais recentes viram documentos, com mensagem e arquivos alterados.",
+      "includeGlobs": "Incluir (um padrão por linha, opcional)",
+      "includeGlobsHint": "Em branco, todos os arquivos. Ex.: src/**/*.py",
+      "excludeGlobs": "Excluir (um padrão por linha, opcional)",
+      "excludeGlobsHint": "Ex.: **/node_modules/** ou docs/rascunhos/**",
+      "scheduleEnabled": "Sincronizar automaticamente",
+      "scheduleEnabledHint": "Desmarcado, o agendamento fica pausado e só a sincronização manual roda.",
+      "cron": "Agendamento (cron, UTC)",
+      "cronHint": "Cinco campos: minuto, hora, dia do mês, mês e dia da semana, sempre em UTC.",
+      "presetsLabel": "Agendamentos prontos",
+      "active": "Ativa",
+      "activeHint": "Fonte desativada não sincroniza nem tem agendamento.",
+      "submit": "Salvar",
+      "cancel": "Cancelar",
+      "validation": {
+        "nameRequired": "Informe o nome da fonte.",
+        "collectionRequired": "Escolha uma coleção.",
+        "pathRequired": "Informe o caminho.",
+        "pathAbsolute": "Use um caminho absoluto, como /sources/erp-core.",
+        "urlInvalid": "Informe uma URL https pública, sem usuário ou senha.",
+        "branchInvalid": "Nome de branch inválido.",
+        "commitLimitInvalid": "Informe um número inteiro de 0 a {{max}}.",
+        "tooManyGlobs": "Use no máximo {{max}} padrões.",
+        "globTooLong": "Cada padrão pode ter até {{max}} caracteres.",
+        "cronRequired": "Informe o agendamento ou desmarque a sincronização automática.",
+        "cronInvalid": "Use uma expressão cron de cinco campos, como 0 3 * * *."
+      }
+    },
+    "detail": {
+      "back": "Voltar para fontes",
+      "loading": "Carregando a fonte…",
+      "loadFailed": "Não foi possível carregar a fonte.",
+      "notFound": "Fonte não encontrada.",
+      "summary": "{{kind}} na coleção {{collection}}",
+      "location": "Origem: {{location}}",
+      "branch": "Branch: {{branch}}",
+      "include": "Incluir: {{globs}}",
+      "exclude": "Excluir: {{globs}}",
+      "schedule": "Agendamento: {{schedule}}",
+      "nextRun": "Próxima execução: {{when}}",
+      "documentCount": "Documentos indexados: {{count}}"
+    },
+    "runs": {
+      "title": "Execuções",
+      "tableLabel": "Execuções da fonte",
+      "empty": "Nenhuma execução ainda.",
+      "loading": "Carregando execuções…",
+      "loadFailed": "Não foi possível carregar as execuções.",
+      "columns": {
+        "status": "Status",
+        "trigger": "Gatilho",
+        "createdAt": "Início",
+        "documents": "Novos / alterados / removidos / com erro",
+        "chunks": "Trechos",
+        "tokens": "Tokens",
+        "cost": "Custo",
+        "duration": "Duração",
+        "errors": "Erros"
+      },
+      "showErrors": "Ver erros",
+      "showErrorsLabel": "Ver erros da execução de {{when}}",
+      "selected": "Selecionada"
+    },
+    "errors": {
+      "title": "Erros da execução de {{when}}",
+      "tableLabel": "Erros por documento",
+      "failure": "Falha da execução: {{error}}",
+      "empty": "Nenhum documento falhou nesta execução.",
+      "loading": "Carregando erros…",
+      "loadFailed": "Não foi possível carregar os erros da execução.",
+      "columns": {
+        "document": "Documento",
+        "stage": "Etapa",
+        "code": "Código",
+        "message": "Mensagem"
+      },
+      "stages": {
+        "fetch": "Leitura",
+        "parse": "Análise",
+        "chunk": "Divisão em trechos",
+        "embed": "Embedding",
+        "store": "Gravação"
+      }
+    },
+    "documents": {
+      "title": "Documentos indexados",
+      "tableLabel": "Documentos da fonte",
+      "path": "Buscar por caminho",
+      "kind": "Tipo de documento",
+      "kinds": {
+        "all": "Todos",
+        "file": "Arquivos",
+        "commit": "Commits"
+      },
+      "search": "Buscar",
+      "empty": "Nenhum documento encontrado.",
+      "loading": "Carregando documentos…",
+      "loadFailed": "Não foi possível carregar os documentos.",
+      "columns": {
+        "document": "Documento",
+        "kind": "Tipo",
+        "language": "Linguagem",
+        "chunks": "Trechos",
+        "indexedAt": "Indexado em"
+      },
+      "notIndexed": "Ainda não indexado"
     }
   },
   "chat": {

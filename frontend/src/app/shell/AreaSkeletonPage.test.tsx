@@ -8,7 +8,6 @@ import { server } from "@/test/server";
 
 describe("AreaSkeletonPage", () => {
   it.each([
-    ["sources", "Fontes", "repositórios de código"],
     ["pipelines", "Pipelines", "transformam o conteúdo"],
     ["channels", "Canais", "widget embutível"],
   ])("test_area_skeleton_page_%s_shows_empty_state", async (path, title, explanation) => {
