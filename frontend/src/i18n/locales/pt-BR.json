@@ -834,7 +834,137 @@
       "label": "Seções da fonte",
       "modules": "Módulos",
       "jobs": "Tarefas",
+      "knowledge": "Conhecimento",
       "indexing": "Indexação"
+    },
+    "knowledge": {
+      "title": "Conhecimento",
+      "description": "Regras e enriquecimento de cada módulo gerados pelo harness, com as evidências conferidas no código. Aprovar troca o selo para revisado; descartar tira o item do índice na próxima sincronização.",
+      "module": "Módulo",
+      "status": "Status",
+      "confidence": "Confiança",
+      "allStatuses": "Todos os status",
+      "allConfidences": "Todas as confianças",
+      "export": "Exportar .md do módulo",
+      "exporting": "Exportando…",
+      "exported": "Download de {{filename}} iniciado.",
+      "loading": "Carregando o conhecimento…",
+      "loadFailed": "Não foi possível carregar o conhecimento do módulo.",
+      "noModules": "Nenhum módulo ainda. O conhecimento aparece por módulo, depois que uma tarefa dele termina.",
+      "empty": "Nenhum item de conhecimento neste módulo ainda. Rode o módulo na aba Módulos; os itens aparecem quando a tarefa termina.",
+      "noMatch": "Nenhum item corresponde aos filtros.",
+      "count_zero": "Nenhum item",
+      "count_one": "{{count}} item",
+      "count_other": "{{count}} itens",
+      "listLabel": "Itens de conhecimento",
+      "kinds": {
+        "rule": "Regra",
+        "module": "Módulo"
+      },
+      "edited": "Editado",
+      "evidenceChanged": "Evidência mudou",
+      "evidenceChangedHint": "Um arquivo citado mudou depois da revisão ou da edição. Confira as evidências e aprove de novo.",
+      "when": "Quando",
+      "message": "Mensagem exibida",
+      "resolution": "Como o usuário resolve",
+      "parameters": "Parâmetros",
+      "classification": "Classificação",
+      "relevance": "Relevância",
+      "objective": "Objetivo",
+      "flow": "Fluxo principal",
+      "messages": "Mensagens",
+      "cause": "Causa",
+      "action": "Ação",
+      "faq": "Perguntas frequentes",
+      "doubts": "Dúvidas em aberto",
+      "evidence": "Evidências",
+      "evidenceLabel": "Evidências de {{title}}",
+      "noEvidence": "Sem evidências.",
+      "excerptNotes": {
+        "sensitive_file": "excerto omitido: arquivo sensível",
+        "disabled": "excerto desligado na fonte",
+        "truncated": "excerto cortado",
+        "redacted": "segredos ocultados no excerto"
+      },
+      "meta": "Gerado por {{generatedBy}} no commit {{commit}} · atualizado em {{when}}",
+      "approve": "Aprovar",
+      "approveLabel": "Aprovar {{title}}",
+      "discard": "Descartar",
+      "discardLabel": "Descartar {{title}}",
+      "reopen": "Reabrir",
+      "reopenLabel": "Reabrir {{title}}",
+      "edit": "Editar",
+      "editLabel": "Editar {{title}}",
+      "approved": "{{title}} aprovado: o selo agora é revisado.",
+      "discarded": "{{title}} descartado: sai do índice na próxima sincronização.",
+      "reopened": "{{title}} reaberto para revisão.",
+      "saved": "{{title}} salvo.",
+      "rejections": {
+        "title": "Rejeitados na última tarefa do módulo",
+        "description": "Itens que o agente gerou e a verificação no checkout recusou, com o motivo. Não entram no índice.",
+        "job": "Tarefa de {{when}}",
+        "noJob": "Nenhuma tarefa concluída deste módulo ainda.",
+        "loading": "Carregando os rejeitados…",
+        "loadFailed": "Não foi possível carregar os rejeitados.",
+        "listLabel": "Itens rejeitados do módulo",
+        "item": "{{label}} ({{block}})"
+      }
+    },
+    "reviewStatus": {
+      "pending": "Pendente",
+      "approved": "Aprovado",
+      "discarded": "Descartado"
+    },
+    "confidence": {
+      "inferido": "Inferido",
+      "revisado": "Revisado"
+    },
+    "classifications": {
+      "observado": "observado",
+      "intencional": "intencional",
+      "bug_conhecido": "bug conhecido"
+    },
+    "relevances": {
+      "alta": "alta",
+      "media": "média",
+      "baixa": "baixa",
+      "sistemica": "sistêmica"
+    },
+    "knowledgeForm": {
+      "ruleTitle": "Editar regra",
+      "moduleTitle": "Editar módulo",
+      "description": "A edição vale para o chat e a exportação; as evidências não mudam. Salvar limpa a marca de evidência mudou.",
+      "title": "Título",
+      "enunciado": "Enunciado",
+      "quando": "Quando",
+      "mensagem": "Mensagem exibida (opcional)",
+      "resolucao": "Como o usuário resolve",
+      "parametros": "Parâmetros",
+      "parametrosHint": "Um por linha.",
+      "classificacao": "Classificação",
+      "relevancia": "Relevância",
+      "objetivo": "Objetivo",
+      "flow": "Fluxo principal",
+      "step": "Passo {{n}}",
+      "messages": "Mensagens",
+      "message": "Mensagem {{n}}",
+      "cause": "Causa {{n}}",
+      "action": "Ação {{n}}",
+      "faq": "Perguntas frequentes",
+      "question": "Pergunta {{n}}",
+      "answer": "Resposta {{n}}",
+      "doubts": "Dúvidas em aberto",
+      "doubt": "Dúvida {{n}}",
+      "context": "Contexto {{n}}",
+      "submit": "Salvar",
+      "cancel": "Cancelar",
+      "problems": "Campos recusados pelo servidor",
+      "validation": {
+        "titleRequired": "Informe o título.",
+        "tooLong": "Use até {{max}} caracteres.",
+        "parametersTooMany": "Use até {{max}} parâmetros.",
+        "parameterTooLong": "Cada parâmetro tem até {{max}} caracteres."
+      }
     },
     "jobStatus": {
       "queued": "Na fila",
@@ -1157,7 +1287,15 @@
       "language": "Linguagem",
       "commit": "Commit",
       "fullSha": "SHA completo: {{sha}}",
-      "authorship": "Autor e data"
+      "authorship": "Autor e data",
+      "confidence": "Confiança",
+      "seals": {
+        "inferido": "Inferido",
+        "revisado": "Revisado"
+      },
+      "item": "Item",
+      "evidence": "Evidências no código",
+      "noEvidence": "Sem evidências registradas."
     },
     "citationLabel": "Fonte {{index}}: {{title}}",
     "composer": {
@@ -1520,6 +1658,8 @@
     "module_key_taken": "Já existe um módulo com essa chave nesta fonte.",
     "module_not_found": "Módulo não encontrado. A lista foi atualizada.",
     "job_not_found": "Tarefa não encontrada.",
-    "job_finished": "A tarefa já terminou e não pode ser cancelada."
+    "job_finished": "A tarefa já terminou e não pode ser cancelada.",
+    "knowledge_content_invalid": "O conteúdo editado não segue o formato do item. Confira os campos apontados.",
+    "knowledge_item_not_found": "Item de conhecimento não encontrado. A lista foi atualizada."
   }
 }

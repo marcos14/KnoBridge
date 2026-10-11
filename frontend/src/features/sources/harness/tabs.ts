@@ -2,7 +2,7 @@
  * Tabs of a runner source, in order. A new tab is one more id here, its label in
  * `harness.tabs.<id>` and its content in `RunnerSourceTabs`.
  */
-export const RUNNER_SOURCE_TABS = ["modules", "jobs", "indexing"] as const;
+export const RUNNER_SOURCE_TABS = ["modules", "jobs", "knowledge", "indexing"] as const;
 
 export type RunnerSourceTab = (typeof RUNNER_SOURCE_TABS)[number];
 

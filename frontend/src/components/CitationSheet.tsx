@@ -2,6 +2,8 @@ import { ExternalLink } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
+import { EvidenceList } from "@/components/EvidenceList";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -83,7 +85,8 @@ export function CitationSheet({ citation, onClose }: CitationSheetProps) {
 
 /**
  * Where the excerpt comes from and the excerpt itself: a file with its path, lines, symbol and the
- * code in a block tagged with its language; a commit with its short SHA; or, for answers saved
+ * code in a block tagged with its language; a commit with its short SHA; a knowledge item with its
+ * trust seal, key and the evidence verified in the code (v0.5); or, for answers saved
  * before the location fields existed, the excerpt alone as a quote.
  */
 function CitationBody({ citation }: { citation: Citation }) {
@@ -95,6 +98,36 @@ function CitationBody({ citation }: { citation: Citation }) {
   if (source.type === "legacy") {
     return (
       <blockquote className="border-l-2 pl-3 whitespace-pre-wrap">{citation.snippet}</blockquote>
+    );
+  }
+  if (source.type === "knowledge") {
+    return (
+      <>
+        <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+          {source.confidence !== null && (
+            <Detail label={t("chat.citations.confidence")}>
+              <Badge variant={source.confidence === "revisado" ? "default" : "outline"}>
+                {t(`chat.citations.seals.${source.confidence}`)}
+              </Badge>
+            </Detail>
+          )}
+          {source.key !== null && (
+            <Detail label={t("chat.citations.item")}>
+              <code className="break-all">{source.key}</code>
+            </Detail>
+          )}
+        </dl>
+        <blockquote className="border-l-2 pl-3 whitespace-pre-wrap">{citation.snippet}</blockquote>
+        <h3 className="text-sm font-semibold">{t("chat.citations.evidence")}</h3>
+        {source.evidence.length === 0 ? (
+          <p className="text-muted-foreground text-xs">{t("chat.citations.noEvidence")}</p>
+        ) : (
+          <EvidenceList
+            label={t("chat.citations.evidence")}
+            evidence={source.evidence.map((entry) => ({ ...entry, note: null }))}
+          />
+        )}
+      </>
     );
   }
   const language = source.type === "file" ? source.language : null;

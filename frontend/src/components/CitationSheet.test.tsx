@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { Citation } from "@/lib/api/conversations";
 import { makeCitation } from "@/test/factories";
+import { makeKnowledgeCitation } from "@/test/knowledgeFactories";
 import { renderWithProviders } from "@/test/renderWithProviders";
 
 import { CitationSheet } from "./CitationSheet";
@@ -122,6 +123,36 @@ describe("CitationSheet", () => {
     const code = within(panel).getByText(/export function fecharCaixa/, { selector: "code" });
     expect(code).not.toHaveClass("language-typescript");
     expect(within(panel).queryByText("Linguagem")).not.toBeInTheDocument();
+  });
+
+  it("test_citation_sheet_shows_knowledge_with_seal_and_evidence", async () => {
+    const panel = await openSheet(makeKnowledgeCitation());
+
+    expect(panel).toHaveAccessibleName("[1] Nota fiscal exige CNPJ do cliente");
+    expect(detail(panel, "Confiança")).toBe("Revisado");
+    expect(detail(panel, "Item")).toBe("src-faturamento.R001");
+    expect(
+      within(panel).getByText("A nota só é emitida se o cliente tiver CNPJ válido.").tagName,
+    ).toBe("BLOCKQUOTE");
+    const evidence = within(panel).getByRole("list", { name: "Evidências no código" });
+    const [first, second] = within(evidence).getAllByRole("listitem");
+    expect(first).toHaveTextContent("src/faturamento/notas.ts:L80–L92 (emitirNota)");
+    expect(within(evidence).getByText("if (!cliente.cnpj) {").closest("pre")).not.toBeNull();
+    // No symbol and no excerpt: the location alone.
+    expect(second?.textContent).toBe("src/faturamento/cliente.ts:L12");
+    // The `knowledge:` URI is not a place people can open.
+    expect(within(panel).queryByText("knowledge:src-faturamento.R001")).not.toBeInTheDocument();
+    expect(within(panel).queryByText("Arquivo")).not.toBeInTheDocument();
+  });
+
+  it("test_citation_sheet_shows_knowledge_saved_without_seal_or_evidence", async () => {
+    const panel = await openSheet(
+      makeKnowledgeCitation({ uri: null, confidence: null, evidence: null }),
+    );
+
+    expect(within(panel).queryByText("Confiança")).not.toBeInTheDocument();
+    expect(within(panel).queryByText("Item")).not.toBeInTheDocument();
+    expect(within(panel).getByText("Sem evidências registradas.")).toBeVisible();
   });
 
   it("test_citation_sheet_keeps_legacy_citations_as_before", async () => {

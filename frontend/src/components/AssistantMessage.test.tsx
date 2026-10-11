@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { Citation } from "@/lib/api/conversations";
 import { makeCitation } from "@/test/factories";
+import { makeKnowledgeCitation } from "@/test/knowledgeFactories";
 import { renderWithProviders } from "@/test/renderWithProviders";
 
 import { AssistantMessage } from "./AssistantMessage";
@@ -59,5 +60,27 @@ describe("AssistantMessage sources", () => {
     renderAnswer([makeCitation()]);
 
     expect(await screen.findByRole("button", { name: "[1] Manual do caixa" })).toBeVisible();
+  });
+
+  it("test_assistant_message_lists_knowledge_with_evidence_and_seal", async () => {
+    const user = userEvent.setup();
+    const knowledge = makeKnowledgeCitation({ index: 2 });
+    const onCitation = renderAnswer([makeCitation(), knowledge]);
+
+    const button = await screen.findByRole("button", {
+      name: "[2] Nota fiscal exige CNPJ do cliente src/faturamento/notas.ts:L80–L92 +1 Revisado",
+    });
+    expect(screen.getByRole("button", { name: "[1] Manual do caixa" })).toBeVisible();
+    await user.click(button);
+
+    expect(onCitation).toHaveBeenCalledWith(knowledge);
+  });
+
+  it("test_assistant_message_lists_knowledge_without_seal_or_evidence", async () => {
+    renderAnswer([makeKnowledgeCitation({ confidence: null, evidence: null })]);
+
+    expect(
+      await screen.findByRole("button", { name: "[1] Nota fiscal exige CNPJ do cliente" }),
+    ).toBeVisible();
   });
 });

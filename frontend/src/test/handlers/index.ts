@@ -8,6 +8,7 @@ import { conversationsHandlers } from "./conversations";
 import { harnessHandlers } from "./harness";
 import { healthReadyOk } from "./health";
 import { invitesHandlers } from "./invites";
+import { knowledgeHandlers } from "./knowledge";
 import { membersHandlers } from "./members";
 import { providersHandlers } from "./providers";
 import { recoveryHandlers } from "./recovery";
@@ -27,6 +28,7 @@ export * from "./errors";
 export * from "./harness";
 export * from "./health";
 export * from "./invites";
+export * from "./knowledge";
 export * from "./members";
 export * from "./page";
 export * from "./providers";
@@ -57,6 +59,7 @@ export const handlers = [
   ...runnersHandlers,
   ...sourcesHandlers,
   ...harnessHandlers,
+  ...knowledgeHandlers,
   ...conversationsHandlers,
   ...workspaceConversationsHandlers,
 ];

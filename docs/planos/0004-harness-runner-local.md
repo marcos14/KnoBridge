@@ -95,7 +95,7 @@ fases:
         commit: 13ee7f9
   - id: F4
     titulo: Painel
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F4.1
         titulo: Tela de runners e formulário da fonte do tipo runner
@@ -113,10 +113,10 @@ fases:
         commit: 1e61b95
       - id: F4.3
         titulo: Revisão do conhecimento, exportação e citações de conhecimento no chat
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-11
-        concluida_em: null
+        concluida_em: 2026-10-11
         commit: null
   - id: F5
     titulo: Entrega e ensaio real
@@ -353,6 +353,13 @@ decisoes:
     decisao: "F4.2: a fonte runner ganha as abas Módulos, Tarefas e Indexação (execuções e documentos), em features/sources/harness/; polling de 5 s enquanto houver tarefa queued, leased, running ou deferred; só módulos habilitados entram na seleção; CopyButton e runnerSetupCommands foram para components/ e lib/ para o estado vazio reaproveitar"
     motivo: "uma área não importa a outra; a aba Conhecimento da F4.3 entra com um id e um case; a fila ativa é o mesmo conjunto que o servidor usa em already_queued"
     alternativas: "página separada para módulos; polling só com running; duplicar o botão de copiar"
+    adr: null
+  - id: D32
+    data: 2026-10-11
+    por: agente
+    decisao: "F4.3: a aba Conhecimento carrega todos os itens do módulo e filtra status e confiança no navegador; rejeitados vêm da tarefa concluída mais recente do módulo (entre as 200 últimas da fonte), sem rota nova; a edição do enriquecimento muda textos mas não inclui nem remove entradas nem troca referências de evidência; o PATCH leva só o que mudou; exportação só do módulo aberto"
+    motivo: "poucos itens por módulo e cache único simplificam a atualização otimista; sem mudar contrato no fim do plano"
+    alternativas: "filtros no servidor; rota de rejeições por módulo; editor livre de JSON"
     adr: null
 pendencias_usuario: []
 ---
@@ -622,6 +629,7 @@ Nenhuma aberta. Observação para a F5.2: a chave do OpenRouter cadastrada na st
 - 2026-10-11 — F4.2 iniciada (agente em worktree).
 - 2026-10-11 — F4.2 concluída: abas Módulos, Tarefas e Indexação na fonte runner, com lote, polling, detalhe de rejeições e cancelamento; frontend 1062 testes, 98,68% de branches
 - 2026-10-11 — F4.3 iniciada (agente em worktree).
+- 2026-10-11 — F4.3 concluída: aba Conhecimento (filtros, editar, aprovar, descartar, reabrir, rejeitados, exportar) e citações knowledge no chat; o teste de abortar do chatStream passou a observar o AbortController do hook em vez do sinal da requisição interceptada, que propaga de forma assíncrona e falhava sob carga; frontend 1139 testes, 98,62% de branches
 
 ## 8. Encerramento
 

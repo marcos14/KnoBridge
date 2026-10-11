@@ -8,6 +8,7 @@ import type { Source } from "@/lib/api/sources";
 import { DocumentsSection } from "../DocumentsSection";
 import { RunsSection } from "../RunsSection";
 import { JobsTab } from "./JobsTab";
+import { KnowledgeTab } from "./KnowledgeTab";
 import { ModulesTab } from "./ModulesTab";
 import { parseRunnerSourceTab, RUNNER_SOURCE_TABS, type RunnerSourceTab } from "./tabs";
 
@@ -18,9 +19,9 @@ interface RunnerSourceTabsProps {
 }
 
 /**
- * The body of a runner source's detail: modules, harness jobs and the indexing runs with the
- * documents. The open tab lives in the query string (`?tab=jobs`), so a reload or a shared link
- * keeps it.
+ * The body of a runner source's detail: modules, harness jobs, the knowledge under review and the
+ * indexing runs with the documents. The open tab lives in the query string (`?tab=jobs`), so a
+ * reload or a shared link keeps it.
  */
 export function RunnerSourceTabs({ workspaceId, source, canManage }: RunnerSourceTabsProps) {
   const { t } = useTranslation();
@@ -33,6 +34,8 @@ export function RunnerSourceTabs({ workspaceId, source, canManage }: RunnerSourc
         return <ModulesTab workspaceId={workspaceId} source={source} canManage={canManage} />;
       case "jobs":
         return <JobsTab workspaceId={workspaceId} source={source} canManage={canManage} />;
+      case "knowledge":
+        return <KnowledgeTab workspaceId={workspaceId} source={source} canManage={canManage} />;
       case "indexing":
         return (
           <div className="flex flex-col gap-6">

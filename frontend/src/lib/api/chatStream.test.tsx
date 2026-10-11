@@ -349,7 +349,7 @@ describe("useChatStream", () => {
 
   it("test_use_chat_stream_unmount_aborts_the_answer", async () => {
     const source = controlledStream();
-    const requests = streamed(source.stream);
+    streamed(source.stream);
     const { result, unmount } = renderStream();
 
     act(() => {
@@ -361,11 +361,13 @@ describe("useChatStream", () => {
     await waitFor(() => {
       expect(result.current.pending?.messageId).toBe(ANSWER_ID);
     });
+    // The abort reaches the intercepted request asynchronously, so watch the hook's own
+    // controller instead: unmounting must abort it synchronously.
+    const abort = vi.spyOn(AbortController.prototype, "abort");
 
     unmount();
 
-    await waitFor(() => {
-      expect(requests[0]?.signal.aborted).toBe(true);
-    });
+    expect(abort).toHaveBeenCalledTimes(1);
+    abort.mockRestore();
   });
 });

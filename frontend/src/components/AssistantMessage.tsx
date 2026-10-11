@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { translateApiErrorCode } from "@/i18n/apiErrors";
 import type { Citation, MessageStatus } from "@/lib/api/conversations";
-import { citationLocation } from "@/lib/citationLocation";
+import { citationLocation, citationSource } from "@/lib/citationLocation";
 
 import { ChatMarkdown } from "./ChatMarkdown";
 
@@ -60,6 +60,8 @@ export function AssistantMessage({
           <ul className="flex flex-wrap gap-2">
             {citations.map((citation) => {
               const location = citationLocation(citation);
+              const source = citationSource(citation);
+              const seal = source.type === "knowledge" ? source.confidence : null;
               return (
                 <li key={citation.index}>
                   <Button
@@ -80,6 +82,12 @@ export function AssistantMessage({
                     {location !== null && (
                       <span className="text-muted-foreground font-mono text-xs break-all">
                         {location}
+                      </span>
+                    )}
+                    {seal !== null && " "}
+                    {seal !== null && (
+                      <span className="text-muted-foreground text-xs">
+                        {t(`chat.citations.seals.${seal}`)}
                       </span>
                     )}
                   </Button>
