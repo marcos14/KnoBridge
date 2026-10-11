@@ -63,7 +63,7 @@ fases:
         commit: 0fa9788
   - id: F3
     titulo: Execução das sincronizações
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F3.1
         titulo: Workflow de ingestão incremental no Temporal
@@ -85,7 +85,7 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: e7c3d06
   - id: F4
     titulo: Recuperação e chat com fontes
     status: em_execucao
@@ -117,9 +117,9 @@ fases:
         commit: 0a214dd
       - id: F5.2
         titulo: Tela de fontes, execuções e agendamento
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code
+        iniciada_em: 2026-10-10
         concluida_em: null
         commit: null
       - id: F5.3
@@ -503,6 +503,7 @@ Ver `decisoes[]` no frontmatter. ADR previsto: 0004 (índice de conhecimento: di
 - 2026-10-10 — F5.1 concluída: Tela /w/:id/collections (lista, CRUD, detalhe com fontes e Testar busca); 759 testes.
 - 2026-10-10 — F5.3 iniciada (em paralelo com a F3.3).
 - 2026-10-10 — F3.3 concluída: Agendamento por fonte via Temporal Schedules, workflow scheduled_sync, reconciliação na subida do worker, next_run_at; 1136 testes backend. Limite: reconciliação só na subida do worker.
+- 2026-10-10 — F3 concluída; F5.2 iniciada (em paralelo com a F5.3).
 
 ## 8. Encerramento
 
