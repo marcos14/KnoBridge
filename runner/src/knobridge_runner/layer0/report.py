@@ -53,10 +53,11 @@ def _valid_path(path: str) -> bool:
     return True
 
 
-def _changed_paths(
+def changed_paths_since(
     repository: GitRepository, previous_head: str | None, head: str
 ) -> list[str] | None:
-    """Changed paths since PREVIOUS_HEAD; ``None`` when unknown (first report, missing base)."""
+    """Changed paths since PREVIOUS_HEAD; ``None`` when unknown (no base, base missing locally,
+    more than 20 000 paths). Base of the report and of the job result `changed_paths`."""
     if previous_head is None:
         return None
     if previous_head == head:
@@ -100,7 +101,7 @@ def build_report(
         head_commit=head,
         branch=git.branch(),
         base_commit=previous_head,
-        changed_paths=_changed_paths(git, previous_head, head),
+        changed_paths=changed_paths_since(git, previous_head, head),
         inventory=inventory_of(files),
         modules=modules,
     )

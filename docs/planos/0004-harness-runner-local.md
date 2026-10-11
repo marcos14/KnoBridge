@@ -35,10 +35,10 @@ fases:
     subfases:
       - id: F2.1
         titulo: Cadastro de runners, token e autenticação do runner
-        status: em_execucao
+        status: concluida
         agente: claude-code
         iniciada_em: 2026-10-11
-        concluida_em: null
+        concluida_em: 2026-10-11
         commit: null
       - id: F2.2
         titulo: Fila de tarefas com reserva (long-poll, heartbeat, resultado, adiamento)
@@ -85,12 +85,12 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-11
         concluida_em: 2026-10-11
-        commit: null
+        commit: ce5541d
       - id: F3.4
         titulo: Verificação de evidências, excertos com redação de segredos e ciclo completo da tarefa
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code
+        iniciada_em: 2026-10-11
         concluida_em: null
         commit: null
   - id: F4
@@ -283,6 +283,13 @@ decisoes:
     decisao: "F3.3: interface run(task, checkout, limits, ...) com o executor montando prompt e schema (garante igualdade entre Claude Code e Codex); validador próprio do subconjunto estrito do schema (sem jsonschema); stdin binário UTF-8; tzdata só no Windows; trava de ferramenta mantida estrita — o mcp_tool_call interno list_mcp_resources do Codex também mata o processo (unsafe_tool_use), reavaliar no ensaio; custo do resgate do Claude somado às duas chamadas"
     motivo: "Achados da suíte real (D17) contra claude 2.1.296 e codex 0.142.5"
     alternativas: "Liberar ferramentas internas de recursos MCP do Codex"
+    adr: null
+  - id: D22
+    data: 2026-10-11
+    por: agente
+    decisao: "F2.1: ações de auditoria no passado (runner.created, harness_job.enqueued...), prefixo auditado como prefix; 404 runner_not_found; runner revogado nunca online; cabeçalho de protocolo conferido antes da autenticação; schemas do painel separados dos do fio; limite de corpo por rota em middleware ASGI (413 payload_too_large)"
+    motivo: "Catálogo de auditoria exige passado e recusa chaves com token; evitar nomes -Input/-Output que quebrariam o contrato do runner"
+    alternativas: "Nomes no presente como na spec original"
     adr: null
 pendencias_usuario: []
 ---
@@ -539,6 +546,8 @@ Nenhuma aberta. Observação para a F5.2: a chave do OpenRouter cadastrada na st
 - 2026-10-11 — F3.2 concluída: camada 0 em runner/layer0 (seleção, inventário, módulos, extrações, git, briefing, report) e correção dos padrões de módulo em harness.md; 202 testes, cobertura 99,8%.
 - 2026-10-11 — F2.1 iniciada.
 - 2026-10-11 — F3.3 concluída: executores Claude Code e Codex em runner/harness, falsos em tests/fakes e suíte opt-in real_harness verde contra os CLIs reais (Claude haiku ~US$ 0,005/30 s; Codex gpt-5.5 ~75 s; o modelo padrão do ~/.codex exige CLI mais novo); 284 testes, cobertura 99,9%.
+- 2026-10-11 — F3.4 iniciada.
+- 2026-10-11 — F2.1 concluída: API de runners (token kbr_ uma vez, hash SHA-256, revogação, 409 runner_in_use), POST /v1/runner/heartbeat com protocolo e limite de corpo; 1250 testes, cobertura 99,96%.
 
 ## 8. Encerramento
 

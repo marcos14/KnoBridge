@@ -61,6 +61,10 @@ class MachineStatus:
 
         return await asyncio.to_thread(read)
 
+    def executor_version(self, name: Executor) -> str | None:
+        """The version found at the last check (sent with the job result)."""
+        return next((info.version for info in self._executors if info.name == name), None)
+
     def claimable_executors(self) -> list[Executor]:
         """Executors found on PATH whose login is not known to be missing."""
         return [

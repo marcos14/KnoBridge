@@ -151,3 +151,62 @@ def test_check_executor_without_version() -> None:
     info = RunnerExecutorInfo(name="claude_code", available=True, authenticated=True)
 
     assert check_executor(info).detail == "versão desconhecida; logado"
+
+
+def windows_doctor(config: RunnerConfig, runner: FakeCommandRunner) -> list[CheckResult]:
+    status = MachineStatus(
+        config=config, platform="windows", runner=runner, auth=FakeAuth(), clock=FakeClock()
+    )
+    server = FakeServer().on("/heartbeat", json_response(200, heartbeat_out()))
+
+    async def scenario() -> list[CheckResult]:
+        async with make_client(server) as client:
+            return await run_doctor(
+                config, status=status, runner=runner, client=client, platform="windows"
+            )
+
+    return asyncio.run(scenario())
+
+
+OWNER_ONLY = "C:\\repo NOTEBOOK\\marco:(OI)(CI)(F)\n\nSuccessfully processed 1 files"
+WITH_USERS = "C:\\repo BUILTIN\\Usuários:(OI)(CI)(RX)\n"
+
+
+@pytest.mark.parametrize(
+    ("icacls", "warned"),
+    [
+        (CommandResult(0, OWNER_ONLY), True),
+        (CommandResult(0, WITH_USERS), False),
+        (CommandResult(5, ""), False),
+    ],
+)
+def test_doctor_warns_when_codex_sandbox_cannot_read_checkout(
+    tmp_path: Path, icacls: CommandResult, warned: bool
+) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    config = make_config(tmp_path, repositories={"erp": str(repo), "gone": str(tmp_path / "x")})
+    runner = FakeCommandRunner({**GIT_OK, ("icacls",): icacls})
+
+    results = by_name(windows_doctor(config, runner))
+
+    warning = results.get("repositório erp (Codex)")
+    assert (warning is not None) is warned
+    if warning is not None:
+        assert warning.ok
+        assert warning.warning
+        assert "/grant *S-1-5-32-545:(OI)(CI)RX /T" in warning.detail
+    assert "repositório gone (Codex)" not in results
+
+
+def test_doctor_skips_sandbox_check_without_codex(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    config = make_config(
+        tmp_path, repositories={"erp": str(repo)}, executors={"codex": {"enabled": False}}
+    )
+    runner = FakeCommandRunner({**GIT_OK, ("icacls",): CommandResult(0, OWNER_ONLY)})
+
+    windows_doctor(config, runner)
+
+    assert ["icacls", str(repo)] not in runner.calls

@@ -58,6 +58,21 @@ def prune_logs(folder: Path, retention_days: int, today: date) -> list[Path]:
     return deleted
 
 
+def prune_executor_logs(folder: Path, retention_days: int, today: date) -> list[Path]:
+    """Delete executor JSONL logs (``YYYYMMDD-HHMMSS-<label>.jsonl``) older than RETENTION_DAYS."""
+    cutoff = today - timedelta(days=retention_days)
+    deleted: list[Path] = []
+    for path in folder.glob("*.jsonl"):
+        try:
+            day = date.fromisoformat(path.name[:8])
+        except ValueError:
+            continue
+        if day < cutoff:
+            path.unlink()
+            deleted.append(path)
+    return deleted
+
+
 def configure_logging(
     stream: TextIO,
     log_dir: Path | None = None,

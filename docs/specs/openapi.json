@@ -1033,7 +1033,11 @@
           "source.deleted",
           "source.tested",
           "source.sync.started",
-          "source.sync.cancelled"
+          "source.sync.cancelled",
+          "runner.created",
+          "runner.updated",
+          "runner.revoked",
+          "runner.deleted"
         ],
         "title": "AuditAction",
         "type": "string"
@@ -1989,6 +1993,14 @@
         },
         "title": "HTTPValidationError",
         "type": "object"
+      },
+      "HarnessExecutor": {
+        "enum": [
+          "claude_code",
+          "codex"
+        ],
+        "title": "HarnessExecutor",
+        "type": "string"
       },
       "InvitationOut": {
         "properties": {
@@ -3202,6 +3214,596 @@
         ],
         "title": "RunTrigger",
         "type": "string"
+      },
+      "RunnerCapabilitiesOut": {
+        "description": "What the last heartbeat reported; empty before the first one.",
+        "properties": {
+          "executors": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/RunnerExecutorOut"
+            },
+            "title": "Executors",
+            "type": "array"
+          },
+          "platform": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Platform"
+          },
+          "repositories": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/RunnerRepositoryOut"
+            },
+            "title": "Repositories",
+            "type": "array"
+          }
+        },
+        "title": "RunnerCapabilitiesOut",
+        "type": "object"
+      },
+      "RunnerCreate": {
+        "properties": {
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "RunnerCreate",
+        "type": "object"
+      },
+      "RunnerCreated": {
+        "properties": {
+          "runner": {
+            "$ref": "#/components/schemas/RunnerOut"
+          },
+          "token": {
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "runner",
+          "token"
+        ],
+        "title": "RunnerCreated",
+        "type": "object"
+      },
+      "RunnerExecutorInfo": {
+        "additionalProperties": false,
+        "properties": {
+          "authenticated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Authenticated"
+          },
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "name": {
+            "$ref": "#/components/schemas/HarnessExecutor"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          }
+        },
+        "required": [
+          "name",
+          "available"
+        ],
+        "title": "RunnerExecutorInfo",
+        "type": "object"
+      },
+      "RunnerExecutorOut": {
+        "properties": {
+          "authenticated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Authenticated"
+          },
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          }
+        },
+        "required": [
+          "name",
+          "available"
+        ],
+        "title": "RunnerExecutorOut",
+        "type": "object"
+      },
+      "RunnerHeartbeatIn": {
+        "additionalProperties": false,
+        "properties": {
+          "active_job_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 16,
+            "title": "Active Job Ids",
+            "type": "array"
+          },
+          "executors": {
+            "items": {
+              "$ref": "#/components/schemas/RunnerExecutorInfo"
+            },
+            "maxItems": 2,
+            "title": "Executors",
+            "type": "array"
+          },
+          "platform": {
+            "enum": [
+              "windows",
+              "linux",
+              "darwin"
+            ],
+            "title": "Platform",
+            "type": "string"
+          },
+          "repositories": {
+            "items": {
+              "$ref": "#/components/schemas/RunnerRepositoryInfo"
+            },
+            "maxItems": 50,
+            "title": "Repositories",
+            "type": "array"
+          },
+          "runner_version": {
+            "maxLength": 64,
+            "title": "Runner Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "runner_version",
+          "platform",
+          "executors",
+          "repositories"
+        ],
+        "title": "RunnerHeartbeatIn",
+        "type": "object"
+      },
+      "RunnerHeartbeatOut": {
+        "properties": {
+          "heartbeat_interval_seconds": {
+            "title": "Heartbeat Interval Seconds",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "protocol": {
+            "title": "Protocol",
+            "type": "integer"
+          },
+          "runner_id": {
+            "format": "uuid",
+            "title": "Runner Id",
+            "type": "string"
+          },
+          "server_time": {
+            "format": "date-time",
+            "title": "Server Time",
+            "type": "string"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/RunnerSourceOut"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "workspace_id": {
+            "format": "uuid",
+            "title": "Workspace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "runner_id",
+          "name",
+          "workspace_id",
+          "protocol",
+          "server_time",
+          "heartbeat_interval_seconds",
+          "sources"
+        ],
+        "title": "RunnerHeartbeatOut",
+        "type": "object"
+      },
+      "RunnerOut": {
+        "properties": {
+          "capabilities": {
+            "$ref": "#/components/schemas/RunnerCapabilitiesOut"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "last_seen_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Seen At"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "online": {
+            "title": "Online",
+            "type": "boolean"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          },
+          "token_prefix": {
+            "title": "Token Prefix",
+            "type": "string"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "token_prefix",
+          "online",
+          "last_seen_at",
+          "version",
+          "capabilities",
+          "revoked_at",
+          "created_at",
+          "created_by"
+        ],
+        "title": "RunnerOut",
+        "type": "object"
+      },
+      "RunnerPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RunnerOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "RunnerPage",
+        "type": "object"
+      },
+      "RunnerRepositoryInfo": {
+        "additionalProperties": false,
+        "properties": {
+          "branch": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Branch"
+          },
+          "dirty": {
+            "title": "Dirty",
+            "type": "boolean"
+          },
+          "head_commit": {
+            "anyOf": [
+              {
+                "pattern": "^[0-9a-f]{40}([0-9a-f]{24})?$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Head Commit"
+          },
+          "name": {
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$",
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "head_commit",
+          "branch",
+          "dirty"
+        ],
+        "title": "RunnerRepositoryInfo",
+        "type": "object"
+      },
+      "RunnerRepositoryOut": {
+        "properties": {
+          "branch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Branch"
+          },
+          "dirty": {
+            "default": false,
+            "title": "Dirty",
+            "type": "boolean"
+          },
+          "head_commit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Head Commit"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "RunnerRepositoryOut",
+        "type": "object"
+      },
+      "RunnerSourceConfig": {
+        "description": "Settings of a runner source the runner needs; defaults for keys not stored.",
+        "properties": {
+          "auto_on_commit": {
+            "default": false,
+            "title": "Auto On Commit",
+            "type": "boolean"
+          },
+          "budget_usd": {
+            "default": 5.0,
+            "title": "Budget Usd",
+            "type": "number"
+          },
+          "default_executor": {
+            "$ref": "#/components/schemas/HarnessExecutor",
+            "default": "claude_code"
+          },
+          "excerpt_max_lines": {
+            "default": 30,
+            "title": "Excerpt Max Lines",
+            "type": "integer"
+          },
+          "models": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/HarnessExecutor"
+            },
+            "title": "Models",
+            "type": "object"
+          },
+          "timeout_seconds": {
+            "default": 1200,
+            "title": "Timeout Seconds",
+            "type": "integer"
+          }
+        },
+        "title": "RunnerSourceConfig",
+        "type": "object"
+      },
+      "RunnerSourceOut": {
+        "properties": {
+          "config": {
+            "$ref": "#/components/schemas/RunnerSourceConfig"
+          },
+          "exclude_globs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Exclude Globs",
+            "type": "array"
+          },
+          "include_globs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Include Globs",
+            "type": "array"
+          },
+          "last_reported_commit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Reported Commit"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "repository": {
+            "title": "Repository",
+            "type": "string"
+          },
+          "source_id": {
+            "format": "uuid",
+            "title": "Source Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_id",
+          "name",
+          "repository",
+          "last_reported_commit",
+          "include_globs",
+          "exclude_globs",
+          "config"
+        ],
+        "title": "RunnerSourceOut",
+        "type": "object"
+      },
+      "RunnerUpdate": {
+        "description": "Fields to change; omitted fields stay. ``revoked: true`` is irreversible.",
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "revoked": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked"
+          }
+        },
+        "title": "RunnerUpdate",
+        "type": "object"
       },
       "SearchDocument": {
         "properties": {
@@ -5243,6 +5845,53 @@
         "summary": "Revoke Session",
         "tags": [
           "account"
+        ]
+      }
+    },
+    "/v1/runner/heartbeat": {
+      "post": {
+        "description": "Record the runner's presence and capabilities; list the active sources bound to it.",
+        "operationId": "heartbeat_v1_runner_heartbeat_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunnerHeartbeatIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunnerHeartbeatOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked token (`invalid_runner_token`)."
+          },
+          "403": {
+            "description": "Workspace of the runner suspended (`workspace_suspended`)."
+          },
+          "413": {
+            "description": "Body above the route limit (`payload_too_large`, `details.max_bytes`)."
+          },
+          "422": {
+            "description": "Body outside the schema (`validation_error`)."
+          },
+          "426": {
+            "description": "Missing or unsupported protocol header (`runner_protocol_unsupported`)."
+          }
+        },
+        "summary": "Heartbeat",
+        "tags": [
+          "runner"
         ]
       }
     },
@@ -7738,6 +8387,325 @@
         "summary": "Test Provider",
         "tags": [
           "providers"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/runners": {
+      "get": {
+        "description": "Runners ordered by name, revoked ones included; never the token or its hash.",
+        "operationId": "list_runners_v1_workspaces__workspace_id__runners_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunnerPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below editor (`forbidden`) or workspace suspended."
+          },
+          "404": {
+            "description": "Workspace or runner not found (`runner_not_found`)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Runners",
+        "tags": [
+          "runners"
+        ]
+      },
+      "post": {
+        "description": "Register a runner and return its token, the only time it is shown.",
+        "operationId": "create_runner_v1_workspaces__workspace_id__runners_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunnerCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunnerCreated"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below admin (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
+          },
+          "404": {
+            "description": "Workspace or runner not found (`runner_not_found`)."
+          },
+          "409": {
+            "description": "Name already used in the workspace (`runner_name_taken`)."
+          },
+          "422": {
+            "description": "Invalid body."
+          }
+        },
+        "summary": "Create Runner",
+        "tags": [
+          "runners"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/runners/{runner_id}": {
+      "delete": {
+        "description": "Delete a runner no source uses; its past jobs keep their history.",
+        "operationId": "delete_runner_v1_workspaces__workspace_id__runners__runner_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "runner_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Runner Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below admin (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
+          },
+          "404": {
+            "description": "Workspace or runner not found (`runner_not_found`)."
+          },
+          "409": {
+            "description": "A source uses the runner (`runner_in_use`)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Runner",
+        "tags": [
+          "runners"
+        ]
+      },
+      "get": {
+        "operationId": "get_runner_v1_workspaces__workspace_id__runners__runner_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "runner_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Runner Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunnerOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below editor (`forbidden`) or workspace suspended."
+          },
+          "404": {
+            "description": "Workspace or runner not found (`runner_not_found`)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Runner",
+        "tags": [
+          "runners"
+        ]
+      },
+      "patch": {
+        "description": "Rename and/or revoke; revoking takes effect on the runner's next request.",
+        "operationId": "update_runner_v1_workspaces__workspace_id__runners__runner_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "runner_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Runner Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunnerUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunnerOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below admin (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
+          },
+          "404": {
+            "description": "Workspace or runner not found (`runner_not_found`)."
+          },
+          "409": {
+            "description": "Name already used in the workspace (`runner_name_taken`)."
+          },
+          "422": {
+            "description": "Invalid body, or `revoked: false` on a revoked runner (`runner_revoked`)."
+          }
+        },
+        "summary": "Update Runner",
+        "tags": [
+          "runners"
         ]
       }
     },

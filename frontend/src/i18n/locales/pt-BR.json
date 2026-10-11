@@ -1021,7 +1021,11 @@
     "source_deleted": "Fonte excluída",
     "source_tested": "Conexão com a fonte testada",
     "source_sync_started": "Sincronização da fonte iniciada",
-    "source_sync_cancelled": "Sincronização da fonte cancelada"
+    "source_sync_cancelled": "Sincronização da fonte cancelada",
+    "runner_created": "Runner cadastrado",
+    "runner_updated": "Runner atualizado",
+    "runner_revoked": "Runner revogado",
+    "runner_deleted": "Runner excluído"
   },
   "admin": {
     "search": "Buscar",

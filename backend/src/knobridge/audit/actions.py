@@ -61,3 +61,8 @@ class AuditAction(StrEnum):
     SOURCE_TESTED = "source.tested"
     SOURCE_SYNC_STARTED = "source.sync.started"
     SOURCE_SYNC_CANCELLED = "source.sync.cancelled"
+    # Runners of the code harness (name, prefix and changed fields; never the token or hash).
+    RUNNER_CREATED = "runner.created"
+    RUNNER_UPDATED = "runner.updated"
+    RUNNER_REVOKED = "runner.revoked"
+    RUNNER_DELETED = "runner.deleted"

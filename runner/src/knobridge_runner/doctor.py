@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 
 from knobridge_runner import __version__
 from knobridge_runner.client import ONCE, RunnerClient
@@ -22,6 +23,9 @@ from knobridge_runner.loop import StatusSource
 from knobridge_runner.protocol import RunnerExecutorInfo, RunnerHeartbeatIn
 
 LOGIN_HINT = {"claude_code": "claude auth login", "codex": "codex login"}
+# How icacls shows BUILTIN\Users (English and pt-BR Windows), or its SID when it cannot resolve.
+USERS_GROUP_MARKERS = ("builtin\\users", "builtin\\usuários", "s-1-5-32-545")
+USERS_GRANT = "/grant *S-1-5-32-545:(OI)(CI)RX /T"
 
 
 @dataclass(frozen=True)
@@ -29,6 +33,8 @@ class CheckResult:
     name: str
     ok: bool
     detail: str
+    # Shown as "aviso"; does not fail the doctor.
+    warning: bool = False
 
 
 def check_repositories(config: RunnerConfig, runner: CommandRunner) -> list[CheckResult]:
@@ -44,6 +50,20 @@ def check_repositories(config: RunnerConfig, runner: CommandRunner) -> list[Chec
         else:
             results.append(CheckResult(label, True, str(path)))
     return results
+
+
+def check_codex_sandbox(name: str, path: Path, runner: CommandRunner) -> CheckResult | None:
+    """Windows: the Codex restricted-token sandbox (``unelevated``) only reads files that
+    BUILTIN\\Users may read, as in a normal clone; an owner-only checkout reads as empty."""
+    result = runner.run(["icacls", str(path)])
+    text = result.stdout.lower()
+    if result.returncode != 0 or any(marker in text for marker in USERS_GROUP_MARKERS):
+        return None
+    detail = (
+        "sem leitura para BUILTIN\\Users o sandbox do Codex não lê o checkout; "
+        f'rode: icacls "{path}" {USERS_GRANT}'
+    )
+    return CheckResult(f"repositório {name} (Codex)", True, detail, warning=True)
 
 
 def check_executor(info: RunnerExecutorInfo) -> CheckResult:
@@ -90,6 +110,11 @@ async def run_doctor(
     platform: Platform,
 ) -> list[CheckResult]:
     results = check_repositories(config, runner)
+    if platform == "windows" and "codex" in config.enabled_executors():
+        for name, path in config.repositories.items():
+            warning = check_codex_sandbox(name, path, runner) if path.is_dir() else None
+            if warning is not None:
+                results.append(warning)
     executors = await status.executors()
     results += [check_executor(info) for info in executors]
     if not executors:

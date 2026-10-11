@@ -9,7 +9,7 @@
 - `failures.py`: detecção de franquia e login e leitura do horário de reset (relógio e fusos injetados).
 - `base.py` (interface `Executor`, `ExecutorSetup`, `ExecutorLimits`, `ExecutorResult`, fluxo comum com resgate), `events.py` (`EventParser`, `AttemptStats`, leitura tipada de campos JSON), `claude_code.py`, `codex.py`; `make_executor` em `__init__.py`.
 
-**Não entra aqui**: briefing e camada 0 (`layer0/`, F3.2), verificação de fontes, excertos e montagem do resultado (`verify.py`, `excerpt.py`, `job.py`, F3.4), conversa com o servidor (`client.py`, `loop.py`).
+**Não entra aqui**: briefing e camada 0 (`layer0/`), verificação de fontes, excertos e montagem do resultado (`verify.py`, `excerpt.py`, `items.py`, `job.py`, no pacote acima), conversa com o servidor (`client.py`, `loop.py`).
 
 **Convenções locais**:
 - Nunca `shell=True`; argumentos em lista; cwd no checkout; arquivos temporários só em `work_dir` (fora do checkout).

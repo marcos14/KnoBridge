@@ -2,7 +2,7 @@
 
 O `knobridge-runner` roda na máquina que tem o checkout do código e o login do Claude Code ou do Codex. Ele conversa com o servidor do KnoBridge só por HTTPS de saída (heartbeat, pedido de tarefa por long-poll, resultado) e executa o harness de código ali mesmo, somente leitura. Arquitetura no [ADR 0005](../docs/adr/0005-runner-local-do-harness.md); protocolo em [docs/specs/runner.md](../docs/specs/runner.md); harness em [docs/specs/harness.md](../docs/specs/harness.md).
 
-> Estado (plano 0004, F3.1): configuração, cliente do protocolo, laço principal e `doctor`. O processamento das tarefas (camada 0, executores, verificação) chega nas subfases F3.2 a F3.4; até lá o `run` só mantém o runner online (heartbeat) e não pede tarefas.
+> Estado (plano 0004, F3.4): o `run` mantém o runner online (heartbeat), relata cada fonte ao iniciar e quando o HEAD muda (módulos sugeridos, arquivos alterados, contagens), pede tarefas e as executa: camada 0 e briefing, Claude Code ou Codex somente leitura, verificação mecânica das fontes, excertos com segredos redigidos e envio do resultado (ou falha ou adiamento).
 
 ## Instalar
 
@@ -49,6 +49,10 @@ output = 10.0
 ```
 
 Variáveis que sobrepõem o arquivo: `KNOBRIDGE_RUNNER_URL`, `KNOBRIDGE_RUNNER_TOKEN`, `KNOBRIDGE_RUNNER_CONCURRENCY`. Nenhuma `KNOBRIDGE_*` é repassada aos executores. Pasta de estado padrão: `%LOCALAPPDATA%\knobridge-runner` no Windows, `$XDG_STATE_HOME/knobridge-runner` ou `~/.local/state/knobridge-runner` nos demais.
+
+Logs: JSON do runner em `<state_dir>/logs` e JSONL de cada execução do executor em `<state_dir>/logs/harness` (prompt e saída do agente ficam só aí, na máquina), apagados depois de `log_retention_days`. Arquivos temporários de uma tarefa ficam em `<state_dir>/work/<job_id>` e são apagados no fim.
+
+No Windows, o sandbox do Codex só lê arquivos com leitura para `BUILTIN\Users` (como num clone comum); o `doctor` avisa quando o checkout não tem essa permissão e mostra o `icacls` que resolve.
 
 Códigos de saída do `run`: 0 parado, 2 configuração inválida, 3 token inválido ou revogado, 4 workspace suspenso, 5 protocolo não suportado (atualize o runner), 130 Ctrl+C.
 

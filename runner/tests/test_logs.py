@@ -6,7 +6,7 @@ import logging
 from datetime import UTC, date, datetime
 from pathlib import Path
 
-from knobridge_runner.logs import configure_logging, prune_logs
+from knobridge_runner.logs import configure_logging, prune_executor_logs, prune_logs
 
 
 def test_logs_are_json_with_extra_fields(tmp_path: Path) -> None:
@@ -63,3 +63,17 @@ def test_prune_logs_keeps_files_within_retention(tmp_path: Path) -> None:
 
     assert prune_logs(tmp_path, 14, date(2026, 10, 11)) == []
     assert kept.exists()
+
+
+def test_prune_executor_logs_by_name_date(tmp_path: Path) -> None:
+    for name in ("20261001-120000-job-1-codex.jsonl", "20260920-080000-job-2-claude_code.jsonl"):
+        (tmp_path / name).write_text("{}\n", encoding="utf-8")
+    (tmp_path / "notes.jsonl").write_text("{}\n", encoding="utf-8")
+
+    deleted = prune_executor_logs(tmp_path, 14, date(2026, 10, 11))
+
+    assert [path.name for path in deleted] == ["20260920-080000-job-2-claude_code.jsonl"]
+    assert sorted(path.name for path in tmp_path.iterdir()) == [
+        "20261001-120000-job-1-codex.jsonl",
+        "notes.jsonl",
+    ]

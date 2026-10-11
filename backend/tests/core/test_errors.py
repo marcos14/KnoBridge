@@ -34,6 +34,10 @@ def _app() -> FastAPI:
     async def custom() -> None:
         raise KnoBridgeError("Quota exceeded.", code="quota_exceeded", status_code=429)
 
+    @app.get("/bearer")
+    async def bearer() -> None:
+        raise UnauthenticatedError("Bad token.", headers={"WWW-Authenticate": "Bearer"})
+
     @app.get("/items/{item_id}")
     async def item(item_id: int) -> dict[str, int]:
         return {"item_id": item_id}
@@ -80,6 +84,14 @@ def test_error_handler_honors_code_and_status_overrides(error_client: TestClient
         "message": "Quota exceeded.",
         "details": None,
     }
+
+
+def test_error_handler_adds_domain_error_headers(error_client: TestClient) -> None:
+    response = error_client.get("/bearer")
+
+    assert response.status_code == 401
+    assert response.headers["WWW-Authenticate"] == "Bearer"
+    assert response.json()["error"]["code"] == "unauthenticated"
 
 
 @pytest.mark.parametrize(

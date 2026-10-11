@@ -7,7 +7,9 @@
 - `conftest.py`: `rls_database_url` (o banco como dono e como não dono).
 - `test_harness_rls.py`: RLS forçada nas cinco tabelas, isolamento de tarefas e itens entre workspaces (leitura, alteração, exclusão e inserção alheia recusada), runner achado pelo `token_prefix` só em modo de sistema e prefixo único na instância.
 - `test_harness_constraints.py`: fonte `runner` aceita e par `(runner_id, repository)` único no workspace; documentos e `run_items` `knowledge`; FKs compostas de módulo e runner; `SET NULL` só da coluna ao excluir runner (tarefa) e tarefa (item); chave de item única por fonte e com formato checado; padrões do item; formato do commit; módulo sem padrões; cascatas da fonte e do workspace.
-- A seguir (plano 0004): fila, autenticação do runner, módulos e resultado.
+- `test_runner_tokens.py` (unitário): formato do token, prefixo de token bem formado e comparação do hash.
+- `test_runner_presence.py`: `authenticate_runner` com `last_seen_at` gravado no máximo a cada 10 s e nada achado fora do modo de sistema.
+- A seguir (plano 0004): fila, módulos e resultado. As rotas do runner e do painel de runners ficam em `tests/api/` (`test_runners.py`, `test_runner_heartbeat.py`).
 
 **Não entra aqui**: rotas (`tests/api/`), cadeia de migrações (`tests/migrations/`), o pacote `runner/` (testes próprios em `runner/tests/`).
 

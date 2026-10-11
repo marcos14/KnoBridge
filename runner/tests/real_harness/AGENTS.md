@@ -2,7 +2,7 @@
 
 **Função**: suíte opt-in que chama o `claude` e o `codex` **reais** (logados na máquina) sobre um repositório sintético pequeno, para conferir flags, formato do JSONL e resgate contra as versões instaladas, o que os falsos não garantem (decisão D17 do [plano 0004](../../../docs/planos/0004-harness-runner-local.md)).
 
-**Entra aqui**: testes marcados `real_harness` (`pytestmark`), com repositório criado em `tmp_path` (`git init`, poucos arquivos de uma regra inventada).
+**Entra aqui**: testes marcados `real_harness` (`pytestmark`), com repositório criado em `tmp_path` (`git init`, poucos arquivos de uma regra inventada): `test_real_harness.py` (executor sozinho; também exporta `make_repository`, `tree_digest` e `git`) e `test_real_job.py` (ciclo completo do `Runner` com `HarnessJobProcessor` e `FakeServer`: report, claim, heartbeat, verificação e resultado).
 **Não entra aqui**: testes da suíte padrão (vão para `runner/tests/`), código ou repositório real, chaves ou saídas gravadas de CLIs reais.
 
 **Convenções locais**:

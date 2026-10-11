@@ -42,7 +42,9 @@ from knobridge_runner.protocol import (
     RunnerJobHeartbeatIn,
     RunnerJobOut,
     RunnerRepositoryInfo,
+    RunnerSourceOut,
 )
+from knobridge_runner.reporter import SourceReporter
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +78,7 @@ class Runner:
         sleep: Sleep,
         clock: Clock,
         platform: Platform,
+        reporter: SourceReporter | None = None,
     ) -> None:
         self._client = client
         self._status = status
@@ -87,6 +90,8 @@ class Runner:
         self._interval = DEFAULT_HEARTBEAT_SECONDS
         self._active: set[UUID] = set()
         self._stop = asyncio.Event()
+        self._reporter = reporter
+        self._sources: list[RunnerSourceOut] = []
 
     async def heartbeat_once(self) -> None:
         body = RunnerHeartbeatIn(
@@ -105,6 +110,13 @@ class Runner:
                     "source_repository_not_served",
                     extra={"source_id": str(source.source_id), "repository": source.repository},
                 )
+        self._sources = [source for source in answer.sources if source.repository in served]
+        await self.report_sources()
+
+    async def report_sources(self) -> None:
+        """Report the served sources whose HEAD changed (all of them on the first call)."""
+        if self._reporter is not None:
+            await self._reporter.sync(self._sources)
 
     def request_stop(self) -> None:
         """Let the loops finish after their current step (the job in progress completes)."""
@@ -158,6 +170,8 @@ class Runner:
             )
             if job is not None:
                 await self.run_job(processor, job)
+                # A HEAD that moved during the job is reported right away.
+                await self.report_sources()
 
     async def run_job(self, processor: JobProcessor, job: RunnerJobOut) -> None:
         context = JobContext(job=job, clock=self._clock)

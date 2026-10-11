@@ -33,9 +33,12 @@ from knobridge_runner.doctor import run_doctor
 from knobridge_runner.errors import EXIT_CONFIG, EXIT_ERROR, EXIT_OK
 from knobridge_runner.executors import AuthChecker, CliAuthChecker, Which
 from knobridge_runner.formats import Platform
+from knobridge_runner.job import HarnessJobProcessor
+from knobridge_runner.layer0 import GIT_TIMEOUT_SECONDS
 from knobridge_runner.logs import configure_logging
 from knobridge_runner.loop import Runner, current_platform
 from knobridge_runner.processor import JobProcessor
+from knobridge_runner.reporter import GitSourceReporter
 from knobridge_runner.status import MachineStatus
 
 EXIT_INTERRUPTED = 130
@@ -57,11 +60,24 @@ class World:
     which: Which = shutil.which
     sleep: Sleep = real_sleep
     clock: Clock = monotonic
-    # The real processor arrives with plan 0004 F3.2-F3.4; without one the runner only heartbeats.
+    # Replaces the real processor (HarnessJobProcessor) in tests.
     processor: JobProcessor | None = None
 
     def runner(self) -> CommandRunner:
         return self.command_runner or SubprocessCommandRunner(self.env)
+
+    def git_runner(self) -> CommandRunner:
+        return self.command_runner or SubprocessCommandRunner(self.env, GIT_TIMEOUT_SECONDS)
+
+    def job_processor(self, config: RunnerConfig, status: MachineStatus) -> JobProcessor:
+        return self.processor or HarnessJobProcessor(
+            config=config,
+            git=self.git_runner(),
+            environment=self.env,
+            platform=self.platform,
+            which=self.which,
+            versions=status.executor_version,
+        )
 
     def status(self, config: RunnerConfig) -> MachineStatus:
         runner = self.runner()
@@ -152,15 +168,17 @@ def configure(args: argparse.Namespace, path: Path, world: World) -> int:
 
 
 async def _run(config: RunnerConfig, world: World) -> int:
+    status = world.status(config)
     async with world.client(config) as client:
         runner = Runner(
             client,
-            world.status(config),
-            world.processor,
+            status,
+            world.job_processor(config, status),
             concurrency=config.concurrency,
             sleep=world.sleep,
             clock=world.clock,
             platform=world.platform,
+            reporter=GitSourceReporter(client, config, world.git_runner()),
         )
         return await runner.run()
 
@@ -184,7 +202,7 @@ async def _doctor(config: RunnerConfig, world: World) -> int:
             platform=world.platform,
         )
     for result in results:
-        mark = "ok" if result.ok else "falha"
+        mark = "aviso" if result.warning else "ok" if result.ok else "falha"
         print(f"[{mark}] {result.name}: {result.detail}", file=world.stdout)
     return EXIT_OK if all(result.ok for result in results) else EXIT_ERROR
 

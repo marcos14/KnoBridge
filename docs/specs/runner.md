@@ -156,7 +156,7 @@ Corpo (`RunnerReportIn`, até 4 MiB):
 | `repository` | `repository` | Tem de ser o da fonte, senão 409 `repository_mismatch`. |
 | `head_commit` | `commit` | HEAD atual. |
 | `branch` | `branch` | |
-| `base_commit` | `commit` ou `null` | O `last_reported_commit` que o runner usou como base. |
+| `base_commit` | `commit` ou `null` | O `last_reported_commit` que o runner usou como base (ou, se o runner já teve um `report` aceito para a fonte desde que iniciou, o `head_commit` desse `report`, que é o que o servidor gravou, mesmo antes de o heartbeat seguinte trazer o valor novo). |
 | `changed_paths` | lista de caminho relativo, ou `null` | Arquivos alterados (adicionados, modificados, removidos, renomeados nos dois nomes) entre `base_commit` e `head_commit`, até 20 000. `null` = desconhecido: primeiro relatório, base ausente no repositório local (ex.: histórico reescrito) ou mais de 20 000 arquivos. |
 | `inventory` | `RunnerInventory` | Do repositório selecionado inteiro: `files` (inteiro), `lines` (inteiro), `languages` (objeto `linguagem → {"files", "lines"}`, até 100 linguagens). |
 | `modules` | lista de `RunnerModuleIn` | Módulos sugeridos pela camada 0, até 2000, chaves únicas. |
@@ -458,7 +458,7 @@ Rotas com sessão e CSRF, sob `/v1/workspaces/{workspace_id}`, paginadas com `li
 
 | Rota | Papel | O que faz |
 |---|---|---|
-| `GET /runners`, `GET /runners/{id}` | editor | Lista e detalhe (para escolher o runner de uma fonte). Nunca devolve token nem hash. |
+| `GET /runners`, `GET /runners/{id}` | editor | Lista (por nome, revogados incluídos) e detalhe (para escolher o runner de uma fonte). Nunca devolve token nem hash. Runner ausente ou de outro workspace: 404 `runner_not_found` (também no `PATCH` e no `DELETE`). |
 | `POST /runners` | admin | `{"name"}` (1 a 200 caracteres, único no workspace, 409 `runner_name_taken`) → 201 `{"runner": RunnerOut, "token": "kbr_..."}`. |
 | `PATCH /runners/{id}` | admin | `{"name"?, "revoked"?}`. `revoked: true` grava `revoked_at`; revogar é irreversível (`revoked: false` em runner revogado → 422 `runner_revoked`). |
 | `DELETE /runners/{id}` | admin | 204; 409 `runner_in_use` se alguma fonte usa o runner. |
@@ -471,11 +471,11 @@ Rotas com sessão e CSRF, sob `/v1/workspaces/{workspace_id}`, paginadas com `li
 | `POST /harness-jobs/{jid}/cancel` | editor | 200 com a tarefa; 409 `job_finished` se já terminou. |
 | `GET /sources/{sid}/knowledge`, `PATCH /sources/{sid}/knowledge/{iid}`, `GET /sources/{sid}/knowledge/export` | viewer / editor / viewer | Revisão e exportação ([harness.md](harness.md#revisão-e-exportação)). |
 
-`RunnerOut`: `id`, `name`, `token_prefix`, `online` (derivado de `last_seen_at`, janela de 90 s), `last_seen_at`, `version`, `capabilities` (`platform`, `executors`, `repositories`), `revoked_at`, `created_at`, `created_by`.
+`RunnerOut`: `id`, `name`, `token_prefix`, `online` (derivado de `last_seen_at`, janela de 90 s; sempre `false` para runner revogado), `last_seen_at`, `version`, `capabilities` (`RunnerCapabilitiesOut`: `platform`, `executors`, `repositories` do último heartbeat; `null` e listas vazias antes do primeiro), `revoked_at`, `created_at`, `created_by`. `PATCH` sem mudança (mesmo nome, `revoked: true` em runner já revogado, `revoked: false` em runner ativo) não grava nem audita.
 
 Tarefa (`HarnessJobOut`): `id`, `source_id`, `module_id`, `module_key`, `module_title`, `runner_id`, `executor`, `model`, `trigger`, `status`, `attempts`, `not_before`, `lease_expires_at`, `commit_sha`, `input_tokens`, `output_tokens`, `cost_usd`, `duration_ms`, `items_accepted`, `items_rejected`, `error`, `created_at`, `started_at`, `finished_at`.
 
-Auditoria (na mesma transação): `runner.create`, `runner.update`, `runner.revoke`, `runner.delete`, `harness_module.create`, `harness_module.update`, `harness_job.enqueue` (um evento por lote, com as chaves), `harness_job.cancel`, `knowledge_item.update`. Sem token, sem conteúdo de conhecimento.
+Auditoria (na mesma transação): `runner.created`, `runner.updated` (renomear), `runner.revoked`, `runner.deleted` (nome e `prefix`, o prefixo público do token), `harness_module.created`, `harness_module.updated`, `harness_job.enqueued` (um evento por lote, com as chaves), `harness_job.cancelled`, `knowledge_item.updated` (verbo no particípio, como o catálogo de `audit/actions.py`). Sem token, sem hash, sem conteúdo de conhecimento.
 
 ## O que sai e o que não sai da máquina
 

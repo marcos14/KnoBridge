@@ -127,6 +127,9 @@ Legenda: "público" = sem sessão; "logado" = qualquer sessão viva; nos papéis
 | `POST .../conversations/{id}/messages/{message_id}/feedback` | quem pode ler a conversa |
 | `POST`, `PATCH`, `DELETE .../assistants[/{id}]` | editor |
 | `GET`, `POST .../providers`, `PATCH`, `DELETE .../providers/{id}`, `POST .../providers/{id}/test` | editor |
+| `GET .../runners`, `GET .../runners/{id}` | editor |
+| `POST .../runners`, `PATCH`, `DELETE .../runners/{id}` | admin |
+| `POST /v1/runner/*` | token de runner (`Authorization: Bearer kbr_...`), sem sessão nem CSRF ([runner.md](runner.md#token-de-runner)) |
 | `PATCH /v1/workspaces/{id}` (renomear) | admin |
 | `PATCH`, `DELETE .../members/{user_id}` | admin (respeitando `role_not_allowed` e `last_owner`) |
 | `GET`, `POST .../invites`, `DELETE .../invites/{id}`, `POST .../invites/{id}/resend` | admin (convite até o próprio papel) |

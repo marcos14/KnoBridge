@@ -9,7 +9,6 @@ import httpx
 import pytest
 
 from knobridge_runner.errors import EXIT_INVALID_TOKEN, EXIT_OK
-from knobridge_runner.formats import Executor
 from knobridge_runner.loop import Runner, current_platform
 from knobridge_runner.processor import (
     JobContext,
@@ -19,12 +18,7 @@ from knobridge_runner.processor import (
     JobProcessor,
     JobSucceeded,
 )
-from knobridge_runner.protocol import (
-    RunnerExecutorInfo,
-    RunnerJobMetrics,
-    RunnerJobOut,
-    RunnerRepositoryInfo,
-)
+from knobridge_runner.protocol import RunnerJobMetrics, RunnerJobOut
 from knobridge_runner.protocol_result import RunnerExecutorRun, RunnerJobResultIn
 from runner_support import (
     COMMIT,
@@ -32,6 +26,7 @@ from runner_support import (
     SOURCE_ID,
     FakeServer,
     FakeSleep,
+    FakeStatus,
     error_response,
     heartbeat_out,
     job_out,
@@ -52,28 +47,6 @@ RESULT_OUT = {
     "items_rejected": 0,
     "sync_run_id": None,
 }
-
-
-@dataclass
-class FakeStatus:
-    claimable: list[Executor] = field(default_factory=lambda: list[Executor](["claude_code"]))
-    names: list[str] = field(default_factory=lambda: ["erp"])
-    unauthenticated: list[Executor] = field(default_factory=list[Executor])
-
-    async def executors(self) -> list[RunnerExecutorInfo]:
-        return [RunnerExecutorInfo(name="claude_code", available=True, authenticated=True)]
-
-    async def repositories(self) -> list[RunnerRepositoryInfo]:
-        return [RunnerRepositoryInfo(name="erp", head_commit=COMMIT, branch="main", dirty=False)]
-
-    def repository_names(self) -> list[str]:
-        return self.names
-
-    def claimable_executors(self) -> list[Executor]:
-        return self.claimable
-
-    def mark_unauthenticated(self, name: Executor) -> None:
-        self.unauthenticated.append(name)
 
 
 def success_result() -> RunnerJobResultIn:

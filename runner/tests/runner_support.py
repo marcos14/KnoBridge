@@ -17,6 +17,7 @@ from knobridge_runner.client import RunnerClient
 from knobridge_runner.commands import CommandResult
 from knobridge_runner.config import RunnerConfig
 from knobridge_runner.formats import Executor
+from knobridge_runner.protocol import RunnerExecutorInfo, RunnerRepositoryInfo
 
 TOKEN = "kbr_abcd1234_" + "A" * 43
 SERVER = "https://knobridge.test"
@@ -196,3 +197,25 @@ def make_config(tmp_path: Path, **overrides: object) -> RunnerConfig:
     }
     data.update(overrides)
     return RunnerConfig.model_validate(data)
+
+
+@dataclass
+class FakeStatus:
+    claimable: list[Executor] = field(default_factory=lambda: list[Executor](["claude_code"]))
+    names: list[str] = field(default_factory=lambda: ["erp"])
+    unauthenticated: list[Executor] = field(default_factory=list[Executor])
+
+    async def executors(self) -> list[RunnerExecutorInfo]:
+        return [RunnerExecutorInfo(name="claude_code", available=True, authenticated=True)]
+
+    async def repositories(self) -> list[RunnerRepositoryInfo]:
+        return [RunnerRepositoryInfo(name="erp", head_commit=COMMIT, branch="main", dirty=False)]
+
+    def repository_names(self) -> list[str]:
+        return self.names
+
+    def claimable_executors(self) -> list[Executor]:
+        return self.claimable
+
+    def mark_unauthenticated(self, name: Executor) -> None:
+        self.unauthenticated.append(name)

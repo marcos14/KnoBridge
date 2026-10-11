@@ -10,7 +10,9 @@ import pytest
 
 from knobridge_runner import cli
 from knobridge_runner.cli import EXIT_INTERRUPTED, World, main
+from knobridge_runner.doctor import CheckResult
 from knobridge_runner.errors import EXIT_CONFIG, EXIT_ERROR, EXIT_INVALID_TOKEN, EXIT_OK
+from knobridge_runner.job import HarnessJobProcessor
 from runner_support import (
     SERVER,
     TOKEN,
@@ -20,6 +22,7 @@ from runner_support import (
     error_response,
     heartbeat_out,
     json_response,
+    make_config,
 )
 
 
@@ -199,6 +202,29 @@ def test_cli_doctor_succeeds_when_everything_is_ready(tmp_path: Path) -> None:
     subprocess.run(["git", "init", "-q", str(repo)], check=True)
 
     assert main(["--config", str(path), "doctor"], world) == EXIT_OK
+
+
+def test_cli_doctor_warning_does_not_fail(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    async def checks(*args: object, **kwargs: object) -> list[CheckResult]:
+        return [CheckResult("repositório erp (Codex)", True, "sem leitura", warning=True)]
+
+    monkeypatch.setattr(cli, "run_doctor", checks)
+    world = make_world(tmp_path)
+    _, path = configure(tmp_path, world, "--server-url", SERVER)
+
+    assert main(["--config", str(path), "doctor"], world) == EXIT_OK
+    assert "[aviso] repositório erp (Codex): sem leitura" in output(world)
+
+
+def test_cli_world_builds_the_harness_processor(tmp_path: Path) -> None:
+    world = make_world(tmp_path)
+    config = make_config(tmp_path)
+    status = world.status(config)
+
+    assert isinstance(world.job_processor(config, status), HarnessJobProcessor)
+    world.processor = sentinel = HarnessJobProcessor(config, world.git_runner(), {}, "linux")
+    assert world.job_processor(config, status) is sentinel
+    assert sentinel.versions("codex") is None
 
 
 def test_cli_entrypoint_exits_with_main_code(monkeypatch: pytest.MonkeyPatch) -> None:

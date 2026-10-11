@@ -434,6 +434,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/runner/heartbeat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Heartbeat
+         * @description Record the runner's presence and capabilities; list the active sources bound to it.
+         */
+        post: operations["heartbeat_v1_runner_heartbeat_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/setup": {
         parameters: {
             query?: never;
@@ -961,6 +981,55 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/runners": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Runners
+         * @description Runners ordered by name, revoked ones included; never the token or its hash.
+         */
+        get: operations["list_runners_v1_workspaces__workspace_id__runners_get"];
+        put?: never;
+        /**
+         * Create Runner
+         * @description Register a runner and return its token, the only time it is shown.
+         */
+        post: operations["create_runner_v1_workspaces__workspace_id__runners_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/runners/{runner_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Runner */
+        get: operations["get_runner_v1_workspaces__workspace_id__runners__runner_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Runner
+         * @description Delete a runner no source uses; its past jobs keep their history.
+         */
+        delete: operations["delete_runner_v1_workspaces__workspace_id__runners__runner_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Runner
+         * @description Rename and/or revoke; revoking takes effect on the runner's next request.
+         */
+        patch: operations["update_runner_v1_workspaces__workspace_id__runners__runner_id__patch"];
         trace?: never;
     };
     "/v1/workspaces/{workspace_id}/runs/{run_id}": {
@@ -1510,7 +1579,7 @@ export interface components {
          * AuditAction
          * @enum {string}
          */
-        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted" | "provider.tested" | "assistant.created" | "assistant.updated" | "assistant.deleted" | "conversation.deleted" | "collection.created" | "collection.updated" | "collection.deleted" | "source.created" | "source.updated" | "source.deleted" | "source.tested" | "source.sync.started" | "source.sync.cancelled";
+        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted" | "provider.tested" | "assistant.created" | "assistant.updated" | "assistant.deleted" | "conversation.deleted" | "collection.created" | "collection.updated" | "collection.deleted" | "source.created" | "source.updated" | "source.deleted" | "source.tested" | "source.sync.started" | "source.sync.cancelled" | "runner.created" | "runner.updated" | "runner.revoked" | "runner.deleted";
         /** AuditEventOut */
         AuditEventOut: {
             /** Action */
@@ -1888,6 +1957,11 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /**
+         * HarnessExecutor
+         * @enum {string}
+         */
+        HarnessExecutor: "claude_code" | "codex";
         /** InvitationOut */
         InvitationOut: {
             /**
@@ -2345,6 +2419,223 @@ export interface components {
          * @enum {string}
          */
         RunTrigger: "manual" | "schedule";
+        /**
+         * RunnerCapabilitiesOut
+         * @description What the last heartbeat reported; empty before the first one.
+         */
+        RunnerCapabilitiesOut: {
+            /**
+             * Executors
+             * @default []
+             */
+            executors: components["schemas"]["RunnerExecutorOut"][];
+            /** Platform */
+            platform?: string | null;
+            /**
+             * Repositories
+             * @default []
+             */
+            repositories: components["schemas"]["RunnerRepositoryOut"][];
+        };
+        /** RunnerCreate */
+        RunnerCreate: {
+            /** Name */
+            name: string;
+        };
+        /** RunnerCreated */
+        RunnerCreated: {
+            runner: components["schemas"]["RunnerOut"];
+            /** Token */
+            token: string;
+        };
+        /** RunnerExecutorInfo */
+        RunnerExecutorInfo: {
+            /** Authenticated */
+            authenticated?: boolean | null;
+            /** Available */
+            available: boolean;
+            name: components["schemas"]["HarnessExecutor"];
+            /** Version */
+            version?: string | null;
+        };
+        /** RunnerExecutorOut */
+        RunnerExecutorOut: {
+            /** Authenticated */
+            authenticated?: boolean | null;
+            /** Available */
+            available: boolean;
+            /** Name */
+            name: string;
+            /** Version */
+            version?: string | null;
+        };
+        /** RunnerHeartbeatIn */
+        RunnerHeartbeatIn: {
+            /** Active Job Ids */
+            active_job_ids?: string[];
+            /** Executors */
+            executors: components["schemas"]["RunnerExecutorInfo"][];
+            /**
+             * Platform
+             * @enum {string}
+             */
+            platform: "windows" | "linux" | "darwin";
+            /** Repositories */
+            repositories: components["schemas"]["RunnerRepositoryInfo"][];
+            /** Runner Version */
+            runner_version: string;
+        };
+        /** RunnerHeartbeatOut */
+        RunnerHeartbeatOut: {
+            /** Heartbeat Interval Seconds */
+            heartbeat_interval_seconds: number;
+            /** Name */
+            name: string;
+            /** Protocol */
+            protocol: number;
+            /**
+             * Runner Id
+             * Format: uuid
+             */
+            runner_id: string;
+            /**
+             * Server Time
+             * Format: date-time
+             */
+            server_time: string;
+            /** Sources */
+            sources: components["schemas"]["RunnerSourceOut"][];
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+        };
+        /** RunnerOut */
+        RunnerOut: {
+            capabilities: components["schemas"]["RunnerCapabilitiesOut"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Last Seen At */
+            last_seen_at: string | null;
+            /** Name */
+            name: string;
+            /** Online */
+            online: boolean;
+            /** Revoked At */
+            revoked_at: string | null;
+            /** Token Prefix */
+            token_prefix: string;
+            /** Version */
+            version: string | null;
+        };
+        /** RunnerPage */
+        RunnerPage: {
+            /** Items */
+            items: components["schemas"]["RunnerOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Total */
+            total: number;
+        };
+        /** RunnerRepositoryInfo */
+        RunnerRepositoryInfo: {
+            /** Branch */
+            branch: string | null;
+            /** Dirty */
+            dirty: boolean;
+            /** Head Commit */
+            head_commit: string | null;
+            /** Name */
+            name: string;
+        };
+        /** RunnerRepositoryOut */
+        RunnerRepositoryOut: {
+            /** Branch */
+            branch?: string | null;
+            /**
+             * Dirty
+             * @default false
+             */
+            dirty: boolean;
+            /** Head Commit */
+            head_commit?: string | null;
+            /** Name */
+            name: string;
+        };
+        /**
+         * RunnerSourceConfig
+         * @description Settings of a runner source the runner needs; defaults for keys not stored.
+         */
+        RunnerSourceConfig: {
+            /**
+             * Auto On Commit
+             * @default false
+             */
+            auto_on_commit: boolean;
+            /**
+             * Budget Usd
+             * @default 5
+             */
+            budget_usd: number;
+            /** @default claude_code */
+            default_executor: components["schemas"]["HarnessExecutor"];
+            /**
+             * Excerpt Max Lines
+             * @default 30
+             */
+            excerpt_max_lines: number;
+            /** Models */
+            models?: {
+                [key: string]: string | null;
+            };
+            /**
+             * Timeout Seconds
+             * @default 1200
+             */
+            timeout_seconds: number;
+        };
+        /** RunnerSourceOut */
+        RunnerSourceOut: {
+            config: components["schemas"]["RunnerSourceConfig"];
+            /** Exclude Globs */
+            exclude_globs: string[];
+            /** Include Globs */
+            include_globs: string[];
+            /** Last Reported Commit */
+            last_reported_commit: string | null;
+            /** Name */
+            name: string;
+            /** Repository */
+            repository: string;
+            /**
+             * Source Id
+             * Format: uuid
+             */
+            source_id: string;
+        };
+        /**
+         * RunnerUpdate
+         * @description Fields to change; omitted fields stay. ``revoked: true`` is irreversible.
+         */
+        RunnerUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Revoked */
+            revoked?: boolean | null;
+        };
         /** SearchDocument */
         SearchDocument: {
             /**
@@ -3659,6 +3950,65 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    heartbeat_v1_runner_heartbeat_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RunnerHeartbeatIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunnerHeartbeatOut"];
+                };
+            };
+            /** @description Missing, malformed, unknown or revoked token (`invalid_runner_token`). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace of the runner suspended (`workspace_suspended`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Body above the route limit (`payload_too_large`, `details.max_bytes`). */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Body outside the schema (`validation_error`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing or unsupported protocol header (`runner_protocol_unsupported`). */
+            426: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -5675,6 +6025,295 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    list_runners_v1_workspaces__workspace_id__runners_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunnerPage"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below editor (`forbidden`) or workspace suspended. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or runner not found (`runner_not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_runner_v1_workspaces__workspace_id__runners_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RunnerCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunnerCreated"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below admin (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or runner not found (`runner_not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Name already used in the workspace (`runner_name_taken`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid body. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_runner_v1_workspaces__workspace_id__runners__runner_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runner_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunnerOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below editor (`forbidden`) or workspace suspended. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or runner not found (`runner_not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_runner_v1_workspaces__workspace_id__runners__runner_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runner_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below admin (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or runner not found (`runner_not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description A source uses the runner (`runner_in_use`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_runner_v1_workspaces__workspace_id__runners__runner_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runner_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RunnerUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunnerOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below admin (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or runner not found (`runner_not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Name already used in the workspace (`runner_name_taken`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid body, or `revoked: false` on a revoked runner (`runner_revoked`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

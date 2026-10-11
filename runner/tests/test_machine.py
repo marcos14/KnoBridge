@@ -211,6 +211,8 @@ def test_machine_status_caches_executors_for_five_minutes(tmp_path: Path) -> Non
     assert [(i.name, i.version, i.authenticated) for i in first] == [("claude_code", "2.1", False)]
     assert runner.calls.count(["/bin/claude", "--version"]) == 2
     assert status.claimable_executors() == []
+    assert status.executor_version("claude_code") == "2.1"
+    assert status.executor_version("codex") is None
 
 
 def test_machine_status_claimable_and_mark_unauthenticated(tmp_path: Path) -> None:

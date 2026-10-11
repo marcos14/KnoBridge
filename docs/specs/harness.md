@@ -448,7 +448,7 @@ Leitura do horário de reset, na ordem: `resets? (at )?H(:MM)?(am|pm)?` com fuso
 
 Feita pelo runner no checkout, para cada fonte de cada item (o servidor não tem o código). Arquivos lidos uma vez por tarefa (cache em memória).
 
-**Normalização do caminho**: `\` vira `/`; `./` no início sai; espaços nas pontas saem.
+**Normalização do caminho**: `\` vira `/`; `./` no início sai; espaços nas pontas saem; segmentos vazios e `.` saem (`src//./a.py` → `src/a.py`). Caminho que, normalizado, não passa no formato de caminho relativo do protocolo (caractere de controle, mais de 500 caracteres) dá `file_not_found`.
 
 Checagens, na ordem; a primeira que falha dá o código da fonte:
 

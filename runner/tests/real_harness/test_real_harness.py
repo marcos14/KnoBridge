@@ -91,7 +91,7 @@ HISTÓRICO RECENTE DO MÓDULO:
 """
 
 
-def _git(repo: Path, *args: str) -> str:
+def git(repo: Path, *args: str) -> str:
     return subprocess.run(
         ["git", "-c", "user.name=Test", "-c", "user.email=test@example.invalid", *args],
         cwd=repo,
@@ -101,7 +101,7 @@ def _git(repo: Path, *args: str) -> str:
     ).stdout
 
 
-def _make_repository(root: Path) -> tuple[Path, str]:
+def make_repository(root: Path) -> tuple[Path, str]:
     repo = root / "store"
     (repo / "shipping").mkdir(parents=True)
     (repo / "shipping" / "rules.py").write_text(RULES, encoding="utf-8", newline="\n")
@@ -116,13 +116,13 @@ def _make_repository(root: Path) -> tuple[Path, str]:
             capture_output=True,
             check=True,
         )
-    _git(repo, "init", "-q")
-    _git(repo, "add", ".")
-    _git(repo, "commit", "-q", "-m", "synthetic store")
-    return repo, _git(repo, "rev-parse", "HEAD").strip()
+    git(repo, "init", "-q")
+    git(repo, "add", ".")
+    git(repo, "commit", "-q", "-m", "synthetic store")
+    return repo, git(repo, "rev-parse", "HEAD").strip()
 
 
-def _tree_digest(repo: Path) -> dict[str, str]:
+def tree_digest(repo: Path) -> dict[str, str]:
     return {
         path.relative_to(repo).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
         for path in sorted(repo.rglob("*"))
@@ -152,8 +152,8 @@ def _run_real(
     command = resolve_command(name, ExecutorConfig(), platform)
     if command is None:
         pytest.skip(f"{name} not found on PATH")
-    repo, commit = _make_repository(tmp_path)
-    before = _tree_digest(repo)
+    repo, commit = make_repository(tmp_path)
+    before = tree_digest(repo)
     setup = ExecutorSetup(
         command=command,
         log_dir=tmp_path / "logs",
@@ -176,8 +176,8 @@ def _run_real(
             f"turns={result.num_turns} tools={result.tool_calls} rescued={result.rescued} "
             f"duration_ms={result.duration_ms} model={result.model} log={result.log_path}\n"
         )
-    assert _git(repo, "status", "--porcelain") == ""
-    assert _tree_digest(repo) == before
+    assert git(repo, "status", "--porcelain") == ""
+    assert tree_digest(repo) == before
     return repo, result
 
 

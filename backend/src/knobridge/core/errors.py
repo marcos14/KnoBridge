@@ -26,6 +26,8 @@ class KnoBridgeError(Exception):
 
     code: str = "error"
     status_code: int = HTTPStatus.BAD_REQUEST
+    # Extra response headers (e.g. ``WWW-Authenticate`` on a 401 of a bearer-token route).
+    headers: dict[str, str] | None = None
 
     def __init__(
         self,
@@ -34,10 +36,13 @@ class KnoBridgeError(Exception):
         code: str | None = None,
         details: ErrorDetails = None,
         status_code: int | None = None,
+        headers: dict[str, str] | None = None,
     ) -> None:
         super().__init__(message)
         self.message = message
         self.details = details
+        if headers is not None:
+            self.headers = headers
         if code is not None:
             self.code = code
         if status_code is not None:
@@ -92,7 +97,10 @@ def _response(
 
 async def _handle_domain_error(_request: Request, exc: Exception) -> JSONResponse:
     assert isinstance(exc, KnoBridgeError)  # noqa: S101 - narrowed by handler registration
-    return _response(exc.status_code, exc.code, exc.message, exc.details)
+    response = _response(exc.status_code, exc.code, exc.message, exc.details)
+    if exc.headers:
+        response.headers.update(exc.headers)
+    return response
 
 
 async def _handle_request_validation(_request: Request, exc: Exception) -> JSONResponse:

@@ -26,11 +26,14 @@ from knobridge.api import (
     members,
     providers,
     recovery,
+    runner_heartbeat,
+    runners,
     runs,
     search,
     setup,
     sources,
 )
+from knobridge.api.body_limit import RunnerBodyLimitMiddleware
 from knobridge.core.clock import Clock, SystemClock
 from knobridge.core.db import create_engine, create_session_factory
 from knobridge.core.errors import register_error_handlers
@@ -96,6 +99,7 @@ def create_app(
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    app.add_middleware(RunnerBodyLimitMiddleware)
     register_error_handlers(app)
 
     v1 = APIRouter(prefix=API_PREFIX)
@@ -119,6 +123,9 @@ def create_app(
         collections,
         sources,
         runs,
+        # Code harness (plan 0004 F2.1).
+        runners,
+        runner_heartbeat,
     )
     for module in routers:
         v1.include_router(module.router)

@@ -43,7 +43,7 @@ Now = Callable[[], datetime]
 _LABEL_UNSAFE = re.compile(r"[^A-Za-z0-9._-]+")
 
 
-def _local_now() -> datetime:
+def local_now() -> datetime:
     return datetime.now().astimezone()
 
 
@@ -65,7 +65,7 @@ class ExecutorSetup:
     # Test-only variables (e.g. FAKE_HARNESS_SCENARIO), added after the allowlist.
     extra_environment: Mapping[str, str] = field(default_factory=dict[str, str])
     clock: Clock = time.monotonic
-    now: Now = _local_now
+    now: Now = local_now
     zones: ZoneResolver = resolve_zone
 
 

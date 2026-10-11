@@ -9,7 +9,7 @@
 - `git.py`: `GitRepository` (HEAD, branch, commit existe, alterados entre commits, `git log` curto) sobre o `CommandRunner` injetado, sempre com `-c safe.directory=<checkout>`.
 - `briefing.py` (texto pt-BR, até 24 000 caracteres, corte de baixo para cima) e `report.py` (entradas de alto nível e pathspecs do `git log`).
 
-**Não entra aqui**: chamada de executor, prompt, verificação de evidências e excertos (ficam em `knobridge_runner/`, F3.3 e F3.4); o laço que decide quando reportar (`loop.py`); nada do backend.
+**Não entra aqui**: chamada de executor, prompt, verificação de evidências e excertos (ficam em `knobridge_runner/`: `harness/`, `verify.py`, `excerpt.py`); quem decide quando reportar (`reporter.py`, chamado pelo `loop.py`); nada do backend. `changed_paths_since` (em `report.py`) serve ao `report` e aos `changed_paths` do resultado da tarefa (`job.py`).
 
 **Convenções locais**:
 - Nada daqui sai da máquina além de caminhos relativos e contagens (`RunnerReportIn`); extrações, `git log` e briefing são só locais. Nunca logue conteúdo de arquivo.
