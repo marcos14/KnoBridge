@@ -13,7 +13,7 @@ branch: plano/0004-harness-runner-local
 fases:
   - id: F1
     titulo: Contrato e modelo de dados
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F1.1
         titulo: ADR 0005, spec do protocolo do runner e spec do harness
@@ -24,10 +24,10 @@ fases:
         commit: d38c790
       - id: F1.2
         titulo: Modelo de dados (runners, módulos, tarefas, itens de conhecimento) com RLS
-        status: em_execucao
+        status: concluida
         agente: claude-code
         iniciada_em: 2026-10-11
-        concluida_em: null
+        concluida_em: 2026-10-11
         commit: null
   - id: F2
     titulo: Servidor
@@ -71,19 +71,19 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-11
         concluida_em: 2026-10-11
-        commit: null
+        commit: f39bf46
       - id: F3.2
         titulo: Camada 0 determinística (inventário, módulos sugeridos, briefing, mudanças por commit)
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code
+        iniciada_em: 2026-10-11
         concluida_em: null
         commit: null
       - id: F3.3
         titulo: Executores Claude Code e Codex, prompt, schema e executáveis falsos
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code
+        iniciada_em: 2026-10-11
         concluida_em: null
         commit: null
       - id: F3.4
@@ -262,6 +262,13 @@ decisoes:
     decisao: "Detalhes do contrato fixados na F1.1 (runner.md e harness.md): token kbr_<8>_<32 urlsafe> com hash SHA-256 e busca por prefixo único na instância; cabeçalho KnoBridge-Runner-Protocol: 1 (426 se ausente); claim 204 sem tarefa; attempt ecoado como identidade da reserva; expiração preguiçosa (sem varredor); falha retentável volta com not_before 60 s x tentativas; auth_failed é adiamento (30 min); chaves <mod>.R<NNN> e <mod>.E<NNN> atribuídas pelo servidor; aprovados, descartados e editados sobrevivem à regeneração; evidence_changed a partir de changed_paths do runner; limites por resultado (30 regras, 40 mensagens, 15 FAQ, 5 fontes por item, excerto 8 KiB); schema no subconjunto estrito aceito pelos dois executores; Claude Code com --setting-sources user e --strict-mcp-config, Codex com -c mcp_servers={}; ferramenta fora de Read/Grep/Glob mata o processo; ambiente do executor por allowlist sem KNOBRIDGE_*; símbolo conferido até 50 linhas acima; arquivos sensíveis valem como evidência mas nunca têm excerto; editor lista runners, admin gerencia; exportação <modulo>/<chave>.md com gerado_por harness:<executor>:<modelo>"
     motivo: "Specs precisas o bastante para servidor e runner em paralelo; detalhes completos nas specs"
     alternativas: "Deixar cada subfase decidir (divergência entre servidor e runner)"
+    adr: null
+  - id: D19
+    data: 2026-10-11
+    por: agente
+    decisao: "F1.2: SourceKind.RUNNER e DocumentKind knowledge entram no enum e no OpenAPI já na F1.2 (frontend regenerado, rótulos pt-BR), mas parse_source_config recusa runner até a F2.3; ON DELETE SET NULL (coluna) para harness_jobs.runner_id e knowledge_items.job_id; downgrade da 0014 recusa se houver fonte runner ou documento knowledge; changed_paths não é gravado (só calcula evidence_changed)"
+    motivo: "Enums expostos pela API mudam o contrato; estreitar e depois reverter daria mais trabalho"
+    alternativas: "Enums estreitos na API até F2.3/F2.4"
     adr: null
 pendencias_usuario: []
 ---
@@ -513,6 +520,8 @@ Nenhuma aberta. Observação para a F5.2: a chave do OpenRouter cadastrada na st
 - 2026-10-11 — F1.1 concluída: ADR 0005, specs runner.md e harness.md, visão v0.3 (7.1.1 e D10); detalhes do contrato em D18.
 - 2026-10-11 — F1.2 e F3.1 iniciadas em paralelo.
 - 2026-10-11 — F3.1 concluída: pacote runner/ (config, cliente com long-poll e backoff, laço, CLI configure/run/doctor), job runner na CI; 151 testes, cobertura 100%.
+- 2026-10-11 — F3.2 e F3.3 iniciadas em paralelo.
+- 2026-10-11 — F1.2 concluída: migração 0014 (runners, harness_modules, harness_jobs, knowledge_items, harness_rejections; kinds runner e knowledge), RLS forçada, modelo de dados v0.6; 1175 testes, cobertura 99%. Observado um flaky isolado em test_admin_cannot_promote_to_owner_or_touch_owner (não reproduziu).
 
 ## 8. Encerramento
 

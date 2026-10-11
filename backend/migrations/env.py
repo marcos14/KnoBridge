@@ -19,6 +19,7 @@ from knobridge.audit import models as audit_models
 from knobridge.conversations import models as conversations_models
 from knobridge.core.models import Base
 from knobridge.core.settings import get_settings
+from knobridge.harness import models as harness_models
 from knobridge.ingestion import models as ingestion_models
 from knobridge.llm import models as llm_models
 from knobridge.security import models as security_models
@@ -39,6 +40,7 @@ _MODEL_MODULES = (
     assistants_models,
     conversations_models,
     ingestion_models,
+    harness_models,
 )
 target_metadata = Base.metadata
 

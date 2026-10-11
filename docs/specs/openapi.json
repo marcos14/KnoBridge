@@ -1796,7 +1796,8 @@
       "DocumentKind": {
         "enum": [
           "file",
-          "commit"
+          "commit",
+          "knowledge"
         ],
         "title": "DocumentKind",
         "type": "string"
@@ -3618,7 +3619,8 @@
       "SourceKind": {
         "enum": [
           "git",
-          "folder"
+          "folder",
+          "runner"
         ],
         "title": "SourceKind",
         "type": "string"

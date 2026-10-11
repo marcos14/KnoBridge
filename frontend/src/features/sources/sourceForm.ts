@@ -95,7 +95,8 @@ export function sourceFormSchema(t: TFunction) {
         .min(1, { error: t("sources.form.validation.nameRequired") })
         .max(SOURCE_NAME_MAX_LENGTH, tooLong(SOURCE_NAME_MAX_LENGTH)),
       collectionId: z.string().min(1, { error: t("sources.form.validation.collectionRequired") }),
-      kind: z.enum(["git", "folder"]),
+      // Every kind the API knows; the form itself only offers git and folder (LocationFields).
+      kind: z.enum(["git", "folder", "runner"]),
       location: z.enum(["path", "url"]),
       path: z.string().trim().max(PATH_MAX_LENGTH, tooLong(PATH_MAX_LENGTH)),
       url: z.string().trim(),

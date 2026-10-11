@@ -84,6 +84,8 @@ class RunErrorStage(StrEnum):
 class DocumentKind(StrEnum):
     FILE = "file"
     COMMIT = "commit"
+    # A knowledge item of a runner source, rendered as Markdown (``harness/``, ADR 0005).
+    KNOWLEDGE = "knowledge"
 
 
 class RunItemChange(StrEnum):
@@ -138,6 +140,15 @@ class Source(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         CheckConstraint("jsonb_typeof(config) = 'object'", name="config_is_object"),
         CheckConstraint(
             "NOT schedule_enabled OR schedule_cron IS NOT NULL", name="schedule_needs_cron"
+        ),
+        # A runner serves a repository to at most one source of the workspace.
+        Index(
+            "uq_sources_workspace_id_runner_repository",
+            "workspace_id",
+            text("(config ->> 'runner_id')"),
+            text("(config ->> 'repository')"),
+            unique=True,
+            postgresql_where=text("kind = 'runner'"),
         ),
     )
 

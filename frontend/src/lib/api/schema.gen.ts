@@ -1808,7 +1808,7 @@ export interface components {
          * DocumentKind
          * @enum {string}
          */
-        DocumentKind: "file" | "commit";
+        DocumentKind: "file" | "commit" | "knowledge";
         /** DocumentOut */
         DocumentOut: {
             /** Chunk Count */
@@ -2509,7 +2509,7 @@ export interface components {
          * SourceKind
          * @enum {string}
          */
-        SourceKind: "git" | "folder";
+        SourceKind: "git" | "folder" | "runner";
         /** SourceOut */
         SourceOut: {
             /** Active */

@@ -12,7 +12,16 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Annotated, Self
 
-from pydantic import AfterValidator, AnyUrl, BaseModel, ConfigDict, Field, model_validator
+from pydantic import (
+    AfterValidator,
+    AnyUrl,
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationError,
+    model_validator,
+)
+from pydantic_core import InitErrorDetails, PydanticCustomError
 
 DEFAULT_INITIAL_COMMIT_LIMIT = 200
 MAX_INITIAL_COMMIT_LIMIT = 5000
@@ -23,6 +32,8 @@ BRANCH_MAX_LENGTH = 200
 class SourceKind(StrEnum):
     GIT = "git"
     FOLDER = "folder"
+    # A repository on a user's machine, mapped by a ``knobridge-runner`` (ADR 0005).
+    RUNNER = "runner"
 
 
 def _absolute_path(value: str) -> str:
@@ -95,12 +106,25 @@ class FolderSourceConfig(BaseModel):
 
 type SourceConfig = GitSourceConfig | FolderSourceConfig
 
+# A kind without a model here (``runner``, until plan 0004 F2.3) exists in the database but
+# cannot pass the config boundary yet: the API refuses to create such a source.
 _CONFIG_MODELS: dict[SourceKind, type[GitSourceConfig] | type[FolderSourceConfig]] = {
     SourceKind.GIT: GitSourceConfig,
     SourceKind.FOLDER: FolderSourceConfig,
 }
 
 
+def _unsupported_kind(kind: SourceKind) -> ValidationError:
+    error = PydanticCustomError(
+        "source_kind_unsupported", "source kind {kind} is not supported", {"kind": kind.value}
+    )
+    details: list[InitErrorDetails] = [{"type": error, "loc": ("kind",), "input": kind.value}]
+    return ValidationError.from_exception_data("SourceConfig", details)
+
+
 def parse_source_config(kind: SourceKind, data: Mapping[str, object]) -> SourceConfig:
     """Validate ``data`` against the model of ``kind``; raises ``pydantic.ValidationError``."""
-    return _CONFIG_MODELS[kind].model_validate(dict(data))
+    model = _CONFIG_MODELS.get(kind)
+    if model is None:
+        raise _unsupported_kind(kind)
+    return model.model_validate(dict(data))

@@ -531,7 +531,8 @@
       },
       "kinds": {
         "git": "Repositório Git",
-        "folder": "Pasta"
+        "folder": "Pasta",
+        "runner": "Runner local"
       },
       "runStatus": {
         "never": "Nunca sincronizada",
@@ -579,7 +580,8 @@
     },
     "kinds": {
       "git": "Repositório Git",
-      "folder": "Pasta"
+      "folder": "Pasta",
+      "runner": "Runner local"
     },
     "inactive": "Desativada",
     "noSchedule": "Sem agendamento",
@@ -763,7 +765,8 @@
       "kinds": {
         "all": "Todos",
         "file": "Arquivos",
-        "commit": "Commits"
+        "commit": "Commits",
+        "knowledge": "Conhecimento"
       },
       "search": "Buscar",
       "empty": "Nenhum documento encontrado.",

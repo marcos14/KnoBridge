@@ -19,6 +19,7 @@ from knobridge.audit import models as audit_models
 from knobridge.conversations import models as conversations_models
 from knobridge.core.models import Base
 from knobridge.core.settings import get_settings
+from knobridge.harness import models as harness_models
 from knobridge.ingestion import models as ingestion_models
 from knobridge.llm import models as llm_models
 from knobridge.security import models as security_models
@@ -33,6 +34,14 @@ _MODEL_MODULES = (
     assistants_models,
     conversations_models,
     ingestion_models,
+    harness_models,
+)
+_HARNESS_TABLES = (
+    "runners",
+    "harness_modules",
+    "harness_jobs",
+    "knowledge_items",
+    "harness_rejections",
 )
 _TENANCY_TABLES = (
     "conversations",
@@ -56,6 +65,7 @@ _TENANCY_TABLES = (
     "chunks",
     "run_items",
     "assistant_collections",
+    *_HARNESS_TABLES,
 )
 _INDEX_TABLES = ("collections", "sources", "runs", "run_errors", "documents", "chunks")
 
@@ -147,6 +157,7 @@ def test_migration_upgrade_downgrade_tenancy(postgres_url: str) -> None:
         **dict.fromkeys(_INDEX_TABLES, (True, True, 1)),
         "run_items": (True, True, 1),
         "assistant_collections": (True, True, 1),
+        **dict.fromkeys(_HARNESS_TABLES, (True, True, 1)),
     }
     assert after_downgrade == {}
 
@@ -469,6 +480,72 @@ def test_migration_upgrade_downgrade_min_similarity_default(postgres_url: str) -
 
     assert default_after_upgrade == 0.35
     assert default_after_downgrade == 0.3
+
+
+def _harness_shape(database_url: str) -> tuple[str, str, str, bool]:
+    """(check of sources.kind, of documents.kind, of run_items.document_kind, whether the
+    runner repository index exists)."""
+
+    async def query() -> tuple[str, str, str, bool]:
+        engine = create_async_engine(database_url, poolclass=NullPool)
+        try:
+            async with engine.connect() as connection:
+                checks: dict[str, str] = {}
+                # The migrations' names pass through the naming convention of ``env.py``
+                # (``ck_<table>_`` prefixed once more), so match on the suffix.
+                for name in ("ck_sources_kind", "ck_documents_kind", "ck_run_items_document_kind"):
+                    checks[name] = str(
+                        await connection.scalar(
+                            text(
+                                "SELECT pg_get_constraintdef(oid) FROM pg_constraint"
+                                " WHERE conname LIKE '%' || :name"
+                            ),
+                            {"name": name},
+                        )
+                    )
+                index = await connection.scalar(
+                    text(
+                        "SELECT count(*) = 1 FROM pg_indexes"
+                        " WHERE indexname = 'uq_sources_workspace_id_runner_repository'"
+                    )
+                )
+                return (
+                    checks["ck_sources_kind"],
+                    checks["ck_documents_kind"],
+                    checks["ck_run_items_document_kind"],
+                    bool(index),
+                )
+        finally:
+            await engine.dispose()
+
+    return asyncio.run(query())
+
+
+@pytest.mark.integration
+def test_migration_0014_upgrade_downgrade(postgres_url: str) -> None:
+    config, _ = _alembic_config(postgres_url)
+
+    command.upgrade(config, "head")
+    after_upgrade = _tenancy_catalog(postgres_url)
+    shape_after_upgrade = _harness_shape(postgres_url)
+    command.downgrade(config, "0013")
+    after_downgrade = _tenancy_catalog(postgres_url)
+    shape_after_downgrade = _harness_shape(postgres_url)
+    command.downgrade(config, "base")
+
+    assert {table: after_upgrade[table] for table in _HARNESS_TABLES} == dict.fromkeys(
+        _HARNESS_TABLES, (True, True, 1)
+    )
+    assert "'runner'" in shape_after_upgrade[0]
+    assert "'knowledge'" in shape_after_upgrade[1]
+    assert "'knowledge'" in shape_after_upgrade[2]
+    assert shape_after_upgrade[3] is True
+    assert not set(_HARNESS_TABLES) & set(after_downgrade)
+    assert "'runner'" not in shape_after_downgrade[0]
+    assert "'knowledge'" not in shape_after_downgrade[1]
+    assert "'knowledge'" not in shape_after_downgrade[2]
+    assert shape_after_downgrade[3] is False
+    assert after_downgrade["sources"] == (True, True, 1)
 
 
 def _schema_diff(connection: Connection) -> list[object]:

@@ -38,7 +38,7 @@ def test_source_config_folder_accepts_absolute_path(absolute_path: str) -> None:
     assert parsed == FolderSourceConfig(path=absolute_path)
 
 
-@pytest.mark.parametrize("kind", list(SourceKind))
+@pytest.mark.parametrize("kind", [SourceKind.GIT, SourceKind.FOLDER])
 def test_source_config_refuses_relative_path(kind: SourceKind) -> None:
     with pytest.raises(ValidationError, match="path must be absolute"):
         parse_source_config(kind, {"path": "relative/dir"})
@@ -114,3 +114,11 @@ def test_source_typed_config_parses_stored_json(absolute_path: str) -> None:
     source = Source(kind=SourceKind.FOLDER, name="Docs", config={"path": absolute_path})
 
     assert source.typed_config() == FolderSourceConfig(path=absolute_path)
+
+
+def test_source_config_runner_kind_not_supported_yet() -> None:
+    with pytest.raises(ValidationError, match="source kind runner is not supported") as raised:
+        parse_source_config(SourceKind.RUNNER, {"repository": "erp"})
+
+    assert raised.value.errors()[0]["type"] == "source_kind_unsupported"
+    assert raised.value.errors()[0]["loc"] == ("kind",)
