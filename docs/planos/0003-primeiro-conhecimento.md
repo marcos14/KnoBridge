@@ -35,24 +35,24 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: 8b67b8b
       - id: F1.4
         titulo: Conector Git (árvore no HEAD e histórico de commits)
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code
+        iniciada_em: 2026-10-10
         concluida_em: null
         commit: null
   - id: F2
     titulo: Processamento de documentos
-    status: pendente
+    status: em_execucao
     subfases:
       - id: F2.1
         titulo: Parsing de documentos para Markdown
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-10
+        concluida_em: 2026-10-10
         commit: null
       - id: F2.2
         titulo: Chunking por estrutura, por AST (tree-sitter) e de commits
@@ -486,6 +486,9 @@ Ver `decisoes[]` no frontmatter. ADR previsto: 0004 (índice de conhecimento: di
 - 2026-10-10 — F1.2 concluída: EmbeddingProvider, adaptador OpenAI/OpenRouter, fake por hashing, tabela de preços; 693 testes, 100%.
 - 2026-10-10 — F1.3 iniciada.
 - 2026-10-10 — F1.3 concluída: Contrato de conector, seleção (gitignore aninhado, binários, limites, raiz permitida, symlinks), conector de pasta incremental, suíte de contrato; 776 testes (2 de symlink pulados no Windows, verdes em container Linux: 80 passed).
+- 2026-10-10 — F1.4 iniciada.
+- 2026-10-10 — F2.1 executada em paralelo com a F1.4 (pastas disjuntas).
+- 2026-10-10 — F2.1 concluída: Parsing para Markdown (texto com detecção de encoding, código cercado, PDF/DOCX/XLSX/PPTX/HTML via MarkItDown, commits), erros unsupported_format/parse_failed; 819 testes. Dependências +216 MB.
 
 ## 8. Encerramento
 

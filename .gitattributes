@@ -13,6 +13,9 @@
 *.ico binary
 *.webp binary
 *.pdf binary
+*.docx binary
+*.xlsx binary
+*.pptx binary
 *.zip binary
 *.gz binary
 *.tar binary
