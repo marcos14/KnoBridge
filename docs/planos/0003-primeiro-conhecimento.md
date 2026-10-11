@@ -38,10 +38,10 @@ fases:
         commit: 8b67b8b
       - id: F1.4
         titulo: Conector Git (árvore no HEAD e histórico de commits)
-        status: em_execucao
+        status: concluida
         agente: claude-code
         iniciada_em: 2026-10-10
-        concluida_em: null
+        concluida_em: 2026-10-10
         commit: null
   - id: F2
     titulo: Processamento de documentos
@@ -53,12 +53,12 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: d4ebe60
       - id: F2.2
         titulo: Chunking por estrutura, por AST (tree-sitter) e de commits
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code
+        iniciada_em: 2026-10-10
         concluida_em: null
         commit: null
   - id: F3
@@ -489,6 +489,8 @@ Ver `decisoes[]` no frontmatter. ADR previsto: 0004 (índice de conhecimento: di
 - 2026-10-10 — F1.4 iniciada.
 - 2026-10-10 — F2.1 executada em paralelo com a F1.4 (pastas disjuntas).
 - 2026-10-10 — F2.1 concluída: Parsing para Markdown (texto com detecção de encoding, código cercado, PDF/DOCX/XLSX/PPTX/HTML via MarkItDown, commits), erros unsupported_format/parse_failed; 819 testes. Dependências +216 MB.
+- 2026-10-10 — F2.2 iniciada (em paralelo com a F1.4).
+- 2026-10-10 — F1.4 concluída: Conector Git (caminho local por objetos, URL https em clone parcial, incremental por SHA com reconstrução, commits como documentos), suíte de contrato; 887 testes.
 
 ## 8. Encerramento
 

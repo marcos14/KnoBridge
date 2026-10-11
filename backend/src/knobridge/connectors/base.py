@@ -25,8 +25,9 @@ type Cursor = dict[str, JSONValue]
 class DocumentRef:
     """Points at one document of a source by its natural key.
 
-    The key is the POSIX path relative to the source root for files, or the commit SHA for
-    commits; it is unique per source and stable across runs.
+    The key is the POSIX path relative to the source root for files, or ``commit:<sha>`` for
+    commits (the prefix keeps it apart from any file path); it is unique per source and stable
+    across runs.
     """
 
     key: str

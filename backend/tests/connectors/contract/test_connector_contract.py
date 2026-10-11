@@ -12,6 +12,7 @@ from contract_support import CONTRACT_SOURCES, ContractSource
 
 from knobridge.connectors.base import OPEN_ACL, ChangeSet, Cursor, DocumentRef
 from knobridge.connectors.errors import ConnectorError, DocumentNotFoundError, InvalidCursorError
+from knobridge.ingestion.models import DocumentKind
 
 INITIAL = {"guide.md": b"# Guide\n\nHow to log in.\n", "src/app.py": b"print('hi')\n"}
 
@@ -35,8 +36,14 @@ def _list(source: ContractSource, cursor: Cursor | None) -> ChangeSet:
     )
 
 
+def _files(refs: tuple[DocumentRef, ...]) -> list[DocumentRef]:
+    # Sources may list documents of other kinds too (the Git connector's commits); the
+    # contract is about the files every source has.
+    return [ref for ref in refs if ref.kind is DocumentKind.FILE]
+
+
 def _keys(refs: tuple[DocumentRef, ...]) -> list[str]:
-    return [ref.key for ref in refs]
+    return [ref.key for ref in _files(refs)]
 
 
 def test_contract_first_listing_adds_every_document(source: ContractSource) -> None:
@@ -74,7 +81,7 @@ def test_contract_lists_added_changed_and_removed(source: ContractSource) -> Non
 
 def test_contract_fetch_returns_content_and_sha256(source: ContractSource) -> None:
     _seed(source)
-    ref = _list(source, None).added[0]
+    ref = _files(_list(source, None).added)[0]
 
     document = asyncio.run(source.connector().fetch(ref))
 

@@ -227,6 +227,7 @@ def test_settings_local_sources_defaults() -> None:
     assert settings.local_sources_root == Path("/sources")
     assert settings.max_source_file_bytes == 2 * 1024 * 1024
     assert settings.max_source_document_bytes == 20 * 1024 * 1024
+    assert settings.git_workdir == Path("/var/lib/knobridge/git")
 
 
 def test_settings_reads_local_sources_variables(
@@ -235,6 +236,7 @@ def test_settings_reads_local_sources_variables(
     monkeypatch.setenv("KNOBRIDGE_LOCAL_SOURCES_ROOT", str(tmp_path))
     monkeypatch.setenv("KNOBRIDGE_MAX_SOURCE_FILE_BYTES", "1024")
     monkeypatch.setenv("KNOBRIDGE_MAX_SOURCE_DOCUMENT_BYTES", "4096")
+    monkeypatch.setenv("KNOBRIDGE_GIT_WORKDIR", str(tmp_path / "git"))
 
     settings = Settings()
 
@@ -242,7 +244,8 @@ def test_settings_reads_local_sources_variables(
         settings.local_sources_root,
         settings.max_source_file_bytes,
         settings.max_source_document_bytes,
-    ) == (tmp_path, 1024, 4096)
+        settings.git_workdir,
+    ) == (tmp_path, 1024, 4096, tmp_path / "git")
 
 
 @pytest.mark.parametrize(

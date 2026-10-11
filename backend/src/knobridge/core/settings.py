@@ -91,6 +91,9 @@ class Settings(BaseSettings):
     max_source_file_bytes: int = Field(default=2 * 1024 * 1024, ge=1)
     # Limit for PDF and Office documents (pdf, docx, xlsx, pptx), larger than for text (20 MiB).
     max_source_document_bytes: int = Field(default=20 * 1024 * 1024, ge=1)
+    # Writable folder where the worker clones Git sources given by https URL, one
+    # subfolder per URL. Local repositories are read in place and never copied here.
+    git_workdir: Path = Path("/var/lib/knobridge/git")
 
     @model_validator(mode="after")
     def _check_secret_key(self) -> Self:

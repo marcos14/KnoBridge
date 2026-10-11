@@ -36,6 +36,13 @@ class DocumentNotFoundError(ConnectorError):
     status_code = HTTPStatus.NOT_FOUND
 
 
+class BranchNotFoundError(ConnectorError):
+    """The repository is readable but the configured branch does not exist."""
+
+    code = "branch_not_found"
+    status_code = HTTPStatus.UNPROCESSABLE_ENTITY
+
+
 class InvalidCursorError(ConnectorError):
     """The stored cursor was not produced by this connector or by this version of it."""
 
