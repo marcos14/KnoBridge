@@ -114,7 +114,7 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: 0a214dd
       - id: F5.2
         titulo: Tela de fontes, execuções e agendamento
         status: pendente
@@ -124,9 +124,9 @@ fases:
         commit: null
       - id: F5.3
         titulo: Coleções no assistente e citações de código e commit no chat
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code
+        iniciada_em: 2026-10-10
         concluida_em: null
         commit: null
   - id: F6
@@ -501,6 +501,7 @@ Ver `decisoes[]` no frontmatter. ADR previsto: 0004 (índice de conhecimento: di
 - 2026-10-10 — F3.2 concluída: API de coleções, fontes (teste de conexão, sync, cancel), execuções e documentos; mesclada com a F4.2 (conflitos só em AGENTS.md; contrato regenerado); backend e frontend verdes.
 - 2026-10-10 — F3.3 e F5.1 iniciadas em paralelo.
 - 2026-10-10 — F5.1 concluída: Tela /w/:id/collections (lista, CRUD, detalhe com fontes e Testar busca); 759 testes.
+- 2026-10-10 — F5.3 iniciada (em paralelo com a F3.3).
 
 ## 8. Encerramento
 
