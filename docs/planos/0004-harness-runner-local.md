@@ -117,16 +117,16 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-11
         concluida_em: 2026-10-11
-        commit: null
+        commit: 3d05406
   - id: F5
     titulo: Entrega e ensaio real
-    status: pendente
+    status: em_execucao
     subfases:
       - id: F5.1
         titulo: E2E da stack com runner e executor falso, guia e documentação
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-11
         concluida_em: null
         commit: null
       - id: F5.2
@@ -630,6 +630,7 @@ Nenhuma aberta. Observação para a F5.2: a chave do OpenRouter cadastrada na st
 - 2026-10-11 — F4.2 concluída: abas Módulos, Tarefas e Indexação na fonte runner, com lote, polling, detalhe de rejeições e cancelamento; frontend 1062 testes, 98,68% de branches
 - 2026-10-11 — F4.3 iniciada (agente em worktree).
 - 2026-10-11 — F4.3 concluída: aba Conhecimento (filtros, editar, aprovar, descartar, reabrir, rejeitados, exportar) e citações knowledge no chat; o teste de abortar do chatStream passou a observar o AbortController do hook em vez do sinal da requisição interceptada, que propaga de forma assíncrona e falhava sob carga; frontend 1139 testes, 98,62% de branches
+- 2026-10-11 — F5.1 iniciada (agente em worktree).
 
 ## 8. Encerramento
 
