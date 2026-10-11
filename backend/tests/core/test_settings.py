@@ -219,3 +219,39 @@ def test_settings_rejects_public_base_url_without_http_scheme(
 
     with pytest.raises(ValidationError):
         Settings()
+
+
+def test_settings_local_sources_defaults() -> None:
+    settings = Settings()
+
+    assert settings.local_sources_root == Path("/sources")
+    assert settings.max_source_file_bytes == 2 * 1024 * 1024
+    assert settings.max_source_document_bytes == 20 * 1024 * 1024
+
+
+def test_settings_reads_local_sources_variables(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    monkeypatch.setenv("KNOBRIDGE_LOCAL_SOURCES_ROOT", str(tmp_path))
+    monkeypatch.setenv("KNOBRIDGE_MAX_SOURCE_FILE_BYTES", "1024")
+    monkeypatch.setenv("KNOBRIDGE_MAX_SOURCE_DOCUMENT_BYTES", "4096")
+
+    settings = Settings()
+
+    assert (
+        settings.local_sources_root,
+        settings.max_source_file_bytes,
+        settings.max_source_document_bytes,
+    ) == (tmp_path, 1024, 4096)
+
+
+@pytest.mark.parametrize(
+    "variable", ["KNOBRIDGE_MAX_SOURCE_FILE_BYTES", "KNOBRIDGE_MAX_SOURCE_DOCUMENT_BYTES"]
+)
+def test_settings_rejects_non_positive_source_size_limits(
+    monkeypatch: pytest.MonkeyPatch, variable: str
+) -> None:
+    monkeypatch.setenv(variable, "0")
+
+    with pytest.raises(ValidationError):
+        Settings()

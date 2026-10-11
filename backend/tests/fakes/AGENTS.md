@@ -6,8 +6,9 @@
 - `email_sender.py`: `FakeEmailSender` (implementa `EmailSender`; guarda as mensagens em `sent`, filtra com `sent_to(endereço)`).
 - `llm_provider.py`: `FailingLLMProvider` (implementa `LLMProvider`; toda chamada levanta o `LLMProviderError` dado; `closed` diz se foi fechado), `UnreachableLLMProvider` (falha o teste se for chamado: prova que a resposta "sem fonte" não chama o LLM), `ScriptedLLMProvider` (deltas e uso roteirizados, grava cada chamada em `calls`; `error` + `fail_after` falha antes ou no meio do stream; `on_delta` avança o relógio; `hold_after` + `holding`/`release` (eventos asyncio) seguram o stream para o teste desconectar) e `RecordingFactory` (`ProviderFactory` que devolve o provedor dado e grava `FactoryCall(kind, api_key, base_url)`), para trocar `api.deps.get_provider_factory` via `dependency_overrides`. O fake de caminho feliz é produção (`knobridge.llm.fake.FakeLLMProvider`), porque o tipo `fake` o usa em dev e E2E.
 - `retriever.py`: `StaticRetriever` (implementa `Retriever`; devolve as fontes dadas e grava cada consulta em `queries`), para trocar `api.deps.get_retriever`.
+- `connector.py`: `FakeConnector` (implementa `Connector` em memória: `files` chave → bytes, `put`/`delete`, `available = False` quebra a fonte; cursor `{"fake": {chave: sha256}}`), a referência da suíte de contrato de `tests/connectors/contract/`.
 - O fake de caminho feliz de `EmbeddingProvider` também é produção (`knobridge.llm.fake_embeddings.FakeEmbeddingProvider`, usado pelo tipo `fake`).
-- Futuramente: fakes de `Reranker`, conectores e canais e variações de `EmbeddingProvider` (falha, roteirizado) quando um teste precisar, um módulo por interface.
+- Futuramente: fakes de `Reranker` e canais e variações de `EmbeddingProvider` (falha, roteirizado) quando um teste precisar, um módulo por interface.
 
 **Não entra aqui**: testes (`test_*.py` ficam na pasta do módulo testado), fixtures de dados (`tests/fixtures/`), servidores de protocolo de apoio usados por um único módulo de teste (ficam no `<subpasta>_support.py` da pasta, como o SMTP de `tests/email/`).
 

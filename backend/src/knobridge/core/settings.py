@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import timedelta
 from decimal import Decimal
 from functools import lru_cache
+from pathlib import Path
 from typing import Annotated, Literal, Self
 
 from pydantic import Field, SecretStr, model_validator
@@ -83,6 +84,13 @@ class Settings(BaseSettings):
     # Embedding prices in USD per million tokens by model id, as JSON; merged over the
     # defaults of llm/pricing.py (a model listed here replaces the default price).
     embedding_prices: dict[str, Annotated[Decimal, Field(ge=0)]] = Field(default_factory=dict)
+    # Folder and local Git sources must live under this directory (checked after resolving
+    # symlinks). Docker Compose mounts the host's sources folder here, read-only.
+    local_sources_root: Path = Path("/sources")
+    # Larger files are skipped by file selection (2 MiB by default).
+    max_source_file_bytes: int = Field(default=2 * 1024 * 1024, ge=1)
+    # Limit for PDF and Office documents (pdf, docx, xlsx, pptx), larger than for text (20 MiB).
+    max_source_document_bytes: int = Field(default=20 * 1024 * 1024, ge=1)
 
     @model_validator(mode="after")
     def _check_secret_key(self) -> Self:

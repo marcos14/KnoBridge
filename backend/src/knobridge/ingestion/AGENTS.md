@@ -7,7 +7,7 @@
 - `source_config.py`: `SourceKind` (`git`, `folder`) e a configuração por tipo em Pydantic: `GitSourceConfig` (exatamente um entre `path` local absoluto e `url` https pública sem credenciais; `branch` opcional, `None` = branch padrão; `initial_commit_limit` de 0 a 5000) e `FolderSourceConfig` (`path` absoluto), ambos com `extra="forbid"`; `parse_source_config(kind, data)` valida na fronteira (API, worker).
 - Depois: parsing, chunking, a lógica incremental por hash de documento e cursor por fonte, e as funções que as activities de `workers/` chamam.
 
-**Não entra aqui**: conectores (`connectors/`, um subpacote por conector), busca e montagem de contexto (`retrieval/`), workflows e activities do Temporal (`workers/`), adaptadores de embedding (`llm/`), routers e schemas (`api/`), migrações (`backend/migrations/`).
+**Não entra aqui**: conectores e a seleção de arquivos (`connectors/`, um subpacote por conector), busca e montagem de contexto (`retrieval/`), workflows e activities do Temporal (`workers/`), adaptadores de embedding (`llm/`), routers e schemas (`api/`), migrações (`backend/migrations/`).
 
 **Convenções locais**:
 - O modelo `Source` mora aqui, e não num pacote `sources/` à parte, porque a configuração, os globs e o cursor só têm sentido para a ingestão que os consome; o registro de conectores fica em `connectors/`.

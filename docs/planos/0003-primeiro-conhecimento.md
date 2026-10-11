@@ -28,13 +28,13 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-10
         concluida_em: 2026-10-10
-        commit: null
+        commit: 01e3b5a
       - id: F1.3
         titulo: Contrato de conector, seleção de arquivos e conector de pasta local
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code
+        iniciada_em: 2026-10-10
+        concluida_em: 2026-10-10
         commit: null
       - id: F1.4
         titulo: Conector Git (árvore no HEAD e histórico de commits)
@@ -484,6 +484,8 @@ Ver `decisoes[]` no frontmatter. ADR previsto: 0004 (índice de conhecimento: di
 - 2026-10-10 — F1.1 concluída: Modelos Collection/Source/Run/RunError/Document/Chunk (vector(1536) HNSW, tsv gerado com GIN), migração 0010 com RLS, ADR 0004; 657 testes, 100%.
 - 2026-10-10 — F1.2 iniciada.
 - 2026-10-10 — F1.2 concluída: EmbeddingProvider, adaptador OpenAI/OpenRouter, fake por hashing, tabela de preços; 693 testes, 100%.
+- 2026-10-10 — F1.3 iniciada.
+- 2026-10-10 — F1.3 concluída: Contrato de conector, seleção (gitignore aninhado, binários, limites, raiz permitida, symlinks), conector de pasta incremental, suíte de contrato; 776 testes (2 de symlink pulados no Windows, verdes em container Linux: 80 passed).
 
 ## 8. Encerramento
 
