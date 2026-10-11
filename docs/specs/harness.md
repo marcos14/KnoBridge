@@ -52,10 +52,12 @@ Constantes: `MIN_FILES = 2`, `MAX_FILES = 40`, `MAX_LINES = 6000`, `MAX_DEPTH = 
 1. Para cada pasta `d` de primeiro nível do checkout (em ordem alfabética), aplique `sugerir(d, profundidade = 1)`:
    - se `d` tem até `MAX_FILES` arquivos e até `MAX_LINES` linhas (recursivo) e pelo menos `MIN_FILES` arquivos → um módulo com `paths = ["d/**"]`;
    - se `d` tem menos de `MIN_FILES` arquivos → não vira módulo próprio: entra no módulo "arquivos da pasta" do pai;
-   - se `d` é grande e tem subpastas e `profundidade < MAX_DEPTH` → aplique `sugerir` a cada subpasta (`profundidade + 1`); os arquivos diretos de `d` mais as subpastas pequenas formam o módulo "arquivos da pasta" de `d`, com `paths = ["d/*", "!d/*/", "d/<pequena>/**", ...]`, se tiver pelo menos 1 arquivo;
+   - se `d` é grande e tem subpastas e `profundidade < MAX_DEPTH` → aplique `sugerir` a cada subpasta (`profundidade + 1`); os arquivos diretos de `d` mais as subpastas pequenas formam o módulo "arquivos da pasta" de `d`, com `paths = ["d/*", "!d/*/**", "d/<pequena>/**", ...]`, se tiver pelo menos 1 arquivo;
    - se `d` é grande e não tem subpastas (ou chegou a `MAX_DEPTH`) → um módulo com `paths = ["d/**"]`, mesmo acima do tamanho-alvo.
-2. Os arquivos da raiz e as pastas de primeiro nível pequenas formam o módulo `root` (`paths = ["*", "!*/", "<pequena>/**", ...]`), se tiver pelo menos 1 arquivo.
+2. Os arquivos da raiz e as pastas de primeiro nível pequenas formam o módulo `root` (`paths = ["*", "!*/**", "<pequena>/**", ...]`), se tiver pelo menos 1 arquivo. A negação é `!d/*/**`, e não `!d/*/`: no gitwildmatch `*` sem barra casa em qualquer nível, e negar só o diretório não tiraria os arquivos das subpastas.
 3. Até 2000 módulos por repositório; acima disso, os menores (em linhas) são juntados ao módulo "arquivos da pasta" do pai.
+4. Um módulo tem até 50 padrões. Se o módulo "arquivos da pasta" passar disso, ele é escrito ao contrário (`["d/**", "!d/<grande>/**", ...]`, ou `["*", "!<grande>/**", ...]` na raiz); se as duas formas passarem de 50, as subpastas pequenas são repartidas em `<pasta> (arquivos da pasta) parte 2`, `parte 3`... (chave a partir de `<pasta>/arquivos-2`, `-3`...).
+5. Nos padrões, `[`, `*`, `?` e `\` de nomes de pasta, e `!` ou `#` no início de um segmento, viram `?` (o protocolo recusa `\`, então não há escape); uma pasta cujo padrão passaria de 300 caracteres fica fora da sugestão.
 
 Os `paths` de um módulo são avaliados como uma lista de `.gitignore` (gitwildmatch, `pathspec`): um arquivo pertence ao módulo se o **último** padrão que casa com ele não é negado (`!`). O mesmo vale no servidor para o disparo por commit.
 
@@ -67,7 +69,7 @@ Estável entre execuções enquanto a árvore de pastas não muda:
 
 1. Parta do caminho da pasta (`src/Faturamento/Notas`); o módulo de arquivos diretos usa `<pasta>/arquivos`; o da raiz é `root`.
 2. Normalize: NFKD sem acentos, minúsculas, todo caractere fora de `[a-z0-9]` vira `-`, hífens repetidos viram um, sem hífen nas pontas (`src-faturamento-notas`).
-3. Acima de 100 caracteres: os 91 primeiros, `-` e os 8 primeiros hex do SHA-256 do caminho original.
+3. Acima de 100 caracteres: os 91 primeiros (sem hífen no fim), `-` e os 8 primeiros hex do SHA-256 do caminho original. Caminho que não deixa nenhum caractere (ex.: só ideogramas) vira `module-<8 hex do SHA-256>`.
 4. Colisão (dois caminhos com a mesma chave): ordene os módulos pelo caminho original; o primeiro fica com a chave, os seguintes ganham `-2`, `-3`...
 
 ### Extrações baratas

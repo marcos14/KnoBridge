@@ -28,7 +28,7 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-11
         concluida_em: 2026-10-11
-        commit: null
+        commit: 656f934
   - id: F2
     titulo: Servidor
     status: pendente
@@ -74,10 +74,10 @@ fases:
         commit: f39bf46
       - id: F3.2
         titulo: Camada 0 determinística (inventário, módulos sugeridos, briefing, mudanças por commit)
-        status: em_execucao
+        status: concluida
         agente: claude-code
         iniciada_em: 2026-10-11
-        concluida_em: null
+        concluida_em: 2026-10-11
         commit: null
       - id: F3.3
         titulo: Executores Claude Code e Codex, prompt, schema e executáveis falsos
@@ -269,6 +269,13 @@ decisoes:
     decisao: "F1.2: SourceKind.RUNNER e DocumentKind knowledge entram no enum e no OpenAPI já na F1.2 (frontend regenerado, rótulos pt-BR), mas parse_source_config recusa runner até a F2.3; ON DELETE SET NULL (coluna) para harness_jobs.runner_id e knowledge_items.job_id; downgrade da 0014 recusa se houver fonte runner ou documento knowledge; changed_paths não é gravado (só calcula evidence_changed)"
     motivo: "Enums expostos pela API mudam o contrato; estreitar e depois reverter daria mais trabalho"
     alternativas: "Enums estreitos na API até F2.3/F2.4"
+    adr: null
+  - id: D20
+    data: 2026-10-11
+    por: agente
+    decisao: "F3.2: padrões de módulo usam !*/** e !d/*/** (correção da spec: * sem barra casa em qualquer nível no gitwildmatch); módulo com mais de 50 padrões tenta a forma invertida e depois divide em partes (<pasta>/arquivos-2...); caracteres especiais de pasta viram ?; chave sem ASCII vira module-<8 hex>; changed_paths [] quando base = HEAD e null sem base, base ausente, erro ou mais de 20 000 arquivos"
+    motivo: "Spec de F1.1 tinha padrões que não excluíam subpastas; casos-limite sem regra"
+    alternativas: "Manter a spec original (módulos errados)"
     adr: null
 pendencias_usuario: []
 ---
@@ -522,6 +529,7 @@ Nenhuma aberta. Observação para a F5.2: a chave do OpenRouter cadastrada na st
 - 2026-10-11 — F3.1 concluída: pacote runner/ (config, cliente com long-poll e backoff, laço, CLI configure/run/doctor), job runner na CI; 151 testes, cobertura 100%.
 - 2026-10-11 — F3.2 e F3.3 iniciadas em paralelo.
 - 2026-10-11 — F1.2 concluída: migração 0014 (runners, harness_modules, harness_jobs, knowledge_items, harness_rejections; kinds runner e knowledge), RLS forçada, modelo de dados v0.6; 1175 testes, cobertura 99%. Observado um flaky isolado em test_admin_cannot_promote_to_owner_or_touch_owner (não reproduziu).
+- 2026-10-11 — F3.2 concluída: camada 0 em runner/layer0 (seleção, inventário, módulos, extrações, git, briefing, report) e correção dos padrões de módulo em harness.md; 202 testes, cobertura 99,8%.
 
 ## 8. Encerramento
 

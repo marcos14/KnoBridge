@@ -5,6 +5,7 @@
 **Entra aqui**:
 - `conftest.py`: pula os testes marcados `real_harness` sem `KNOBRIDGE_RUNNER_REAL_HARNESS=1` (D17) e restaura o logging depois de cada teste.
 - `runner_support.py`: fakes compartilhados, importados pelo basename: `FakeServer` (rotas de `/v1/runner/*` sobre `httpx.MockTransport`, com as requisições gravadas), `FakeClock`, `FakeSleep` (grava as esperas e avança o relógio sem esperar), `FakeCommandRunner`, `FakeAuth`, `make_client`, `make_config` e corpos de resposta de exemplo.
+- `layer0_support.py`: repositório Git sintético em `tmp_path` (`make_repo`, `commit_all`, `write`, `git`), `local_runner` com o timeout do git e `repo_file`; usado por `test_layer0_*.py` (camada 0).
 - Depois: `fakes/` com os `claude`/`codex` falsos (F3.3) e `real_harness/` com a suíte opt-in, cada uma com o seu `AGENTS.md`.
 
 **Não entra aqui**: código de produção, chamadas de rede reais, LLM ou CLI real fora de `real_harness`, repositórios ou código reais.
