@@ -112,6 +112,8 @@ def test_citation_keeps_a_snippet() -> None:
         "sha": None,
         "author": None,
         "date": None,
+        "confidence": None,
+        "evidence": None,
     }
 
 

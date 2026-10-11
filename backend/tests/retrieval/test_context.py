@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 
 from knobridge.audit.models import JSONValue
-from knobridge.conversations.retrieval import Source
+from knobridge.conversations.retrieval import EvidenceRef, Source, citation
 from knobridge.ingestion.models import DocumentKind
 from knobridge.llm.embeddings import CHARS_PER_TOKEN
 from knobridge.retrieval.context import (
@@ -98,6 +98,98 @@ def test_citation_uri_for_code_and_commit() -> None:
         sha="abc123",
         author="Ana",
         date="2026-10-01T10:00:00+00:00",
+    )
+
+
+def test_citation_kind_knowledge_has_confidence_and_evidence() -> None:
+    meta: dict[str, JSONValue] = {
+        "kind": "knowledge",
+        "item_key": "src-faturamento.R001",
+        "module": "src-faturamento",
+        "confidence": "revisado",
+        "title": "Nota fiscal exige CNPJ",
+        "headings": ["Nota fiscal exige CNPJ"],
+        "display": "# Nota fiscal exige CNPJ\n\nA nota só sai com CNPJ.",
+        "evidence": [
+            {
+                "path": "src/notas.ts",
+                "start_line": 80,
+                "end_line": 92,
+                "symbol": "emitirNota",
+                "excerpt": "if (!cnpj) throw x;",
+            },
+            {"path": "src/rotas.ts", "start_line": True, "end_line": None, "excerpt": ""},
+            {"path": ""},
+            "texto",
+        ],
+    }
+    hit = _hit(
+        "item: x\n\ncorpo",
+        meta,
+        kind=DocumentKind.KNOWLEDGE,
+        key="src-faturamento.R001",
+        title="Nota",
+    )
+
+    source = source_from_hit(hit)
+
+    assert source == Source(
+        title="Nota fiscal exige CNPJ",
+        content="# Nota fiscal exige CNPJ\n\nA nota só sai com CNPJ.",
+        uri="knowledge:src-faturamento.R001",
+        document_id=str(DOCUMENT_ID),
+        kind="knowledge",
+        confidence="revisado",
+        evidence=(
+            EvidenceRef("src/notas.ts", 80, 92, "emitirNota", "if (!cnpj) throw x;"),
+            EvidenceRef("src/rotas.ts", None, None, None, None),
+        ),
+    )
+    assert citation(1, source) == {
+        "index": 1,
+        "title": "Nota fiscal exige CNPJ",
+        "uri": "knowledge:src-faturamento.R001",
+        "snippet": "# Nota fiscal exige CNPJ\n\nA nota só sai com CNPJ.",
+        "document_id": str(DOCUMENT_ID),
+        "kind": "knowledge",
+        "path": None,
+        "symbol": None,
+        "start_line": None,
+        "end_line": None,
+        "language": None,
+        "sha": None,
+        "author": None,
+        "date": None,
+        "confidence": "revisado",
+        "evidence": [
+            {
+                "path": "src/notas.ts",
+                "start_line": 80,
+                "end_line": 92,
+                "symbol": "emitirNota",
+                "excerpt": "if (!cnpj) throw x;",
+            },
+            {
+                "path": "src/rotas.ts",
+                "start_line": None,
+                "end_line": None,
+                "symbol": None,
+                "excerpt": None,
+            },
+        ],
+    }
+
+
+def test_knowledge_source_falls_back_to_the_document() -> None:
+    hit = _hit("corpo", {}, kind=DocumentKind.KNOWLEDGE, key="src-core.E001", title="src/core")
+
+    source = source_from_hit(hit)
+
+    assert (source.title, source.uri, source.confidence, source.evidence) == (
+        "src/core",
+        "knowledge:src-core.E001",
+        None,
+        (),
     )
 
 

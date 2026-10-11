@@ -4,7 +4,9 @@ Pure functions (no IO). A hit becomes a ``Source`` whose ``content`` is the chun
 the embedding header (``meta["display"]``, written by the indexer), titled by its path (or the
 commit title) and pointing to ``<path>#L<start>-L<end>``, ``<path>`` (no line numbers, as in
 converted documents) or ``commit:<sha>``; a commit also carries its author's name and date
-(chunk ``meta``, absent in chunks indexed before they were recorded). The sources keep the
+(chunk ``meta``, absent in chunks indexed before they were recorded). A knowledge item is
+titled by the item, points to ``knowledge:<key>`` and carries its confidence and the evidence
+(file, lines, symbol, excerpt) of the chunk. The sources keep the
 search order and are cut when the estimated tokens of the numbered blocks would pass
 ``MAX_CONTEXT_TOKENS``; the numbering of the prompt and of the stored citations is the
 position in the kept list.
@@ -17,7 +19,7 @@ from dataclasses import replace
 
 from knobridge.audit.models import JSONValue
 from knobridge.conversations.prompt import source_header
-from knobridge.conversations.retrieval import Source
+from knobridge.conversations.retrieval import EvidenceRef, Source
 from knobridge.ingestion.models import DocumentKind
 from knobridge.llm.embeddings import CHARS_PER_TOKEN, estimate_tokens
 from knobridge.retrieval.search import SearchHit, display_text
@@ -27,6 +29,7 @@ from knobridge.retrieval.search import SearchHit, display_text
 # in a 16k-token model, for the rules, 10 history messages and the answer.
 MAX_CONTEXT_TOKENS = 6000
 COMMIT_PREFIX = "commit:"
+KNOWLEDGE_PREFIX = "knowledge:"
 
 
 def citation_uri(
@@ -47,10 +50,46 @@ def citation_uri(
     return path
 
 
+def _evidence(meta: dict[str, JSONValue]) -> tuple[EvidenceRef, ...]:
+    raw = meta.get("evidence")
+    evidence: list[EvidenceRef] = []
+    for entry in raw if isinstance(raw, list) else []:
+        if not isinstance(entry, dict) or (path := _text(entry.get("path"))) is None:
+            continue
+        evidence.append(
+            EvidenceRef(
+                path=path,
+                start_line=_line(entry.get("start_line")),
+                end_line=_line(entry.get("end_line")),
+                symbol=_text(entry.get("symbol")),
+                excerpt=_text(entry.get("excerpt")),
+            )
+        )
+    return tuple(evidence)
+
+
+def knowledge_source(hit: SearchHit, display: str) -> Source:
+    """A knowledge item: titled by the item, pointing to ``knowledge:<key>``, with its
+    confidence and the evidence (with excerpts) the chunk relies on."""
+    document = hit.document
+    key = _text(hit.meta.get("item_key")) or document.natural_key
+    return Source(
+        title=_text(hit.meta.get("title")) or document.title,
+        content=display,
+        uri=f"{KNOWLEDGE_PREFIX}{key}",
+        document_id=str(document.id),
+        kind=document.kind.value,
+        confidence=_text(hit.meta.get("confidence")),
+        evidence=_evidence(hit.meta),
+    )
+
+
 def source_from_hit(hit: SearchHit) -> Source:
     document = hit.document
     display = _text(hit.meta.get("display")) or display_text(hit.content)
     language = _text(hit.meta.get("language"))
+    if document.kind is DocumentKind.KNOWLEDGE:
+        return knowledge_source(hit, display)
     if document.kind is DocumentKind.COMMIT:
         sha = _text(hit.meta.get("sha")) or document.natural_key.removeprefix(COMMIT_PREFIX)
         title = _text(hit.meta.get("title")) or document.title
@@ -113,3 +152,8 @@ def fit_to_budget(sources: Sequence[Source], max_tokens: int = MAX_CONTEXT_TOKEN
 
 def _text(value: JSONValue) -> str | None:
     return value if isinstance(value, str) and value else None
+
+
+def _line(value: JSONValue) -> int | None:
+    # ``bool`` is an ``int`` subclass; a flag is never a line number.
+    return value if isinstance(value, int) and not isinstance(value, bool) else None

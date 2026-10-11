@@ -8,6 +8,8 @@ from pathlib import Path
 
 import pytest
 
+from fakes.connector import FakeConnector
+from knobridge.connectors.base import Connector
 from knobridge.connectors.errors import SourceUnavailableError
 from knobridge.connectors.folder.connector import FolderConnector
 from knobridge.connectors.git.connector import GitConnector
@@ -54,11 +56,28 @@ def test_connector_factory_builds_git_connector(tmp_path: Path) -> None:
     assert isinstance(connector, GitConnector)
 
 
-def test_connector_factory_refuses_runner_source(tmp_path: Path) -> None:
+def test_connector_factory_serves_runner_sources_with_the_knowledge_connector(
+    tmp_path: Path,
+) -> None:
+    built: list[Source] = []
+    fake = FakeConnector()
+
+    def knowledge(source: Source) -> Connector:
+        built.append(source)
+        return fake
+
+    factory = SettingsConnectorFactory(
+        Settings(env="test", local_sources_root=tmp_path), knowledge=knowledge
+    )
+    # Not a config any parser accepts: the runner's config is never validated here.
+    source = _source(SourceKind.RUNNER, {"anything": True})
+
+    assert factory(source) is fake
+    assert built == [source]
+
+
+def test_connector_factory_without_knowledge_refuses_runner_sources(tmp_path: Path) -> None:
     factory = SettingsConnectorFactory(Settings(env="test", local_sources_root=tmp_path))
-    source = _source(SourceKind.RUNNER, {"runner_id": str(uuid.uuid4()), "repository": "erp"})
 
-    with pytest.raises(SourceUnavailableError) as raised:
-        factory(source)
-
-    assert raised.value.details == {"kind": "runner"}
+    with pytest.raises(SourceUnavailableError):
+        factory(_source(SourceKind.RUNNER, {}))

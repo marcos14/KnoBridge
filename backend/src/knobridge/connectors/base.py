@@ -61,11 +61,15 @@ class RawDocument:
     # Language name derived from the extension (e.g. "python"), when known.
     language: str | None = None
     metadata: Mapping[str, JSONValue] = field(default_factory=dict[str, JSONValue])
+    # Hash set by a connector whose citation data lives outside ``content`` (the knowledge
+    # connector: confidence and evidence), so a change there also reindexes the document.
+    digest: str | None = None
 
     @property
     def content_hash(self) -> str:
-        """SHA-256 of the content, hex; the ingestion engine skips unchanged documents by it."""
-        return hashlib.sha256(self.content).hexdigest()
+        """SHA-256 (hex) of the content, or ``digest`` when set; the ingestion engine skips
+        unchanged documents by it."""
+        return self.digest or hashlib.sha256(self.content).hexdigest()
 
     @property
     def text(self) -> str:

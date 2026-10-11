@@ -45,6 +45,8 @@ _NO_LOCATION: dict[str, object] = {
     "sha": None,
     "author": None,
     "date": None,
+    "confidence": None,
+    "evidence": None,
 }
 
 

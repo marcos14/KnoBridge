@@ -61,6 +61,8 @@ CHUNK_TSV_EXPRESSION = (
 class RunTrigger(StrEnum):
     MANUAL = "manual"
     SCHEDULE = "schedule"
+    # Asked for by a harness result or a knowledge review (plan 0004, ``harness/``).
+    HARNESS = "harness"
 
 
 class RunStatus(StrEnum):
@@ -174,6 +176,11 @@ class Source(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     cursor: Mapped[dict[str, JSONValue] | None] = mapped_column(JSONB, nullable=True)
     active: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=True, server_default=text("true")
+    )
+    # A harness sync was asked for while another run was in progress; the next successful run
+    # consumes it and the workflow continues with a new run (``ingestion.runs``).
+    sync_pending: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=text("false")
     )
 
     def typed_config(self) -> SourceConfig:

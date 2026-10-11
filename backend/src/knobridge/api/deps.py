@@ -30,6 +30,7 @@ from knobridge.core.errors import ForbiddenError, NotFoundError, Unauthenticated
 from knobridge.core.settings import Settings
 from knobridge.email.rendering import EmailComposer
 from knobridge.email.sender import EmailSender
+from knobridge.harness.knowledge_connector import KnowledgeConnectorFactory
 from knobridge.ingestion.collections import CollectionService
 from knobridge.ingestion.connectors import ConnectorFactory, SettingsConnectorFactory
 from knobridge.ingestion.schedule import ScheduleManager
@@ -362,7 +363,10 @@ def get_schedule_manager(request: Request) -> ScheduleManager:
 
 def get_connector_factory(request: Request) -> ConnectorFactory:
     """Builds the connector of a source (connection test); tests override it with fakes."""
-    return SettingsConnectorFactory(get_settings_from_app(request))
+    return SettingsConnectorFactory(
+        get_settings_from_app(request),
+        knowledge=KnowledgeConnectorFactory(get_session_factory(request)),
+    )
 
 
 def get_collection_service(request: Request) -> CollectionService:

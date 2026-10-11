@@ -284,7 +284,7 @@ Corpo (`RunnerJobResultIn`, até 8 MiB):
 3. Rejeições gravadas em `harness_rejections`.
 4. Tarefa: `status = succeeded`, `finished_at`, métricas, `items_accepted` = itens gravados, `items_rejected` = rejeições, `commit_sha`; `lease_expires_at = null`.
 5. Módulo: `last_commit = commit_sha`.
-6. Depois do commit da transação: `start_sync` da fonte (conector interno `knowledge`). Se já houver sincronização em andamento, a nova é pedida ao fim dela; falha ao falar com o Temporal não desfaz o resultado (a resposta traz `sync_run_id = null` e a próxima revisão ou resultado sincroniza).
+6. Depois do commit da transação: sincronização da fonte com o gatilho `harness` (`request_sync`, conector interno `knowledge`). Se já houver sincronização em andamento, a nova fica [pendente](indexacao.md#sincronização-pendente) e roda ao fim dela (`sync_run_id = null`); falha ao falar com o Temporal não desfaz o resultado (a resposta traz `sync_run_id = null` e a próxima revisão ou resultado sincroniza).
 
 **Idempotência**: um `result` repetido para uma tarefa já `succeeded` pelo mesmo runner e `attempt` devolve 200 com o mesmo resumo e `duplicate = true`, sem regravar (retentativa de rede segura).
 

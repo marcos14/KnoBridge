@@ -1319,6 +1319,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/workspaces/{workspace_id}/sources/{source_id}/knowledge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Knowledge Items
+         * @description Knowledge items of the source by key, discarded ones included unless filtered.
+         */
+        get: operations["list_knowledge_items_v1_workspaces__workspace_id__sources__source_id__knowledge_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/sources/{source_id}/knowledge/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Export Knowledge
+         * @description The items not discarded (of ``module``, when given) as ``<module>/<item>.md`` files.
+         */
+        get: operations["export_knowledge_v1_workspaces__workspace_id__sources__source_id__knowledge_export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/sources/{source_id}/knowledge/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Review Knowledge Item
+         * @description Edit, approve, discard or reopen the item; the source sync follows the commit.
+         */
+        patch: operations["review_knowledge_item_v1_workspaces__workspace_id__sources__source_id__knowledge__item_id__patch"];
+        trace?: never;
+    };
     "/v1/workspaces/{workspace_id}/sources/{source_id}/modules": {
         parameters: {
             query?: never;
@@ -1801,7 +1861,7 @@ export interface components {
          * AuditAction
          * @enum {string}
          */
-        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted" | "provider.tested" | "assistant.created" | "assistant.updated" | "assistant.deleted" | "conversation.deleted" | "collection.created" | "collection.updated" | "collection.deleted" | "source.created" | "source.updated" | "source.deleted" | "source.tested" | "source.sync.started" | "source.sync.cancelled" | "runner.created" | "runner.updated" | "runner.revoked" | "runner.deleted" | "harness_job.cancelled" | "harness_job.enqueued" | "harness_module.created" | "harness_module.updated";
+        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted" | "provider.tested" | "assistant.created" | "assistant.updated" | "assistant.deleted" | "conversation.deleted" | "collection.created" | "collection.updated" | "collection.deleted" | "source.created" | "source.updated" | "source.deleted" | "source.tested" | "source.sync.started" | "source.sync.cancelled" | "runner.created" | "runner.updated" | "runner.revoked" | "runner.deleted" | "harness_job.cancelled" | "harness_job.enqueued" | "harness_module.created" | "harness_module.updated" | "knowledge_item.updated";
         /** AuditEventOut */
         AuditEventOut: {
             /** Action */
@@ -1848,6 +1908,22 @@ export interface components {
             new_password: string;
         };
         /**
+         * CitationEvidenceOut
+         * @description Where in the code a knowledge item was verified (chat-sse v0.5).
+         */
+        CitationEvidenceOut: {
+            /** End Line */
+            end_line: number | null;
+            /** Excerpt */
+            excerpt: string | null;
+            /** Path */
+            path: string;
+            /** Start Line */
+            start_line: number | null;
+            /** Symbol */
+            symbol: string | null;
+        };
+        /**
          * CitationOut
          * @description A numbered source of an answer (``docs/specs/chat-sse.md``). The location fields came
          *     with the real retriever (v0.3); answers saved before have them as ``null``.
@@ -1855,12 +1931,16 @@ export interface components {
         CitationOut: {
             /** Author */
             author?: string | null;
+            /** Confidence */
+            confidence?: string | null;
             /** Date */
             date?: string | null;
             /** Document Id */
             document_id: string | null;
             /** End Line */
             end_line?: number | null;
+            /** Evidence */
+            evidence?: components["schemas"]["CitationEvidenceOut"][] | null;
             /** Index */
             index: number;
             /** Kind */
@@ -2581,6 +2661,119 @@ export interface components {
             email: string;
             role: components["schemas"]["Role"];
         };
+        /**
+         * KnowledgeConfidence
+         * @description Trust seal shown with the item; values in pt-BR because they reach the exported
+         *     frontmatter and the chat citation as written.
+         * @enum {string}
+         */
+        KnowledgeConfidence: "inferido" | "revisado";
+        /** KnowledgeEvidenceOut */
+        KnowledgeEvidenceOut: {
+            /** End Line */
+            end_line: number;
+            /** Excerpt */
+            excerpt?: string | null;
+            /** Excerpt Omitted */
+            excerpt_omitted?: string | null;
+            /**
+             * Excerpt Truncated
+             * @default false
+             */
+            excerpt_truncated: boolean;
+            /** Path */
+            path: string;
+            /**
+             * Redacted
+             * @default false
+             */
+            redacted: boolean;
+            /** Start Line */
+            start_line: number;
+            /** Symbol */
+            symbol?: string | null;
+        };
+        /**
+         * KnowledgeItemKind
+         * @enum {string}
+         */
+        KnowledgeItemKind: "rule" | "module";
+        /** KnowledgeItemOut */
+        KnowledgeItemOut: {
+            /** Commit Sha */
+            commit_sha: string;
+            confidence: components["schemas"]["KnowledgeConfidence"];
+            /** Content */
+            content: {
+                [key: string]: unknown;
+            };
+            /** Edited */
+            edited: {
+                [key: string]: unknown;
+            } | null;
+            /** Evidence */
+            evidence: components["schemas"]["KnowledgeEvidenceOut"][];
+            /** Evidence Changed */
+            evidence_changed: boolean;
+            /** Generated By */
+            generated_by: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Job Id */
+            job_id: string | null;
+            /** Key */
+            key: string;
+            kind: components["schemas"]["KnowledgeItemKind"];
+            /**
+             * Module Id
+             * Format: uuid
+             */
+            module_id: string;
+            /** Module Key */
+            module_key: string;
+            review_status: components["schemas"]["KnowledgeReviewStatus"];
+            /**
+             * Source Id
+             * Format: uuid
+             */
+            source_id: string;
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** KnowledgeItemPage */
+        KnowledgeItemPage: {
+            /** Items */
+            items: components["schemas"]["KnowledgeItemOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Total */
+            total: number;
+        };
+        /** KnowledgeItemPatch */
+        KnowledgeItemPatch: {
+            action?: components["schemas"]["ReviewAction"] | null;
+            /** Content */
+            content?: {
+                [key: string]: unknown;
+            } | null;
+            /** Title */
+            title?: string | null;
+        };
+        /**
+         * KnowledgeReviewStatus
+         * @enum {string}
+         */
+        KnowledgeReviewStatus: "pending" | "approved" | "discarded";
         /** LiveResponse */
         LiveResponse: {
             /**
@@ -2871,6 +3064,11 @@ export interface components {
             token: string;
         };
         /**
+         * ReviewAction
+         * @enum {string}
+         */
+        ReviewAction: "approve" | "discard" | "reopen";
+        /**
          * Role
          * @description Per-workspace role, from most to least privileged.
          * @enum {string}
@@ -3054,7 +3252,7 @@ export interface components {
          * RunTrigger
          * @enum {string}
          */
-        RunTrigger: "manual" | "schedule";
+        RunTrigger: "manual" | "schedule" | "harness";
         /**
          * RunnerCapabilitiesOut
          * @description What the last heartbeat reported; empty before the first one.
@@ -8455,6 +8653,177 @@ export interface operations {
                 content?: never;
             };
             /** @description Invalid body (`validation_error`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_knowledge_items_v1_workspaces__workspace_id__sources__source_id__knowledge_get: {
+        parameters: {
+            query?: {
+                module?: string | null;
+                review_status?: components["schemas"]["KnowledgeReviewStatus"] | null;
+                confidence?: components["schemas"]["KnowledgeConfidence"] | null;
+                kind?: components["schemas"]["KnowledgeItemKind"] | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                source_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeItemPage"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace suspended. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace, source (`source_not_found`) or module (`module_not_found`) not found, or caller is not a member. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_knowledge_v1_workspaces__workspace_id__sources__source_id__knowledge_export_get: {
+        parameters: {
+            query?: {
+                module?: string | null;
+            };
+            header?: never;
+            path: {
+                source_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Zip of `.md` files. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/zip": unknown;
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace suspended. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace, source (`source_not_found`) or module (`module_not_found`) not found, or caller is not a member. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    review_knowledge_item_v1_workspaces__workspace_id__sources__source_id__knowledge__item_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+                item_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KnowledgeItemPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KnowledgeItemOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below editor, workspace suspended or CSRF failure. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or item (`knowledge_item_not_found`) not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid body (`validation_error`) or content that breaks the shape of the item kind (`knowledge_content_invalid`, details `[{loc, problem}]`). */
             422: {
                 headers: {
                     [name: string]: unknown;

@@ -24,6 +24,7 @@ from knobridge.api import (
     harness_modules,
     health,
     invites,
+    knowledge,
     me,
     members,
     providers,
@@ -128,7 +129,7 @@ def create_app(
         collections,
         sources,
         runs,
-        # Code harness (plan 0004 F2.1, F2.2, F2.3).
+        # Code harness (plan 0004 F2.1 to F2.4).
         runners,
         runner_heartbeat,
         runner_jobs,
@@ -136,6 +137,7 @@ def create_app(
         runner_results,
         harness_jobs,
         harness_modules,
+        knowledge,
     )
     for module in routers:
         v1.include_router(module.router)

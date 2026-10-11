@@ -13,6 +13,8 @@
 - `test_harness_queue.py`: ordem e filtros do claim, reserva expirada retomada, falha na terceira tentativa, adiamento até `not_before`, claims concorrentes que nunca dividem tarefa (Postgres real, `asyncio.gather`), espera da falha retentável, `expire_leases`, heartbeat, falha, adiamento e cancelamento.
 - `test_harness_results.py`: regeneração que preserva itens revisados e editados, chaves numeradas depois da maior preservada, `evidence_changed`, repetição idempotente e regras da fonte (`excerpt_max_lines`, executor).
 - `test_module_paths.py` (unitário): chave do módulo (acentos, hash quando vazia ou longa) e padrões avaliados como `.gitignore`.
+- `test_knowledge_markdown.py` (unitário, itens em memória): Markdown de regra e de enriquecimento conforme a spec, edição, campos vazios, arquivo sensível, evidência malformada, `.md` exportado com os 8 campos e zip determinístico.
+- `test_knowledge_connector.py`: conector `knowledge` (itens não descartados, incremental por hash com alterados e removidos, aprovação que muda o hash, `fetch` com Markdown e metadados, descartado não encontrado, cursor alheio, isolamento entre workspaces e a fábrica).
 - `test_long_poll.py` e `test_job_metrics.py` (unitários): o laço do long-poll com o `ClockWaiter` e a soma das métricas. As rotas do runner e do painel de runners ficam em `tests/api/` (`test_runners.py`, `test_runner_heartbeat.py`).
 
 **Não entra aqui**: rotas (`tests/api/`), cadeia de migrações (`tests/migrations/`), o pacote `runner/` (testes próprios em `runner/tests/`).

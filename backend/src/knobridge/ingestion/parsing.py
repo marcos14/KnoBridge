@@ -9,6 +9,8 @@
   MarkItDown; anything else, such as a template or fragment in a repository, is code.
 - Source code becomes a fenced block tagged with the language of its extension.
 - A commit becomes Markdown with its subject as the title (see ``commits``).
+- A knowledge item of a runner source is already Markdown (rendered by ``harness``) and keeps
+  the item title.
 
 A document that cannot be read raises ``UnsupportedFormatError`` or ``ParseFailedError``,
 which the ingestion engine records as a ``RunError`` without aborting the run.
@@ -45,6 +47,8 @@ class ParsedKind(StrEnum):
     CODE = "code"
     COMMIT = "commit"
     DOCUMENT = "document"
+    # A knowledge item of a runner source: Markdown rendered by the harness, cited by item.
+    KNOWLEDGE = "knowledge"
 
 
 @dataclass(frozen=True, slots=True)
@@ -215,6 +219,8 @@ async def parse_document(raw: RawDocument) -> ParsedDocument:
     if raw.ref.kind is DocumentKind.COMMIT:
         title, markdown = render_commit(decode_text(raw.content), raw.metadata, raw.ref.key)
         return ParsedDocument.of(raw, ParsedKind.COMMIT, title, markdown)
+    if raw.ref.kind is DocumentKind.KNOWLEDGE:
+        return ParsedDocument.of(raw, ParsedKind.KNOWLEDGE, raw.title, decode_text(raw.content))
     details = {"key": raw.ref.key, "extension": raw.extension}
     if raw.metadata.get("format") == "document" and raw.extension not in _DOCUMENT_CONVERTERS:
         raise UnsupportedFormatError("document format is not supported", details=details)

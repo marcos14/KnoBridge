@@ -156,6 +156,10 @@ Na listagem:
 
 `title` = nome do arquivo; `uri` = caminho POSIX relativo; `metadata` com `path`, `commit` (o HEAD lido), `size_bytes` e `format`.
 
+## Conector interno de conhecimento
+
+Fontes `runner` não são lidas por um conector de arquivos: o repositório está na máquina do usuário e o servidor só recebe itens de conhecimento verificados ([harness.md](harness.md)). O `SettingsConnectorFactory` atende o tipo `runner` com o conector interno `knowledge` (`backend/src/knobridge/harness/knowledge_connector.py`), sem validar a config da fonte. Ele cumpre o mesmo contrato, mas lê os `knowledge_items` do banco, no escopo do workspace; `RawDocument.digest` leva o hash do Markdown e dos metadados de citação, que o motor usa no lugar do SHA-256 do conteúdo. Detalhes em [indexacao.md](indexacao.md#conhecimento-do-harness).
+
 ## Suíte de contrato
 
 Todo conector passa pela mesma suíte (`backend/tests/connectors/contract/`), parametrizada por fonte. Hoje roda contra:

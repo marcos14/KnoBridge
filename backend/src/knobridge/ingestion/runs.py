@@ -19,7 +19,7 @@ from collections.abc import Iterator, Sequence
 from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass
 
-from sqlalchemy import delete, insert, select
+from sqlalchemy import delete, insert, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from knobridge.connectors.base import DocumentRef
@@ -35,6 +35,7 @@ from knobridge.ingestion.models import (
     RunItem,
     RunItemChange,
     RunStatus,
+    RunTrigger,
     Source,
 )
 from knobridge.llm.pricing import EmbeddingPriceTable
@@ -84,12 +85,11 @@ async def require_run(db: AsyncSession, scope: RunScope) -> Run:
     return run
 
 
-async def load_source(db: AsyncSession, scope: RunScope) -> Source:
-    source = await db.scalar(
-        select(Source).where(
-            Source.workspace_id == scope.workspace_id, Source.id == scope.source_id
-        )
+async def load_source(db: AsyncSession, scope: RunScope, *, for_update: bool = False) -> Source:
+    statement = select(Source).where(
+        Source.workspace_id == scope.workspace_id, Source.id == scope.source_id
     )
+    source = await db.scalar(statement.with_for_update() if for_update else statement)
     if source is None:
         raise NotFoundError("source not found", code="source_not_found")
     return source
@@ -145,12 +145,21 @@ class RunLifecycle:
         return workspace_session(self._factory, scope)
 
     async def open(self, scope: RunScope) -> None:
-        """Mark a queued run as running; a retry (already running) changes nothing."""
+        """Mark a queued run as running; a retry (already running) changes nothing.
+
+        Opening also clears ``sources.sync_pending``: this run lists the source afterwards, so
+        it already covers any sync asked for before it started.
+        """
         async with self._session(scope) as db:
             run = await require_run(db, scope)
             if run.status is RunStatus.QUEUED:
                 run.status = RunStatus.RUNNING
                 run.started_at = self._clock.now()
+                await db.execute(
+                    update(Source)
+                    .where(Source.workspace_id == scope.workspace_id, Source.id == scope.source_id)
+                    .values(sync_pending=False)
+                )
 
     async def list_changes(self, scope: RunScope) -> int:
         """Store what changed since the source's cursor; returns how many items to process.
@@ -183,20 +192,39 @@ class RunLifecycle:
         )
         return len(rows)
 
-    async def finish(self, scope: RunScope, status: RunStatus, error: str | None = None) -> None:
+    async def finish(
+        self, scope: RunScope, status: RunStatus, error: str | None = None
+    ) -> uuid.UUID | None:
         """Close the run with ``status``; only success moves the pending cursor to the source.
 
         Also sets the estimated cost from the tokens spent (whatever the outcome, they were
         paid for) and drops the run's items. A run already closed is left as it is.
+
+        A successful run of an active source with ``sync_pending`` (a harness sync asked for
+        while it ran) consumes the flag and queues the next run, whose id is returned for the
+        workflow to continue with; otherwise ``None``. A failed or cancelled run leaves the
+        flag for the next successful one.
         """
         async with self._session(scope) as db:
             run = await lock_run(db, scope)
             if run is None or run.status in TERMINAL_STATUSES:
-                return
-            source = await load_source(db, scope)
+                return None
+            # Locked so a concurrent ``request_sync`` either sees this run still active (and
+            # sets the flag before it is read here) or sees it closed (and starts its own).
+            source = await load_source(db, scope, for_update=True)
             collection = await load_collection(db, scope, source)
+            next_run: Run | None = None
             if status is RunStatus.SUCCEEDED:
                 source.cursor = run.pending_cursor
+                if source.sync_pending and source.active:
+                    source.sync_pending = False
+                    next_run = Run(
+                        workspace_id=scope.workspace_id,
+                        source_id=scope.source_id,
+                        trigger=RunTrigger.HARNESS,
+                        status=RunStatus.QUEUED,
+                    )
+                    db.add(next_run)
             run.status = status
             run.finished_at = self._clock.now()
             run.error = None if error is None else error[:RUN_ERROR_MESSAGE_MAX_LENGTH]
@@ -207,4 +235,6 @@ class RunLifecycle:
                     RunItem.workspace_id == scope.workspace_id, RunItem.run_id == scope.run_id
                 )
             )
-        _log.info("ingestion_run_finished", status=status.value)
+            await db.flush()
+        _log.info("ingestion_run_finished", status=status.value, continued=next_run is not None)
+        return None if next_run is None else next_run.id

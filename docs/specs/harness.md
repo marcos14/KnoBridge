@@ -651,24 +651,25 @@ Falta o CNPJ do cliente. [2]
 
 ## No índice e no chat
 
-Contrato para o plano 0004, F2.4 (que atualiza [indexacao.md](indexacao.md) e [chat-sse.md](chat-sse.md)):
+Conector interno `knowledge` no workflow de ingestão (plano 0004, F2.4; detalhes em [indexacao.md](indexacao.md#conhecimento-do-harness)):
 
-- documento: `kind = knowledge`, `natural_key` = chave do item, `title` = título (editado, se houver), `uri = knowledge:<chave>`, `content_hash` = SHA-256 do Markdown;
-- chunking por seção do Markdown; `meta` de cada chunk: `{"kind": "knowledge", "item_key", "module", "confidence", "evidence": [{"path", "start_line", "end_line", "symbol", "excerpt"}]}`;
-- citação no chat com `kind: "knowledge"`, `title`, `uri`, `snippet`, a confiança (`inferido` ou `revisado`) e as evidências com excerto.
+- documento: `kind = knowledge`, `natural_key` = chave do item, `title` = título (editado, se houver), `uri = knowledge:<chave>`, `content_hash` = SHA-256 do Markdown e dos metadados de citação (assim aprovar, que só muda a confiança, também reindexa);
+- chunking por seção do Markdown; `meta` de cada chunk: `{"kind": "knowledge", "item_key", "module", "confidence", "title", "headings", "evidence": [{"path", "start_line", "end_line", "symbol", "excerpt"}]}`, com as evidências citadas por `[n]` no trecho (até 10) ou, sem marcador, as 5 primeiras do item;
+- citação no chat com `kind: "knowledge"`, `title`, `uri`, `snippet`, a confiança (`inferido` ou `revisado`) e as evidências com excerto ([chat-sse.md](chat-sse.md#citations), v0.5).
 
 ## Revisão e exportação
 
 API de sessão sob `/v1/workspaces/{workspace_id}/sources/{source_id}` ([runner.md](runner.md#api-de-sessão-painel)):
 
-- `GET .../knowledge` (viewer): itens paginados, filtros `module` (chave), `review_status`, `confidence`, `kind`; cada item com `key`, `kind`, `title`, `content`, `edited`, `evidence`, `confidence`, `review_status`, `evidence_changed`, `commit_sha`, `generated_by`, `job_id`, `updated_at`.
-- `PATCH .../knowledge/{item_id}` (editor): `{"action"?: "approve" | "discard" | "reopen", "title"?: texto, "content"?: objeto}`.
-  - `title`/`content` gravam `edited` (substituição completa da forma do `kind`, validada como no resultado; evidências não se editam) e limpam `evidence_changed`;
+- `GET .../knowledge` (viewer): itens paginados (`limit` 1 a 200, padrão 50, e `offset`), por chave, descartados incluídos; filtros `module` (chave), `review_status`, `confidence`, `kind`; cada item com `id`, `source_id`, `module_id`, `module_key`, `key`, `kind`, `title`, `content`, `edited`, `evidence`, `confidence`, `review_status`, `evidence_changed`, `commit_sha`, `generated_by`, `job_id`, `updated_at`. Fonte ausente ou de outro workspace: 404 `source_not_found`.
+- `PATCH .../knowledge/{item_id}` (editor, com CSRF): `{"action"?: "approve" | "discard" | "reopen", "title"?: texto, "content"?: objeto}`, ao menos um (senão 422 `validation_error`; campos desconhecidos também). Item ausente ou de outra fonte: 404 `knowledge_item_not_found`.
+  - `title` (1 a 200, sem espaços nas pontas) e `content` gravam `edited` (`content` substitui por inteiro a forma do `kind`, validada como no resultado, com os índices de `evidencias` apontando para as evidências do item; violação → 422 `knowledge_content_invalid` com `[{loc, problem}]`; evidências não se editam) e limpam `evidence_changed`. Os campos não enviados ficam como estavam em `edited`;
   - `approve` → `review_status = approved`, `confidence = revisado`, limpa `evidence_changed`;
   - `discard` → `review_status = discarded` (sai do índice na próxima sincronização; continua listável);
   - `reopen` → `review_status = pending`, `confidence = inferido`;
-  - toda mudança dispara a sincronização da fonte e grava auditoria `knowledge_item.update` (sem o texto).
-- `GET .../knowledge/export?module=<chave>` (viewer): `application/zip`, nome `<nome-da-fonte>-<chave-do-módulo>.zip` (sem `module`, todos os módulos, `<nome-da-fonte>.zip`); um arquivo por item não descartado em `<chave-do-módulo>/<chave-do-item>.md`.
+  - ação e edição podem vir juntas; resposta 200 com o item;
+  - toda mudança grava auditoria `knowledge_item.updated` (`item_key`, `source_id`, `action`, campos editados; sem o texto) e, depois do commit, pede a sincronização da fonte com o gatilho `harness`; se já houver uma em andamento, a nova fica [pendente](indexacao.md#sincronização-pendente) e roda ao fim dela.
+- `GET .../knowledge/export?module=<chave>` (viewer): `application/zip`, nome `<nome-da-fonte>-<chave-do-módulo>.zip` (sem `module`, todos os módulos, `<nome-da-fonte>.zip`; `Content-Disposition` com `filename` ASCII e `filename*` UTF-8); um arquivo por item não descartado em `<chave-do-módulo>/<chave-do-item>.md`, por módulo e chave. Módulo inexistente na fonte: 404 `module_not_found`.
 
 ### `.md` exportado
 

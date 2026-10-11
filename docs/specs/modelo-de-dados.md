@@ -1,6 +1,8 @@
 # Modelo de dados
 
-> Rascunho v0.6 · 2026-10-11 · Em uso (planos 0002, 0003 e 0004)
+> Rascunho v0.7 · 2026-10-11 · Em uso (planos 0002, 0003 e 0004)
+>
+> **Mudanças da v0.7**: migração `0015` (plano 0004, F2.4): `runs.trigger` aceita `harness` (sincronização pedida por um resultado do harness ou por uma revisão de conhecimento) e `sources.sync_pending` guarda uma sincronização pedida enquanto outra da fonte estava em andamento ([indexacao.md](indexacao.md#sincronização-pendente)).
 >
 > **Mudanças da v0.6**: migração `0014` (plano 0004, F1.2): tabelas do harness de código `runners`, `harness_modules`, `harness_jobs`, `knowledge_items` e `harness_rejections` ([ADR 0005](../adr/0005-runner-local-do-harness.md)); `sources.kind` aceita `runner` (com o par `(runner_id, repository)` único no workspace) e `documents.kind`/`run_items.document_kind` aceitam `knowledge`.
 >
@@ -30,6 +32,7 @@ Tabelas do Postgres do KnoBridge, criadas pelas migrações em [`backend/migrati
 | `0012` | `20261010_0012_assistant_collections.py` | `assistant_collections` (vínculo N:N assistente ↔ coleção, RLS forçada) e `assistants.min_similarity` (0 a 1, padrão 0,3). |
 | `0013` | `20261011_0013_raise_min_similarity_default.py` | Padrão de `assistants.min_similarity` passa de 0,3 para 0,35; valores gravados ficam. |
 | `0014` | `20261011_0014_harness.py` | Harness de código: `runners`, `harness_modules`, `harness_jobs`, `knowledge_items`, `harness_rejections` (RLS forçada); `sources.kind` aceita `runner` e ganha `uq_sources_workspace_id_runner_repository`; `documents.kind` e `run_items.document_kind` aceitam `knowledge`. O `downgrade` falha se houver fonte `runner` ou documento `knowledge` (não apaga dados). |
+| `0015` | `20261011_0015_harness_sync.py` | `runs.trigger` aceita `harness`; `sources.sync_pending` (`boolean`, padrão `false`). O `downgrade` falha se houver execução `harness` (não reescreve o histórico). |
 
 Toda migração tem `downgrade` que desfaz o `upgrade`; o teste `test_migrations_match_orm_models` compara as migrações com os modelos ORM.
 
@@ -194,6 +197,7 @@ erDiagram
         text_array exclude_globs
         varchar schedule_cron
         boolean schedule_enabled
+        boolean sync_pending
         jsonb cursor "posição incremental"
         boolean active
     }
@@ -202,7 +206,7 @@ erDiagram
         uuid id PK
         uuid workspace_id FK
         uuid source_id FK "mesmo workspace"
-        varchar trigger "manual | schedule"
+        varchar trigger "manual | schedule | harness"
         varchar status "queued | running | succeeded | failed | cancelled"
         integer documents_new
         integer chunks_written
@@ -623,6 +627,7 @@ Uma fonte de conteúdo de uma coleção: repositório Git ou pasta local.
 | `schedule_enabled` | `boolean` | Padrão `false`; ligado exige `schedule_cron` (`ck_sources_schedule_needs_cron`). |
 | `cursor` | `jsonb` | Posição incremental do conector (ex.: último commit indexado); nulo antes da primeira execução. |
 | `active` | `boolean` | Padrão `true`. |
+| `sync_pending` | `boolean` | Padrão `false`. Uma sincronização `harness` foi pedida enquanto outra execução da fonte estava em andamento: a execução que terminar com sucesso o consome e o workflow continua com uma execução nova; abrir uma execução (`queued` → `running`) também o limpa ([indexacao.md](indexacao.md#sincronização-pendente)). |
 
 ### `runs`
 
@@ -632,7 +637,7 @@ Uma execução da ingestão de uma fonte. `created_at` é o momento em que entro
 |---|---|---|
 | `workspace_id` | `uuid` | FK `workspaces.id`, `ON DELETE CASCADE`. |
 | `source_id` | `uuid` | FK composta → `sources (workspace_id, id)` (`fk_runs_workspace_id_sources`), `ON DELETE CASCADE`. |
-| `trigger` | `varchar(32)` | `manual` ou `schedule` (`ck_runs_trigger`). |
+| `trigger` | `varchar(32)` | `manual`, `schedule` ou `harness` (pedida por um resultado do harness ou por uma revisão de conhecimento, inclusive a execução que continua uma sincronização pendente) (`ck_runs_trigger`). |
 | `status` | `varchar(32)` | `queued`, `running`, `succeeded`, `failed` ou `cancelled` (`ck_runs_status`). |
 | `documents_new`, `documents_changed`, `documents_removed`, `documents_failed` | `integer` | Contagens de documentos, padrão 0. |
 | `chunks_written` | `integer` | Chunks gravados, padrão 0. |

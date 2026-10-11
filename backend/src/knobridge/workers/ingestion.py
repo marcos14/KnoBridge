@@ -5,7 +5,8 @@ Steps, each an activity with explicit timeout and retry: open the run, list the 
 ``BATCH_SIZE`` documents, then finish the run (the new cursor is saved only on success).
 Failure marks the run ``failed`` with a short summary; cancellation marks it ``cancelled``.
 The workflow id is derived from the source (``workflow_id``), so one source has at most one
-running sync.
+running sync. When a harness sync was asked for while it ran, the successful finish queues the
+next run and the workflow continues as new with it, under the same id.
 
 This module is loaded inside the Temporal workflow sandbox, so it imports only ``temporalio``
 and the standard library; activities are referenced by name (see ``ingestion_activities``).
@@ -97,7 +98,14 @@ class IngestionWorkflow:
             summary = failure_summary(error)
             await self._finish(params, FAILED, summary)
             raise ApplicationError(summary, type="ingestion_failed", non_retryable=True) from None
-        await self._finish(params, SUCCEEDED)
+        next_run_id = await self._finish(params, SUCCEEDED)
+        if next_run_id is not None:
+            # A harness sync was asked for while this run went on: same workflow id, new run.
+            workflow.continue_as_new(
+                IngestionInput(
+                    params.workspace_id, params.source_id, next_run_id, params.batch_size
+                )
+            )
         return SUCCEEDED
 
     async def _sync(self, params: IngestionInput) -> None:
@@ -124,10 +132,17 @@ class IngestionWorkflow:
                 retry_policy=RETRY_POLICY,
             )
 
-    async def _finish(self, params: IngestionInput, status: str, error: str | None = None) -> None:
-        await workflow.execute_activity(
+    async def _finish(
+        self, params: IngestionInput, status: str, error: str | None = None
+    ) -> str | None:
+        """Close the run; the id of the next run to continue with, if one was queued.
+
+        Histories recorded before the activity returned anything replay it as ``None``.
+        """
+        next_run_id: object = await workflow.execute_activity(
             FINISH_RUN_ACTIVITY,
             FinishInput(params, status, error),
             start_to_close_timeout=SHORT_TIMEOUT,
             retry_policy=RETRY_POLICY,
         )
+        return next_run_id if isinstance(next_run_id, str) else None

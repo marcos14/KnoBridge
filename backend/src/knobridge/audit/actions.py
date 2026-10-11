@@ -72,3 +72,5 @@ class AuditAction(StrEnum):
     # Modules of runner sources (key, source and changed fields).
     HARNESS_MODULE_CREATED = "harness_module.created"
     HARNESS_MODULE_UPDATED = "harness_module.updated"
+    # Review of a knowledge item (key, action and edited fields; never the text).
+    KNOWLEDGE_ITEM_UPDATED = "knowledge_item.updated"

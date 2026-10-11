@@ -94,6 +94,16 @@ class ConversationPage(BaseModel):
     offset: int
 
 
+class CitationEvidenceOut(BaseModel):
+    """Where in the code a knowledge item was verified (chat-sse v0.5)."""
+
+    path: str
+    start_line: int | None
+    end_line: int | None
+    symbol: str | None
+    excerpt: str | None
+
+
 class CitationOut(BaseModel):
     """A numbered source of an answer (``docs/specs/chat-sse.md``). The location fields came
     with the real retriever (v0.3); answers saved before have them as ``null``."""
@@ -103,7 +113,7 @@ class CitationOut(BaseModel):
     uri: str | None
     snippet: str
     document_id: str | None
-    # ``file`` or ``commit``.
+    # ``file``, ``commit`` or ``knowledge``.
     kind: str | None = None
     path: str | None = None
     symbol: str | None = None
@@ -115,6 +125,9 @@ class CitationOut(BaseModel):
     # Commits only (v0.4): the author's name (never the e-mail) and the ISO 8601 date.
     author: str | None = None
     date: str | None = None
+    # Knowledge items only (v0.5): ``inferido`` or ``revisado``, and the verified evidence.
+    confidence: str | None = None
+    evidence: list[CitationEvidenceOut] | None = None
 
 
 class FeedbackOut(BaseModel):

@@ -619,7 +619,8 @@
     },
     "triggers": {
       "manual": "Manual",
-      "schedule": "Agendada"
+      "schedule": "Agendada",
+      "harness": "Harness"
     },
     "cron": {
       "everyMinute": "A cada minuto",
@@ -1029,7 +1030,8 @@
     "harness_module_created": "Módulo do harness criado",
     "harness_module_updated": "Módulo do harness atualizado",
     "harness_job_enqueued": "Tarefas do harness enfileiradas",
-    "harness_job_cancelled": "Tarefa do harness cancelada"
+    "harness_job_cancelled": "Tarefa do harness cancelada",
+    "knowledge_item_updated": "Item de conhecimento revisado"
   },
   "admin": {
     "search": "Buscar",

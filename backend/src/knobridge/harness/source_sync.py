@@ -1,9 +1,12 @@
-"""Index the knowledge of a runner source after a result: the extension point the result route
-calls once its transaction is committed (docs/specs/runner.md, effect 6 of ``result``).
+"""Index the knowledge of a runner source after a result or a review: the extension point the
+result and review routes call once their transaction is committed (docs/specs/runner.md, effect
+6 of ``result``; docs/specs/harness.md, "Revisão e exportação").
 
-``StartSourceSync`` asks ``ingestion.sync.start_sync`` for a run of the source. A failure to
-start (Temporal down, a sync already running, inactive source) never undoes the result: the
-route answers ``sync_run_id = null`` and the next result or review synchronizes again.
+``StartSourceSync`` asks ``ingestion.sync.request_sync`` for a run of the source with the
+``harness`` trigger. A sync already running does not lose the request: the running workflow
+continues with a new run when it succeeds. A failure to start (Temporal down, inactive source)
+never undoes the stored change: the route answers ``sync_run_id = null`` and the next result
+or review synchronizes again.
 """
 
 from __future__ import annotations
@@ -16,14 +19,15 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from knobridge.core.clock import Clock
 from knobridge.core.logging import get_logger
 from knobridge.ingestion.models import RunTrigger
-from knobridge.ingestion.sync import SyncStarter, start_sync
+from knobridge.ingestion.sync import SyncStarter, request_sync
 
 _log = get_logger(__name__)
 
 
 class SourceSync(Protocol):
     async def __call__(self, *, workspace_id: uuid.UUID, source_id: uuid.UUID) -> uuid.UUID | None:
-        """Start a sync of the source; the run id, or ``None`` when it did not start."""
+        """Ask for a sync of the source; the run id, or ``None`` when it did not start now
+        (pending behind a running sync, or not started at all)."""
         ...
 
 
@@ -37,15 +41,15 @@ class StartSourceSync:
 
     async def __call__(self, *, workspace_id: uuid.UUID, source_id: uuid.UUID) -> uuid.UUID | None:
         try:
-            run = await start_sync(
+            run = await request_sync(
                 self._factory,
                 self._starter,
                 self._clock,
                 workspace_id=workspace_id,
                 source_id=source_id,
-                trigger=RunTrigger.MANUAL,
+                trigger=RunTrigger.HARNESS,
             )
-        except Exception as exc:  # any failure leaves the stored result alone
+        except Exception as exc:  # any failure leaves the stored change alone
             _log.warning(
                 "harness_sync_not_started",
                 workspace_id=str(workspace_id),
@@ -53,4 +57,4 @@ class StartSourceSync:
                 error_type=type(exc).__name__,
             )
             return None
-        return run.id
+        return None if run is None else run.id

@@ -1,6 +1,6 @@
 # Chat em streaming (SSE)
 
-> Rascunho v0.4 · 2026-10-11 · Plano 0002, F4.4 (v0.2, F4.5: resposta `streaming` órfã lida como `interrupted`; v0.3, plano 0003 F4.2: campos de localização nas citações e erros do provedor de embedding antes do stream; v0.4, plano 0003 F6.1: autor e data nas citações de commit)
+> Rascunho v0.5 · 2026-10-11 · Plano 0002, F4.4 (v0.2, F4.5: resposta `streaming` órfã lida como `interrupted`; v0.3, plano 0003 F4.2: campos de localização nas citações e erros do provedor de embedding antes do stream; v0.4, plano 0003 F6.1: autor e data nas citações de commit; v0.5, plano 0004 F2.4: citação de item de conhecimento com confiança e evidências)
 
 Contrato da resposta de `POST /v1/workspaces/{workspace_id}/conversations/{conversation_id}/messages`, que manda uma pergunta ao assistente da conversa e devolve a resposta como [Server-Sent Events](https://html.spec.whatwg.org/multipage/server-sent-events.html). Os schemas das rotas JSON (conversas, mensagens, feedback) estão no [`openapi.json`](openapi.json); lá, esta rota aparece com `200` em `text/event-stream`, e os eventos são descritos aqui. O comportamento do chat além do fio (regra de citações, `Retriever`, fases da rodada, histórico, feedback e visão administrativa) está em [chat.md](chat.md). Implementação em [`backend/src/knobridge/conversations/`](../../backend/src/knobridge/conversations/AGENTS.md) e [`backend/src/knobridge/api/conversations.py`](../../backend/src/knobridge/api/AGENTS.md).
 
@@ -61,11 +61,11 @@ Cada citação:
 | Campo | Tipo | Descrição |
 |---|---|---|
 | `index` | inteiro | A partir de 1, o mesmo `[n]` que a resposta usa no texto. |
-| `title` | texto | Caminho do arquivo (`src/caixa/fechamento.ts`) ou título do commit. |
-| `uri` | texto ou `null` | `<caminho>#L<início>-L<fim>` para texto e código com linhas, `<caminho>` sem linhas (documentos convertidos: PDF, DOCX…) ou `commit:<sha>`. |
+| `title` | texto | Caminho do arquivo (`src/caixa/fechamento.ts`), título do commit ou título do item de conhecimento. |
+| `uri` | texto ou `null` | `<caminho>#L<início>-L<fim>` para texto e código com linhas, `<caminho>` sem linhas (documentos convertidos: PDF, DOCX…), `commit:<sha>` ou `knowledge:<chave-do-item>` (v0.5). |
 | `snippet` | texto | Até 300 caracteres do trecho, sem o cabeçalho de contexto usado no embedding. |
 | `document_id` | texto ou `null` | Id do documento no índice. |
-| `kind` | `file`, `commit` ou `null` | Tipo do documento (v0.3). |
+| `kind` | `file`, `commit`, `knowledge` ou `null` | Tipo do documento (v0.3; `knowledge` na v0.5: item de conhecimento de uma fonte `runner`, [harness.md](harness.md#no-índice-e-no-chat)). |
 | `path` | texto ou `null` | Caminho do arquivo; `null` em commit (v0.3). |
 | `symbol` | texto ou `null` | Função, classe ou tipo do trecho de código, quando conhecido (v0.3). |
 | `start_line`, `end_line` | inteiro ou `null` | Linhas do trecho, a partir de 1, inclusivas; `null` sem linhas (v0.3). |
@@ -73,8 +73,10 @@ Cada citação:
 | `sha` | texto ou `null` | SHA do commit; `null` em arquivo (v0.3). |
 | `author` | texto ou `null` | Nome do autor do commit (nunca o e-mail); `null` em arquivo (v0.4). |
 | `date` | texto ou `null` | Data de autoria do commit em ISO 8601, como o repositório informou (ex.: `2026-10-01T10:00:00-03:00`); `null` em arquivo (v0.4). |
+| `confidence` | `inferido`, `revisado` ou `null` | Selo de confiança do item de conhecimento (`revisado` depois de aprovado na revisão); `null` fora de `knowledge` (v0.5). |
+| `evidence` | lista ou `null` | Só em `knowledge` (v0.5): onde o item foi verificado no código, `[{path, start_line, end_line, symbol, excerpt}]` (linhas a partir de 1; `symbol` e `excerpt` podem ser `null`, o excerto quando desligado na fonte ou omitido por arquivo sensível). São as evidências que o trecho citado usa (até 10). `null` nos demais tipos. |
 
-Os campos marcados com v0.3 e v0.4 são aditivos e compatíveis: respostas gravadas antes vêm com eles `null` em `GET .../conversations/{id}`, e commits indexados antes da v0.4 vêm sem `author` e `date` até serem reindexados. As mesmas citações ficam gravadas na mensagem (`citations` em `GET .../conversations/{id}`).
+Os campos marcados com v0.3, v0.4 e v0.5 são aditivos e compatíveis: respostas gravadas antes vêm com eles `null` em `GET .../conversations/{id}`, e commits indexados antes da v0.4 vêm sem `author` e `date` até serem reindexados. As mesmas citações ficam gravadas na mensagem (`citations` em `GET .../conversations/{id}`).
 
 ### `delta`
 

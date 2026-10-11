@@ -102,6 +102,8 @@ def test_chat_with_indexed_source_streams_and_cites(api: ApiEnv, chat: ChatOverr
         "sha": None,
         "author": None,
         "date": None,
+        "confidence": None,
+        "evidence": None,
     }
     assert (commit["title"], commit["uri"], commit["sha"]) == (
         "Corrige fechamento de caixa",

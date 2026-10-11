@@ -52,6 +52,7 @@ const ACTIONS: Record<AuditAction, true> = {
   "harness_module.updated": true,
   "harness_job.enqueued": true,
   "harness_job.cancelled": true,
+  "knowledge_item.updated": true,
   "workspace.created": true,
   "workspace.updated": true,
   "workspace.suspended": true,

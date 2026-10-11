@@ -1,6 +1,8 @@
 # Indexação e busca
 
-> Rascunho v0.1 · 2026-10-11 · Em uso (plano 0003)
+> Rascunho v0.2 · 2026-10-11 · Em uso (planos 0003 e 0004)
+>
+> **Mudanças da v0.2** (plano 0004, F2.4): conhecimento do harness indexado pelo conector interno `knowledge` ([Conhecimento do harness](#conhecimento-do-harness)), gatilho `harness` e [sincronização pendente](#sincronização-pendente), citação `knowledge` no chat.
 
 Como um documento lido por um conector vira trechos (chunks) com vetor no índice, como a sincronização roda no Temporal (manual ou agendada), quanto ela custa e como a busca híbrida encontra os trechos que viram citações no chat. A leitura das fontes está em [conectores.md](conectores.md); o uso da busca no chat, em [chat.md](chat.md#recuperação-de-fontes); as tabelas, em [modelo-de-dados.md](modelo-de-dados.md#índice-de-conhecimento); as decisões de arquitetura, no [ADR 0004](../adr/0004-indice-de-conhecimento.md).
 
@@ -110,6 +112,17 @@ O divisor por linhas faz janelas gulosas de cerca de `TARGET_TOKENS`, cada uma r
 | `sha`, `title`, `author`, `date` | Commits (`author` só o nome). |
 | `display` | Gravado pelo motor junto com o trecho: o corpo sem o cabeçalho de embedding. |
 
+## Conhecimento do harness
+
+Fontes `runner` (plano 0004, decisão D15) passam pelo mesmo workflow, com o conector interno `knowledge` (`harness/knowledge_connector.py`), que `SettingsConnectorFactory` usa para todo tipo `runner` sem validar a config (ela é do runner). Diferente dos conectores de arquivos, ele lê o banco: os `knowledge_items` da fonte, numa transação no escopo do workspace, sem usuário.
+
+- **Documentos**: um por item não descartado; `natural_key` = chave do item (`src-faturamento.R001`), `kind = knowledge`, `title` = título (o editado, se houver), `uri = knowledge:<chave>`. Conteúdo = [Markdown do item](harness.md#markdown-de-um-item), de `edited` quando houver.
+- **Hash**: SHA-256 do Markdown **e** dos metadados de citação (módulo, confiança, título, evidências com excerto). Aprovar um item muda só a confiança e, por isso, também o reindexa.
+- **Incremental**: o cursor (`{"kind": "knowledge", "version": 1, "items": {chave: hash}}`) compara os hashes; item novo é adicionado, hash diferente é alterado, item descartado ou apagado sai do índice.
+- **Parsing**: o Markdown passa direto (`ParsedKind.KNOWLEDGE`), com o título do item.
+- **Chunking**: por títulos, como Markdown, sem linhas (o Markdown é gerado). Texto embedado com o cabeçalho `item: <chave>` e `section: …`. `meta` de cada trecho: `kind` (`knowledge`), `item_key`, `module`, `confidence`, `title`, `headings` e `evidence` (`[{path, start_line, end_line, symbol, excerpt}]`): as evidências que o trecho cita com `[n]` (enriquecimento do módulo, até 10), ou, sem marcador (regras e seções sem citação), as 5 primeiras do item.
+- **Citação**: `kind: knowledge`, com a confiança e as evidências ([Da busca à citação](#da-busca-à-citação)).
+
 ## Embeddings
 
 - **A coleção define o embedding** (ADR 0004): credencial de provedor e modelo. A credencial tem de ser do mesmo workspace e de um tipo com embeddings (OpenAI, OpenRouter ou, fora de produção, `fake`). A Anthropic não oferece embeddings: `provider_embeddings_unsupported` (422).
@@ -127,8 +140,24 @@ O divisor por linhas faz janelas gulosas de cerca de `TARGET_TOKENS`, cada uma r
 `start_sync` (`ingestion/sync.py`) é a entrada comum da API (`POST .../sources/{id}/sync`, papel editor ou acima) e do agendamento:
 
 1. confere a fonte (`source_not_found` 404; fonte desativada, `source_inactive` 409);
-2. grava um `Run` `queued` com o gatilho (`manual` ou `schedule`);
+2. grava um `Run` `queued` com o gatilho (`manual`, `schedule` ou `harness`);
 3. inicia o workflow `knobridge.ingestion.v1` com id `ingestion-<source_id>`, `ALLOW_DUPLICATE` + `FAIL`: depois de uma execução terminada pode vir outra, mas não duas ao mesmo tempo. **Uma execução por fonte**: se já há uma, o run recém-criado é apagado e a API responde `sync_already_running` (409). Temporal fora do ar: `sync_unavailable` (503) e nada é iniciado.
+
+### Sincronização pendente
+
+O harness pede sincronizações que não podem se perder: depois de cada resultado de tarefa ([runner.md](runner.md#post-v1runnerjobsjob_idresult), efeito 6) e de cada revisão de item ([harness.md](harness.md#revisão-e-exportação)). Elas entram por `request_sync` (`ingestion/sync.py`), com o gatilho `harness`:
+
+1. tenta `start_sync`; se começou, pronto;
+2. se já há execução da fonte (`sync_already_running`), trava a linha da fonte (`FOR UPDATE`) e procura uma execução `queued` ou `running`: havendo, grava `sources.sync_pending = true` e devolve "pendente" (sem execução);
+3. não havendo (o workflow anterior já fechou a execução e está terminando), tenta `start_sync` mais uma vez; se ainda for recusado, grava a marca do mesmo jeito.
+
+A marca é consumida pelo próprio workflow:
+
+- `open_run` (`queued` → `running`) limpa a marca: essa execução lista a fonte depois, então já cobre o que foi pedido antes dela;
+- `finish_run` com sucesso, numa fonte ativa com a marca, limpa a marca e grava uma execução nova `queued` com gatilho `harness`, cujo id a activity devolve; o workflow então faz `continue-as-new` com ela, com o mesmo id de workflow (a regra "uma execução por fonte" continua valendo);
+- falha ou cancelamento deixam a marca para a próxima execução bem-sucedida.
+
+`finish_run` trava a linha da fonte, como o passo 2: ou a execução que termina ainda aparece ativa e lê a marca depois do commit de quem a gravou, ou já aparece encerrada e quem pede começa a sua. Históricos gravados antes de a activity devolver o id são lidos como "sem continuação".
 
 ### Workflow `knobridge.ingestion.v1`
 
@@ -139,7 +168,7 @@ Workflow determinístico (`workers/ingestion.py`); todo IO fica nas activities (
 | `knobridge.ingestion.open_run.v1` | 30 s | `queued` → `running`, grava `started_at`. Retry não muda nada. |
 | `knobridge.ingestion.list_changes.v1` | 1 h (heartbeat a cada 5 s, timeout de heartbeat 2 min) | Chama `list_changes` do conector **fora de transação**, grava o `ChangeSet` em `run_items` (adicionados e alterados como `upsert`, removidos como `remove`, cada um com um `ordinal`) e o cursor novo em `runs.pending_cursor`. Devolve só a contagem. Retry substitui os itens da tentativa anterior. |
 | `knobridge.ingestion.process_batch.v1` | 30 min (heartbeat igual) | Processa os itens com `início <= ordinal < início + 50` ainda não feitos. |
-| `knobridge.ingestion.finish_run.v1` | 30 s | Fecha a execução (abaixo). Execução já encerrada fica como está. |
+| `knobridge.ingestion.finish_run.v1` | 30 s | Fecha a execução (abaixo). Execução já encerrada fica como está. Devolve o id da próxima execução quando consome uma [sincronização pendente](#sincronização-pendente), senão `null`. |
 
 A lista de mudanças não passa pelo histórico do Temporal, que limita payloads a cerca de 2 MB. Ela fica em `run_items` e cada lote lê a sua página. Com `BATCH_SIZE` = 50, 10 mil arquivos dão 200 lotes e cerca de 1 400 eventos de histórico (o limite é 51 200).
 
@@ -209,6 +238,7 @@ O `HybridRetriever` (`retrieval/retriever.py`) lê as coleções e a similaridad
 | `title` | caminho do arquivo, ou título do commit |
 | `uri` | `<caminho>#L<início>-L<fim>` (texto, Markdown e código), `<caminho>` (documento convertido, sem linhas) ou `commit:<sha>` |
 | `kind`, `path`, `symbol`, `start_line`, `end_line`, `language`, `sha`, `author`, `date` | `meta` do trecho (`null` quando não se aplica) |
+| item de conhecimento (`kind = knowledge`) | `title` = título do item, `uri` = `knowledge:<chave>`, `confidence` e `evidence` (arquivo, linhas, símbolo, excerto) do `meta`; sem `path` nem linhas ([Conhecimento do harness](#conhecimento-do-harness)) |
 
 As fontes ficam na ordem da busca e são cortadas pelo orçamento de 6000 tokens estimados; a numeração `[n]` é a posição nessa lista. Sem nenhuma fonte, o chat responde a mensagem de "sem fonte" sem chamar o LLM. Detalhes em [chat.md](chat.md#recuperação-de-fontes) e formato no fio em [chat-sse.md](chat-sse.md#citations).
 

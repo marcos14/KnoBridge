@@ -31,7 +31,7 @@ fases:
         commit: 656f934
   - id: F2
     titulo: Servidor
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F2.1
         titulo: Cadastro de runners, token e autenticação do runner
@@ -53,13 +53,13 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-11
         concluida_em: 2026-10-11
-        commit: null
+        commit: 2710599
       - id: F2.4
         titulo: Conhecimento no índice, revisão, exportação .md e citações de conhecimento
-        status: em_execucao
+        status: concluida
         agente: claude-code
         iniciada_em: 2026-10-11
-        concluida_em: null
+        concluida_em: 2026-10-11
         commit: null
   - id: F3
     titulo: Runner local (knobridge-runner)
@@ -326,6 +326,20 @@ decisoes:
     motivo: "evita corrida entre report e edição; auditoria registra ações de pessoas, não reações automáticas"
     alternativas: "lock otimista por versão; auditar todo enfileiramento; 422 para chave repetida"
     adr: null
+  - id: D28
+    data: 2026-10-11
+    por: agente
+    decisao: "F2.4: a sincronização pedida pelo harness (resultado ou revisão) usa request_sync com gatilho harness; com outra execução em andamento grava sources.sync_pending, e o workflow, ao terminar, continua como novo (finish_run.v1 devolve o id da próxima execução ou None)"
+    motivo: "não perder a revisão feita durante uma sincronização sem abrir execuções concorrentes na mesma fonte"
+    alternativas: "recusar com 409 como na sincronização manual; enfileirar no Temporal com outro id de workflow"
+    adr: null
+  - id: D29
+    data: 2026-10-11
+    por: agente
+    decisao: "F2.4: o hash do documento knowledge cobre o Markdown e os metadados de citação (RawDocument.digest); a citação ganha o tipo knowledge com confiança e evidências (chat-sse v0.5); ingestion/ não importa harness/, a fábrica knowledge é injetada no SettingsConnectorFactory pela API e pelo worker"
+    motivo: "mudar só a evidência ou a confiança precisa reindexar; a citação mostra de onde veio a regra; mantém as dependências apontando para baixo"
+    alternativas: "hash só do Markdown; citação como arquivo comum; importar o conector direto"
+    adr: null
 pendencias_usuario: []
 ---
 
@@ -588,6 +602,7 @@ Nenhuma aberta. Observação para a F5.2: a chave do OpenRouter cadastrada na st
 - 2026-10-11 — F2.2 concluída: fila com reserva (claim long-poll, heartbeat, result, fail, defer, cancelamento), itens com chaves do servidor e revisados preservados; 14 schemas novos no contrato do runner sem divergência; 1324 testes, cobertura 99,8%. Corrigido YAML inválido na D23.
 - 2026-10-11 — F2.3 e F2.4 iniciadas em paralelo.
 - 2026-10-11 — F2.3 concluída: fonte do tipo runner, report de inventário, módulos editáveis e disparo manual e por commit; backend 1410 passed com 99,84% de cobertura (1 OSError de socket do Windows em test_members, verde ao rodar de novo), frontend 921, runner 427
+- 2026-10-11 — F2.4 concluída: conector knowledge no workflow de ingestão, revisão e exportação, citação knowledge e sincronização pendente (migração 0015), mesclada sobre a F2.3; backend 1470 passed com 99% de cobertura, frontend 921, runner 427
 
 ## 8. Encerramento
 

@@ -548,6 +548,49 @@ def test_migration_0014_upgrade_downgrade(postgres_url: str) -> None:
     assert after_downgrade["sources"] == (True, True, 1)
 
 
+def _harness_sync_shape(database_url: str) -> tuple[str, bool]:
+    """(check of runs.trigger, whether sources.sync_pending exists)."""
+
+    async def query() -> tuple[str, bool]:
+        engine = create_async_engine(database_url, poolclass=NullPool)
+        try:
+            async with engine.connect() as connection:
+                check = await connection.scalar(
+                    text(
+                        "SELECT pg_get_constraintdef(oid) FROM pg_constraint"
+                        " WHERE conname LIKE '%ck_runs_trigger'"
+                    )
+                )
+                column = await connection.scalar(
+                    text(
+                        "SELECT count(*) = 1 FROM information_schema.columns"
+                        " WHERE table_name = 'sources' AND column_name = 'sync_pending'"
+                    )
+                )
+                return str(check), bool(column)
+        finally:
+            await engine.dispose()
+
+    return asyncio.run(query())
+
+
+@pytest.mark.integration
+def test_migration_0015_upgrade_downgrade(postgres_url: str) -> None:
+    config, _ = _alembic_config(postgres_url)
+
+    command.upgrade(config, "head")
+    after_upgrade = _harness_sync_shape(postgres_url)
+    command.downgrade(config, "0014")
+    after_downgrade = _harness_sync_shape(postgres_url)
+    command.downgrade(config, "base")
+
+    assert "'harness'" in after_upgrade[0]
+    assert after_upgrade[1] is True
+    assert "'harness'" not in after_downgrade[0]
+    assert "'schedule'" in after_downgrade[0]
+    assert after_downgrade[1] is False
+
+
 def _schema_diff(connection: Connection) -> list[object]:
     diff: list[object] = compare_metadata(MigrationContext.configure(connection), Base.metadata)
     return diff

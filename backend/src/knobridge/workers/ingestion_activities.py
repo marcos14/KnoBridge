@@ -26,6 +26,7 @@ from knobridge.core.crypto import SecretBox
 from knobridge.core.errors import KnoBridgeError
 from knobridge.core.logging import log_context
 from knobridge.core.settings import Settings
+from knobridge.harness.knowledge_connector import KnowledgeConnectorFactory
 from knobridge.ingestion.connectors import SettingsConnectorFactory
 from knobridge.ingestion.errors import SyncAlreadyRunningError, SyncNotRunningError
 from knobridge.ingestion.indexer import Indexer
@@ -88,7 +89,9 @@ class IngestionActivities:
         clock = SystemClock()
         box = SecretBox.derive(settings.secret_key.get_secret_value(), info=CREDENTIALS_KEY_INFO)
         credentials = ProviderCredentialService(clock, box, allow_fake=settings.env != "production")
-        connectors = SettingsConnectorFactory(settings)
+        connectors = SettingsConnectorFactory(
+            settings, knowledge=KnowledgeConnectorFactory(factory)
+        )
         return cls(
             RunLifecycle(factory, clock, connectors, EmbeddingPriceTable.from_settings(settings)),
             Indexer(factory, clock, connectors, credentials.reveal_key, create_embedding_provider),
@@ -130,9 +133,13 @@ class IngestionActivities:
             await self._indexer.process_batch(scope, batch.start, batch.run.batch_size)
 
     @activity.defn(name=FINISH_RUN_ACTIVITY)
-    async def finish_run(self, params: FinishInput) -> None:
+    async def finish_run(self, params: FinishInput) -> str | None:
+        """Close the run; the id of the next run when a pending harness sync was queued."""
         async with self._working(params.run) as scope:
-            await self._lifecycle.finish(scope, RunStatus(params.status), params.error)
+            next_run_id = await self._lifecycle.finish(
+                scope, RunStatus(params.status), params.error
+            )
+        return None if next_run_id is None else str(next_run_id)
 
 
 class TemporalSyncStarter:

@@ -1041,7 +1041,8 @@
           "harness_job.cancelled",
           "harness_job.enqueued",
           "harness_module.created",
-          "harness_module.updated"
+          "harness_module.updated",
+          "knowledge_item.updated"
         ],
         "title": "AuditAction",
         "type": "string"
@@ -1178,6 +1179,68 @@
         "title": "ChangePasswordRequest",
         "type": "object"
       },
+      "CitationEvidenceOut": {
+        "description": "Where in the code a knowledge item was verified (chat-sse v0.5).",
+        "properties": {
+          "end_line": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Line"
+          },
+          "excerpt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Excerpt"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "start_line": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Line"
+          },
+          "symbol": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Symbol"
+          }
+        },
+        "required": [
+          "path",
+          "start_line",
+          "end_line",
+          "symbol",
+          "excerpt"
+        ],
+        "title": "CitationEvidenceOut",
+        "type": "object"
+      },
       "CitationOut": {
         "description": "A numbered source of an answer (``docs/specs/chat-sse.md``). The location fields came\nwith the real retriever (v0.3); answers saved before have them as ``null``.",
         "properties": {
@@ -1191,6 +1254,17 @@
               }
             ],
             "title": "Author"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
           },
           "date": {
             "anyOf": [
@@ -1224,6 +1298,20 @@
               }
             ],
             "title": "End Line"
+          },
+          "evidence": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/CitationEvidenceOut"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Evidence"
           },
           "index": {
             "title": "Index",
@@ -3140,6 +3228,285 @@
         "title": "InviteRequest",
         "type": "object"
       },
+      "KnowledgeConfidence": {
+        "description": "Trust seal shown with the item; values in pt-BR because they reach the exported\nfrontmatter and the chat citation as written.",
+        "enum": [
+          "inferido",
+          "revisado"
+        ],
+        "title": "KnowledgeConfidence",
+        "type": "string"
+      },
+      "KnowledgeEvidenceOut": {
+        "properties": {
+          "end_line": {
+            "title": "End Line",
+            "type": "integer"
+          },
+          "excerpt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Excerpt"
+          },
+          "excerpt_omitted": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Excerpt Omitted"
+          },
+          "excerpt_truncated": {
+            "default": false,
+            "title": "Excerpt Truncated",
+            "type": "boolean"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "redacted": {
+            "default": false,
+            "title": "Redacted",
+            "type": "boolean"
+          },
+          "start_line": {
+            "title": "Start Line",
+            "type": "integer"
+          },
+          "symbol": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Symbol"
+          }
+        },
+        "required": [
+          "path",
+          "start_line",
+          "end_line"
+        ],
+        "title": "KnowledgeEvidenceOut",
+        "type": "object"
+      },
+      "KnowledgeItemKind": {
+        "enum": [
+          "rule",
+          "module"
+        ],
+        "title": "KnowledgeItemKind",
+        "type": "string"
+      },
+      "KnowledgeItemOut": {
+        "properties": {
+          "commit_sha": {
+            "title": "Commit Sha",
+            "type": "string"
+          },
+          "confidence": {
+            "$ref": "#/components/schemas/KnowledgeConfidence"
+          },
+          "content": {
+            "additionalProperties": true,
+            "title": "Content",
+            "type": "object"
+          },
+          "edited": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edited"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/KnowledgeEvidenceOut"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "evidence_changed": {
+            "title": "Evidence Changed",
+            "type": "boolean"
+          },
+          "generated_by": {
+            "title": "Generated By",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "job_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Id"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/KnowledgeItemKind"
+          },
+          "module_id": {
+            "format": "uuid",
+            "title": "Module Id",
+            "type": "string"
+          },
+          "module_key": {
+            "title": "Module Key",
+            "type": "string"
+          },
+          "review_status": {
+            "$ref": "#/components/schemas/KnowledgeReviewStatus"
+          },
+          "source_id": {
+            "format": "uuid",
+            "title": "Source Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "source_id",
+          "module_id",
+          "module_key",
+          "key",
+          "kind",
+          "title",
+          "content",
+          "edited",
+          "evidence",
+          "confidence",
+          "review_status",
+          "evidence_changed",
+          "commit_sha",
+          "generated_by",
+          "job_id",
+          "updated_at"
+        ],
+        "title": "KnowledgeItemOut",
+        "type": "object"
+      },
+      "KnowledgeItemPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/KnowledgeItemOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "KnowledgeItemPage",
+        "type": "object"
+      },
+      "KnowledgeItemPatch": {
+        "additionalProperties": false,
+        "properties": {
+          "action": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReviewAction"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "content": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "title": "KnowledgeItemPatch",
+        "type": "object"
+      },
+      "KnowledgeReviewStatus": {
+        "enum": [
+          "pending",
+          "approved",
+          "discarded"
+        ],
+        "title": "KnowledgeReviewStatus",
+        "type": "string"
+      },
       "LiveResponse": {
         "properties": {
           "status": {
@@ -3952,6 +4319,15 @@
         "title": "ResetPasswordRequest",
         "type": "object"
       },
+      "ReviewAction": {
+        "enum": [
+          "approve",
+          "discard",
+          "reopen"
+        ],
+        "title": "ReviewAction",
+        "type": "string"
+      },
       "Role": {
         "description": "Per-workspace role, from most to least privileged.",
         "enum": [
@@ -4440,7 +4816,8 @@
       "RunTrigger": {
         "enum": [
           "manual",
-          "schedule"
+          "schedule",
+          "harness"
         ],
         "title": "RunTrigger",
         "type": "string"
@@ -12372,6 +12749,311 @@
           }
         },
         "summary": "Enqueue Harness Jobs",
+        "tags": [
+          "harness"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/sources/{source_id}/knowledge": {
+      "get": {
+        "description": "Knowledge items of the source by key, discarded ones included unless filtered.",
+        "operationId": "list_knowledge_items_v1_workspaces__workspace_id__sources__source_id__knowledge_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "module",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Module"
+            }
+          },
+          {
+            "in": "query",
+            "name": "review_status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/KnowledgeReviewStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Review Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "confidence",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/KnowledgeConfidence"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Confidence"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/KnowledgeItemKind"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeItemPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Workspace suspended."
+          },
+          "404": {
+            "description": "Workspace, source (`source_not_found`) or module (`module_not_found`) not found, or caller is not a member."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Knowledge Items",
+        "tags": [
+          "harness"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/sources/{source_id}/knowledge/export": {
+      "get": {
+        "description": "The items not discarded (of ``module``, when given) as ``<module>/<item>.md`` files.",
+        "operationId": "export_knowledge_v1_workspaces__workspace_id__sources__source_id__knowledge_export_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "module",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Module"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/zip": {}
+            },
+            "description": "Zip of `.md` files."
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Workspace suspended."
+          },
+          "404": {
+            "description": "Workspace, source (`source_not_found`) or module (`module_not_found`) not found, or caller is not a member."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export Knowledge",
+        "tags": [
+          "harness"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/sources/{source_id}/knowledge/{item_id}": {
+      "patch": {
+        "description": "Edit, approve, discard or reopen the item; the source sync follows the commit.",
+        "operationId": "review_knowledge_item_v1_workspaces__workspace_id__sources__source_id__knowledge__item_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Item Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KnowledgeItemPatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KnowledgeItemOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below editor, workspace suspended or CSRF failure."
+          },
+          "404": {
+            "description": "Workspace or item (`knowledge_item_not_found`) not found."
+          },
+          "422": {
+            "description": "Invalid body (`validation_error`) or content that breaks the shape of the item kind (`knowledge_content_invalid`, details `[{loc, problem}]`)."
+          }
+        },
+        "summary": "Review Knowledge Item",
         "tags": [
           "harness"
         ]
