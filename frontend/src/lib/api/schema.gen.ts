@@ -2539,6 +2539,8 @@ export interface components {
             last_run: components["schemas"]["RunOut"] | null;
             /** Name */
             name: string;
+            /** Next Run At */
+            next_run_at: string | null;
             /** Schedule Cron */
             schedule_cron: string | null;
             /** Schedule Enabled */

@@ -81,10 +81,10 @@ fases:
         commit: 12c325c
       - id: F3.3
         titulo: Agendamento por fonte (Temporal Schedules)
-        status: em_execucao
+        status: concluida
         agente: claude-code
         iniciada_em: 2026-10-10
-        concluida_em: null
+        concluida_em: 2026-10-10
         commit: null
   - id: F4
     titulo: Recuperação e chat com fontes
@@ -502,6 +502,7 @@ Ver `decisoes[]` no frontmatter. ADR previsto: 0004 (índice de conhecimento: di
 - 2026-10-10 — F3.3 e F5.1 iniciadas em paralelo.
 - 2026-10-10 — F5.1 concluída: Tela /w/:id/collections (lista, CRUD, detalhe com fontes e Testar busca); 759 testes.
 - 2026-10-10 — F5.3 iniciada (em paralelo com a F3.3).
+- 2026-10-10 — F3.3 concluída: Agendamento por fonte via Temporal Schedules, workflow scheduled_sync, reconciliação na subida do worker, next_run_at; 1136 testes backend. Limite: reconciliação só na subida do worker.
 
 ## 8. Encerramento
 

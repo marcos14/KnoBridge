@@ -651,6 +651,7 @@ export function makeSource(overrides: Partial<Source> = {}): Source {
     active: true,
     schedule_cron: null,
     schedule_enabled: false,
+    next_run_at: null,
     document_count: 42,
     last_run: {
       id: "00000000-0000-4000-8000-0000000001c1",

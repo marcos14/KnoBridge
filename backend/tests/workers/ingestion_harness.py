@@ -46,6 +46,8 @@ from knobridge.llm.pricing import EmbeddingPriceTable
 from knobridge.tenancy.models import Membership, Role, User, Workspace
 from knobridge.workers.ingestion import BATCH_SIZE, IngestionWorkflow, workflow_id
 from knobridge.workers.ingestion_activities import IngestionActivities, TemporalSyncStarter
+from knobridge.workers.scheduled_sync import ScheduledSyncWorkflow
+from knobridge.workers.scheduled_sync_activities import ScheduledSyncActivities
 
 SessionFactory = async_sessionmaker[AsyncSession]
 TASK_QUEUE = "test-ingestion"
@@ -279,7 +281,8 @@ async def harness(
     batch_size: int = BATCH_SIZE,
     model: str = MODEL,
 ) -> AsyncGenerator[Harness]:
-    """``database`` plus the Temporal test server and a worker running the ingestion."""
+    """``database`` plus the Temporal test server and a worker running the ingestion and the
+    scheduled sync (whose activity starts the ingestion with the worker's own client)."""
     async with (
         database(database_url, files, model=model) as h,
         await WorkflowEnvironment.start_time_skipping() as env,
@@ -287,11 +290,12 @@ async def harness(
         h.env = env
         h.starter = TemporalSyncStarter(env.client, TASK_QUEUE, batch_size=batch_size)
         activities = IngestionActivities(h.lifecycle, h.indexer, heartbeat_interval=0.05)
+        scheduled = ScheduledSyncActivities(h.factory, h.clock, TASK_QUEUE)
         async with Worker(
             env.client,
             task_queue=TASK_QUEUE,
-            workflows=[IngestionWorkflow],
-            activities=activities.all(),
+            workflows=[IngestionWorkflow, ScheduledSyncWorkflow],
+            activities=[*activities.all(), *scheduled.all()],
             # Cancellation reaches an activity on its next heartbeat; keep that quick.
             max_heartbeat_throttle_interval=timedelta(milliseconds=50),
             default_heartbeat_throttle_interval=timedelta(milliseconds=50),

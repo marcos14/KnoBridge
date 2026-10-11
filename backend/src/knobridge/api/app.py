@@ -39,7 +39,7 @@ from knobridge.core.settings import Settings, get_settings
 from knobridge.email.rendering import EmailComposer
 from knobridge.email.sender import EmailSender, SmtpEmailSender
 from knobridge.security.passwords import PasswordHasher
-from knobridge.workers.sync_client import LazyTemporalSyncStarter
+from knobridge.workers.sync_client import LazyTemporalScheduleManager, LazyTemporalSyncStarter
 
 API_PREFIX = "/v1"
 
@@ -69,8 +69,9 @@ def create_app(
         db_engine = engine if engine is not None else create_engine(resolved)
         app.state.engine = db_engine
         app.state.session_factory = create_session_factory(db_engine)
-        # Connects on the first sync, so the API starts even with Temporal down.
+        # Both connect on first use, so the API starts even with Temporal down.
         app.state.sync_starter = LazyTemporalSyncStarter(resolved)
+        app.state.schedule_manager = LazyTemporalScheduleManager(resolved)
         try:
             yield
         finally:

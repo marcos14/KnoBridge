@@ -3662,6 +3662,18 @@
             "title": "Name",
             "type": "string"
           },
+          "next_run_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Run At"
+          },
           "schedule_cron": {
             "anyOf": [
               {
@@ -3694,6 +3706,7 @@
           "schedule_cron",
           "schedule_enabled",
           "active",
+          "next_run_at",
           "document_count",
           "last_run",
           "created_at",

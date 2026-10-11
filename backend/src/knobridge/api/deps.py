@@ -32,6 +32,7 @@ from knobridge.email.rendering import EmailComposer
 from knobridge.email.sender import EmailSender
 from knobridge.ingestion.collections import CollectionService
 from knobridge.ingestion.connectors import ConnectorFactory, SettingsConnectorFactory
+from knobridge.ingestion.schedule import ScheduleManager
 from knobridge.ingestion.sources import SourceService
 from knobridge.ingestion.sync import SyncStarter
 from knobridge.llm.credentials import CREDENTIALS_KEY_INFO, ProviderCredentialService
@@ -353,6 +354,12 @@ def get_sync_starter(request: Request) -> SyncStarter:
     return starter
 
 
+def get_schedule_manager(request: Request) -> ScheduleManager:
+    """The lazy Temporal schedule manager created by the lifespan; tests override it."""
+    manager: ScheduleManager = request.app.state.schedule_manager
+    return manager
+
+
 def get_connector_factory(request: Request) -> ConnectorFactory:
     """Builds the connector of a source (connection test); tests override it with fakes."""
     return SettingsConnectorFactory(get_settings_from_app(request))
@@ -362,8 +369,10 @@ def get_collection_service(request: Request) -> CollectionService:
     return CollectionService(request.app.state.clock)
 
 
-def get_source_service(request: Request) -> SourceService:
-    return SourceService(request.app.state.clock)
+def get_source_service(
+    request: Request, schedules: Annotated[ScheduleManager, Depends(get_schedule_manager)]
+) -> SourceService:
+    return SourceService(request.app.state.clock, schedules)
 
 
 SyncStarterDep = Annotated[SyncStarter, Depends(get_sync_starter)]

@@ -4,7 +4,9 @@ and cancel the running synchronization.
 Runs in the caller's workspace-scoped session (the route's ``WorkspaceContext.db``). The config
 is validated against the model of the source's kind (``source_config.py``) and stored
 normalized; the kind and the collection never change (the chunks carry the collection and the
-cursor belongs to the connector). The schedule is only validated and stored (``schedule.py``).
+cursor belongs to the connector). The schedule is validated and stored, then mirrored on the
+``ScheduleManager`` (``schedule.py``) after the change is flushed; with Temporal unreachable the
+source is still saved and the worker's reconciliation brings the schedule in line later.
 Deleting a source first cancels its running synchronization, then the database cascades to
 runs, documents and chunks. Audit metadata carries names, kinds and changed fields, never the
 config itself (paths and URLs stay out of the trail).
@@ -16,6 +18,7 @@ import contextlib
 import uuid
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from datetime import datetime
 
 import pydantic
 from sqlalchemy import func, select
@@ -31,7 +34,14 @@ from knobridge.ingestion.connectors import ConnectorFactory
 from knobridge.ingestion.errors import SyncNotRunningError
 from knobridge.ingestion.index_queries import active_run, document_count, last_runs
 from knobridge.ingestion.models import Collection, Document, Run, Source
-from knobridge.ingestion.schedule import validate_schedule
+from knobridge.ingestion.schedule import (
+    ScheduleManager,
+    desired_schedule,
+    drop_schedule,
+    mirror_schedule,
+    next_run_at,
+    validate_schedule,
+)
 from knobridge.ingestion.source_check import (
     TEST_CONNECTION_TIMEOUT,
     ConnectionFailure,
@@ -58,6 +68,7 @@ class SourceView:
     source: Source
     document_count: int
     last_run: Run | None
+    next_run_at: datetime | None
 
 
 @dataclass(frozen=True)
@@ -101,14 +112,29 @@ def normalized_config(kind: SourceKind, data: Mapping[str, object]) -> dict[str,
     return dumped
 
 
+# Fields whose change can create, update, pause or remove the source's schedule.
+_SCHEDULE_FIELDS = frozenset({"schedule_cron", "schedule_enabled", "active"})
+
+
 def _target(source: Source) -> AuditTarget:
     return AuditTarget("source", str(source.id))
 
 
 class SourceService:
-    def __init__(self, clock: Clock, *, test_timeout: float = TEST_CONNECTION_TIMEOUT) -> None:
+    def __init__(
+        self,
+        clock: Clock,
+        schedules: ScheduleManager,
+        *,
+        test_timeout: float = TEST_CONNECTION_TIMEOUT,
+    ) -> None:
+        self._clock = clock
         self._audit = AuditService(clock)
+        self._schedules = schedules
         self._test_timeout = test_timeout
+
+    def _view(self, source: Source, count: int, last_run: Run | None) -> SourceView:
+        return SourceView(source, count, last_run, next_run_at(source, self._clock.now()))
 
     async def list_sources(
         self,
@@ -133,7 +159,7 @@ class SourceService:
         )
         pairs = list(rows)
         runs = await last_runs(db, workspace_id, [source.id for source, _ in pairs])
-        views = [SourceView(source, count, runs.get(source.id)) for source, count in pairs]
+        views = [self._view(source, count, runs.get(source.id)) for source, count in pairs]
         return views, total or 0
 
     async def get(
@@ -150,7 +176,7 @@ class SourceService:
             raise NotFoundError("Source not found.", code="source_not_found")
         source, count = row
         runs = await last_runs(db, workspace_id, [source.id])
-        return SourceView(source, count, runs.get(source.id))
+        return self._view(source, count, runs.get(source.id))
 
     async def create(
         self,
@@ -192,7 +218,9 @@ class SourceService:
             },
             ip=ip,
         )
-        return SourceView(source, 0, None)
+        if source.schedule_cron is not None:
+            await mirror_schedule(self._schedules, source)
+        return self._view(source, 0, None)
 
     async def update(
         self,
@@ -206,6 +234,7 @@ class SourceService:
     ) -> SourceView:
         """Apply the given fields; audited only when something actually changes."""
         source = await self._get(db, workspace_id, source_id)
+        had_schedule = desired_schedule(source) is not None
         wanted: dict[str, object] = {
             "name": changes.name,
             "config": None
@@ -245,6 +274,8 @@ class SourceService:
                 metadata={"name": source.name, "fields": list(fields)},
                 ip=ip,
             )
+            if set(fields) & _SCHEDULE_FIELDS and (had_schedule or desired_schedule(source)):
+                await mirror_schedule(self._schedules, source)
         return await self.get(db, workspace_id=workspace_id, source_id=source_id)
 
     async def delete(
@@ -269,8 +300,11 @@ class SourceService:
             .select_from(Document)
             .where(Document.workspace_id == workspace_id, Document.source_id == source_id)
         )
+        had_schedule = source.schedule_cron is not None
         await db.delete(source)
         await db.flush()
+        if had_schedule:
+            await drop_schedule(self._schedules, workspace_id, source_id)
         await self._audit.record(
             db,
             action=AuditAction.SOURCE_DELETED,

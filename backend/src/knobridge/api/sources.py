@@ -4,8 +4,11 @@ Every member lists and reads them; owners, admins and editors create, update, de
 and synchronize. The config is validated by kind (422 ``source_config_invalid`` with the
 field errors in ``details``); the collection must be of the same workspace (422
 ``source_collection_invalid``); names are unique per workspace (409 ``source_name_taken``);
-``schedule_cron`` is a five-field cron (422 ``source_schedule_invalid``), only stored for now
-(the Temporal Schedule comes with F3.3). ``POST .../{id}/test`` answers 200 ``{ok, error}``;
+``schedule_cron`` is a five-field UTC cron (422 ``source_schedule_invalid``) mirrored on a
+Temporal Schedule (paused while ``schedule_enabled`` is false, removed with the source or when
+it is deactivated; saved even with Temporal down, the worker reconciles it), and
+``next_run_at`` is its next tick computed from the clock. ``POST .../{id}/test`` answers 200
+``{ok, error}``;
 ``POST .../{id}/sync`` queues a run and starts the ingestion workflow (202 with the run; 409
 ``sync_already_running`` or ``source_inactive``; 503 ``sync_unavailable`` without Temporal);
 ``POST .../{id}/cancel`` asks the running sync to stop (202 with the run; 409
@@ -120,6 +123,9 @@ class SourceOut(BaseModel):
     schedule_cron: str | None
     schedule_enabled: bool
     active: bool
+    # Next scheduled tick (UTC); null when there is no enabled schedule or the source is
+    # inactive.
+    next_run_at: datetime | None
     document_count: int
     last_run: RunOut | None
     created_at: datetime
@@ -160,6 +166,7 @@ def _out(view: SourceView) -> SourceOut:
         schedule_cron=source.schedule_cron,
         schedule_enabled=source.schedule_enabled,
         active=source.active,
+        next_run_at=view.next_run_at,
         document_count=view.document_count,
         last_run=None if view.last_run is None else run_out(view.last_run),
         created_at=source.created_at,

@@ -55,3 +55,10 @@ class SyncUnavailableError(KnoBridgeError):
 
     code = "sync_unavailable"
     status_code = HTTPStatus.SERVICE_UNAVAILABLE
+
+
+class ScheduleUnavailableError(KnoBridgeError):
+    """Temporal cannot be reached to change a source's schedule; the worker reconciles it."""
+
+    code = "schedule_unavailable"
+    status_code = HTTPStatus.SERVICE_UNAVAILABLE

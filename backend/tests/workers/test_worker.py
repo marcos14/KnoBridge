@@ -14,10 +14,15 @@ from knobridge.core.settings import Settings
 from knobridge.workers import worker as worker_module
 from knobridge.workers.health import HealthWorkflow, ping
 from knobridge.workers.ingestion import IngestionWorkflow
+from knobridge.workers.scheduled_sync import ScheduledSyncWorkflow
 from knobridge.workers.worker import build_worker, connect, main, run
 
 # Stand-in for a real client: the fakes below never touch it.
 FAKE_CLIENT = cast(Client, object())
+
+
+async def no_reconcile(_client: Client, _settings: Settings) -> None:
+    return None
 
 
 class FakeWorker:
@@ -48,7 +53,7 @@ def test_build_worker_registers_workflows_and_activities() -> None:
     config = asyncio.run(build())
 
     assert config["task_queue"] == "queue-test"
-    assert list(config["workflows"]) == [HealthWorkflow, IngestionWorkflow]
+    assert list(config["workflows"]) == [HealthWorkflow, IngestionWorkflow, ScheduledSyncWorkflow]
     activities = list(config["activities"])
     assert activities[0] is ping
     assert [activity.__name__ for activity in activities[1:]] == [
@@ -56,6 +61,7 @@ def test_build_worker_registers_workflows_and_activities() -> None:
         "list_changes",
         "process_batch",
         "finish_run",
+        "start_scheduled_sync",
     ]
 
 
@@ -86,9 +92,23 @@ def test_run_connects_builds_and_runs_worker() -> None:
         built_with.append((client, received))
         return fake_worker
 
-    asyncio.run(run(settings, connect_client=fake_connect, worker_factory=fake_factory))
+    reconciled: list[tuple[Client, Settings]] = []
+
+    async def fake_reconcile(client: Client, received: Settings) -> None:
+        assert not fake_worker.ran
+        reconciled.append((client, received))
+
+    asyncio.run(
+        run(
+            settings,
+            connect_client=fake_connect,
+            worker_factory=fake_factory,
+            reconcile=fake_reconcile,
+        )
+    )
 
     assert (fake_worker.ran, built_with) == (True, [(FAKE_CLIENT, settings)])
+    assert reconciled == [(FAKE_CLIENT, settings)]
 
 
 def test_run_defaults_to_process_settings(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -99,7 +119,13 @@ def test_run_defaults_to_process_settings(monkeypatch: pytest.MonkeyPatch) -> No
         seen.append(received.temporal_task_queue)
         return FAKE_CLIENT
 
-    asyncio.run(run(connect_client=fake_connect, worker_factory=lambda _c, _s: FakeWorker()))
+    asyncio.run(
+        run(
+            connect_client=fake_connect,
+            worker_factory=lambda _c, _s: FakeWorker(),
+            reconcile=no_reconcile,
+        )
+    )
 
     assert seen == ["from-env"]
 
@@ -112,7 +138,12 @@ def test_run_logs_worker_started() -> None:
         return FAKE_CLIENT
 
     asyncio.run(
-        run(_settings(), connect_client=fake_connect, worker_factory=lambda _c, _s: FakeWorker())
+        run(
+            _settings(),
+            connect_client=fake_connect,
+            worker_factory=lambda _c, _s: FakeWorker(),
+            reconcile=no_reconcile,
+        )
     )
 
     record = json.loads(stream.getvalue().splitlines()[-1])

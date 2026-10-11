@@ -1,7 +1,7 @@
 """Helpers for the collection, source, run and document route tests: a workspace with a ``fake``
-provider and a collection created through the API, the fake sync starter and connector
-factory installed as dependency overrides, and direct writes of runs, errors, documents and
-chunks (the ingestion workflow does not run here).
+provider and a collection created through the API, the fake sync starter, schedule manager
+and connector factory installed as dependency overrides, and direct writes of runs, errors,
+documents and chunks (the ingestion workflow does not run here).
 
 Not a test module (pytest only collects ``test_*.py``); imported by its basename.
 """
@@ -19,8 +19,9 @@ from fastapi import FastAPI
 from sqlalchemy import func, select
 
 from fakes.connector import FakeConnector
+from fakes.schedule_manager import FakeScheduleManager
 from fakes.sync_starter import FakeSyncStarter
-from knobridge.api.deps import get_connector_factory, get_sync_starter
+from knobridge.api.deps import get_connector_factory, get_schedule_manager, get_sync_starter
 from knobridge.connectors.base import Connector
 from knobridge.core.db import system_session
 from knobridge.ingestion.models import (
@@ -47,15 +48,18 @@ OTHER_FOLDER = str(Path("/srv/knowledge/other").resolve())
 
 @dataclass
 class IndexOverrides:
-    """Fake starter and connector factory on the app; ``clear`` removes them."""
+    """Fake starter, schedule manager and connector factory on the app; ``clear`` removes
+    them."""
 
     app: FastAPI
     starter: FakeSyncStarter = field(default_factory=FakeSyncStarter)
+    schedules: FakeScheduleManager = field(default_factory=FakeScheduleManager)
     connector: FakeConnector = field(default_factory=FakeConnector)
     built_for: list[uuid.UUID] = field(default_factory=lambda: [])
 
     def __post_init__(self) -> None:
         self.app.dependency_overrides[get_sync_starter] = lambda: self.starter
+        self.app.dependency_overrides[get_schedule_manager] = lambda: self.schedules
         self.app.dependency_overrides[get_connector_factory] = lambda: self._factory
 
     def _factory(self, source: Source) -> Connector:
@@ -64,6 +68,7 @@ class IndexOverrides:
 
     def clear(self) -> None:
         self.app.dependency_overrides.pop(get_sync_starter, None)
+        self.app.dependency_overrides.pop(get_schedule_manager, None)
         self.app.dependency_overrides.pop(get_connector_factory, None)
 
 
