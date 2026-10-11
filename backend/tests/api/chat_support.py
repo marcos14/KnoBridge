@@ -15,9 +15,14 @@ import httpx2 as httpx
 from api_support import ApiEnv, SeededUser
 from fastapi import FastAPI
 
+from fakes.embedding_provider import RecordingEmbeddingFactory
 from fakes.llm_provider import RecordingFactory
 from fakes.retriever import StaticRetriever
-from knobridge.api.deps import get_provider_factory, get_retriever
+from knobridge.api.deps import (
+    get_embedding_provider_factory,
+    get_provider_factory,
+    get_retriever,
+)
 from knobridge.conversations.retrieval import Source
 from knobridge.llm.provider import LLMProvider
 from knobridge.tenancy.models import Role
@@ -123,7 +128,7 @@ def error(response: httpx.Response) -> tuple[int, str]:
 
 @dataclass
 class ChatOverrides:
-    """Swaps the retriever and the provider factory of the app under test."""
+    """Swaps the retriever and the LLM and embedding provider factories of the app under test."""
 
     app: FastAPI
 
@@ -136,6 +141,11 @@ class ChatOverrides:
         self.app.dependency_overrides[get_provider_factory] = lambda: factory
         return factory
 
+    def embeddings(self, factory: RecordingEmbeddingFactory) -> RecordingEmbeddingFactory:
+        self.app.dependency_overrides[get_embedding_provider_factory] = lambda: factory
+        return factory
+
     def clear(self) -> None:
         self.app.dependency_overrides.pop(get_retriever, None)
         self.app.dependency_overrides.pop(get_provider_factory, None)
+        self.app.dependency_overrides.pop(get_embedding_provider_factory, None)

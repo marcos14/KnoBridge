@@ -352,6 +352,8 @@ export function makeAssistant(overrides: Partial<Assistant> = {}): Assistant {
     tone: "neutral",
     no_source_message: "Não encontrei isso nas fontes. Quer abrir um chamado?",
     active: true,
+    collection_ids: [],
+    min_similarity: 0.3,
     created_at: "2026-10-02T10:00:00Z",
     updated_at: "2026-10-02T10:00:00Z",
     ...overrides,

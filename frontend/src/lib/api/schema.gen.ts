@@ -1174,6 +1174,8 @@ export interface components {
              * @default true
              */
             active: boolean;
+            /** Collection Ids */
+            collection_ids?: string[];
             /**
              * Description
              * @default
@@ -1184,6 +1186,8 @@ export interface components {
              * @default pt-BR
              */
             language: string;
+            /** Min Similarity */
+            min_similarity?: number | null;
             /** Model */
             model: string;
             /** Name */
@@ -1212,6 +1216,8 @@ export interface components {
         AssistantOut: {
             /** Active */
             active: boolean;
+            /** Collection Ids */
+            collection_ids: string[];
             /**
              * Created At
              * Format: date-time
@@ -1226,6 +1232,8 @@ export interface components {
             id: string;
             /** Language */
             language: string;
+            /** Min Similarity */
+            min_similarity: number;
             /** Model */
             model: string;
             /** Name */
@@ -1272,10 +1280,14 @@ export interface components {
         AssistantUpdate: {
             /** Active */
             active?: boolean | null;
+            /** Collection Ids */
+            collection_ids?: string[] | null;
             /** Description */
             description?: string | null;
             /** Language */
             language?: string | null;
+            /** Min Similarity */
+            min_similarity?: number | null;
             /** Model */
             model?: string | null;
             /** Name */
@@ -1340,14 +1352,32 @@ export interface components {
             /** New Password */
             new_password: string;
         };
-        /** CitationOut */
+        /**
+         * CitationOut
+         * @description A numbered source of an answer (``docs/specs/chat-sse.md``). The location fields came
+         *     with the real retriever (v0.3); answers saved before have them as ``null``.
+         */
         CitationOut: {
             /** Document Id */
             document_id: string | null;
+            /** End Line */
+            end_line?: number | null;
             /** Index */
             index: number;
+            /** Kind */
+            kind?: string | null;
+            /** Language */
+            language?: string | null;
+            /** Path */
+            path?: string | null;
+            /** Sha */
+            sha?: string | null;
             /** Snippet */
             snippet: string;
+            /** Start Line */
+            start_line?: number | null;
+            /** Symbol */
+            symbol?: string | null;
             /** Title */
             title: string;
             /** Uri */
@@ -3407,7 +3437,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Invalid body, or provider not in the workspace (`assistant_provider_invalid`). */
+            /** @description Invalid body, provider not in the workspace (`assistant_provider_invalid`) or collection not in the workspace (`assistant_collection_invalid`). */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -3573,7 +3603,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Invalid body, or provider not in the workspace (`assistant_provider_invalid`). */
+            /** @description Invalid body, provider not in the workspace (`assistant_provider_invalid`) or collection not in the workspace (`assistant_collection_invalid`). */
             422: {
                 headers: {
                     [name: string]: unknown;

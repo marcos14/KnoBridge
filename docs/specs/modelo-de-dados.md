@@ -1,6 +1,8 @@
 # Modelo de dados
 
-> Rascunho v0.3 · 2026-10-10 · Em uso (planos 0002 e 0003)
+> Rascunho v0.4 · 2026-10-10 · Em uso (planos 0002 e 0003)
+>
+> **Mudanças da v0.4**: migração `0012` (plano 0003, F4.2): `assistant_collections` (coleções que cada assistente consulta) e `assistants.min_similarity` (limiar da busca do chat).
 >
 > **Mudanças da v0.3**: índice de conhecimento da migração `0010` (plano 0003, F1.1): `collections`, `sources`, `runs`, `run_errors`, `documents` e `chunks`, com `vector(1536)`, HNSW e `tsvector` gerado ([ADR 0004](../adr/0004-indice-de-conhecimento.md)). Migração `0011` (plano 0003, F3.1): `run_items` (trabalho pendente de uma execução), `runs.pending_cursor` e o índice do cache de embedding em `chunks`.
 
@@ -21,6 +23,7 @@ Tabelas do Postgres do KnoBridge, criadas pelas migrações em [`backend/migrati
 | `0009` | `20261010_0009_conversations.py` | `conversations`, `messages`, `feedback`; único `(workspace_id, id)` em `assistants`. |
 | `0010` | `20261010_0010_knowledge_index.py` | Índice de conhecimento: `collections`, `sources`, `runs`, `run_errors`, `documents`, `chunks`; HNSW cosseno em `chunks.embedding` e GIN em `chunks.tsv` (gerado). |
 | `0011` | `20261010_0011_run_items.py` | `run_items` (documentos pendentes de uma execução, RLS forçada), `runs.pending_cursor` e `ix_chunks_collection_id_content_hash` (cache de embedding). |
+| `0012` | `20261010_0012_assistant_collections.py` | `assistant_collections` (vínculo N:N assistente ↔ coleção, RLS forçada) e `assistants.min_similarity` (0 a 1, padrão 0,3). |
 
 Toda migração tem `downgrade` que desfaz o `upgrade`; o teste `test_migrations_match_orm_models` compara as migrações com os modelos ORM.
 
@@ -73,6 +76,7 @@ Todas as tabelas abaixo têm `ENABLE` + `FORCE ROW LEVEL SECURITY`. `users` é a
 | `documents` | `documents_workspace` | `ALL` | workspace, ou sistema |
 | `chunks` | `chunks_workspace` | `ALL` | workspace, ou sistema |
 | `run_items` | `run_items_workspace` | `ALL` | workspace, ou sistema |
+| `assistant_collections` | `assistant_collections_workspace` | `ALL` | workspace, ou sistema |
 
 A RLS isola workspaces; regras dentro do workspace (papel mínimo, privacidade de conversa entre membros) são da aplicação ([autenticacao.md](autenticacao.md#matriz-de-permissões)). Cada consulta tem teste de isolamento contra Postgres real, junto dos testes do seu módulo (ex.: `backend/tests/tenancy/test_invitations_rls.py`).
 
@@ -114,6 +118,14 @@ erDiagram
         varchar tone "neutral | formal | friendly"
         text no_source_message "nunca vazia"
         boolean active
+        float min_similarity "0 a 1"
+    }
+    assistants ||--o{ assistant_collections : "consulta"
+    collections ||--o{ assistant_collections : "consultada por"
+    assistant_collections {
+        uuid workspace_id FK
+        uuid assistant_id PK "mesmo workspace"
+        uuid collection_id PK "mesmo workspace"
     }
     assistants ||--o{ conversations : "atende"
     users ||--o{ conversations : "conversa"
@@ -458,8 +470,22 @@ Configuração de um assistente do workspace (plano 0002, F4.3), em [`backend/sr
 | `tone` | `varchar(32)` | `neutral`, `formal` ou `friendly`. |
 | `no_source_message` | `text` | Resposta quando não há fonte (regra 8 do AGENTS.md). Nunca vazia (`ck_assistants_no_source_message_not_empty`): vazio ou nulo na API grava a mensagem padrão em pt-BR, que diz que não sabe e oferece abrir chamado. |
 | `active` | `boolean` | Padrão `true`. Inativo some para viewer e não aceita conversa nova nem mensagem (409 `assistant_inactive`). |
+| `min_similarity` | `double precision` | Similaridade mínima (cosseno) para um chunk virar fonte no chat (decisão D12 do plano 0003): entra o chunk que alcança o limiar ou casa a busca textual. De 0 a 1 (`ck_assistants_min_similarity_range`); padrão 0,3, o mesmo da rota "testar busca" (com `text-embedding-3-small`, trechos relacionados em pt-BR ficam em 0,35 a 0,6 e os sem relação abaixo de 0,25), provisório até o ensaio com dados reais. |
 
-Único extra `uq_assistants_workspace_id_id` (`workspace_id`, `id`), alvo da FK composta de `conversations`. Excluir um assistente exclui as conversas dele (com mensagens e feedback); para preservar o histórico, desative-o.
+Único extra `uq_assistants_workspace_id_id` (`workspace_id`, `id`), alvo das FKs compostas de `conversations` e `assistant_collections`. Excluir um assistente exclui as conversas dele (com mensagens e feedback); para preservar o histórico, desative-o.
+
+### `assistant_collections`
+
+Coleções em que o chat de um assistente busca as fontes (plano 0003, F4.2), N:N. Dado de workspace com RLS forçada e uma política padrão (`assistant_collections_workspace`). Gerido pela API do assistente (`collection_ids`; trocar o conjunto substitui todas as linhas e audita `assistant.updated` com `collection_ids` em `fields`). Assistente sem coleção responde sempre "sem fonte", sem chamar embedding nem LLM. Chave primária `(assistant_id, collection_id)` (`pk_assistant_collections`).
+
+| Coluna | Tipo | Regras |
+|---|---|---|
+| `workspace_id` | `uuid` | FK `workspaces.id`, `ON DELETE CASCADE`. |
+| `assistant_id` | `uuid` | FK composta → `assistants (workspace_id, id)` (`fk_assistant_collections_workspace_id_assistants`), `ON DELETE CASCADE`. |
+| `collection_id` | `uuid` | FK composta → `collections (workspace_id, id)` (`fk_assistant_collections_workspace_id_collections`), `ON DELETE CASCADE`: a coleção excluída some dos assistentes que a usavam (coleção com fontes não se exclui). A API recusa coleção de outro workspace ou inexistente (422 `assistant_collection_invalid`). |
+| `created_at` | `timestamptz` | Relógio do banco. |
+
+Índice `ix_assistant_collections_workspace_id_collection_id`, para a cascata a partir de `collections`.
 
 ### `conversations`
 
@@ -486,7 +512,7 @@ Pergunta ou resposta de uma conversa. RLS forçada, política `messages_workspac
 | `position` | `integer` | Ordem na conversa a partir de 0 (`ck_messages_position_not_negative`), única por conversa (`uq_messages_conversation_id_position`); atribuída com a conversa travada (`FOR UPDATE`). |
 | `role` | `varchar(32)` | `user` ou `assistant` (`ck_messages_role`). |
 | `content` | `text` | Texto; numa resposta interrompida ou com erro, o que chegou a ser gerado. |
-| `citations` | `jsonb` | Lista de `{index, title, uri, snippet, document_id}`; padrão `[]`. Vazia em perguntas e em `no_source`. |
+| `citations` | `jsonb` | Lista de `{index, title, uri, snippet, document_id, kind, path, symbol, start_line, end_line, language, sha}` ([chat-sse.md](chat-sse.md#citations); os campos depois de `document_id` existem desde a v0.3 do contrato e são nulos nas respostas antigas); padrão `[]`. Vazia em perguntas e em `no_source`. |
 | `status` | `varchar(32)` | `streaming`, `completed`, `no_source`, `failed`, `interrupted` (`ck_messages_status`; ver [chat.md](chat.md#estados-das-mensagens)). Perguntas são `completed`. Uma resposta `streaming` com `updated_at` de mais de 5 minutos atrás é órfã (o processo morreu no meio do stream): as leituras a mostram como `interrupted`, e a próxima pergunta da conversa grava `interrupted` nela. |
 | `error_code` | `varchar(64)` | Código de domínio de uma resposta `failed` (ex.: `provider_unavailable`). |
 | `model` | `varchar(200)` | Modelo que respondeu; nulo em perguntas e em `no_source`. |

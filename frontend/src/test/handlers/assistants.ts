@@ -33,6 +33,19 @@ function storedNoSourceMessage(message: string | null | undefined): string {
     : message;
 }
 
+/** Stored when the request omits them, like the backend defaults. */
+export const DEFAULT_MIN_SIMILARITY = 0.3;
+
+/** What the backend stores for a `POST` body: its defaults for the omitted fields. */
+function storedInput(body: AssistantInput): Partial<Assistant> {
+  return {
+    ...body,
+    collection_ids: body.collection_ids ?? [],
+    min_similarity: body.min_similarity ?? DEFAULT_MIN_SIMILARITY,
+    no_source_message: storedNoSourceMessage(body.no_source_message),
+  };
+}
+
 /**
  * Assistants that really change: `POST` adds one (409 `assistant_name_taken` for a name in use),
  * `PATCH` applies the given fields and `DELETE` removes it. An empty `no_source_message` stores
@@ -52,9 +65,8 @@ export function assistantStore(initial: Assistant[] = makeAssistants()) {
         return apiErrorResponse(409, "assistant_name_taken");
       }
       const assistant = makeAssistant({
-        ...body,
+        ...storedInput(body),
         id: `00000000-0000-4000-8000-${String(970 + created.length).padStart(12, "0")}`,
-        no_source_message: storedNoSourceMessage(body.no_source_message),
       });
       assistants = [...assistants, assistant].sort((a, b) => a.name.localeCompare(b.name));
       created.push(body);
@@ -103,10 +115,7 @@ export const assistantsServerError = http.get(ASSISTANTS, () =>
 /** POST /v1/workspaces/{id}/assistants creating the assistant (201). */
 export const createAssistantOk = http.post(ASSISTANTS, async ({ request }) => {
   const body = (await request.json()) as AssistantInput;
-  return HttpResponse.json<Assistant>(
-    makeAssistant({ ...body, no_source_message: storedNoSourceMessage(body.no_source_message) }),
-    { status: 201 },
-  );
+  return HttpResponse.json<Assistant>(makeAssistant(storedInput(body)), { status: 201 });
 });
 
 /** POST /v1/workspaces/{id}/assistants refused with `status` and `code`. */

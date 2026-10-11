@@ -99,10 +99,10 @@ fases:
         commit: 602e1d1
       - id: F4.2
         titulo: Retriever real, coleções do assistente e prompt com citações
-        status: em_execucao
+        status: concluida
         agente: claude-code
         iniciada_em: 2026-10-10
-        concluida_em: null
+        concluida_em: 2026-10-10
         commit: null
   - id: F5
     titulo: Telas
@@ -497,6 +497,7 @@ Ver `decisoes[]` no frontmatter. ADR previsto: 0004 (índice de conhecimento: di
 - 2026-10-10 — F4.1 concluída: Busca híbrida (HNSW + FTS, RRF, limiar), Reranker como Protocol, rota POST .../collections/{cid}/search; backend 966 testes, frontend 704.
 - 2026-10-10 — F3.1 concluída: Workflow knobridge.ingestion.v1 (open_run/list_changes/process_batch/finish_run), run_items (migração 0011), cache de embedding por hash, start_sync/TemporalSyncStarter; fake de embeddings unificado com a F4.1; 1001 testes.
 - 2026-10-10 — F3.2 e F4.2 iniciadas em paralelo.
+- 2026-10-10 — F4.2 concluída: HybridRetriever no chat, assistant_collections + min_similarity (migração 0012), citações com caminho/linhas/commit, prompt reforçado; regra 8 preservada; backend 1031 testes.
 
 ## 8. Encerramento
 

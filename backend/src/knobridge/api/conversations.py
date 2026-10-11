@@ -95,11 +95,23 @@ class ConversationPage(BaseModel):
 
 
 class CitationOut(BaseModel):
+    """A numbered source of an answer (``docs/specs/chat-sse.md``). The location fields came
+    with the real retriever (v0.3); answers saved before have them as ``null``."""
+
     index: int
     title: str
     uri: str | None
     snippet: str
     document_id: str | None
+    # ``file`` or ``commit``.
+    kind: str | None = None
+    path: str | None = None
+    symbol: str | None = None
+    # 1-based, inclusive; only for text and code.
+    start_line: int | None = None
+    end_line: int | None = None
+    language: str | None = None
+    sha: str | None = None
 
 
 class FeedbackOut(BaseModel):

@@ -35,6 +35,17 @@ pytestmark = pytest.mark.integration
 NO_SOURCE = "Não achei nas fontes. Quer abrir um chamado?"
 
 
+_NO_LOCATION: dict[str, object] = {
+    "kind": None,
+    "path": None,
+    "symbol": None,
+    "start_line": None,
+    "end_line": None,
+    "language": None,
+    "sha": None,
+}
+
+
 def _citations() -> list[dict[str, object]]:
     return [
         {
@@ -43,6 +54,7 @@ def _citations() -> list[dict[str, object]]:
             "uri": "docs/caixa.md",
             "snippet": "O fechamento exige o relatório Z antes da sangria.",
             "document_id": "doc-1",
+            **_NO_LOCATION,
         },
         {
             "index": 2,
@@ -50,12 +62,13 @@ def _citations() -> list[dict[str, object]]:
             "uri": None,
             "snippet": "A sangria é registrada no menu Caixa.",
             "document_id": None,
+            **_NO_LOCATION,
         },
     ]
 
 
 def test_no_source_returns_fallback_without_llm_call(api: ApiEnv, chat: ChatOverrides) -> None:
-    # Production retriever (NullRetriever) and a provider that fails the test if called.
+    # Production retriever (assistant without collections) and a provider that must not run.
     factory = chat.provider(UnreachableLLMProvider())
     world = build_world(api, Role.OWNER, no_source_message=NO_SOURCE)
     conversation_id = start(api, world)

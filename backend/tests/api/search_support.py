@@ -11,6 +11,7 @@ import uuid
 from dataclasses import dataclass, field
 
 from api_support import ApiEnv, SeededUser, SessionFactory, run_db, unique
+from sqlalchemy import delete
 
 from knobridge.audit.models import JSONValue
 from knobridge.core.db import system_session
@@ -39,6 +40,7 @@ class Passage:
     key: str
     position: int = 0
     meta: dict[str, JSONValue] = field(default_factory=lambda: {})
+    kind: DocumentKind = DocumentKind.FILE
 
 
 def search_path(workspace_id: uuid.UUID, collection_id: uuid.UUID | str) -> str:
@@ -87,6 +89,33 @@ def build_search_world(api: ApiEnv, *roles: Role) -> SearchWorld:
     return SearchWorld(workspace_id, users, provider_id, collection_id, source_id)
 
 
+def add_collection(api: ApiEnv, workspace_id: uuid.UUID, provider_id: uuid.UUID) -> uuid.UUID:
+    """Another collection (no source) on the ``fake`` provider of the workspace."""
+
+    async def scenario(factory: SessionFactory) -> uuid.UUID:
+        async with system_session(factory) as db:
+            collection = Collection(
+                workspace_id=workspace_id,
+                name=unique("collection"),
+                description="",
+                credential_id=provider_id,
+                embedding_model=MODEL,
+            )
+            db.add(collection)
+            await db.flush()
+            return collection.id
+
+    return run_db(api.database_url, scenario)
+
+
+def delete_collection(api: ApiEnv, collection_id: uuid.UUID) -> None:
+    async def scenario(factory: SessionFactory) -> None:
+        async with system_session(factory) as db:
+            await db.execute(delete(Collection).where(Collection.id == collection_id))
+
+    run_db(api.database_url, scenario)
+
+
 def add_passages(api: ApiEnv, world: SearchWorld, *passages: Passage) -> list[uuid.UUID]:
     """Chunk ids in the order given; one document per distinct key."""
 
@@ -100,7 +129,7 @@ def add_passages(api: ApiEnv, world: SearchWorld, *passages: Passage) -> list[uu
                         workspace_id=world.workspace_id,
                         source_id=world.source_id,
                         natural_key=passage.key,
-                        kind=DocumentKind.FILE,
+                        kind=passage.kind,
                         title=passage.key.rsplit("/", 1)[-1],
                         uri=f"https://git.example.test/repo/blob/main/{passage.key}",
                         content_hash=HASH,

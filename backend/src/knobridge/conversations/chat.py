@@ -3,10 +3,12 @@
 A turn has two phases, so no database transaction stays open while the LLM answers:
 
 1. ``prepare`` runs in the request's workspace-scoped transaction (``WorkspaceContext.db``),
-   which commits before the response starts: it saves the user message, asks the retriever
-   for sources and saves the assistant message. Without sources it saves the assistant's
-   "no source" message as the final answer (status ``no_source``, no citations) and the LLM
-   is never called. With sources it saves a ``streaming`` placeholder with the citations.
+   which commits before the response starts: it asks the retriever for sources (after the
+   access checks, before locking the conversation: the retriever embeds the question over
+   the network), saves the user message and saves the assistant message. Without sources it
+   saves the assistant's "no source" message as the final answer (status ``no_source``, no
+   citations) and the LLM is never called. With sources it saves a ``streaming``
+   placeholder with the citations.
 2. ``stream`` yields the events of the answer. On the LLM path it calls the provider outside
    any transaction and, at the end, writes the outcome to the placeholder in a fresh
    ``scoped_session`` (``completed``, ``failed`` with the error code, or ``interrupted`` when
@@ -106,25 +108,27 @@ class ChatService:
     ) -> PreparedTurn:
         """Save the question and the answer's starting point (phase 1, see module doc)."""
         started_at = self._clock.now()
-        conversation = await get_readable_conversation(
-            db, workspace_id, conversation_id, reader, lock=True
-        )
+        conversation = await get_readable_conversation(db, workspace_id, conversation_id, reader)
         require_owner(conversation, reader)
-        # An answer orphaned by a dead process must not stay ``streaming`` behind the new one.
-        await interrupt_stale_streaming(
-            db, workspace_id=workspace_id, conversation_id=conversation_id, now=started_at
-        )
         assistant = await get_active_assistant(db, workspace_id, conversation.assistant_id)
-        position = await self._next_position(db, workspace_id, conversation_id)
-        history = await self._history(db, workspace_id, conversation_id)
+        # Retrieval embeds the question over the network: done after the access checks but
+        # before locking the conversation, so concurrent questions do not queue behind it.
         sources = await self._retriever.retrieve(
+            db,
             RetrievalQuery(
                 workspace_id=workspace_id,
                 assistant_id=assistant.id,
                 user_id=reader.user_id,
                 text=question,
-            )
+            ),
         )
+        await get_readable_conversation(db, workspace_id, conversation_id, reader, lock=True)
+        # An answer orphaned by a dead process must not stay ``streaming`` behind the new one.
+        await interrupt_stale_streaming(
+            db, workspace_id=workspace_id, conversation_id=conversation_id, now=started_at
+        )
+        position = await self._next_position(db, workspace_id, conversation_id)
+        history = await self._history(db, workspace_id, conversation_id)
         # Title from the first question; ``updated_at`` orders "my conversations".
         await db.execute(
             update(Conversation)

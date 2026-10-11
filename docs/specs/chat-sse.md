@@ -1,6 +1,6 @@
 # Chat em streaming (SSE)
 
-> Rascunho v0.2 · 2026-10-10 · Plano 0002, F4.4 (v0.2, F4.5: resposta `streaming` órfã lida como `interrupted`)
+> Rascunho v0.3 · 2026-10-10 · Plano 0002, F4.4 (v0.2, F4.5: resposta `streaming` órfã lida como `interrupted`; v0.3, plano 0003 F4.2: campos de localização nas citações e erros do provedor de embedding antes do stream)
 
 Contrato da resposta de `POST /v1/workspaces/{workspace_id}/conversations/{conversation_id}/messages`, que manda uma pergunta ao assistente da conversa e devolve a resposta como [Server-Sent Events](https://html.spec.whatwg.org/multipage/server-sent-events.html). Os schemas das rotas JSON (conversas, mensagens, feedback) estão no [`openapi.json`](openapi.json); lá, esta rota aparece com `200` em `text/event-stream`, e os eventos são descritos aqui. O comportamento do chat além do fio (regra de citações, `Retriever`, fases da rodada, histórico, feedback e visão administrativa) está em [chat.md](chat.md). Implementação em [`backend/src/knobridge/conversations/`](../../backend/src/knobridge/conversations/AGENTS.md) e [`backend/src/knobridge/api/conversations.py`](../../backend/src/knobridge/api/AGENTS.md).
 
@@ -19,6 +19,7 @@ Antes do primeiro byte do stream, a pergunta e o ponto de partida da resposta j�
 | 404 | `not_found` | Conversa inexistente, de outro workspace ou de outro membro (para quem não é owner/admin). |
 | 409 | `assistant_inactive` | O assistente da conversa foi desativado. |
 | 422 | `validation_error` | Corpo inválido (pergunta vazia ou longa demais). |
+| 422, 429, 502, 503 | `provider_*`, `embedding_*` | O provedor de embedding da coleção falhou ao vetorizar a pergunta (desde a v0.3; códigos de `llm/errors.py`, `details: {provider, status}`). Nada é gravado: a pergunta pode ser reenviada. |
 
 ## Formato no fio
 
@@ -55,7 +56,23 @@ Sempre nesta ordem:
 | `user_message_id` | uuid | Id da mensagem com a pergunta. |
 | `citations` | lista | Fontes numeradas da resposta; vazia quando não há fonte. |
 
-Cada citação: `index` (inteiro a partir de 1, o mesmo `[n]` que a resposta usa no texto), `title` (texto), `uri` (texto ou `null`), `snippet` (até 300 caracteres do trecho) e `document_id` (texto ou `null`). As mesmas citações ficam gravadas na mensagem (`citations` em `GET .../conversations/{id}`).
+Cada citação:
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `index` | inteiro | A partir de 1, o mesmo `[n]` que a resposta usa no texto. |
+| `title` | texto | Caminho do arquivo (`src/caixa/fechamento.ts`) ou título do commit. |
+| `uri` | texto ou `null` | `<caminho>#L<início>-L<fim>` para texto e código com linhas, `<caminho>` sem linhas (documentos convertidos: PDF, DOCX…) ou `commit:<sha>`. |
+| `snippet` | texto | Até 300 caracteres do trecho, sem o cabeçalho de contexto usado no embedding. |
+| `document_id` | texto ou `null` | Id do documento no índice. |
+| `kind` | `file`, `commit` ou `null` | Tipo do documento (v0.3). |
+| `path` | texto ou `null` | Caminho do arquivo; `null` em commit (v0.3). |
+| `symbol` | texto ou `null` | Função, classe ou tipo do trecho de código, quando conhecido (v0.3). |
+| `start_line`, `end_line` | inteiro ou `null` | Linhas do trecho, a partir de 1, inclusivas; `null` sem linhas (v0.3). |
+| `language` | texto ou `null` | Linguagem detectada (ex.: `typescript`, `markdown`) (v0.3). |
+| `sha` | texto ou `null` | SHA do commit; `null` em arquivo (v0.3). |
+
+Os campos marcados com v0.3 são aditivos: respostas gravadas antes vêm com eles `null` em `GET .../conversations/{id}`. As mesmas citações ficam gravadas na mensagem (`citations` em `GET .../conversations/{id}`).
 
 ### `delta`
 
@@ -95,7 +112,7 @@ Códigos possíveis em `error.code`:
 
 ## Sem fonte (regra 8)
 
-Quando a recuperação não encontra nenhuma fonte, o LLM **não é chamado**. A resposta é a mensagem de "sem fonte" configurada no assistente (por padrão, diz que não sabe e oferece abrir um chamado):
+Quando a recuperação não encontra nenhuma fonte (o assistente não tem coleção, ou nenhum trecho alcança a similaridade mínima do assistente nem casa a busca textual), o LLM **não é chamado**. A resposta é a mensagem de "sem fonte" configurada no assistente (por padrão, diz que não sabe e oferece abrir um chamado):
 
 ```text
 event: citations

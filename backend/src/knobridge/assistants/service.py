@@ -7,22 +7,36 @@ deleted between the check and the write; the composite foreign key is the last b
 empty "no source" message falls back to ``DEFAULT_NO_SOURCE_MESSAGE`` (rule 8 of AGENTS.md:
 no answer without a source). Audit metadata carries names, models and changed fields, never
 prompts or messages.
+
+The collections the assistant answers from (``assistant_collections``) follow the same rule
+as the credential: each one is looked up under the workspace filter and locked with
+``FOR KEY SHARE`` (a collection of another workspace, or one that does not exist, is 422
+``assistant_collection_invalid``); the composite foreign keys are the last barrier. Updating
+``collection_ids`` replaces the whole set.
 """
 
 from __future__ import annotations
 
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from knobridge.assistants.models import DEFAULT_NO_SOURCE_MESSAGE, Assistant, AssistantTone
+from knobridge.assistants.models import (
+    DEFAULT_MIN_SIMILARITY,
+    DEFAULT_NO_SOURCE_MESSAGE,
+    Assistant,
+    AssistantCollection,
+    AssistantTone,
+)
 from knobridge.audit.actions import AuditAction
 from knobridge.audit.service import AuditService, AuditTarget
 from knobridge.core.clock import Clock
 from knobridge.core.errors import ConflictError, NotFoundError, ValidationError
+from knobridge.ingestion.models import Collection
 from knobridge.llm.models import ProviderCredential
 
 
@@ -32,6 +46,10 @@ class AssistantNameTakenError(ConflictError):
 
 class AssistantProviderInvalidError(ValidationError):
     code = "assistant_provider_invalid"
+
+
+class AssistantCollectionInvalidError(ValidationError):
+    code = "assistant_collection_invalid"
 
 
 @dataclass(frozen=True)
@@ -49,6 +67,9 @@ class AssistantSettings:
     # Empty means the default message.
     no_source_message: str
     active: bool
+    # Collections the assistant answers from (no collection: every answer is "no source").
+    collection_ids: tuple[uuid.UUID, ...] = ()
+    min_similarity: float = DEFAULT_MIN_SIMILARITY
 
 
 @dataclass(frozen=True)
@@ -66,6 +87,9 @@ class AssistantChanges:
     tone: AssistantTone | None = None
     no_source_message: str | None = None
     active: bool | None = None
+    # Replaces the whole set when given.
+    collection_ids: tuple[uuid.UUID, ...] | None = None
+    min_similarity: float | None = None
 
 
 def no_source_message_or_default(message: str) -> str:
@@ -127,6 +151,7 @@ class AssistantService:
         ip: str | None,
     ) -> Assistant:
         await self._lock_credential(db, workspace_id, settings.credential_id)
+        await self._lock_collections(db, workspace_id, settings.collection_ids)
         assistant = Assistant(
             workspace_id=workspace_id,
             name=settings.name,
@@ -139,9 +164,11 @@ class AssistantService:
             tone=settings.tone,
             no_source_message=no_source_message_or_default(settings.no_source_message),
             active=settings.active,
+            min_similarity=settings.min_similarity,
         )
         db.add(assistant)
         await self._flush(db)
+        await self._link(db, assistant, settings.collection_ids)
         await db.refresh(assistant)
         await self._audit.record(
             db,
@@ -153,6 +180,7 @@ class AssistantService:
                 "name": assistant.name,
                 "model": assistant.model,
                 "provider_id": str(assistant.credential_id),
+                "collection_ids": [str(cid) for cid in dict.fromkeys(settings.collection_ids)],
             },
             ip=ip,
         )
@@ -172,6 +200,8 @@ class AssistantService:
         assistant = await self._get(db, workspace_id, assistant_id)
         if changes.credential_id is not None:
             await self._lock_credential(db, workspace_id, changes.credential_id)
+        if changes.collection_ids is not None:
+            await self._lock_collections(db, workspace_id, changes.collection_ids)
         wanted: dict[str, object] = {
             "name": changes.name,
             "description": changes.description,
@@ -187,6 +217,7 @@ class AssistantService:
                 else no_source_message_or_default(changes.no_source_message)
             ),
             "active": changes.active,
+            "min_similarity": changes.min_similarity,
         }
         fields: list[str] = []
         for attribute, value in wanted.items():
@@ -195,7 +226,13 @@ class AssistantService:
                 # The API calls the credential "provider".
                 fields.append("provider_id" if attribute == "credential_id" else attribute)
         if fields:
+            # Before the link table: a name clash must surface as ``assistant_name_taken``.
             await self._flush(db)
+        if changes.collection_ids is not None and await self._relink(
+            db, assistant, changes.collection_ids
+        ):
+            fields.append("collection_ids")
+        if fields:
             # ``updated_at`` is set by the database; load it now (no lazy IO in async code).
             await db.refresh(assistant)
             await self._audit.record(
@@ -230,6 +267,83 @@ class AssistantService:
             metadata={"name": assistant.name},
             ip=ip,
         )
+
+    async def collections_of(
+        self, db: AsyncSession, workspace_id: uuid.UUID, assistant_ids: Sequence[uuid.UUID]
+    ) -> dict[uuid.UUID, list[uuid.UUID]]:
+        """The collection ids of each assistant (one query), ordered by id."""
+        if not assistant_ids:
+            return {}
+        rows = await db.execute(
+            select(AssistantCollection.assistant_id, AssistantCollection.collection_id)
+            .where(
+                AssistantCollection.workspace_id == workspace_id,
+                AssistantCollection.assistant_id.in_(assistant_ids),
+            )
+            .order_by(AssistantCollection.assistant_id, AssistantCollection.collection_id)
+        )
+        found: dict[uuid.UUID, list[uuid.UUID]] = {}
+        for assistant_id, collection_id in rows:
+            found.setdefault(assistant_id, []).append(collection_id)
+        return found
+
+    async def _relink(
+        self, db: AsyncSession, assistant: Assistant, collection_ids: Sequence[uuid.UUID]
+    ) -> bool:
+        """Replace the assistant's collections; ``False`` when the set is unchanged."""
+        current = await self.collections_of(db, assistant.workspace_id, [assistant.id])
+        if set(current.get(assistant.id, [])) == set(collection_ids):
+            return False
+        await db.execute(
+            delete(AssistantCollection).where(
+                AssistantCollection.workspace_id == assistant.workspace_id,
+                AssistantCollection.assistant_id == assistant.id,
+            )
+        )
+        await self._link(db, assistant, collection_ids)
+        # Only the link table changed: bump ``updated_at`` of the assistant explicitly.
+        await db.execute(
+            update(Assistant)
+            .where(Assistant.workspace_id == assistant.workspace_id, Assistant.id == assistant.id)
+            .values(updated_at=func.now())
+        )
+        return True
+
+    @staticmethod
+    async def _link(
+        db: AsyncSession, assistant: Assistant, collection_ids: Sequence[uuid.UUID]
+    ) -> None:
+        db.add_all(
+            AssistantCollection(
+                workspace_id=assistant.workspace_id,
+                assistant_id=assistant.id,
+                collection_id=collection_id,
+            )
+            for collection_id in dict.fromkeys(collection_ids)
+        )
+        await db.flush()
+
+    @staticmethod
+    async def _lock_collections(
+        db: AsyncSession, workspace_id: uuid.UUID, collection_ids: Sequence[uuid.UUID]
+    ) -> None:
+        """Refuse collections that are not in the workspace; hold them until commit."""
+        wanted = set(collection_ids)
+        if not wanted:
+            return
+        found = set(
+            await db.scalars(
+                select(Collection.id)
+                .where(Collection.workspace_id == workspace_id, Collection.id.in_(wanted))
+                .with_for_update(key_share=True)
+            )
+        )
+        missing = sorted(str(cid) for cid in wanted - found)
+        if missing:
+            raise AssistantCollectionInvalidError(
+                "Some collections do not exist in this workspace.",
+                details={"collection_ids": missing},
+            )
 
     @staticmethod
     async def _lock_credential(

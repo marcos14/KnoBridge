@@ -4,7 +4,10 @@ Every member lists and reads them, but viewers only see active assistants (an in
 is 404 for them). Owners, admins and editors create, update and delete. The provider must be
 a credential of the same workspace (422 ``assistant_provider_invalid``); names are unique per
 workspace (409 ``assistant_name_taken``). An empty or null ``no_source_message`` stores the
-default "I don't know, shall I open a ticket?" message.
+default "I don't know, shall I open a ticket?" message. ``collection_ids`` are the collections
+the assistant answers from, all of the same workspace (422 ``assistant_collection_invalid``);
+optional on write (empty by default: every answer is "no source"), always returned.
+``min_similarity`` is the retrieval threshold (0 to 1; omitted or null on create: the default).
 """
 
 from __future__ import annotations
@@ -26,13 +29,16 @@ from knobridge.api.deps import (
 )
 from knobridge.assistants.models import (
     DEFAULT_LANGUAGE,
+    DEFAULT_MIN_SIMILARITY,
     DEFAULT_TEMPERATURE,
+    MAX_SIMILARITY,
     MAX_TEMPERATURE,
+    MIN_SIMILARITY,
     MIN_TEMPERATURE,
     Assistant,
     AssistantTone,
 )
-from knobridge.assistants.service import AssistantChanges, AssistantSettings
+from knobridge.assistants.service import AssistantChanges, AssistantService, AssistantSettings
 from knobridge.security.csrf import require_csrf
 from knobridge.tenancy.models import Role
 from knobridge.tenancy.rbac import role_at_least
@@ -58,6 +64,9 @@ Language = Annotated[
     ),
 ]
 NoSourceMessage = Annotated[str, StringConstraints(strip_whitespace=True, max_length=2000)]
+MinSimilarity = Annotated[float, Field(ge=MIN_SIMILARITY, le=MAX_SIMILARITY, allow_inf_nan=False)]
+MAX_COLLECTIONS = 50
+CollectionIds = Annotated[list[uuid.UUID], Field(max_length=MAX_COLLECTIONS)]
 
 _ERRORS: dict[int | str, dict[str, object]] = {
     401: {"description": "No live session (standard error shape)."},
@@ -75,8 +84,9 @@ _SAVE_ERRORS: dict[int | str, dict[str, object]] = {
     **_WRITE_ERRORS,
     409: {"description": "Name already used in the workspace (`assistant_name_taken`)."},
     422: {
-        "description": "Invalid body, or provider not in the workspace "
-        "(`assistant_provider_invalid`)."
+        "description": "Invalid body, provider not in the workspace "
+        "(`assistant_provider_invalid`) or collection not in the workspace "
+        "(`assistant_collection_invalid`)."
     },
 }
 
@@ -93,6 +103,9 @@ class AssistantCreate(BaseModel):
     # Empty or null: the default "no source" message.
     no_source_message: NoSourceMessage | None = None
     active: bool = True
+    collection_ids: CollectionIds = Field(default_factory=lambda: [])
+    # Omitted or null: ``DEFAULT_MIN_SIMILARITY``.
+    min_similarity: MinSimilarity | None = None
 
 
 class AssistantUpdate(BaseModel):
@@ -109,6 +122,9 @@ class AssistantUpdate(BaseModel):
     tone: AssistantTone | None = None
     no_source_message: NoSourceMessage | None = None
     active: bool | None = None
+    # Replaces the whole set when given.
+    collection_ids: CollectionIds | None = None
+    min_similarity: MinSimilarity | None = None
 
 
 class AssistantOut(BaseModel):
@@ -123,6 +139,8 @@ class AssistantOut(BaseModel):
     tone: AssistantTone
     no_source_message: str
     active: bool
+    collection_ids: list[uuid.UUID]
+    min_similarity: float
     created_at: datetime
     updated_at: datetime
 
@@ -134,7 +152,7 @@ class AssistantPage(BaseModel):
     offset: int
 
 
-def _out(assistant: Assistant) -> AssistantOut:
+def _out(assistant: Assistant, collection_ids: list[uuid.UUID]) -> AssistantOut:
     return AssistantOut(
         id=assistant.id,
         name=assistant.name,
@@ -147,6 +165,8 @@ def _out(assistant: Assistant) -> AssistantOut:
         tone=assistant.tone,
         no_source_message=assistant.no_source_message,
         active=assistant.active,
+        collection_ids=collection_ids,
+        min_similarity=assistant.min_similarity,
         created_at=assistant.created_at,
         updated_at=assistant.updated_at,
     )
@@ -155,6 +175,13 @@ def _out(assistant: Assistant) -> AssistantOut:
 def _only_active(context: WorkspaceContext) -> bool:
     """Viewers only see active assistants; editors and above manage all of them."""
     return not role_at_least(context.role, Role.EDITOR)
+
+
+async def _one(
+    context: WorkspaceContext, assistants: AssistantService, assistant: Assistant
+) -> AssistantOut:
+    links = await assistants.collections_of(context.db, context.workspace_id, [assistant.id])
+    return _out(assistant, links.get(assistant.id, []))
 
 
 router = APIRouter(prefix="/workspaces/{workspace_id}/assistants", tags=["assistants"])
@@ -175,8 +202,14 @@ async def list_assistants(
         limit=limit,
         offset=offset,
     )
+    links = await assistants.collections_of(
+        context.db, context.workspace_id, [item.id for item in items]
+    )
     return AssistantPage(
-        items=[_out(item) for item in items], total=total, limit=limit, offset=offset
+        items=[_out(item, links.get(item.id, [])) for item in items],
+        total=total,
+        limit=limit,
+        offset=offset,
     )
 
 
@@ -191,7 +224,7 @@ async def get_assistant(
         assistant_id=assistant_id,
         active_only=_only_active(context),
     )
-    return _out(assistant)
+    return await _one(context, assistants, assistant)
 
 
 @router.post(
@@ -222,10 +255,14 @@ async def create_assistant(
             tone=body.tone,
             no_source_message=body.no_source_message or "",
             active=body.active,
+            collection_ids=tuple(body.collection_ids),
+            min_similarity=(
+                DEFAULT_MIN_SIMILARITY if body.min_similarity is None else body.min_similarity
+            ),
         ),
         ip=ip,
     )
-    return _out(assistant)
+    return await _one(context, assistants, assistant)
 
 
 @router.patch("/{assistant_id}", dependencies=[Depends(require_csrf)], responses=_SAVE_ERRORS)
@@ -256,10 +293,12 @@ async def update_assistant(
             tone=body.tone,
             no_source_message=no_source_message,
             active=body.active,
+            collection_ids=None if body.collection_ids is None else tuple(body.collection_ids),
+            min_similarity=body.min_similarity,
         ),
         ip=ip,
     )
-    return _out(assistant)
+    return await _one(context, assistants, assistant)
 
 
 @router.delete(

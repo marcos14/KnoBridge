@@ -1,6 +1,6 @@
 # backend/src/knobridge/retrieval/
 
-**Função**: recuperação sobre o índice de conhecimento (seção 7.4 da [visão](../../../../docs/01-visao-do-projeto.md)): busca híbrida vetorial + FTS com fusão RRF, filtros por workspace e coleções, similaridade mínima e remoção de vizinhos; e o ponto de extensão do reranker. Sem rotas.
+**Função**: recuperação sobre o índice de conhecimento (seção 7.4 da [visão](../../../../docs/01-visao-do-projeto.md)): busca híbrida vetorial + FTS com fusão RRF, filtros por workspace e coleções, similaridade mínima e remoção de vizinhos; o `HybridRetriever` do chat, que monta as fontes numeradas com citação e orçamento de contexto; e o ponto de extensão do reranker. Sem rotas.
 
 **Entra aqui**:
 - `search.py`: `SearchService(credentials, factory)` com `search(db, workspace_id=, collection_ids=, query=, limit=10, min_similarity=0.3) -> list[SearchHit]` e `embed_query`. Passos: coleções + credenciais numa consulta (coleção ausente ou de outro workspace: `CollectionNotFoundError`, 404 `not_found`); um embedding da consulta por par (credencial, modelo), com a chave decifrada só em memória e o provedor sempre fechado; `set_config('hnsw.ef_search', max(100, candidatos), true)`; braço vetorial por modelo (`<=>`, só chunks com `embedding_model` do grupo, corte em `1 - distância >= min_similarity`); braço FTS numa consulta (`websearch_to_tsquery` em `portuguese` OU `simple` OU `simple` sobre a consulta com `/` e `.` trocados por espaço, como o `tsv`; `ts_rank_cd`); RRF; vizinhos removidos; chunks e documentos carregados numa consulta. Número de statements constante: 5 + 1 por modelo extra.
@@ -8,16 +8,19 @@
 - Constantes: `DEFAULT_LIMIT` 10, `MAX_LIMIT` 50, `DEFAULT_MIN_SIMILARITY` 0,3, candidatos por braço `limit × 4` entre 40 e 200.
 - `fusion.py` (puro): `reciprocal_rank_fusion` (`RRF_K` = 60, do artigo original; ranks a partir de 1) e `drop_neighbors` sobre `ChunkSpan` (mesmo documento e posições adjacentes, ou faixas de linhas que se cruzam).
 - `rerank.py`: `Reranker` (`Protocol`, `rerank(query, hits, limit=)`), sem implementação nem uso (decisão D8 do plano 0003).
+- `retriever.py`: `HybridRetriever(search, limit=10, max_context_tokens=6000)`, o `Retriever` de produção do chat (`api/deps.py:get_retriever`): lê numa consulta o `min_similarity` e as coleções do assistente (`assistant_collections`); sem coleção devolve vazio **sem chamar o embedding**; senão chama `SearchService.search` com o limiar do assistente e converte os acertos. Coleção excluída entre as duas consultas (`CollectionNotFoundError`) vira "nada encontrado". Log `chat_retrieval_finished` só com contagens.
+- `context.py` (puro): `source_from_hit` (conteúdo = `meta["display"]`, o corpo sem o cabeçalho de embedding, ou `display_text` na falta; título = caminho ou título do commit; `kind`, `path`, `symbol`, `start_line`/`end_line`, `language`, `sha`), `citation_uri` (`<caminho>#L<ini>-L<fim>`, `<caminho>` sem linhas, `commit:<sha>`), `source_tokens` e `fit_to_budget` (ordem da busca; para na primeira fonte que estoura `MAX_CONTEXT_TOKENS` = 6000, estimados com `llm.embeddings.estimate_tokens`; a primeira fonte maior que o orçamento é truncada).
 
-**Não entra aqui**: o modelo do índice e a ingestão (`ingestion/`), adaptadores de embedding (`llm/`), a rota "testar busca" (`api/search.py`), o `Retriever` do chat e a montagem do contexto com citações (`conversations/`, plano 0003 F4.2).
+**Não entra aqui**: o modelo do índice e a ingestão (`ingestion/`), adaptadores de embedding (`llm/`), a rota "testar busca" (`api/search.py`), a interface `Retriever`, o prompt e a rodada do chat (`conversations/`), o vínculo assistente ↔ coleções (`assistants/`).
 
 **Convenções locais**:
 - Limiar (decisão D12): um chunk entra se a similaridade vetorial alcança `min_similarity` ou se casa a consulta FTS. `websearch_to_tsquery` é conjuntivo (todos os termos, fora stop words), então casar o FTS já é sinal forte e é o que acha identificadores exatos; pergunta sem relação não passa em nenhum dos dois e volta vazia (regra 8). A contribuição vetorial ao RRF só vale acima do limiar.
 - Vetores de modelos diferentes nunca se comparam: cada modelo é um ranking próprio na fusão; chunks com `embedding_model` diferente do da coleção (reindexação pendente) só aparecem pelo FTS.
-- Toda consulta filtra por `workspace_id` e roda na sessão com escopo de RLS de quem chama. O embedding acontece dentro da transação do chamador; quem segura a sessão por mais tempo deve chamar `embed_query` antes.
+- Toda consulta filtra por `workspace_id` e roda na sessão com escopo de RLS de quem chama. O embedding acontece dentro da transação do chamador; quem segura a sessão por mais tempo deve chamar `embed_query` antes. O chat chama o retriever antes de travar a conversa (motivo em [docs/specs/chat.md](../../../../docs/specs/chat.md#retriever)).
+- Limiar do chat: o de cada assistente (`assistants.min_similarity`, padrão 0,3 = `DEFAULT_MIN_SIMILARITY`, provisório até o ensaio com dados reais). Numeração das fontes = posição na lista cortada pelo orçamento, a mesma das citações gravadas.
 - Sem `hnsw.iterative_scan` (exige pgvector 0.8+, e a imagem não fixa a versão); o `ef_search` maior compensa o filtro posterior ao índice.
 - Logs nunca levam o texto da consulta nem dos chunks.
 
-**Como testar**: de `backend/`, `uv run pytest tests/retrieval tests/api/test_search_route.py` (Postgres real; exige Docker). Gate da suíte inteira: `uv run pytest`.
+**Como testar**: de `backend/`, `uv run pytest tests/retrieval tests/api/test_search_route.py tests/api/test_chat_retrieval.py` (Postgres real; exige Docker). Gate da suíte inteira: `uv run pytest`.
 
 **Leia também**: [ADR 0004](../../../../docs/adr/0004-indice-de-conhecimento.md); [ingestion/AGENTS.md](../ingestion/AGENTS.md); [llm/AGENTS.md](../llm/AGENTS.md); [tests/retrieval/AGENTS.md](../../../tests/retrieval/AGENTS.md).

@@ -110,6 +110,8 @@ def test_create_assistant_requires_editor(api: ApiEnv) -> None:
         "tone",
         "no_source_message",
         "active",
+        "collection_ids",
+        "min_similarity",
         "created_at",
         "updated_at",
     }
@@ -123,10 +125,17 @@ def test_create_assistant_requires_editor(api: ApiEnv) -> None:
     assert body["tone"] == "neutral"
     assert body["no_source_message"] == DEFAULT_NO_SOURCE_MESSAGE
     assert body["active"] is True
+    assert body["collection_ids"] == []
+    assert body["min_similarity"] == 0.3
     assert _assistant_events(api, workspace_id) == [
         (
             "assistant.created",
-            {"name": "Support", "model": "fake-model", "provider_id": provider_id},
+            {
+                "name": "Support",
+                "model": "fake-model",
+                "provider_id": provider_id,
+                "collection_ids": [],
+            },
         )
     ]
 

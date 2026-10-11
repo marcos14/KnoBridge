@@ -21,7 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from knobridge.assistants.service import AssistantService
 from knobridge.conversations.chat import ChatService
-from knobridge.conversations.retrieval import NullRetriever, Retriever
+from knobridge.conversations.retrieval import Retriever
 from knobridge.conversations.service import ConversationService
 from knobridge.core.clock import Clock
 from knobridge.core.crypto import SecretBox
@@ -37,6 +37,7 @@ from knobridge.llm.factory import (
     create_embedding_provider,
     create_provider,
 )
+from knobridge.retrieval.retriever import HybridRetriever
 from knobridge.retrieval.search import SearchService
 from knobridge.security.passwords import PasswordHasher
 from knobridge.security.sessions import InvalidSessionError
@@ -178,14 +179,6 @@ EmailSenderDep = Annotated[EmailSender, Depends(get_email_sender)]
 EmailComposerDep = Annotated[EmailComposer, Depends(get_email_composer)]
 
 
-def get_retriever() -> Retriever:
-    """Finds the sources of an answer; ``NullRetriever`` until indexing exists (tests override)."""
-    return NullRetriever()
-
-
-RetrieverDep = Annotated[Retriever, Depends(get_retriever)]
-
-
 def get_embedding_provider_factory() -> EmbeddingProviderFactory:
     """Builds embedding adapters from credentials; tests override it to return fakes."""
     return create_embedding_provider
@@ -203,6 +196,14 @@ def get_search_service(
 
 
 SearchServiceDep = Annotated[SearchService, Depends(get_search_service)]
+
+
+def get_retriever(search: SearchServiceDep) -> Retriever:
+    """Finds the sources of an answer in the assistant's collections (tests override)."""
+    return HybridRetriever(search)
+
+
+RetrieverDep = Annotated[Retriever, Depends(get_retriever)]
 
 
 def get_conversation_service(request: Request) -> ConversationService:

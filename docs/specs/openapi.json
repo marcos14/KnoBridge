@@ -610,6 +610,15 @@
             "title": "Active",
             "type": "boolean"
           },
+          "collection_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Collection Ids",
+            "type": "array"
+          },
           "description": {
             "default": "",
             "maxLength": 1000,
@@ -622,6 +631,19 @@
             "pattern": "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$",
             "title": "Language",
             "type": "string"
+          },
+          "min_similarity": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Similarity"
           },
           "model": {
             "maxLength": 200,
@@ -685,6 +707,14 @@
             "title": "Active",
             "type": "boolean"
           },
+          "collection_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Collection Ids",
+            "type": "array"
+          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
@@ -702,6 +732,10 @@
           "language": {
             "title": "Language",
             "type": "string"
+          },
+          "min_similarity": {
+            "title": "Min Similarity",
+            "type": "number"
           },
           "model": {
             "title": "Model",
@@ -749,6 +783,8 @@
           "tone",
           "no_source_message",
           "active",
+          "collection_ids",
+          "min_similarity",
           "created_at",
           "updated_at"
         ],
@@ -809,6 +845,22 @@
             ],
             "title": "Active"
           },
+          "collection_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "maxItems": 50,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Collection Ids"
+          },
           "description": {
             "anyOf": [
               {
@@ -833,6 +885,19 @@
               }
             ],
             "title": "Language"
+          },
+          "min_similarity": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Similarity"
           },
           "model": {
             "anyOf": [
@@ -1097,6 +1162,7 @@
         "type": "object"
       },
       "CitationOut": {
+        "description": "A numbered source of an answer (``docs/specs/chat-sse.md``). The location fields came\nwith the real retriever (v0.3); answers saved before have them as ``null``.",
         "properties": {
           "document_id": {
             "anyOf": [
@@ -1109,13 +1175,90 @@
             ],
             "title": "Document Id"
           },
+          "end_line": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Line"
+          },
           "index": {
             "title": "Index",
             "type": "integer"
           },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path"
+          },
+          "sha": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sha"
+          },
           "snippet": {
             "title": "Snippet",
             "type": "string"
+          },
+          "start_line": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Line"
+          },
+          "symbol": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Symbol"
           },
           "title": {
             "title": "Title",
@@ -4563,7 +4706,7 @@
             "description": "Name already used in the workspace (`assistant_name_taken`)."
           },
           "422": {
-            "description": "Invalid body, or provider not in the workspace (`assistant_provider_invalid`)."
+            "description": "Invalid body, provider not in the workspace (`assistant_provider_invalid`) or collection not in the workspace (`assistant_collection_invalid`)."
           }
         },
         "summary": "Create Assistant",
@@ -4747,7 +4890,7 @@
             "description": "Name already used in the workspace (`assistant_name_taken`)."
           },
           "422": {
-            "description": "Invalid body, or provider not in the workspace (`assistant_provider_invalid`)."
+            "description": "Invalid body, provider not in the workspace (`assistant_provider_invalid`) or collection not in the workspace (`assistant_collection_invalid`)."
           }
         },
         "summary": "Update Assistant",

@@ -55,6 +55,7 @@ _TENANCY_TABLES = (
     "documents",
     "chunks",
     "run_items",
+    "assistant_collections",
 )
 _INDEX_TABLES = ("collections", "sources", "runs", "run_errors", "documents", "chunks")
 
@@ -145,6 +146,7 @@ def test_migration_upgrade_downgrade_tenancy(postgres_url: str) -> None:
         "feedback": (True, True, 1),
         **dict.fromkeys(_INDEX_TABLES, (True, True, 1)),
         "run_items": (True, True, 1),
+        "assistant_collections": (True, True, 1),
     }
     assert after_downgrade == {}
 
@@ -398,6 +400,43 @@ def test_migration_upgrade_downgrade_run_items(postgres_url: str) -> None:
     assert "ix_chunks_collection_id_content_hash" not in indexes_after_downgrade
     assert cursor_after_downgrade is False
     assert after_downgrade["runs"] == (True, True, 1)
+
+
+def _has_min_similarity(database_url: str) -> bool:
+    async def query() -> bool:
+        engine = create_async_engine(database_url, poolclass=NullPool)
+        try:
+            async with engine.connect() as connection:
+                result = await connection.execute(
+                    text(
+                        "SELECT count(*) FROM information_schema.columns"
+                        " WHERE table_name = 'assistants' AND column_name = 'min_similarity'"
+                    )
+                )
+                return result.scalar_one() == 1
+        finally:
+            await engine.dispose()
+
+    return asyncio.run(query())
+
+
+@pytest.mark.integration
+def test_migration_upgrade_downgrade_assistant_collections(postgres_url: str) -> None:
+    config, _ = _alembic_config(postgres_url)
+
+    command.upgrade(config, "head")
+    after_upgrade = _tenancy_catalog(postgres_url)
+    column_after_upgrade = _has_min_similarity(postgres_url)
+    command.downgrade(config, "0011")
+    after_downgrade = _tenancy_catalog(postgres_url)
+    column_after_downgrade = _has_min_similarity(postgres_url)
+    command.downgrade(config, "base")
+
+    assert after_upgrade["assistant_collections"] == (True, True, 1)
+    assert column_after_upgrade is True
+    assert "assistant_collections" not in after_downgrade
+    assert column_after_downgrade is False
+    assert after_downgrade["assistants"] == (True, True, 4)
 
 
 def _schema_diff(connection: Connection) -> list[object]:
