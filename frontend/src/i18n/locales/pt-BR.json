@@ -396,11 +396,13 @@
     "columns": {
       "name": "Nome",
       "model": "Provedor e modelo",
+      "collections": "Coleções",
       "status": "Status",
       "actions": "Ações"
     },
     "active": "Ativo",
     "inactive": "Inativo",
+    "noCollections": "Nenhuma (sem fonte)",
     "empty": "Nenhum assistente cadastrado.",
     "loading": "Carregando assistentes…",
     "loadFailed": "Não foi possível carregar os assistentes.",
@@ -440,6 +442,15 @@
       "noSourceMessageHint": "Resposta dada quando nenhuma fonte responde à pergunta. Em branco, usa a mensagem padrão.",
       "active": "Ativo",
       "activeHint": "Um assistente inativo não aceita conversas novas; o histórico continua disponível.",
+      "collections": "Coleções",
+      "collectionsHint": "O assistente responde só com os trechos das coleções marcadas.",
+      "collectionsLoading": "Carregando coleções…",
+      "collectionsLoadFailed": "Não foi possível carregar as coleções.",
+      "collectionsEmpty": "Nenhuma coleção cadastrada neste workspace.",
+      "goToCollections": "Ir para coleções",
+      "noCollections": "Nenhuma coleção selecionada: o assistente responderá sempre sem fonte.",
+      "minSimilarity": "Similaridade mínima",
+      "minSimilarityHint": "De 0 a 1 (padrão 0,3). Mais alto é mais exigente: abaixo do limiar, o trecho não conta e, sem nenhum, o assistente responde \"sem fonte\".",
       "submit": "Salvar",
       "cancel": "Cancelar",
       "validation": {
@@ -448,6 +459,7 @@
         "modelRequired": "Informe o modelo.",
         "modelInvalid": "O identificador do modelo não pode ter espaços.",
         "temperatureInvalid": "Informe um número de 0 a 2.",
+        "minSimilarityInvalid": "Informe um número de 0 a 1.",
         "languageInvalid": "Informe um código de idioma válido, como pt-BR."
       }
     }
@@ -579,7 +591,8 @@
       "noneTitle": "Nenhum assistente disponível",
       "noneManager": "Ainda não há assistente ativo neste workspace. Crie ou ative um assistente para começar a conversar.",
       "noneMember": "Ainda não há assistente ativo neste workspace. Peça a um administrador que configure um.",
-      "goToAssistants": "Configurar assistentes"
+      "goToAssistants": "Configurar assistentes",
+      "noCollections": "Este assistente ainda não usa nenhuma coleção: responderá sempre sem fonte."
     },
     "conversation": {
       "label": "Conversa",
@@ -605,7 +618,13 @@
       "title": "Fontes",
       "panelDescription": "Trecho da fonte usado na resposta.",
       "openSource": "Abrir a fonte",
-      "close": "Fechar"
+      "close": "Fechar",
+      "path": "Arquivo",
+      "lines": "Linhas",
+      "symbol": "Símbolo",
+      "language": "Linguagem",
+      "commit": "Commit",
+      "fullSha": "SHA completo: {{sha}}"
     },
     "citationLabel": "Fonte {{index}}: {{title}}",
     "composer": {
@@ -893,6 +912,7 @@
     "assistant_inactive": "Este assistente está inativo e não aceita novas mensagens.",
     "assistant_name_taken": "Já existe um assistente com este nome no workspace.",
     "assistant_provider_invalid": "Escolha um provedor de LLM cadastrado neste workspace.",
+    "assistant_collection_invalid": "Escolha apenas coleções deste workspace.",
     "cannot_suspend_self": "Você não pode suspender a própria conta.",
     "chat_failed": "O assistente não conseguiu responder. Tente de novo.",
     "conflict": "A operação conflita com o estado atual. Atualize a página e tente de novo.",

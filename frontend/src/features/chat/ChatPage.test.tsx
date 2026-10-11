@@ -297,6 +297,70 @@ describe("ChatPage", () => {
     expect(within(panel).queryByRole("link")).not.toBeInTheDocument();
   });
 
+  it("test_chat_code_citation_shows_path_lines_and_code", async () => {
+    useStore({
+      messages: {
+        [CONVERSATION_ID]: [
+          makeQuestion("Onde fecha o caixa?"),
+          makeMessage({
+            content: "Em fecharCaixa [1].",
+            citations: [
+              makeCitation({
+                title: "caixa.ts",
+                uri: "src/caixa.ts#L12-L18",
+                snippet: "export function fecharCaixa() {}",
+                kind: "file",
+                path: "src/caixa.ts",
+                symbol: "fecharCaixa",
+                start_line: 12,
+                end_line: 18,
+                language: "typescript",
+              }),
+            ],
+          }),
+        ],
+      },
+    });
+    const { user } = await openChat(`${CHAT}/${CONVERSATION_ID}`);
+
+    await user.click(await screen.findByRole("button", { name: /src\/caixa\.ts:L12–L18/ }));
+
+    const panel = await screen.findByRole("dialog", { name: "[1] caixa.ts" });
+    expect(within(panel).getByText("L12–L18")).toBeVisible();
+    expect(
+      within(panel).getByText("export function fecharCaixa() {}", { selector: "code" }),
+    ).toHaveClass("language-typescript");
+  });
+
+  const NO_COLLECTIONS_HINT =
+    "Este assistente ainda não usa nenhuma coleção: responderá sempre sem fonte.";
+
+  it("test_chat_hints_when_the_chosen_assistant_has_no_collection", async () => {
+    useStore();
+    server.use(
+      assistantsAs([
+        makeAssistant(),
+        makeAssistant({ id: OTHER_ASSISTANT_ID, name: "Fiscal", collection_ids: [] }),
+      ]),
+    );
+    const { user } = await openChat();
+
+    await screen.findByRole("combobox", { name: "Assistente" });
+    expect(screen.queryByText(NO_COLLECTIONS_HINT)).not.toBeInTheDocument();
+    await user.click(screen.getByRole("combobox", { name: "Assistente" }));
+    await user.click(await screen.findByRole("option", { name: "Fiscal" }));
+
+    expect(screen.getByText(NO_COLLECTIONS_HINT)).toBeVisible();
+  });
+
+  it("test_chat_conversation_hints_when_its_assistant_has_no_collection", async () => {
+    useStore();
+    server.use(assistantsAs([makeAssistant({ collection_ids: [] })]));
+    await openChat(`${CHAT}/${CONVERSATION_ID}`);
+
+    expect(await screen.findByText(NO_COLLECTIONS_HINT)).toBeVisible();
+  });
+
   it("test_chat_no_source_answer_offers_disabled_ticket", async () => {
     useStore({
       reply: () => ({

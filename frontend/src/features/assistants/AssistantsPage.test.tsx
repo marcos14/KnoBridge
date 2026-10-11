@@ -6,10 +6,12 @@ import { describe, expect, it } from "vitest";
 import type { Role } from "@/lib/api/auth";
 import {
   ASSISTANT_ID,
+  COLLECTION_ID,
   makeAssistant,
   makeMe,
   makeWorkspace,
   OTHER_ASSISTANT_ID,
+  OTHER_COLLECTION_ID,
   OTHER_WORKSPACE_ID,
   PROVIDER_ID,
   WORKSPACE_ID,
@@ -19,6 +21,8 @@ import {
   assistantsOk,
   assistantsServerError,
   assistantStore,
+  collectionsAs,
+  collectionsServerError,
   createAssistantFails,
   DEFAULT_NO_SOURCE_MESSAGE,
   deleteAssistantFails,
@@ -208,6 +212,21 @@ describe("AssistantsPage create", () => {
     await user.clear(language);
     await user.type(language, "en");
     await pick(user, dialog, "Tom", "Formal");
+    expect(
+      within(dialog).getByText(
+        "Nenhuma coleção selecionada: o assistente responderá sempre sem fonte.",
+      ),
+    ).toBeVisible();
+    await user.click(await within(dialog).findByRole("checkbox", { name: "Código ERP" }));
+    expect(
+      within(dialog).queryByText(
+        "Nenhuma coleção selecionada: o assistente responderá sempre sem fonte.",
+      ),
+    ).not.toBeInTheDocument();
+    const minSimilarity = within(dialog).getByLabelText("Similaridade mínima");
+    expect(minSimilarity).toHaveValue("0.3");
+    await user.clear(minSimilarity);
+    await user.type(minSimilarity, "0,45");
     await user.click(within(dialog).getByRole("checkbox", { name: "Ativo" }));
     await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
 
@@ -224,6 +243,8 @@ describe("AssistantsPage create", () => {
         tone: "formal",
         no_source_message: "",
         active: false,
+        collection_ids: [COLLECTION_ID],
+        min_similarity: 0.45,
       },
     ]);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -364,6 +385,133 @@ describe("AssistantsPage edit", () => {
     expect(await within(dialog).findByRole("alert")).toHaveTextContent(
       "Você não tem permissão para fazer isso.",
     );
+  });
+});
+
+describe("AssistantsPage collections", () => {
+  const NO_COLLECTION_WARNING =
+    "Nenhuma coleção selecionada: o assistente responderá sempre sem fonte.";
+
+  it("test_assistants_page_lists_how_many_collections_each_uses", async () => {
+    server.use(
+      assistantsAs([
+        makeAssistant({ collection_ids: [COLLECTION_ID, OTHER_COLLECTION_ID] }),
+        makeAssistant({ id: OTHER_ASSISTANT_ID, name: "Rascunho", collection_ids: [] }),
+      ]),
+    );
+    await renderAssistants();
+
+    const header = screen.getByRole("columnheader", { name: "Coleções" });
+    expect(header).toBeInTheDocument();
+    expect(within(rowOf("Suporte ERP")).getByRole("cell", { name: "2" })).toBeInTheDocument();
+    expect(within(rowOf("Rascunho")).getByText("Nenhuma (sem fonte)")).toBeInTheDocument();
+  });
+
+  it("test_assistants_page_edit_replaces_the_collection_set", async () => {
+    const user = userEvent.setup();
+    const store = assistantStore();
+    server.use(...store.handlers);
+    await renderAssistants();
+    const dialog = await openEdit(user, "Suporte ERP");
+
+    const erp = await within(dialog).findByRole("checkbox", { name: "Código ERP" });
+    const manuals = within(dialog).getByRole("checkbox", { name: "Manuais" });
+    expect(erp).toBeChecked();
+    expect(manuals).not.toBeChecked();
+    expect(within(dialog).getByText("Repositório do ERP e seus commits.")).toBeVisible();
+    expect(within(dialog).queryByText(NO_COLLECTION_WARNING)).not.toBeInTheDocument();
+    await user.click(erp);
+    expect(within(dialog).getByText(NO_COLLECTION_WARNING)).toBeVisible();
+    await user.click(manuals);
+    await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
+
+    expect(await screen.findByText("Assistente Suporte ERP atualizado.")).toHaveRole("status");
+    expect(store.changes).toEqual([
+      {
+        assistantId: ASSISTANT_ID,
+        body: expect.objectContaining({
+          collection_ids: [OTHER_COLLECTION_ID],
+          min_similarity: 0.3,
+        }) as unknown,
+      },
+    ]);
+  });
+
+  it("test_assistants_page_can_save_without_collections", async () => {
+    const user = userEvent.setup();
+    const store = assistantStore();
+    server.use(...store.handlers);
+    await renderAssistants();
+    const dialog = await openEdit(user, "Suporte ERP");
+
+    await user.click(await within(dialog).findByRole("checkbox", { name: "Código ERP" }));
+    await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
+
+    expect(await screen.findByText("Assistente Suporte ERP atualizado.")).toHaveRole("status");
+    expect(store.changes[0]?.body.collection_ids).toEqual([]);
+    await waitFor(() => {
+      expect(within(rowOf("Suporte ERP")).getByText("Nenhuma (sem fonte)")).toBeInTheDocument();
+    });
+  });
+
+  it("test_assistants_page_validates_min_similarity", async () => {
+    const user = userEvent.setup();
+    const store = assistantStore();
+    server.use(...store.handlers);
+    await renderAssistants();
+    const dialog = await openEdit(user, "Suporte ERP");
+    const minSimilarity = within(dialog).getByLabelText("Similaridade mínima");
+
+    await user.clear(minSimilarity);
+    await user.type(minSimilarity, "1,2");
+    await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
+
+    expect(await within(dialog).findByText("Informe um número de 0 a 1.")).toBeInTheDocument();
+    expect(store.changes).toEqual([]);
+  });
+
+  it("test_assistants_page_shows_collection_invalid_error", async () => {
+    const user = userEvent.setup();
+    await renderAssistants();
+    server.use(updateAssistantFails(422, "assistant_collection_invalid"));
+    const dialog = await openEdit(user, "Suporte ERP");
+
+    await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
+
+    expect(await within(dialog).findByRole("alert")).toHaveTextContent(
+      "Escolha apenas coleções deste workspace.",
+    );
+  });
+
+  it("test_assistants_page_without_collections_points_to_collections", async () => {
+    const user = userEvent.setup();
+    server.use(...collectionsAs([]));
+    await renderAssistants();
+    const dialog = await openCreate(user);
+
+    expect(
+      await within(dialog).findByText(/Nenhuma coleção cadastrada neste workspace./),
+    ).toBeVisible();
+    expect(within(dialog).getByRole("link", { name: "Ir para coleções" })).toHaveAttribute(
+      "href",
+      `/w/${WORKSPACE_ID}/collections`,
+    );
+    expect(within(dialog).getByText(NO_COLLECTION_WARNING)).toBeVisible();
+  });
+
+  it("test_assistants_page_retries_loading_collections", async () => {
+    const user = userEvent.setup();
+    server.use(collectionsServerError);
+    await renderAssistants();
+    const dialog = await openCreate(user);
+
+    expect(await within(dialog).findByText("Não foi possível carregar as coleções.")).toHaveRole(
+      "alert",
+    );
+    server.use(...collectionsAs());
+    await user.click(within(dialog).getByRole("button", { name: "Tentar novamente" }));
+
+    expect(await within(dialog).findByRole("checkbox", { name: "Manuais" })).toBeVisible();
   });
 });
 

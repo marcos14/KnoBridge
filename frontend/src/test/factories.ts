@@ -340,7 +340,7 @@ export function makeProviders(): Provider[] {
 export const ASSISTANT_ID = "00000000-0000-4000-8000-0000000000f1";
 export const OTHER_ASSISTANT_ID = "00000000-0000-4000-8000-0000000000f2";
 
-/** One item of `GET /v1/workspaces/{id}/assistants`: by default the active "Suporte ERP". */
+/** One item of `GET /v1/workspaces/{id}/assistants`: by default the active "Suporte ERP", on Código ERP. */
 export function makeAssistant(overrides: Partial<Assistant> = {}): Assistant {
   return {
     id: ASSISTANT_ID,
@@ -354,7 +354,7 @@ export function makeAssistant(overrides: Partial<Assistant> = {}): Assistant {
     tone: "neutral",
     no_source_message: "Não encontrei isso nas fontes. Quer abrir um chamado?",
     active: true,
-    collection_ids: [],
+    collection_ids: [COLLECTION_ID],
     min_similarity: 0.3,
     created_at: "2026-10-02T10:00:00Z",
     updated_at: "2026-10-02T10:00:00Z",
@@ -362,7 +362,7 @@ export function makeAssistant(overrides: Partial<Assistant> = {}): Assistant {
   };
 }
 
-/** The default assistants, by name: Rascunho (inactive, on Anthropic) and Suporte ERP (active). */
+/** The default assistants, by name: Rascunho (inactive, on Anthropic, no collection) and Suporte ERP (active). */
 export function makeAssistants(): Assistant[] {
   return [
     makeAssistant({
@@ -373,6 +373,7 @@ export function makeAssistants(): Assistant[] {
       model: "claude-sonnet",
       tone: "friendly",
       active: false,
+      collection_ids: [],
     }),
     makeAssistant(),
   ];

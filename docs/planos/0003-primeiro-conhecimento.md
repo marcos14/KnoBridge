@@ -124,10 +124,10 @@ fases:
         commit: null
       - id: F5.3
         titulo: Coleções no assistente e citações de código e commit no chat
-        status: em_execucao
+        status: concluida
         agente: claude-code
         iniciada_em: 2026-10-10
-        concluida_em: null
+        concluida_em: 2026-10-10
         commit: null
   - id: F6
     titulo: Stack, documentação e ensaio real
@@ -504,6 +504,7 @@ Ver `decisoes[]` no frontmatter. ADR previsto: 0004 (índice de conhecimento: di
 - 2026-10-10 — F5.3 iniciada (em paralelo com a F3.3).
 - 2026-10-10 — F3.3 concluída: Agendamento por fonte via Temporal Schedules, workflow scheduled_sync, reconciliação na subida do worker, next_run_at; 1136 testes backend. Limite: reconciliação só na subida do worker.
 - 2026-10-10 — F3 concluída; F5.2 iniciada (em paralelo com a F5.3).
+- 2026-10-10 — F5.3 concluída: Coleções e similaridade mínima no formulário do assistente, citações de código/commit/documento no chat e conversas, dica de assistente sem coleção; 797 testes. Pendente: autor e data do commit na citação (F6.1).
 
 ## 8. Encerramento
 

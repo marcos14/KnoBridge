@@ -11,6 +11,7 @@ import { type Citation, useConversation } from "@/lib/api/conversations";
 
 import { Composer } from "./Composer";
 import { MessageList } from "./MessageList";
+import { NoCollectionsHint } from "./NoCollectionsHint";
 
 interface ConversationViewProps {
   workspaceId: string;
@@ -103,6 +104,7 @@ export function ConversationView({
         }
       />
       {failure !== null && <FormAlert key={failure} message={failure} />}
+      <NoCollectionsHint assistant={assistant} />
       <Composer onSend={send} streaming={streaming} onStop={stream.stop} />
     </div>
   );

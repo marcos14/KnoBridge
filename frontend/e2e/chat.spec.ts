@@ -39,6 +39,8 @@ const assistant = {
   tone: "neutral",
   no_source_message: "",
   active: true,
+  collection_ids: ["00000000-0000-4000-8000-0000000001a1"],
+  min_similarity: 0.3,
   created_at: "2026-10-01T00:00:00Z",
   updated_at: "2026-10-01T00:00:00Z",
 };

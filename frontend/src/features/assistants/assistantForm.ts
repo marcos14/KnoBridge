@@ -18,18 +18,33 @@ export const MIN_TEMPERATURE = 0;
 export const MAX_TEMPERATURE = 2;
 export const DEFAULT_TEMPERATURE = 0.2;
 export const DEFAULT_LANGUAGE = "pt-BR";
+export const MAX_MIN_SIMILARITY = 1;
+export const DEFAULT_MIN_SIMILARITY = 0.3;
 
 /**
  * Temperature typed as text, with a comma or a dot as decimal separator ("0,7", "1.5"); `null`
  * when it is not a plain number from 0 to 2.
  */
 export function parseTemperature(text: string): number | null {
+  return parseBoundedDecimal(text, MAX_TEMPERATURE);
+}
+
+/**
+ * Minimum similarity typed as text ("0,45", "0.3"); `null` when it is not a plain number from 0
+ * to 1.
+ */
+export function parseMinSimilarity(text: string): number | null {
+  return parseBoundedDecimal(text, MAX_MIN_SIMILARITY);
+}
+
+/** A plain non-negative decimal up to `max`, with a comma or a dot; `null` otherwise. */
+function parseBoundedDecimal(text: string, max: number): number | null {
   const normalized = text.trim().replace(",", ".");
   if (!/^\d+(\.\d+)?$/.test(normalized)) {
     return null;
   }
   const value = Number(normalized);
-  return value >= MIN_TEMPERATURE && value <= MAX_TEMPERATURE ? value : null;
+  return value <= max ? value : null;
 }
 
 export interface AssistantFormValues {
@@ -43,6 +58,8 @@ export interface AssistantFormValues {
   tone: AssistantTone;
   noSourceMessage: string;
   active: boolean;
+  collectionIds: string[];
+  minSimilarity: string;
 }
 
 export function assistantFormSchema(t: TFunction) {
@@ -65,6 +82,10 @@ export function assistantFormSchema(t: TFunction) {
     tone: z.enum(ASSISTANT_TONES),
     noSourceMessage: text(NO_SOURCE_MESSAGE_MAX_LENGTH),
     active: z.boolean(),
+    collectionIds: z.array(z.string()),
+    minSimilarity: z.string().refine((value) => parseMinSimilarity(value) !== null, {
+      error: t("assistants.form.validation.minSimilarityInvalid"),
+    }),
   });
 }
 
@@ -88,6 +109,8 @@ export function assistantFormDefaults(
       tone: "neutral",
       noSourceMessage: "",
       active: true,
+      collectionIds: [],
+      minSimilarity: String(DEFAULT_MIN_SIMILARITY),
     };
   }
   return {
@@ -101,12 +124,14 @@ export function assistantFormDefaults(
     tone: assistant.tone,
     noSourceMessage: assistant.no_source_message,
     active: assistant.active,
+    collectionIds: [...assistant.collection_ids],
+    minSimilarity: String(assistant.min_similarity),
   };
 }
 
 /**
  * Body of both `POST` and `PATCH` (every field is sent): a blank `no_source_message` makes the
- * backend store its default message.
+ * backend store its default message; `collection_ids` replaces the whole set.
  */
 export function assistantBody(values: AssistantFormValues): AssistantInput {
   return {
@@ -121,5 +146,8 @@ export function assistantBody(values: AssistantFormValues): AssistantInput {
     tone: values.tone,
     no_source_message: values.noSourceMessage,
     active: values.active,
+    // The whole set is sent: on a PATCH it replaces the assistant's collections.
+    collection_ids: values.collectionIds,
+    min_similarity: parseMinSimilarity(values.minSimilarity) ?? DEFAULT_MIN_SIMILARITY,
   };
 }

@@ -15,6 +15,7 @@ import { translateApiError } from "@/i18n/apiErrors";
 import { type Assistant, useAssistants } from "@/lib/api/assistants";
 
 import { Composer } from "./Composer";
+import { NoCollectionsHint } from "./NoCollectionsHint";
 
 interface NewConversationProps {
   workspaceId: string;
@@ -121,6 +122,7 @@ function StartForm({ assistants, onStart }: StartFormProps) {
         )}
       </div>
       {failure !== null && <FormAlert key={failure} message={failure} />}
+      <NoCollectionsHint assistant={chosen} />
       <Composer
         onSend={async (content) => {
           setFailure(null);

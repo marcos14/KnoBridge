@@ -1,7 +1,9 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { type ReactElement, useMemo, useState } from "react";
-import { type Control, useForm } from "react-hook-form";
+import { AlertTriangle } from "lucide-react";
+import { type ReactElement, type ReactNode, useId, useMemo, useState } from "react";
+import { type Control, useController, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router";
 
 import { FormAlert } from "@/components/FormAlert";
 import { TextField } from "@/components/TextField";
@@ -26,6 +28,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -35,6 +38,7 @@ import {
 } from "@/components/ui/select";
 import { translateApiError } from "@/i18n/apiErrors";
 import { type Assistant, useCreateAssistant, useUpdateAssistant } from "@/lib/api/assistants";
+import { useCollections } from "@/lib/api/collections";
 import type { Provider } from "@/lib/api/providers";
 
 import {
@@ -154,6 +158,14 @@ export function AssistantDialog({
               />
               <ToneField control={form.control} />
             </div>
+            <CollectionsField control={form.control} workspaceId={workspaceId} />
+            <TextField
+              control={form.control}
+              name="minSimilarity"
+              inputMode="decimal"
+              label={t("assistants.form.minSimilarity")}
+              description={t("assistants.form.minSimilarityHint")}
+            />
             <TextField
               control={form.control}
               name="noSourceMessage"
@@ -229,6 +241,99 @@ function ProviderField({ control, providers }: FieldProps & { providers: readonl
         </FormItem>
       )}
     />
+  );
+}
+
+/**
+ * The collections the assistant answers from, as checkboxes. Mounted only with the dialog open,
+ * so the list is fetched when someone edits an assistant, not for every row of the table.
+ */
+function CollectionsField({ control, workspaceId }: FieldProps & { workspaceId: string }) {
+  const { t } = useTranslation();
+  const idPrefix = useId();
+  const collections = useCollections(workspaceId);
+  const { field } = useController({ control, name: "collectionIds" });
+  const selected = field.value;
+
+  function toggle(collectionId: string, checked: boolean) {
+    field.onChange(
+      checked ? [...selected, collectionId] : selected.filter((item) => item !== collectionId),
+    );
+  }
+
+  let options: ReactNode;
+  if (collections.isPending) {
+    options = (
+      <p role="status" className="text-sm">
+        {t("assistants.form.collectionsLoading")}
+      </p>
+    );
+  } else if (collections.isError) {
+    options = (
+      <div className="flex flex-wrap items-center gap-2">
+        <p role="alert" className="text-sm">
+          {t("assistants.form.collectionsLoadFailed")}
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            void collections.refetch();
+          }}
+        >
+          {t("assistants.retry")}
+        </Button>
+      </div>
+    );
+  } else if (collections.data.length === 0) {
+    options = (
+      <p className="text-sm">
+        {t("assistants.form.collectionsEmpty")}{" "}
+        <Link to={`/w/${workspaceId}/collections`} className="underline underline-offset-4">
+          {t("assistants.form.goToCollections")}
+        </Link>
+      </p>
+    );
+  } else {
+    options = (
+      <ul className="flex flex-col gap-2">
+        {collections.data.map((collection) => {
+          const id = `${idPrefix}-${collection.id}`;
+          return (
+            <li key={collection.id} className="flex items-start gap-3">
+              <Checkbox
+                id={id}
+                checked={selected.includes(collection.id)}
+                onCheckedChange={(checked) => {
+                  toggle(collection.id, checked === true);
+                }}
+              />
+              <div className="flex flex-col gap-0.5">
+                <Label htmlFor={id}>{collection.name}</Label>
+                {collection.description !== "" && (
+                  <span className="text-muted-foreground text-xs">{collection.description}</span>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    );
+  }
+
+  return (
+    <fieldset className="flex flex-col gap-2">
+      <legend className="text-sm font-medium">{t("assistants.form.collections")}</legend>
+      <p className="text-muted-foreground text-sm">{t("assistants.form.collectionsHint")}</p>
+      {options}
+      {selected.length === 0 && (
+        <p className="flex items-start gap-2 rounded-md border border-amber-500/50 px-3 py-2 text-sm">
+          <AlertTriangle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+          <span>{t("assistants.form.noCollections")}</span>
+        </p>
+      )}
+    </fieldset>
   );
 }
 

@@ -129,6 +129,16 @@ function AssistantsList({ workspaceId }: { workspaceId: string }) {
           .join(" · "),
     },
     {
+      key: "collections",
+      header: t("assistants.columns.collections"),
+      cell: (item) =>
+        item.collection_ids.length > 0 ? (
+          String(item.collection_ids.length)
+        ) : (
+          <span className="text-muted-foreground">{t("assistants.noCollections")}</span>
+        ),
+    },
+    {
       key: "status",
       header: t("assistants.columns.status"),
       cell: (item) =>
