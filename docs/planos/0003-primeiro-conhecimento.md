@@ -139,19 +139,19 @@ fases:
         agente: claude-code
         iniciada_em: 2026-10-11
         concluida_em: 2026-10-10
-        commit: null
+        commit: 32f3a37
       - id: F6.2
         titulo: Specs, guia de indexação e documentação
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code
+        iniciada_em: 2026-10-11
         concluida_em: null
         commit: null
       - id: F6.3
         titulo: Ensaio real com o Minski (local, fora da CI)
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code
+        iniciada_em: 2026-10-11
         concluida_em: null
         commit: null
 decisoes:
@@ -508,6 +508,7 @@ Ver `decisoes[]` no frontmatter. ADR previsto: 0004 (índice de conhecimento: di
 - 2026-10-10 — F5.2 concluída: Tela /w/:id/sources (formulário Git/pasta, cron com prévia e próxima execução, testar, sincronizar, cancelar, execuções ao vivo, erros, documentos); mesclada com a F5.3; 914 testes.
 - 2026-10-11 — F5 concluída; F6.1 iniciada (inclui autor e data do commit na citação, pendente da F5.3).
 - 2026-10-10 — F6.1 concluída: Imagem com git (1,13 GB; era 473 MB antes do plano), compose com /sources somente leitura e volume de clones, E2E da stack da indexação (coleção, fonte de pasta, sincronizar, busca, chat com citação e sem fonte); orquestrador: stack do zero em 67 s, 2 de 2 rodadas verdes (33 s e 30 s); autor e data na citação de commit.
+- 2026-10-11 — F6.2 (agente) e F6.3 (orquestrador, ensaio com o Minski) iniciadas em paralelo.
 
 ## 8. Encerramento
 
