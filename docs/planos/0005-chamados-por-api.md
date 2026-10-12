@@ -13,7 +13,7 @@ branch: plano/0005-chamados-por-api
 fases:
   - id: F1
     titulo: Contrato e modelo de dados
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F1.1
         titulo: ADR 0006 e spec de chamados (formato, envio, fila, anonimização, Markdown, citação, webhook de saída)
@@ -28,16 +28,16 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
         concluida_em: 2026-10-12
-        commit: null
+        commit: 69da51b
   - id: F2
     titulo: Servidor — recebimento e indexação
-    status: pendente
+    status: em_execucao
     subfases:
       - id: F2.1
         titulo: Fonte tickets, token de envio e endpoint de lote para a caixa de entrada
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-12
         concluida_em: null
         commit: null
       - id: F2.2
@@ -575,6 +575,7 @@ D1 a D12 vêm das respostas do usuário (seção 2). D13 a D16 são do agente, n
 - 2026-10-12 — F1.1 concluída: ADR 0006, spec chamados.md (JSON Schema, envio, fila, anonimização, Markdown, citação, webhook), chat-sse v0.6 e visão v0.4 (D17 e roadmap); token e segredo passaram a owner ou admin na revisão do orquestrador
 - 2026-10-12 — F1.2 iniciada (agente em worktree).
 - 2026-10-12 — F1.2 concluída: migração 0016 com ingest_tokens, ticket_inbox, ticket_requests e webhook em assistants, RLS forçada e testes de isolamento, modelo-de-dados v0.8, subpacote tickets/; backend 1537 passed com 99% de cobertura, frontend 1140
+- 2026-10-12 — F2.1 iniciada (agente em worktree).
 
 ## 8. Encerramento
 
