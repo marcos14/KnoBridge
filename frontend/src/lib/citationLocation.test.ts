@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 import type { Citation } from "@/lib/api/conversations";
 import { makeCitation } from "@/test/factories";
 import { makeKnowledgeCitation } from "@/test/knowledgeFactories";
+import { makeTicketCitation } from "@/test/ticketFactories";
 
 import {
+  citationDate,
   citationLines,
   citationLocation,
   citationSource,
@@ -186,5 +188,61 @@ describe("commitAuthorship", () => {
 
   it("test_commit_authorship_is_null_without_author_and_date", () => {
     expect(commitAuthorship(null, null, "pt-BR")).toBeNull();
+  });
+});
+
+describe("citationSource for tickets", () => {
+  it("test_citation_source_reads_a_ticket_with_status_date_and_link", () => {
+    const citation = makeTicketCitation();
+
+    expect(citationSource(citation)).toEqual({
+      type: "ticket",
+      number: "48213",
+      status: "resolved",
+      date: "2026-10-01T12:00:00Z",
+      dateKind: "resolved",
+      url: "https://suporte.example.test/chamados/48213",
+    });
+    expect(citationLocation(citation)).toBeNull();
+  });
+
+  it("test_citation_source_drops_a_ticket_link_that_is_not_http", () => {
+    for (const url of ["javascript:alert(1)", "ftp://x.test/1", "", null]) {
+      expect(citationSource(makeTicketCitation({ url }))).toMatchObject({ url: null });
+    }
+    expect(citationSource(makeTicketCitation({ url: "HTTP://x.test/1" }))).toMatchObject({
+      url: "HTTP://x.test/1",
+    });
+  });
+
+  it("test_citation_source_tolerates_a_ticket_without_its_fields", () => {
+    expect(
+      citationSource(
+        makeTicketCitation({
+          ticket_number: null,
+          ticket_status: undefined,
+          date: null,
+          ticket_date_kind: "updated",
+          url: undefined,
+        }),
+      ),
+    ).toEqual({
+      type: "ticket",
+      number: null,
+      status: null,
+      date: null,
+      dateKind: null,
+      url: null,
+    });
+    expect(citationSource(makeTicketCitation({ ticket_date_kind: undefined }))).toMatchObject({
+      dateKind: null,
+    });
+  });
+});
+
+describe("citationDate", () => {
+  it("test_citation_date_formats_the_day_or_keeps_the_text", () => {
+    expect(citationDate("2026-10-01T15:00:00Z", "pt-BR", "UTC")).toBe("1 de out. de 2026");
+    expect(citationDate("ontem", "pt-BR")).toBe("ontem");
   });
 });

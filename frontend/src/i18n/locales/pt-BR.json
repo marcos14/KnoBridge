@@ -620,7 +620,8 @@
     "testReasons": {
       "runner_offline": "o runner está offline",
       "runner_revoked": "o runner foi revogado",
-      "repository_not_served": "o runner não informou esse repositório no último contato"
+      "repository_not_served": "o runner não informou esse repositório no último contato",
+      "ingest_token_missing": "a fonte ainda não tem token de envio. Gere um na aba Integração."
     },
     "runStatus": {
       "queued": "Na fila",
@@ -716,6 +717,14 @@
       "excerptMaxLinesHint": "De 0 a {{max}}. Trecho do código enviado com cada evidência, com segredos redigidos; 0 não envia excerto.",
       "autoOnCommit": "Gerar conhecimento a cada commit",
       "autoOnCommitHint": "Quando o runner relata um commit novo, os módulos com arquivos alterados entram na fila.",
+      "ticketsHint": "Os chamados chegam pela API (com o token da fonte) ou por upload de arquivo no detalhe da fonte. Cada envio já pede a sincronização.",
+      "anonymize": "Anonimizar",
+      "anonymizeHint": "Troca e-mails, telefones, CPF, CNPJ, cartões, IPs e os nomes informados no chamado por marcadores antes de indexar.",
+      "includeInternalNotes": "Incluir notas internas",
+      "includeInternalNotesHint": "Notas internas (mensagens não públicas) também entram no índice e podem aparecer nas respostas.",
+      "statuses": "Status indexados",
+      "statusesHint": "Chamados com outros status ficam fora do índice.",
+      "ticketsChangeHint": "Mudar estas opções vale para os chamados processados depois. Os já indexados não são reprocessados: para reaplicar, reenvie os chamados.",
       "includeGlobs": "Incluir (um padrão por linha, opcional)",
       "includeGlobsHint": "Em branco, todos os arquivos. Ex.: src/**/*.py",
       "excludeGlobs": "Excluir (um padrão por linha, opcional)",
@@ -747,7 +756,8 @@
         "modelInvalid": "Use até 100 caracteres entre letras, números e . _ : / -",
         "budgetInvalid": "Informe um valor de {{min, number}} a {{max, number}}.",
         "timeoutInvalid": "Informe um número inteiro de {{min}} a {{max}}.",
-        "excerptInvalid": "Informe um número inteiro de 0 a {{max}}."
+        "excerptInvalid": "Informe um número inteiro de 0 a {{max}}.",
+        "statusesRequired": "Escolha ao menos um status."
       }
     },
     "detail": {
@@ -831,6 +841,123 @@
         "indexedAt": "Indexado em"
       },
       "notIndexed": "Ainda não indexado"
+    }
+  },
+  "tickets": {
+    "status": {
+      "open": "Aberto",
+      "pending": "Pendente",
+      "resolved": "Resolvido",
+      "closed": "Fechado"
+    },
+    "summary": {
+      "origin": "Recebe chamados pela API e por upload de arquivo.",
+      "anonymized": "Anonimização ligada.",
+      "notAnonymized": "Anonimização desligada.",
+      "withInternalNotes": "Notas internas indexadas.",
+      "withoutInternalNotes": "Notas internas fora do índice.",
+      "statuses": "Status indexados: {{statuses}}"
+    },
+    "tabs": {
+      "label": "Seções da fonte de chamados",
+      "integration": "Integração",
+      "upload": "Upload",
+      "preview": "Prévia",
+      "indexing": "Indexação"
+    },
+    "token": {
+      "title": "Token de envio",
+      "description": "O sistema de chamados se identifica com este token em POST /v1/ingest/tickets. O token aparece uma única vez ao ser gerado; gerar outro invalida o anterior na hora.",
+      "managersOnly": "Um owner ou admin do workspace gera o token desta fonte.",
+      "generate": "Gerar token",
+      "confirmTitle": "Gerar o token de envio de {{name}}?",
+      "confirmDescription": "Se a fonte já tem um token, ele deixa de funcionar assim que o novo for gerado. Atualize a integração em seguida.",
+      "confirm": "Gerar",
+      "generating": "Gerando…",
+      "cancel": "Cancelar",
+      "issuedTitle": "Token de envio gerado",
+      "issuedDescription": "Copie o token agora: ele não aparece de novo. Guarde-o como segredo na integração, por exemplo na variável de ambiente {{variable}} usada nos exemplos.",
+      "label": "Token",
+      "copy": "Copiar token",
+      "done": "Concluir"
+    },
+    "examples": {
+      "title": "Exemplos de envio",
+      "description": "Até 100 itens por requisição. Os exemplos leem o token da variável de ambiente {{variable}}; reenviar o mesmo lote é seguro.",
+      "curl": "Exemplo com curl",
+      "python": "Exemplo em Python",
+      "copyCurl": "Copiar exemplo curl",
+      "copyPython": "Copiar exemplo Python"
+    },
+    "upload": {
+      "title": "Enviar arquivo de chamados",
+      "description": "Envie um export em .json (uma lista ou {\"items\": [...]}) ou .jsonl (um item por linha), com itens da API ou chamados puros. Itens inválidos são recusados linha a linha; os outros seguem.",
+      "inactive": "A fonte está desativada: o envio será recusado até ela ser ativada.",
+      "file": "Arquivo",
+      "fileHint": "Arquivo .json ou .jsonl de até {{max}} MiB. O arquivo não é guardado: só os chamados aceitos.",
+      "submit": "Enviar arquivo",
+      "sending": "Enviando…",
+      "problems": {
+        "missing": "Escolha o arquivo a enviar.",
+        "format": "Use um arquivo {{extensions}}.",
+        "tooLarge": "O arquivo passa de {{max}} MiB."
+      },
+      "columns": {
+        "line": "Linha",
+        "index": "Posição",
+        "ticket": "Chamado",
+        "error": "Erro"
+      },
+      "codes": {
+        "validation_error": "Fora do formato do chamado",
+        "ticket_too_large": "Chamado acima de 1 MiB",
+        "duplicate_in_batch": "Chamado repetido no arquivo",
+        "invalid_json": "Linha que não é JSON válido"
+      },
+      "duplicateOfLine": "Já apareceu na linha {{first}}.",
+      "duplicateOfIndex": "Já apareceu na posição {{first}}.",
+      "report": {
+        "title": "Resultado do envio",
+        "summary": "{{total}} itens lidos do arquivo {{format}}.",
+        "sync": {
+          "started": "A indexação começou.",
+          "pending": "Já havia uma sincronização em andamento: os chamados entram na próxima.",
+          "deferred": "O serviço de sincronização está fora do ar: os chamados esperam a próxima sincronização.",
+          "none": "Nada novo para indexar."
+        },
+        "counts": {
+          "queued": "Na fila para indexar",
+          "unchanged": "Sem mudança",
+          "stale": "Mais antigos que os guardados",
+          "rejected": "Recusados"
+        },
+        "errorsTitle": "Itens recusados",
+        "errorsLabel": "Itens recusados do arquivo",
+        "truncated": "Mostrando os primeiros {{shown}} itens recusados."
+      }
+    },
+    "preview": {
+      "title": "Prévia de um chamado",
+      "description": "Cole um chamado no formato da API e veja o Markdown que vai para o índice, com a anonimização e as notas internas desta fonte. Nada é gravado.",
+      "ticket": "Chamado (JSON)",
+      "ticketHint": "Um objeto com external_id, title, status, created_at, updated_at e, se houver, mensagens e solução.",
+      "submit": "Gerar prévia",
+      "loading": "Gerando…",
+      "problems": {
+        "empty": "Cole um chamado em JSON.",
+        "invalidJson": "O texto não é um JSON válido.",
+        "notObject": "Cole um único chamado: um objeto JSON."
+      },
+      "problemsLabel": "Problemas do chamado",
+      "resultTitle": "Prévia: {{title}}",
+      "anonymized": "Com anonimização.",
+      "notAnonymized": "Sem anonimização.",
+      "withInternalNotes": "Notas internas incluídas.",
+      "withoutInternalNotes": "Notas internas fora.",
+      "markers": "Marcadores aplicados",
+      "noMarkers": "Nenhum dado pessoal encontrado pelas regras.",
+      "marker": "{{marker}} × {{times}}",
+      "markdown": "Markdown do chamado"
     }
   },
   "harness": {
@@ -1299,7 +1426,13 @@
       },
       "item": "Item",
       "evidence": "Evidências no código",
-      "noEvidence": "Sem evidências registradas."
+      "noEvidence": "Sem evidências registradas.",
+      "ticket": "Chamado",
+      "ticketNumber": "Chamado {{number}}",
+      "ticketStatus": "Status",
+      "resolvedAt": "Resolvido em",
+      "updatedAt": "Atualizado em",
+      "openTicket": "Abrir o chamado no sistema de origem"
     },
     "citationLabel": "Fonte {{index}}: {{title}}",
     "composer": {
@@ -1669,6 +1802,11 @@
     "job_not_found": "Tarefa não encontrada.",
     "job_finished": "A tarefa já terminou e não pode ser cancelada.",
     "knowledge_content_invalid": "O conteúdo editado não segue o formato do item. Confira os campos apontados.",
-    "knowledge_item_not_found": "Item de conhecimento não encontrado. A lista foi atualizada."
+    "knowledge_item_not_found": "Item de conhecimento não encontrado. A lista foi atualizada.",
+    "payload_too_large": "O conteúdo enviado passa do tamanho máximo aceito.",
+    "ticket_too_large": "O chamado passa de 1 MiB.",
+    "upload_format_unsupported": "Use um arquivo .json ou .jsonl.",
+    "upload_invalid_json": "O arquivo .json não é válido: ele deve ser uma lista ou um objeto {\"items\": [...]}.",
+    "upload_empty": "O arquivo não tem nenhum chamado."
   }
 }

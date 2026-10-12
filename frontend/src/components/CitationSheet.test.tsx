@@ -5,6 +5,7 @@ import type { Citation } from "@/lib/api/conversations";
 import { makeCitation } from "@/test/factories";
 import { makeKnowledgeCitation } from "@/test/knowledgeFactories";
 import { renderWithProviders } from "@/test/renderWithProviders";
+import { makeTicketCitation } from "@/test/ticketFactories";
 
 import { CitationSheet } from "./CitationSheet";
 
@@ -153,6 +154,53 @@ describe("CitationSheet", () => {
     expect(within(panel).queryByText("Confiança")).not.toBeInTheDocument();
     expect(within(panel).queryByText("Item")).not.toBeInTheDocument();
     expect(within(panel).getByText("Sem evidências registradas.")).toBeVisible();
+  });
+
+  it("test_citation_sheet_shows_ticket_with_status_date_and_external_link", async () => {
+    const panel = await openSheet(makeTicketCitation());
+
+    expect(panel).toHaveAccessibleName("[1] Erro 4021 ao fechar o caixa");
+    expect(detail(panel, "Chamado")).toBe("48213");
+    expect(detail(panel, "Status")).toBe("Resolvido");
+    expect(detail(panel, "Resolvido em")).toBe("1 de out. de 2026");
+    expect(within(panel).getByText("1 de out. de 2026")).toHaveAttribute(
+      "title",
+      "2026-10-01T12:00:00Z",
+    );
+    expect(
+      within(panel).getByText("Finalizar a sangria do turno anterior libera o fechamento.").tagName,
+    ).toBe("BLOCKQUOTE");
+    const link = within(panel).getByRole("link", { name: "Abrir o chamado no sistema de origem" });
+    expect(link).toHaveAttribute("href", "https://suporte.example.test/chamados/48213");
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    // The `ticket:` URI is not a place people can open.
+    expect(within(panel).queryByText("ticket:4f6c2a10-0001")).not.toBeInTheDocument();
+  });
+
+  it("test_citation_sheet_shows_open_ticket_updated_without_link", async () => {
+    const panel = await openSheet(
+      makeTicketCitation({
+        ticket_status: "pending",
+        ticket_date_kind: "updated",
+        url: "javascript:alert(1)",
+      }),
+    );
+
+    expect(detail(panel, "Status")).toBe("Pendente");
+    expect(detail(panel, "Atualizado em")).toBe("1 de out. de 2026");
+    expect(within(panel).queryByRole("link")).not.toBeInTheDocument();
+  });
+
+  it("test_citation_sheet_shows_ticket_saved_without_its_fields", async () => {
+    const panel = await openSheet(
+      makeTicketCitation({ ticket_number: null, ticket_status: null, date: null, url: null }),
+    );
+
+    expect(within(panel).queryByText("Chamado")).not.toBeInTheDocument();
+    expect(within(panel).queryByText("Status")).not.toBeInTheDocument();
+    expect(within(panel).queryByText("Resolvido em")).not.toBeInTheDocument();
+    expect(within(panel).queryByRole("link")).not.toBeInTheDocument();
   });
 
   it("test_citation_sheet_keeps_legacy_citations_as_before", async () => {

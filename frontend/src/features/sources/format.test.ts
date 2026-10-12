@@ -92,7 +92,8 @@ describe("testFailureReason", () => {
     ["runner_offline", "o runner está offline"],
     ["runner_revoked", "o runner foi revogado"],
     ["repository_not_served", "o runner não informou esse repositório no último contato"],
-  ])("test_test_failure_reason_explains_runner_%s", (reason, expected) => {
+    ["ingest_token_missing", "a fonte ainda não tem token de envio. Gere um na aba Integração."],
+  ])("test_test_failure_reason_explains_%s", (reason, expected) => {
     expect(testFailureReason({ code: "source_unavailable", details: { reason } }, t)).toBe(
       expected,
     );

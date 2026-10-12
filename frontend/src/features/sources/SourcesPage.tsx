@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { useMatch } from "react-router";
 
 import { useCurrentWorkspace } from "@/hooks/use-current-workspace";
-import { hasRole } from "@/lib/roles";
+import { canManageWorkspace, hasRole } from "@/lib/roles";
 
 import { SourceDetail } from "./SourceDetail";
 import { SourcesList } from "./SourcesList";
@@ -33,6 +33,7 @@ export function SourcesPage() {
           workspaceId={workspace.id}
           sourceId={sourceId}
           canManage={canManage}
+          canManageTokens={canManageWorkspace(workspace.role)}
         />
       )}
     </div>

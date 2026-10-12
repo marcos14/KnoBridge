@@ -59,9 +59,17 @@ export function AssistantMessage({
           <p className="text-muted-foreground text-xs font-medium">{t("chat.citations.title")}</p>
           <ul className="flex flex-wrap gap-2">
             {citations.map((citation) => {
-              const location = citationLocation(citation);
               const source = citationSource(citation);
-              const seal = source.type === "knowledge" ? source.confidence : null;
+              const location =
+                source.type === "ticket" && source.number !== null
+                  ? t("chat.citations.ticketNumber", { number: source.number })
+                  : citationLocation(citation);
+              const seal =
+                source.type === "knowledge" && source.confidence !== null
+                  ? t(`chat.citations.seals.${source.confidence}`)
+                  : source.type === "ticket" && source.status !== null
+                    ? t(`tickets.status.${source.status}`)
+                    : null;
               return (
                 <li key={citation.index}>
                   <Button
@@ -85,11 +93,7 @@ export function AssistantMessage({
                       </span>
                     )}
                     {seal !== null && " "}
-                    {seal !== null && (
-                      <span className="text-muted-foreground text-xs">
-                        {t(`chat.citations.seals.${seal}`)}
-                      </span>
-                    )}
+                    {seal !== null && <span className="text-muted-foreground text-xs">{seal}</span>}
                   </Button>
                 </li>
               );

@@ -12,6 +12,13 @@ import {
   runnerFieldsFromConfig,
   type RunnerFormFields,
 } from "./runnerSourceForm";
+import {
+  TICKET_STATUSES,
+  TICKETS_FORM_DEFAULTS,
+  ticketsConfig,
+  ticketsFieldsFromConfig,
+  type TicketsFormFields,
+} from "./ticketsSourceForm";
 
 /** Limits of the contract (`api/sources.py`, `ingestion/source_config.py`). */
 export const SOURCE_NAME_MAX_LENGTH = 200;
@@ -25,7 +32,7 @@ export const MAX_INITIAL_COMMIT_LIMIT = 5000;
 /** Where a Git source is read from: a clone on the server or a public https remote. */
 export type GitLocation = "path" | "url";
 
-export interface SourceFormValues extends RunnerFormFields {
+export interface SourceFormValues extends RunnerFormFields, TicketsFormFields {
   name: string;
   collectionId: string;
   kind: SourceKind;
@@ -41,8 +48,6 @@ export interface SourceFormValues extends RunnerFormFields {
   scheduleEnabled: boolean;
   cron: string;
   active: boolean;
-  /** Config of a tickets source, sent back as stored: the panel has no fields for it yet. */
-  ticketsConfig: Record<string, unknown>;
 }
 
 /** The non-blank lines of a textarea, trimmed. */
@@ -106,7 +111,9 @@ export function sourceFormSchema(t: TFunction) {
         .max(SOURCE_NAME_MAX_LENGTH, tooLong(SOURCE_NAME_MAX_LENGTH)),
       collectionId: z.string().min(1, { error: t("sources.form.validation.collectionRequired") }),
       kind: z.enum(["git", "folder", "runner", "tickets"]),
-      ticketsConfig: z.record(z.string(), z.unknown()),
+      includeInternalNotes: z.boolean(),
+      anonymize: z.boolean(),
+      statuses: z.array(z.enum(TICKET_STATUSES)),
       location: z.enum(["path", "url"]),
       path: z.string().trim().max(PATH_MAX_LENGTH, tooLong(PATH_MAX_LENGTH)),
       url: z.string().trim(),
@@ -133,7 +140,11 @@ export function sourceFormSchema(t: TFunction) {
         for (const [path, message] of runnerFieldIssues(values, t)) {
           issue(ctx, path, message);
         }
-      } else if (values.kind !== "tickets" && (!git || values.location === "path")) {
+      } else if (values.kind === "tickets") {
+        if (values.statuses.length === 0) {
+          issue(ctx, "statuses", t("sources.form.validation.statusesRequired"));
+        }
+      } else if (!git || values.location === "path") {
         if (values.path === "") {
           issue(ctx, "path", t("sources.form.validation.pathRequired"));
         } else if (!isAbsolutePath(values.path)) {
@@ -188,8 +199,8 @@ export function sourceFormDefaults(
       scheduleEnabled: false,
       cron: "",
       active: true,
-      ticketsConfig: {},
       ...RUNNER_FORM_DEFAULTS,
+      ...TICKETS_FORM_DEFAULTS,
     };
   }
   const { config } = source;
@@ -208,12 +219,15 @@ export function sourceFormDefaults(
     scheduleEnabled: source.schedule_enabled,
     cron: source.schedule_cron ?? "",
     active: source.active,
-    ticketsConfig: source.kind === "tickets" ? config : {},
     ...runnerFieldsFromConfig(config),
+    ...ticketsFieldsFromConfig(config),
   };
 }
 
-/** Where a stored source is read from: its URL, its path or, for a runner, its repository. */
+/**
+ * Where a stored source is read from: its URL, its path or, for a runner, its repository. A
+ * tickets source is not read from anywhere (tickets are sent to it): empty.
+ */
 export function sourceLocation(source: Source): string {
   const { url, path, repository } = source.config;
   if (source.kind === "runner") {
@@ -224,14 +238,14 @@ export function sourceLocation(source: Source): string {
 
 /**
  * `config` for the kind: Git `{path | url, branch?, initial_commit_limit}`, folder `{path}`,
- * runner `runnerConfig`, tickets the stored config unchanged.
+ * runner `runnerConfig`, tickets `ticketsConfig`.
  */
 export function sourceConfig(values: SourceFormValues): Record<string, unknown> {
   if (values.kind === "runner") {
     return runnerConfig(values);
   }
   if (values.kind === "tickets") {
-    return values.ticketsConfig;
+    return ticketsConfig(values);
   }
   if (values.kind === "folder") {
     return { path: values.path };
@@ -244,15 +258,16 @@ export function sourceConfig(values: SourceFormValues): Record<string, unknown> 
   };
 }
 
-/** Body of `POST`. */
+/** Body of `POST`. A tickets source has no files, so no globs (the API refuses them). */
 export function sourceInput(values: SourceFormValues): SourceInput {
+  const globs = values.kind !== "tickets";
   return {
     collection_id: values.collectionId,
     kind: values.kind,
     name: values.name,
     config: sourceConfig(values),
-    include_globs: globList(values.includeGlobs),
-    exclude_globs: globList(values.excludeGlobs),
+    include_globs: globs ? globList(values.includeGlobs) : [],
+    exclude_globs: globs ? globList(values.excludeGlobs) : [],
     schedule_cron: values.cron === "" ? null : values.cron,
     schedule_enabled: values.scheduleEnabled,
     active: values.active,

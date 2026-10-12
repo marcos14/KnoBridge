@@ -16,7 +16,14 @@ import {
 } from "@/components/ui/sheet";
 import type { Citation } from "@/lib/api/conversations";
 
-import { citationSource, commitAuthorship } from "@/lib/citationLocation";
+import {
+  citationDate,
+  type CitationSource,
+  citationSource,
+  commitAuthorship,
+} from "@/lib/citationLocation";
+
+import { TicketStatusBadge } from "./TicketStatusBadge";
 import { isWebUri } from "@/lib/citationMarkers";
 
 interface CitationSheetProps {
@@ -86,7 +93,8 @@ export function CitationSheet({ citation, onClose }: CitationSheetProps) {
 /**
  * Where the excerpt comes from and the excerpt itself: a file with its path, lines, symbol and the
  * code in a block tagged with its language; a commit with its short SHA; a knowledge item with its
- * trust seal, key and the evidence verified in the code (v0.5); or, for answers saved
+ * trust seal, key and the evidence verified in the code (v0.5); a ticket with its number, status,
+ * date and link (v0.6); or, for answers saved
  * before the location fields existed, the excerpt alone as a quote.
  */
 function CitationBody({ citation }: { citation: Citation }) {
@@ -99,6 +107,9 @@ function CitationBody({ citation }: { citation: Citation }) {
     return (
       <blockquote className="border-l-2 pl-3 whitespace-pre-wrap">{citation.snippet}</blockquote>
     );
+  }
+  if (source.type === "ticket") {
+    return <TicketBody source={source} snippet={citation.snippet} />;
   }
   if (source.type === "knowledge") {
     return (
@@ -173,6 +184,57 @@ function CitationBody({ citation }: { citation: Citation }) {
         </pre>
       ) : (
         <blockquote className="border-l-2 pl-3 whitespace-pre-wrap">{citation.snippet}</blockquote>
+      )}
+    </>
+  );
+}
+
+/**
+ * A ticket (v0.6): its number, status seal, resolution or update date, the cited excerpt as a
+ * quote and, when the source sent an `http(s)` link, the way to open it in its own system.
+ */
+function TicketBody({
+  source,
+  snippet,
+}: {
+  source: Extract<CitationSource, { type: "ticket" }>;
+  snippet: string;
+}) {
+  const { t, i18n } = useTranslation();
+  return (
+    <>
+      <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+        {source.number !== null && (
+          <Detail label={t("chat.citations.ticket")}>{source.number}</Detail>
+        )}
+        {source.status !== null && (
+          <Detail label={t("chat.citations.ticketStatus")}>
+            <TicketStatusBadge status={source.status} />
+          </Detail>
+        )}
+        {source.date !== null && (
+          <Detail
+            label={
+              source.dateKind === "resolved"
+                ? t("chat.citations.resolvedAt")
+                : t("chat.citations.updatedAt")
+            }
+          >
+            <span title={source.date}>{citationDate(source.date, i18n.language)}</span>
+          </Detail>
+        )}
+      </dl>
+      <blockquote className="border-l-2 pl-3 whitespace-pre-wrap">{snippet}</blockquote>
+      {source.url !== null && (
+        <a
+          href={source.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 underline underline-offset-4"
+        >
+          {t("chat.citations.openTicket")}
+          <ExternalLink aria-hidden="true" className="size-3" />
+        </a>
       )}
     </>
   );

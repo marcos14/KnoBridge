@@ -19,18 +19,28 @@ import { SourceDialog } from "./SourceDialog";
 import { testFailureReason } from "./format";
 import { sourceLocation } from "./sourceForm";
 import { SyncButton } from "./SyncButton";
+import { TicketsSourceTabs } from "./tickets/TicketsSourceTabs";
+import { TicketsSummary } from "./tickets/TicketsSummary";
 
 interface SourceDetailProps {
   workspaceId: string;
   sourceId: string;
   canManage: boolean;
+  /** Owners and admins: issue the send token of a tickets source. */
+  canManageTokens: boolean;
 }
 
 /**
  * One source: its settings and actions, then its runs with the errors of one of them and its
- * documents; a runner source shows them in tabs, next to its modules and harness jobs.
+ * documents; a runner source shows them in tabs, next to its modules and harness jobs; a tickets
+ * source, for those who manage it, next to the API integration, the upload and the preview.
  */
-export function SourceDetail({ workspaceId, sourceId, canManage }: SourceDetailProps) {
+export function SourceDetail({
+  workspaceId,
+  sourceId,
+  canManage,
+  canManageTokens,
+}: SourceDetailProps) {
   const { t } = useTranslation();
   const source = useSource(workspaceId, sourceId);
   const collections = useCollections(workspaceId);
@@ -58,6 +68,12 @@ export function SourceDetail({ workspaceId, sourceId, canManage }: SourceDetailP
               workspaceId={workspaceId}
               source={source.data}
               canManage={canManage}
+            />
+          ) : source.data.kind === "tickets" && canManage ? (
+            <TicketsSourceTabs
+              workspaceId={workspaceId}
+              source={source.data}
+              canManageToken={canManageTokens}
             />
           ) : (
             <>
@@ -146,11 +162,15 @@ function SourceHeader({ workspaceId, source, collections, canManage }: SourceHea
               collection: collection?.name,
             })}
           </p>
-          <p className="text-sm break-all">
-            {source.kind === "runner"
-              ? t("sources.detail.repository", { repository: sourceLocation(source) })
-              : t("sources.detail.location", { location: sourceLocation(source) })}
-          </p>
+          {source.kind === "tickets" ? (
+            <TicketsSummary source={source} />
+          ) : (
+            <p className="text-sm break-all">
+              {source.kind === "runner"
+                ? t("sources.detail.repository", { repository: sourceLocation(source) })
+                : t("sources.detail.location", { location: sourceLocation(source) })}
+            </p>
+          )}
           {typeof branch === "string" && (
             <p className="text-sm">{t("sources.detail.branch", { branch })}</p>
           )}

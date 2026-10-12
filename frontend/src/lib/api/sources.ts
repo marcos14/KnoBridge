@@ -166,7 +166,7 @@ export function useSourceDocuments(workspaceId: string, sourceId: string, query:
  * Reloads every source query (list, detail, runs, documents) and runs; with `collections`, also
  * the collections, whose source counts change when a source is created or deleted.
  */
-function useRefreshSources(workspaceId: string, { collections = false } = {}) {
+export function useRefreshSources(workspaceId: string, { collections = false } = {}) {
   const queryClient = useQueryClient();
   return async () => {
     await Promise.all([

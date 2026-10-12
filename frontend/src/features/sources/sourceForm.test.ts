@@ -185,20 +185,38 @@ describe("source bodies", () => {
     expect(changes).toMatchObject({ schedule_cron: null, active: false, name: "erp-core" });
   });
 
-  it("test_source_form_keeps_the_stored_config_of_a_tickets_source", () => {
-    const config = { include_internal_notes: true, anonymize: true, statuses: ["closed"] };
+  it("test_source_form_reads_and_sends_the_config_of_a_tickets_source", () => {
+    const config = { include_internal_notes: true, anonymize: false, statuses: ["closed"] };
     const form = sourceFormDefaults(
       makeSource({ kind: "tickets", config, include_globs: [] }),
       COLLECTION_ID,
     );
 
-    expect(form.ticketsConfig).toEqual(config);
+    expect(form).toMatchObject({
+      includeInternalNotes: true,
+      anonymize: false,
+      statuses: ["closed"],
+    });
     expect(errorsOf({ ...form, path: "" })).toEqual({});
     expect(sourceChanges({ ...form, name: "Chamados" })).toMatchObject({
       name: "Chamados",
       config,
+      include_globs: [],
+      exclude_globs: [],
     });
-    expect(sourceFormDefaults(makeFolderSource(), COLLECTION_ID).ticketsConfig).toEqual({});
+  });
+
+  it("test_source_form_requires_a_status_and_sends_no_globs_for_tickets", () => {
+    const tickets = values({ kind: "tickets", path: "", includeGlobs: "**/*.md" });
+
+    expect(errorsOf({ ...tickets, statuses: [] })).toEqual({
+      statuses: "Escolha ao menos um status.",
+    });
+    expect(sourceInput({ ...tickets, statuses: ["closed", "open"] })).toMatchObject({
+      kind: "tickets",
+      config: { include_internal_notes: false, anonymize: true, statuses: ["open", "closed"] },
+      include_globs: [],
+    });
   });
 
   it("test_source_location_is_url_or_path", () => {

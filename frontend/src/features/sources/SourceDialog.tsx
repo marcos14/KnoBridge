@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { type ReactElement, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { FormAlert } from "@/components/FormAlert";
@@ -80,6 +80,8 @@ export function SourceDialog({
     resolver: zodResolver(schema),
     defaultValues: defaults(),
   });
+  // A tickets source has no files: globs do not apply (the API refuses them).
+  const kind = useWatch({ control: form.control, name: "kind" });
 
   function onOpenChange(next: boolean) {
     setOpen(next);
@@ -149,20 +151,24 @@ export function SourceDialog({
               )}
             />
             <LocationFields workspaceId={workspaceId} form={form} editing={editing} />
-            <TextField
-              control={form.control}
-              name="includeGlobs"
-              rows={2}
-              label={t("sources.form.includeGlobs")}
-              description={t("sources.form.includeGlobsHint")}
-            />
-            <TextField
-              control={form.control}
-              name="excludeGlobs"
-              rows={2}
-              label={t("sources.form.excludeGlobs")}
-              description={t("sources.form.excludeGlobsHint")}
-            />
+            {kind !== "tickets" && (
+              <>
+                <TextField
+                  control={form.control}
+                  name="includeGlobs"
+                  rows={2}
+                  label={t("sources.form.includeGlobs")}
+                  description={t("sources.form.includeGlobsHint")}
+                />
+                <TextField
+                  control={form.control}
+                  name="excludeGlobs"
+                  rows={2}
+                  label={t("sources.form.excludeGlobs")}
+                  description={t("sources.form.excludeGlobsHint")}
+                />
+              </>
+            )}
             <ScheduleFields form={form} />
             <FormField
               control={form.control}

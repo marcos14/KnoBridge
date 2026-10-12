@@ -104,28 +104,36 @@ export function cronText(cron: string, t: TFunction, locale: string): string {
   return description === undefined ? t("sources.cron.custom") : describe(description, t, locale);
 }
 
-/** Why a runner source is unreachable (`details.reason` of `source_unavailable`). */
-const RUNNER_TEST_REASONS = ["runner_offline", "runner_revoked", "repository_not_served"] as const;
+/**
+ * Why a runner or tickets source is unreachable (`details.reason` of `source_unavailable`): the
+ * runner's state, or a tickets source without a send token.
+ */
+const TEST_REASONS = [
+  "runner_offline",
+  "runner_revoked",
+  "repository_not_served",
+  "ingest_token_missing",
+] as const;
 
-type RunnerTestReason = (typeof RUNNER_TEST_REASONS)[number];
+type TestReason = (typeof TEST_REASONS)[number];
 
-function runnerTestReason(details: unknown): RunnerTestReason | undefined {
+function testReason(details: unknown): TestReason | undefined {
   const reason =
     typeof details === "object" && details !== null && "reason" in details
       ? details.reason
       : undefined;
-  return RUNNER_TEST_REASONS.find((item) => item === reason);
+  return TEST_REASONS.find((item) => item === reason);
 }
 
 /**
- * Reason shown when "Testar conexão" fails: the runner's own reason when `source_unavailable`
+ * Reason shown when "Testar conexão" fails: the source's own reason when `source_unavailable`
  * carries one, otherwise the message of the error code.
  */
 export function testFailureReason(
   error: { code: string; details?: unknown },
   t: TFunction,
 ): string {
-  const reason = error.code === "source_unavailable" ? runnerTestReason(error.details) : undefined;
+  const reason = error.code === "source_unavailable" ? testReason(error.details) : undefined;
   return reason === undefined
     ? translateApiErrorCode(error.code, t)
     : t(`sources.testReasons.${reason}`);

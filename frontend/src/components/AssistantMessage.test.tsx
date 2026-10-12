@@ -6,6 +6,7 @@ import type { Citation } from "@/lib/api/conversations";
 import { makeCitation } from "@/test/factories";
 import { makeKnowledgeCitation } from "@/test/knowledgeFactories";
 import { renderWithProviders } from "@/test/renderWithProviders";
+import { makeTicketCitation } from "@/test/ticketFactories";
 
 import { AssistantMessage } from "./AssistantMessage";
 
@@ -81,6 +82,27 @@ describe("AssistantMessage sources", () => {
 
     expect(
       await screen.findByRole("button", { name: "[1] Nota fiscal exige CNPJ do cliente" }),
+    ).toBeVisible();
+  });
+
+  it("test_assistant_message_lists_tickets_with_number_and_status", async () => {
+    const user = userEvent.setup();
+    const ticket = makeTicketCitation({ index: 2 });
+    const onCitation = renderAnswer([makeCitation(), ticket]);
+
+    const button = await screen.findByRole("button", {
+      name: "[2] Erro 4021 ao fechar o caixa Chamado 48213 Resolvido",
+    });
+    await user.click(button);
+
+    expect(onCitation).toHaveBeenCalledWith(ticket);
+  });
+
+  it("test_assistant_message_lists_a_ticket_without_number_or_status", async () => {
+    renderAnswer([makeTicketCitation({ ticket_number: null, ticket_status: null })]);
+
+    expect(
+      await screen.findByRole("button", { name: "[1] Erro 4021 ao fechar o caixa" }),
     ).toBeVisible();
   });
 });
