@@ -1,6 +1,8 @@
 # KnoBridge — Visão do Projeto
 
-> Rascunho v0.3 · 2026-10-11 · Status: ideia em definição (ver seção 13, "Perguntas em aberto")
+> Rascunho v0.4 · 2026-10-12 · Status: ideia em definição (ver seção 13, "Perguntas em aberto")
+>
+> **Mudanças da v0.4**: chamados entram por **push**, num formato padrão do KnoBridge, pela API (`POST /v1/ingest/tickets`) ou por upload JSON/JSONL, em vez de um conector por sistema de chamados; "abrir chamado" é um webhook de saída por assistente, assinado com HMAC ([ADR 0006](adr/0006-chamados-por-push.md); D17 e seção 11).
 >
 > **Mudanças da v0.3**: o harness de código roda num **runner local** (`knobridge-runner`), na máquina de quem tem o checkout e o login dos CLIs, e conversa com o servidor por HTTPS long-poll; o código e as credenciais não saem da máquina ([ADR 0005](adr/0005-runner-local-do-harness.md); seção 7.1.1 e D10).
 >
@@ -151,7 +153,7 @@ Ordem sugerida de implementação (primeiro os que validam a tese):
 |---|---|---|
 | P0 | **Git** (GitHub, GitLab, Bitbucket, Gitea, pasta local) | Clona/atualiza, lê árvore, histórico de commits, PRs/MRs, issues, READMEs. Incremental por SHA. O conteúdo do código é mapeado pelo **harness de agente** (7.1.1); tree-sitter é o fallback. |
 | P0 | **Arquivos** (upload, pasta, S3) | PDF, DOCX, XLSX, MD, HTML, TXT. |
-| P0 | **Sistema de chamados #1** (a definir: Movidesk, Jira Service Management, GLPI, Zendesk, Freshdesk, Zammad, osTicket) | Tickets + comentários + artigos da base de conhecimento. Movidesk tem API REST com token e endpoint de artigos. |
+| P0 | **API de chamados** (formato KnoBridge por push, qualquer sistema; [ADR 0006](adr/0006-chamados-por-push.md)) | Chamados com conversa e solução, enviados pelo sistema de origem, por automação, iPaaS ou upload JSON/JSONL. Substitui o conector por provedor (Movidesk, Jira Service Management, GLPI, Zendesk...). |
 | P1 | **Wikis/docs**: Confluence, Notion, Google Drive, SharePoint, GitBook, Docusaurus (via site) | |
 | P1 | **Sites** (crawler com sitemap/robots) | Portais de ajuda, documentação pública. |
 | P2 | **Bancos de dados** (SQL read-only, consulta parametrizada) | Para "dados de referência" (tabelas de códigos de erro, parâmetros). |
@@ -301,6 +303,7 @@ Quando entrar (fase 3): OpenTelemetry + Langfuse para traces; conjunto de avalia
 | D14 | Canal no "padrão OpenAI" | Só REST própria / também Chat Completions | **Também Chat Completions** (`/v1/chat/completions`) | Fácil |
 | D15 | Segredos em repouso (chaves de provedores, depois tokens de conectores e canais) | Fernet / pgcrypto / AES-GCM na aplicação / KMS externo | **AES-256-GCM na aplicação**, chave por finalidade derivada de `KNOBRIDGE_SECRET_KEY` (HKDF), versão no texto cifrado e AAD com workspace e linha ([ADR 0003](adr/0003-segredos-cifrados.md)) | Médio (recifrar) |
 | D16 | Índice de conhecimento (coleção, fonte, modelo de embedding) | Fonte em N coleções / fonte em uma coleção; dimensão variável / fixa | **Coleção define credencial e modelo de embedding; fonte em uma única coleção; `vector(1536)` fixo com HNSW cosseno e `tsvector` gerado; modelo registrado por chunk (trocar = reindexar); pipeline fixo sobre Temporal antes do canvas** ([ADR 0004](adr/0004-indice-de-conhecimento.md)) | Médio (reindexar) |
+| D17 | Entrada de chamados e abertura de chamado | Conector por provedor / mapeamento do webhook nativo / push num formato padrão | **Push num formato KnoBridge** (JSON Schema), pela API com token por fonte ou por upload JSON/JSONL, numa caixa de entrada no Postgres processada pelo conector interno `tickets` no workflow de ingestão; bruto apagado após indexar; abrir chamado por **webhook de saída por assistente** (HMAC-SHA256, retentativas no Temporal, proteção contra SSRF) ([ADR 0006](adr/0006-chamados-por-push.md)) | Médio (o formato é contrato público) |
 
 ## 10. Fluxos de exemplo
 
@@ -328,14 +331,14 @@ Quando entrar (fase 3): OpenTelemetry + Langfuse para traces; conjunto de avalia
 ## 11. Roadmap sugerido
 
 **Fase 0 — Validação (2 a 4 semanas)**
-- Protótipo em linha de comando: 1 repositório + 1 export de chamados → Postgres/pgvector → perguntas via terminal com citações.
+- Protótipo em linha de comando: 1 repositório + 1 export de chamados → Postgres/pgvector → perguntas via terminal com citações. Chamados entram pela API de chamados (formato padrão por push, D17), não por um conector de provedor.
 - Harness de código em 2 ou 3 módulos reais, com Claude Code e com Codex (mesmo prompt e schema): custo, tempo, taxa de rejeição, qualidade lida por alguém do suporte.
 - Spike Temporal: um pipeline de 3 nós como workflow, com retry, cancelamento e test run.
 - Comparação rápida OpenAI x Gemini embedding em PT-BR com ~20 perguntas (manual, sem framework de eval).
 - Decidir D1, D2 e confirmar D4, D5, D10.
 
 **Fase 1 — MVP (2 a 3 meses)**
-- Conectores: Git (harness + fallback tree-sitter), arquivos, 1 sistema de chamados.
+- Conectores: Git (harness + fallback tree-sitter), arquivos e a API de chamados (push no formato KnoBridge, pela API ou por upload JSON/JSONL; [ADR 0006](adr/0006-chamados-por-push.md)) no lugar de "1 sistema de chamados".
 - Canvas com os nós básicos, execução incremental sobre Temporal, test run, agendamento.
 - Postgres/pgvector + FTS, busca híbrida + reranker.
 - 1 assistente, REST API com streaming, API compatível com OpenAI, widget, Slack, MCP.

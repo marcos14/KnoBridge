@@ -17,10 +17,10 @@ fases:
     subfases:
       - id: F1.1
         titulo: ADR 0006 e spec de chamados (formato, envio, fila, anonimização, Markdown, citação, webhook de saída)
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
-        concluida_em: null
+        concluida_em: 2026-10-11
         commit: null
       - id: F1.2
         titulo: Migração 0016 (fonte tickets, token de envio, caixa de entrada, webhook do assistente, solicitações de chamado) com RLS
@@ -551,6 +551,7 @@ D1 a D12 vêm das respostas do usuário (seção 2). D13 a D16 são do agente, n
 
 - 2026-10-12 — plano criado na branch `plano/0005-chamados-por-api`, a partir de `plano/0004-harness-runner-local` (ainda não integrada à `main`); aguardando aprovação.
 - 2026-10-12 — plano aprovado pelo usuário ("Aprovado"); F1.1 iniciada (agente em worktree).
+- 2026-10-11 — F1.1 concluída: ADR 0006, spec chamados.md (JSON Schema, envio, fila, anonimização, Markdown, citação, webhook), chat-sse v0.6 e visão v0.4 (D17 e roadmap); token e segredo passaram a owner ou admin na revisão do orquestrador
 
 ## 8. Encerramento
 
