@@ -8,8 +8,8 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Annotated, Literal, Self
 
-from pydantic import Field, SecretStr, model_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import Field, SecretStr, field_validator, model_validator
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 # Development-only default; production refuses to start with it (see _check_secret_key).
 DEV_SECRET_KEY = "dev-only-insecure-secret-key-change-me"  # noqa: S105 - documented dev default
@@ -94,6 +94,17 @@ class Settings(BaseSettings):
     # Writable folder where the worker clones Git sources given by https URL, one
     # subfolder per URL. Local repositories are read in place and never copied here.
     git_workdir: Path = Path("/var/lib/knobridge/git")
+    # Hosts (exact names, comma-separated) that ticket webhooks may reach without the SSRF
+    # address checks, also over http: the fake destination of Compose and E2E. Keep it empty
+    # in production (docs/specs/chamados.md, "Proteção contra SSRF").
+    webhook_allowed_hosts: Annotated[list[str], NoDecode] = Field(default_factory=list)
+
+    @field_validator("webhook_allowed_hosts", mode="before")
+    @classmethod
+    def _split_hosts(cls, value: object) -> object:
+        if isinstance(value, str):
+            return [host.strip().lower() for host in value.split(",") if host.strip()]
+        return value
 
     @model_validator(mode="after")
     def _check_secret_key(self) -> Self:

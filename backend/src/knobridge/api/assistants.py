@@ -8,6 +8,9 @@ default "I don't know, shall I open a ticket?" message. ``collection_ids`` are t
 the assistant answers from, all of the same workspace (422 ``assistant_collection_invalid``);
 optional on write (empty by default: every answer is "no source"), always returned.
 ``min_similarity`` is the retrieval threshold (0 to 1; omitted or null on create: the default).
+``ticket_webhook_url`` is where ticket requests go (``null``: off), checked against the SSRF
+rules when saved (422 ``webhook_url_invalid`` or ``webhook_destination_blocked``); its signing
+secret and the test event live in ``api/ticket_webhook.py``.
 """
 
 from __future__ import annotations
@@ -27,6 +30,7 @@ from knobridge.api.deps import (
     WorkspaceContextDep,
     require_role,
 )
+from knobridge.api.ticket_webhook import DestinationValidatorDep
 from knobridge.assistants.models import (
     DEFAULT_LANGUAGE,
     DEFAULT_MIN_SIMILARITY,
@@ -35,6 +39,7 @@ from knobridge.assistants.models import (
     MAX_TEMPERATURE,
     MIN_SIMILARITY,
     MIN_TEMPERATURE,
+    TICKET_WEBHOOK_URL_MAX_LENGTH,
     Assistant,
     AssistantTone,
 )
@@ -42,6 +47,7 @@ from knobridge.assistants.service import AssistantChanges, AssistantService, Ass
 from knobridge.security.csrf import require_csrf
 from knobridge.tenancy.models import Role
 from knobridge.tenancy.rbac import role_at_least
+from knobridge.tickets.webhook import check_webhook_url
 
 DEFAULT_LIMIT = 50
 MAX_LIMIT = 200
@@ -67,6 +73,12 @@ NoSourceMessage = Annotated[str, StringConstraints(strip_whitespace=True, max_le
 MinSimilarity = Annotated[float, Field(ge=MIN_SIMILARITY, le=MAX_SIMILARITY, allow_inf_nan=False)]
 MAX_COLLECTIONS = 50
 CollectionIds = Annotated[list[uuid.UUID], Field(max_length=MAX_COLLECTIONS)]
+WebhookUrl = Annotated[
+    str,
+    StringConstraints(
+        strip_whitespace=True, min_length=1, max_length=TICKET_WEBHOOK_URL_MAX_LENGTH
+    ),
+]
 
 _ERRORS: dict[int | str, dict[str, object]] = {
     401: {"description": "No live session (standard error shape)."},
@@ -86,7 +98,8 @@ _SAVE_ERRORS: dict[int | str, dict[str, object]] = {
     422: {
         "description": "Invalid body, provider not in the workspace "
         "(`assistant_provider_invalid`) or collection not in the workspace "
-        "(`assistant_collection_invalid`)."
+        "(`assistant_collection_invalid`), or webhook URL refused (`webhook_url_invalid`, "
+        "`webhook_destination_blocked`, with `details.reason`)."
     },
 }
 
@@ -106,6 +119,8 @@ class AssistantCreate(BaseModel):
     collection_ids: CollectionIds = Field(default_factory=lambda: [])
     # Omitted or null: ``DEFAULT_MIN_SIMILARITY``.
     min_similarity: MinSimilarity | None = None
+    # ``https`` (``http`` only for an allowlisted development host); null: ticket requests off.
+    ticket_webhook_url: WebhookUrl | None = None
 
 
 class AssistantUpdate(BaseModel):
@@ -125,6 +140,8 @@ class AssistantUpdate(BaseModel):
     # Replaces the whole set when given.
     collection_ids: CollectionIds | None = None
     min_similarity: MinSimilarity | None = None
+    # Unlike the other fields, null turns the webhook off; omitted keeps it.
+    ticket_webhook_url: WebhookUrl | None = None
 
 
 class AssistantOut(BaseModel):
@@ -141,6 +158,11 @@ class AssistantOut(BaseModel):
     active: bool
     collection_ids: list[uuid.UUID]
     min_similarity: float
+    ticket_webhook_url: str | None
+    # URL and signing secret set: the chat may send ticket requests.
+    ticket_webhook_configured: bool
+    # When the current signing secret was generated (never the secret); null: none yet.
+    ticket_webhook_secret_created_at: datetime | None
     created_at: datetime
     updated_at: datetime
 
@@ -167,6 +189,9 @@ def _out(assistant: Assistant, collection_ids: list[uuid.UUID]) -> AssistantOut:
         active=assistant.active,
         collection_ids=collection_ids,
         min_similarity=assistant.min_similarity,
+        ticket_webhook_url=assistant.ticket_webhook_url,
+        ticket_webhook_configured=assistant.ticket_webhook_configured,
+        ticket_webhook_secret_created_at=assistant.ticket_webhook_secret_created_at,
         created_at=assistant.created_at,
         updated_at=assistant.updated_at,
     )
@@ -237,9 +262,12 @@ async def create_assistant(
     body: AssistantCreate,
     context: EditorContext,
     assistants: AssistantServiceDep,
+    validator: DestinationValidatorDep,
     ip: ClientIpDep,
 ) -> AssistantOut:
     """Create an assistant bound to a provider credential of the workspace."""
+    if body.ticket_webhook_url is not None:
+        await check_webhook_url(validator, body.ticket_webhook_url)
     assistant = await assistants.create(
         context.db,
         workspace_id=context.workspace_id,
@@ -259,6 +287,7 @@ async def create_assistant(
             min_similarity=(
                 DEFAULT_MIN_SIMILARITY if body.min_similarity is None else body.min_similarity
             ),
+            ticket_webhook_url=body.ticket_webhook_url,
         ),
         ip=ip,
     )
@@ -271,9 +300,13 @@ async def update_assistant(
     body: AssistantUpdate,
     context: EditorContext,
     assistants: AssistantServiceDep,
+    validator: DestinationValidatorDep,
     ip: ClientIpDep,
 ) -> AssistantOut:
-    """Change any field; ``no_source_message`` empty or null restores the default."""
+    """Change any field; ``no_source_message`` empty or null restores the default and
+    ``ticket_webhook_url`` null turns the webhook off."""
+    if body.ticket_webhook_url is not None:
+        await check_webhook_url(validator, body.ticket_webhook_url)
     no_source_message = body.no_source_message
     if no_source_message is None and "no_source_message" in body.model_fields_set:
         no_source_message = ""
@@ -295,6 +328,8 @@ async def update_assistant(
             active=body.active,
             collection_ids=None if body.collection_ids is None else tuple(body.collection_ids),
             min_similarity=body.min_similarity,
+            ticket_webhook_url=body.ticket_webhook_url,
+            ticket_webhook_url_given="ticket_webhook_url" in body.model_fields_set,
         ),
         ip=ip,
     )

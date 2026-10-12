@@ -258,3 +258,17 @@ def test_settings_rejects_non_positive_source_size_limits(
 
     with pytest.raises(ValidationError):
         Settings()
+
+
+def test_settings_webhook_allowlist_is_empty_by_default() -> None:
+    assert Settings().webhook_allowed_hosts == []
+
+
+def test_settings_reads_webhook_allowlist_as_comma_list(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("KNOBRIDGE_WEBHOOK_ALLOWED_HOSTS", " Webhook-Sink , localhost,, ")
+
+    assert Settings().webhook_allowed_hosts == ["webhook-sink", "localhost"]
+
+
+def test_settings_accepts_webhook_allowlist_as_list() -> None:
+    assert Settings(webhook_allowed_hosts=["a.test"]).webhook_allowed_hosts == ["a.test"]

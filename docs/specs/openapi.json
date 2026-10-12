@@ -688,6 +688,19 @@
             "title": "Temperature",
             "type": "number"
           },
+          "ticket_webhook_url": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticket Webhook Url"
+          },
           "tone": {
             "$ref": "#/components/schemas/AssistantTone",
             "default": "neutral"
@@ -762,6 +775,33 @@
             "title": "Temperature",
             "type": "number"
           },
+          "ticket_webhook_configured": {
+            "title": "Ticket Webhook Configured",
+            "type": "boolean"
+          },
+          "ticket_webhook_secret_created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticket Webhook Secret Created At"
+          },
+          "ticket_webhook_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticket Webhook Url"
+          },
           "tone": {
             "$ref": "#/components/schemas/AssistantTone"
           },
@@ -785,6 +825,9 @@
           "active",
           "collection_ids",
           "min_similarity",
+          "ticket_webhook_url",
+          "ticket_webhook_configured",
+          "ticket_webhook_secret_created_at",
           "created_at",
           "updated_at"
         ],
@@ -975,6 +1018,19 @@
             ],
             "title": "Temperature"
           },
+          "ticket_webhook_url": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticket Webhook Url"
+          },
           "tone": {
             "anyOf": [
               {
@@ -1024,6 +1080,8 @@
           "assistant.created",
           "assistant.updated",
           "assistant.deleted",
+          "assistant.ticket_webhook_secret_rotated",
+          "assistant.ticket_webhook_tested",
           "conversation.deleted",
           "collection.created",
           "collection.updated",
@@ -8196,6 +8254,102 @@
         "title": "TicketUpsertItemIn",
         "type": "object"
       },
+      "TicketWebhookSecretOut": {
+        "description": "The whole secret appears only here, once.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "secret": {
+            "title": "Secret",
+            "type": "string"
+          }
+        },
+        "required": [
+          "secret",
+          "created_at"
+        ],
+        "title": "TicketWebhookSecretOut",
+        "type": "object"
+      },
+      "TicketWebhookTestError": {
+        "description": "``webhook_url_invalid``, ``webhook_destination_blocked`` and ``webhook_unreachable``\ncarry ``details.reason``; ``webhook_rejected`` carries ``details.status``.",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "details": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Details",
+            "type": "object"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "details"
+        ],
+        "title": "TicketWebhookTestError",
+        "type": "object"
+      },
+      "TicketWebhookTestOut": {
+        "properties": {
+          "delivery_id": {
+            "format": "uuid",
+            "title": "Delivery Id",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TicketWebhookTestError"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "required": [
+          "ok",
+          "delivery_id",
+          "status",
+          "error"
+        ],
+        "title": "TicketWebhookTestOut",
+        "type": "object"
+      },
       "UpdateUserRequest": {
         "properties": {
           "is_superadmin": {
@@ -10528,7 +10682,7 @@
             "description": "Name already used in the workspace (`assistant_name_taken`)."
           },
           "422": {
-            "description": "Invalid body, provider not in the workspace (`assistant_provider_invalid`) or collection not in the workspace (`assistant_collection_invalid`)."
+            "description": "Invalid body, provider not in the workspace (`assistant_provider_invalid`) or collection not in the workspace (`assistant_collection_invalid`), or webhook URL refused (`webhook_url_invalid`, `webhook_destination_blocked`, with `details.reason`)."
           }
         },
         "summary": "Create Assistant",
@@ -10654,7 +10808,7 @@
         ]
       },
       "patch": {
-        "description": "Change any field; ``no_source_message`` empty or null restores the default.",
+        "description": "Change any field; ``no_source_message`` empty or null restores the default and\n``ticket_webhook_url`` null turns the webhook off.",
         "operationId": "update_assistant_v1_workspaces__workspace_id__assistants__assistant_id__patch",
         "parameters": [
           {
@@ -10712,10 +10866,139 @@
             "description": "Name already used in the workspace (`assistant_name_taken`)."
           },
           "422": {
-            "description": "Invalid body, provider not in the workspace (`assistant_provider_invalid`) or collection not in the workspace (`assistant_collection_invalid`)."
+            "description": "Invalid body, provider not in the workspace (`assistant_provider_invalid`) or collection not in the workspace (`assistant_collection_invalid`), or webhook URL refused (`webhook_url_invalid`, `webhook_destination_blocked`, with `details.reason`)."
           }
         },
         "summary": "Update Assistant",
+        "tags": [
+          "assistants"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/assistants/{assistant_id}/ticket-webhook/secret": {
+      "post": {
+        "description": "Generate the signing secret of the webhook, replacing the current one at once.",
+        "operationId": "rotate_ticket_webhook_secret_v1_workspaces__workspace_id__assistants__assistant_id__ticket_webhook_secret_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assistant_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assistant Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketWebhookSecretOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below admin (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
+          },
+          "404": {
+            "description": "Workspace or assistant not found, or caller is not a member."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Rotate Ticket Webhook Secret",
+        "tags": [
+          "assistants"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/assistants/{assistant_id}/ticket-webhook/test": {
+      "post": {
+        "description": "Send a signed ``ticket.test`` event to the webhook and report the outcome.",
+        "operationId": "test_ticket_webhook_v1_workspaces__workspace_id__assistants__assistant_id__ticket_webhook_test_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assistant_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assistant Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketWebhookTestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
+          },
+          "404": {
+            "description": "Workspace or assistant not found, or caller is not a member."
+          },
+          "409": {
+            "description": "No URL or no secret (`ticket_webhook_not_configured`)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Test Ticket Webhook",
         "tags": [
           "assistants"
         ]

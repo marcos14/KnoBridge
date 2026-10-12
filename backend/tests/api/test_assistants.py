@@ -112,6 +112,9 @@ def test_create_assistant_requires_editor(api: ApiEnv) -> None:
         "active",
         "collection_ids",
         "min_similarity",
+        "ticket_webhook_url",
+        "ticket_webhook_configured",
+        "ticket_webhook_secret_created_at",
         "created_at",
         "updated_at",
     }

@@ -31,6 +31,7 @@ dependencies = [
     "tree-sitter-go>=0.25",
     "croniter>=6.2.4",
     "python-multipart>=0.0.20",
+    "httpx2>=2.13.1",
 ]
 
 [project.scripts]
@@ -41,7 +42,6 @@ knobridge-openapi = "knobridge.api.openapi:main"
 [dependency-groups]
 dev = [
     "aiosmtpd>=1.4",
-    "httpx2>=2.13.1",
     "pyright>=1.1.390",
     "pytest>=8.3",
     "pytest-cov>=6.0",

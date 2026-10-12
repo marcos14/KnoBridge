@@ -67,10 +67,10 @@ fases:
     subfases:
       - id: F3.1
         titulo: Webhook do assistente (URL, segredo cifrado, teste) e proteção contra SSRF
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
-        concluida_em: null
+        concluida_em: 2026-10-12
         commit: null
       - id: F3.2
         titulo: Solicitação de chamado na conversa, resumo, entrega assinada com retentativas no Temporal
@@ -294,6 +294,13 @@ decisoes:
     decisao: "F2.4: dependência nova python-multipart (exigida pelo Starlette para multipart); limite de 50 MiB do upload aplicado na rota em fluxo (não no middleware, que guarda o corpo em memória), arquivo em disco temporário lido em blocos de 100; leitor JSON incremental próprio com uma passada de conferência antes de gravar; duplicado detectado no arquivo inteiro; prévia: editor+, até 2 MiB, funciona com fonte inativa, devolve título, Markdown e marcadores aplicados com contagem; arquivo vazio upload_empty; falha no meio mantém os blocos já gravados (reenvio seguro, unchanged)"
     motivo: "carga histórica grande sem estourar memória e sem dependência pesada de parsing"
     alternativas: "biblioteca de JSON em streaming; limite no middleware"
+    adr: null
+  - id: D24
+    data: 2026-10-12
+    por: agente
+    decisao: "F3.1: validador SSRF em core/outbound.py (recusa loopback, privado, link-local, CGNAT, não especificado, multicast e o resto não global; IPv4 mapeado visto como IPv4), conexão no IP verificado com Host e SNI originais, sem proxy nem redirecionamento, 10 s e até 64 KiB de resposta; teste de entrega devolve 200 {ok, delivery_id, status, error} e é sempre auditado (assistant.ticket_webhook_tested); evento ticket.test; enviar o teste é editor+, gerar o segredo é owner/admin; resposta do assistente ganha ticket_webhook_secret_created_at; httpx2 vira dependência de runtime (era só de dev, chegava pelos SDKs)"
+    motivo: "segurança da saída sem depender da rede nos testes; diagnóstico do destino como dado, não erro HTTP"
+    alternativas: "erro HTTP na falha do destino; seguir redirecionamentos"
     adr: null
 pendencias_usuario:
   - id: P1
@@ -612,6 +619,7 @@ D1 a D12 vêm das respostas do usuário (seção 2). D13 a D16 são do agente, n
 - 2026-10-12 — F2.4 concluída: upload JSON/JSONL em fluxo com relatório por linha e prévia de anonimização, integrados sobre a F2.3; backend 1866 passed com 99% de cobertura, frontend 1140
 - 2026-10-12 — F3.1 iniciada (agente em worktree).
 - 2026-10-12 — F5.1 iniciada (agente em worktree).
+- 2026-10-12 — F3.1 concluída: webhook do assistente: URL validada contra SSRF, segredo kbw_ cifrado, assinatura HMAC e evento de teste, com httpx2 como dependência de runtime; backend 1983 passed com 99% de cobertura, frontend 1140
 
 ## 8. Encerramento
 

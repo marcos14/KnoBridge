@@ -769,9 +769,50 @@ export interface paths {
         head?: never;
         /**
          * Update Assistant
-         * @description Change any field; ``no_source_message`` empty or null restores the default.
+         * @description Change any field; ``no_source_message`` empty or null restores the default and
+         *     ``ticket_webhook_url`` null turns the webhook off.
          */
         patch: operations["update_assistant_v1_workspaces__workspace_id__assistants__assistant_id__patch"];
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/assistants/{assistant_id}/ticket-webhook/secret": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rotate Ticket Webhook Secret
+         * @description Generate the signing secret of the webhook, replacing the current one at once.
+         */
+        post: operations["rotate_ticket_webhook_secret_v1_workspaces__workspace_id__assistants__assistant_id__ticket_webhook_secret_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/assistants/{assistant_id}/ticket-webhook/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test Ticket Webhook
+         * @description Send a signed ``ticket.test`` event to the webhook and report the outcome.
+         */
+        post: operations["test_ticket_webhook_v1_workspaces__workspace_id__assistants__assistant_id__ticket_webhook_test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/workspaces/{workspace_id}/audit": {
@@ -1847,6 +1888,8 @@ export interface components {
              * @default 0.2
              */
             temperature: number;
+            /** Ticket Webhook Url */
+            ticket_webhook_url?: string | null;
             /** @default neutral */
             tone: components["schemas"]["AssistantTone"];
         };
@@ -1887,6 +1930,12 @@ export interface components {
             system_prompt: string;
             /** Temperature */
             temperature: number;
+            /** Ticket Webhook Configured */
+            ticket_webhook_configured: boolean;
+            /** Ticket Webhook Secret Created At */
+            ticket_webhook_secret_created_at: string | null;
+            /** Ticket Webhook Url */
+            ticket_webhook_url: string | null;
             tone: components["schemas"]["AssistantTone"];
             /**
              * Updated At
@@ -1938,13 +1987,15 @@ export interface components {
             system_prompt?: string | null;
             /** Temperature */
             temperature?: number | null;
+            /** Ticket Webhook Url */
+            ticket_webhook_url?: string | null;
             tone?: components["schemas"]["AssistantTone"] | null;
         };
         /**
          * AuditAction
          * @enum {string}
          */
-        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted" | "provider.tested" | "assistant.created" | "assistant.updated" | "assistant.deleted" | "conversation.deleted" | "collection.created" | "collection.updated" | "collection.deleted" | "source.created" | "source.updated" | "source.deleted" | "source.tested" | "source.sync.started" | "source.sync.cancelled" | "source.ingest_token_rotated" | "source.tickets_uploaded" | "runner.created" | "runner.updated" | "runner.revoked" | "runner.deleted" | "harness_job.cancelled" | "harness_job.enqueued" | "harness_module.created" | "harness_module.updated" | "knowledge_item.updated";
+        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted" | "provider.tested" | "assistant.created" | "assistant.updated" | "assistant.deleted" | "assistant.ticket_webhook_secret_rotated" | "assistant.ticket_webhook_tested" | "conversation.deleted" | "collection.created" | "collection.updated" | "collection.deleted" | "source.created" | "source.updated" | "source.deleted" | "source.tested" | "source.sync.started" | "source.sync.cancelled" | "source.ingest_token_rotated" | "source.tickets_uploaded" | "runner.created" | "runner.updated" | "runner.revoked" | "runner.deleted" | "harness_job.cancelled" | "harness_job.enqueued" | "harness_module.created" | "harness_module.updated" | "knowledge_item.updated";
         /** AuditEventOut */
         AuditEventOut: {
             /** Action */
@@ -4463,6 +4514,47 @@ export interface components {
             op: "upsert";
             ticket: components["schemas"]["TicketIn"];
         };
+        /**
+         * TicketWebhookSecretOut
+         * @description The whole secret appears only here, once.
+         */
+        TicketWebhookSecretOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Secret */
+            secret: string;
+        };
+        /**
+         * TicketWebhookTestError
+         * @description ``webhook_url_invalid``, ``webhook_destination_blocked`` and ``webhook_unreachable``
+         *     carry ``details.reason``; ``webhook_rejected`` carries ``details.status``.
+         */
+        TicketWebhookTestError: {
+            /** Code */
+            code: string;
+            /** Details */
+            details: {
+                [key: string]: string | number;
+            };
+            /** Message */
+            message: string;
+        };
+        /** TicketWebhookTestOut */
+        TicketWebhookTestOut: {
+            /**
+             * Delivery Id
+             * Format: uuid
+             */
+            delivery_id: string;
+            error: components["schemas"]["TicketWebhookTestError"] | null;
+            /** Ok */
+            ok: boolean;
+            /** Status */
+            status: number | null;
+        };
         /** UpdateUserRequest */
         UpdateUserRequest: {
             /** Is Superadmin */
@@ -6462,7 +6554,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Invalid body, provider not in the workspace (`assistant_provider_invalid`) or collection not in the workspace (`assistant_collection_invalid`). */
+            /** @description Invalid body, provider not in the workspace (`assistant_provider_invalid`) or collection not in the workspace (`assistant_collection_invalid`), or webhook URL refused (`webhook_url_invalid`, `webhook_destination_blocked`, with `details.reason`). */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -6628,12 +6720,125 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Invalid body, provider not in the workspace (`assistant_provider_invalid`) or collection not in the workspace (`assistant_collection_invalid`). */
+            /** @description Invalid body, provider not in the workspace (`assistant_provider_invalid`) or collection not in the workspace (`assistant_collection_invalid`), or webhook URL refused (`webhook_url_invalid`, `webhook_destination_blocked`, with `details.reason`). */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    rotate_ticket_webhook_secret_v1_workspaces__workspace_id__assistants__assistant_id__ticket_webhook_secret_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assistant_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketWebhookSecretOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below admin (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or assistant not found, or caller is not a member. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_ticket_webhook_v1_workspaces__workspace_id__assistants__assistant_id__ticket_webhook_test_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assistant_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketWebhookTestOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or assistant not found, or caller is not a member. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No URL or no secret (`ticket_webhook_not_configured`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

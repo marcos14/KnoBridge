@@ -70,6 +70,8 @@ class AssistantSettings:
     # Collections the assistant answers from (no collection: every answer is "no source").
     collection_ids: tuple[uuid.UUID, ...] = ()
     min_similarity: float = DEFAULT_MIN_SIMILARITY
+    # Already checked against the SSRF rules by the caller; ``None``: ticket requests off.
+    ticket_webhook_url: str | None = None
 
 
 @dataclass(frozen=True)
@@ -90,6 +92,9 @@ class AssistantChanges:
     # Replaces the whole set when given.
     collection_ids: tuple[uuid.UUID, ...] | None = None
     min_similarity: float | None = None
+    # Applied only when ``ticket_webhook_url_given`` (``None`` then turns the webhook off).
+    ticket_webhook_url: str | None = None
+    ticket_webhook_url_given: bool = False
 
 
 def no_source_message_or_default(message: str) -> str:
@@ -165,6 +170,7 @@ class AssistantService:
             no_source_message=no_source_message_or_default(settings.no_source_message),
             active=settings.active,
             min_similarity=settings.min_similarity,
+            ticket_webhook_url=settings.ticket_webhook_url,
         )
         db.add(assistant)
         await self._flush(db)
@@ -225,6 +231,13 @@ class AssistantService:
                 setattr(assistant, attribute, value)
                 # The API calls the credential "provider".
                 fields.append("provider_id" if attribute == "credential_id" else attribute)
+        if (
+            changes.ticket_webhook_url_given
+            and changes.ticket_webhook_url != assistant.ticket_webhook_url
+        ):
+            # Audited by name only: a URL may carry a token of the destination.
+            assistant.ticket_webhook_url = changes.ticket_webhook_url
+            fields.append("ticket_webhook_url")
         if fields:
             # Before the link table: a name clash must surface as ``assistant_name_taken``.
             await self._flush(db)

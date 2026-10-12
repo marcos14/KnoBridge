@@ -34,6 +34,8 @@ const ACTIONS: Record<AuditAction, true> = {
   "assistant.created": true,
   "assistant.updated": true,
   "assistant.deleted": true,
+  "assistant.ticket_webhook_secret_rotated": true,
+  "assistant.ticket_webhook_tested": true,
   "conversation.deleted": true,
   "collection.created": true,
   "collection.updated": true,

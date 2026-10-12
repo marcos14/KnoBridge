@@ -48,6 +48,10 @@ class AuditAction(StrEnum):
     ASSISTANT_CREATED = "assistant.created"
     ASSISTANT_UPDATED = "assistant.updated"
     ASSISTANT_DELETED = "assistant.deleted"
+    # Ticket webhook: signing secret generated or replaced (never the secret) and test event
+    # sent (outcome only: ok, HTTP status, error code).
+    ASSISTANT_TICKET_WEBHOOK_SECRET_ROTATED = "assistant.ticket_webhook_secret_rotated"  # noqa: S105
+    ASSISTANT_TICKET_WEBHOOK_TESTED = "assistant.ticket_webhook_tested"
     # Conversations: only the deletion is audited (no content: ids and counts only).
     CONVERSATION_DELETED = "conversation.deleted"
     # Knowledge index configuration: collections, sources and their runs (names, kinds,

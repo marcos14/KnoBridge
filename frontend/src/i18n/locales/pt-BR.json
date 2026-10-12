@@ -1465,6 +1465,8 @@
     "assistant_created": "Assistente criado",
     "assistant_updated": "Assistente atualizado",
     "assistant_deleted": "Assistente excluído",
+    "assistant_ticket_webhook_secret_rotated": "Segredo do webhook de chamados gerado",
+    "assistant_ticket_webhook_tested": "Webhook de chamados testado",
     "conversation_deleted": "Conversa excluída",
     "workspace_created": "Workspace criado",
     "workspace_updated": "Workspace atualizado",

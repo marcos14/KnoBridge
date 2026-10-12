@@ -4,7 +4,7 @@
 
 Como chamados de qualquer sistema entram no KnoBridge e viram fonte do chat, e como o chat abre um chamado quando não sabe responder. Cobre o formato do chamado (JSON Schema), o envio pela API com token, o upload no painel, a caixa de entrada e seu ciclo de vida, a anonimização, o Markdown e o chunking, a citação `kind: ticket` e o webhook de saída. A arquitetura está no [ADR 0006](../adr/0006-chamados-por-push.md); o workflow de ingestão, em [indexacao.md](indexacao.md); o formato da citação no fio, em [chat-sse.md](chat-sse.md#citations) (v0.6); as tabelas, em [modelo-de-dados.md](modelo-de-dados.md).
 
-Código: `backend/src/knobridge/tickets/` (token de envio em `tokens.py`, formato do chamado em `wire.py`, validação por item e caixa de entrada em `ingest.py`, disparo da sincronização em `ingest_sync.py`) e as rotas `backend/src/knobridge/api/ingest.py` e `ingest_tokens.py` (plano 0005, F2.1); anonimização em `anonymize.py` e Markdown em `markdown.py` (F2.2); conector interno em `connector.py` e citação no chat em `retrieval/context.py` (F2.3); upload e prévia em `upload.py` e `upload_files.py`, com as rotas em `api/ticket_uploads.py` (F2.4). A criar no plano 0005: pedidos de chamado e workflow do webhook, e as telas do painel em `frontend/`.
+Código: `backend/src/knobridge/tickets/` (token de envio em `tokens.py`, formato do chamado em `wire.py`, validação por item e caixa de entrada em `ingest.py`, disparo da sincronização em `ingest_sync.py`) e as rotas `backend/src/knobridge/api/ingest.py` e `ingest_tokens.py` (plano 0005, F2.1); anonimização em `anonymize.py` e Markdown em `markdown.py` (F2.2); conector interno em `connector.py` e citação no chat em `retrieval/context.py` (F2.3); upload e prévia em `upload.py` e `upload_files.py`, com as rotas em `api/ticket_uploads.py` (F2.4); webhook do assistente (URL, segredo e evento de teste) em `webhook.py` e `signature.py`, proteção contra SSRF e cliente de saída em `core/outbound.py`, e as rotas em `api/ticket_webhook.py` e `api/assistants.py` (F3.1). A criar no plano 0005: pedidos de chamado e workflow do webhook, e as telas do painel em `frontend/`.
 
 ## Visão geral
 
@@ -33,7 +33,7 @@ sequenceDiagram
 - **Textos**: sem NUL (`\u0000`). Espaços nas pontas são removidos antes de validar comprimento. Comprimentos em caracteres (pontos de código Unicode).
 - **Requisições** validadas com campos desconhecidos recusados. **Respostas** podem ganhar campos novos; o cliente ignora o que não conhece.
 - **Erros** no formato único da API: `{"error": {"code": "...", "message": "...", "details": ...}}`.
-- **Nomes dos schemas no OpenAPI**: `TicketIn` (o chamado), `TicketMessageIn`, `TicketRequesterIn`, `TicketPersonIn`, `TicketResolutionIn`, `TicketAttachmentIn`, `TicketUpsertItemIn`, `TicketDeleteItemIn`, `TicketIngestIn`, `TicketIngestOut`, `TicketIngestItemResult`, `TicketUploadOut`, `TicketUploadError`, `TicketPreviewIn`, `TicketPreviewOut`, `TicketPreviewMarker`, `TicketsSourceConfig`, `TicketsSummaryOut`, `IngestTokenOut`, `TicketRequestPreviewIn`, `TicketRequestPreviewOut`, `TicketRequestIn`, `TicketRequestOut`.
+- **Nomes dos schemas no OpenAPI**: `TicketIn` (o chamado), `TicketMessageIn`, `TicketRequesterIn`, `TicketPersonIn`, `TicketResolutionIn`, `TicketAttachmentIn`, `TicketUpsertItemIn`, `TicketDeleteItemIn`, `TicketIngestIn`, `TicketIngestOut`, `TicketIngestItemResult`, `TicketUploadOut`, `TicketUploadError`, `TicketPreviewIn`, `TicketPreviewOut`, `TicketPreviewMarker`, `TicketsSourceConfig`, `TicketsSummaryOut`, `IngestTokenOut`, `TicketRequestPreviewIn`, `TicketRequestPreviewOut`, `TicketRequestIn`, `TicketRequestOut`, `TicketWebhookSecretOut`, `TicketWebhookTestOut`, `TicketWebhookTestError`.
 
 ## Formato do chamado
 
@@ -694,11 +694,26 @@ Quando o assistente não sabe responder, o usuário pode pedir que um chamado se
 
 | Campo | Regras |
 |---|---|
-| `ticket_webhook_url` | `https`, até 2000 caracteres, sem usuário e senha, ou `null` (desligado). Validada ao salvar pelas regras de [SSRF](#proteção-contra-ssrf) (422 `webhook_url_invalid` ou `webhook_destination_blocked`, com `details.reason`). |
+| `ticket_webhook_url` | `https`, até 2000 caracteres (espaços nas pontas removidos), sem usuário e senha, ou `null` (desligado). Validada ao salvar (no `POST` e no `PATCH` do assistente, pelos mesmos papéis que editam o assistente) pelas regras de [SSRF](#proteção-contra-ssrf) (422 `webhook_url_invalid` ou `webhook_destination_blocked`, com `details.reason`). No `PATCH`, omitida fica e `null` desliga. |
 | `ticket_webhook_configured` | Só leitura: `true` quando há URL e segredo. |
+| `ticket_webhook_secret_created_at` | Só leitura: quando o segredo atual foi gerado, ou `null` sem segredo. Nunca o segredo. |
 
-- **Segredo**: gerado pelo servidor em `POST /v1/workspaces/{wid}/assistants/{aid}/ticket-webhook/secret` (sessão, CSRF, owner ou admin: é uma credencial), que devolve 201 `{"secret": "kbw_<segredo>", "created_at"}` **uma única vez** (`segredo` = `secrets.token_urlsafe(32)`). O servidor precisa do segredo para assinar, então o guarda cifrado com AES-256-GCM ([ADR 0003](../adr/0003-segredos-cifrados.md)), nunca o devolve de novo nem o loga. Gerar de novo substitui o anterior na hora. Auditoria: `assistant.ticket_webhook_secret_rotated` (sem o segredo); mudar a URL entra no `assistant.updated`.
+- **Segredo**: gerado pelo servidor em `POST /v1/workspaces/{wid}/assistants/{aid}/ticket-webhook/secret` (sessão, CSRF, owner ou admin: é uma credencial), que devolve 201 `TicketWebhookSecretOut` `{"secret": "kbw_<segredo>", "created_at"}` **uma única vez** (`segredo` = `secrets.token_urlsafe(32)`). O servidor precisa do segredo para assinar, então o guarda cifrado com AES-256-GCM ([ADR 0003](../adr/0003-segredos-cifrados.md)), nunca o devolve de novo nem o loga. Gerar de novo substitui o anterior na hora. Auditoria: `assistant.ticket_webhook_secret_rotated` (só o nome do assistente, sem o segredo); mudar a URL entra no `assistant.updated` (só o nome do campo, `ticket_webhook_url`, nunca a URL, que pode levar um token do destino).
 - Apagar a URL desliga o recurso; o segredo continua guardado até ser girado ou o assistente ser excluído.
+
+**Motivos (`details.reason`)** de `webhook_url_invalid`: `malformed` (URL ou porta inválida), `scheme_not_https`, `host_missing`, `credentials_in_url`, `host_unresolvable` (o host não resolve, ou não tem endereço); de `webhook_destination_blocked`: `loopback`, `private`, `link_local`, `cgnat`, `unspecified`, `multicast`, `reserved` (qualquer outro endereço que não é roteável na internet, como as faixas de documentação).
+
+**Testar o webhook**: `POST /v1/workspaces/{wid}/assistants/{aid}/ticket-webhook/test` (sessão, CSRF, editor ou acima) envia **um** evento de teste assinado, sem retentativas, para a URL configurada, com as mesmas regras de SSRF, cabeçalhos e assinatura da entrega real, e responde 200 `TicketWebhookTestOut`:
+
+```json
+{ "ok": false, "delivery_id": "…", "status": 500, "error": { "code": "webhook_rejected", "message": "…", "details": { "status": 500 } } }
+```
+
+- `ok`: o destino respondeu 2xx (o corpo da resposta é ignorado). `status`: status HTTP do destino, ou `null` sem resposta. `delivery_id`: o `KnoBridge-Delivery` e o `id` do evento.
+- `error` (ou `null`): `webhook_url_invalid` e `webhook_destination_blocked` (com `details.reason`, como acima: o destino é verificado de novo no envio), `webhook_unreachable` (`details.reason` `timeout` ou `network`) ou `webhook_rejected` (qualquer status fora de 2xx, inclusive 3xx, que não é seguido; `details.status`). Falha do destino não vira erro HTTP, para a tentativa ser auditada.
+- Sem URL ou sem segredo: 409 `ticket_webhook_not_configured`.
+- Corpo do evento (`KnoBridge-Event: ticket.test`): `{"event": "ticket.test", "version": 1, "id", "created_at", "workspace": {"id", "name"}, "assistant": {"id", "name"}}`. O destino deve responder 2xx sem abrir chamado.
+- Auditoria: `assistant.ticket_webhook_tested` com `name`, `ok`, `status` e `error_code`.
 
 ### Pedido no chat
 
@@ -811,7 +826,7 @@ Valem ao salvar a URL e **em toda tentativa**:
 3. a conexão é feita para o endereço já verificado (com o nome original no SNI e no `Host`), para que uma nova resolução (DNS rebinding) não mude o destino;
 4. proxy das variáveis de ambiente não é usado nessa conexão.
 
-**Desenvolvimento**: `KNOBRIDGE_WEBHOOK_ALLOWED_HOSTS` (lista separada por vírgula, vazia por padrão) libera hosts exatos: para eles, `http` é aceito e os passos 2 e 3 não se aplicam. Usado pelo destino fake do Compose e do E2E. Em produção, deve ficar vazia.
+**Desenvolvimento**: `KNOBRIDGE_WEBHOOK_ALLOWED_HOSTS` (lista separada por vírgula, vazia por padrão; comparada sem diferenciar maiúsculas, só o nome do host, sem porta) libera hosts exatos: para eles, `http` é aceito e os passos 2 e 3 não se aplicam (o host é alcançado pelo nome). Usado pelo destino fake do Compose e do E2E. Em produção, deve ficar vazia.
 
 ## Referências
 
