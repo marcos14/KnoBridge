@@ -74,20 +74,20 @@ fases:
         commit: fd993f5
       - id: F3.2
         titulo: Solicitação de chamado na conversa, resumo, entrega assinada com retentativas no Temporal
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-12
         concluida_em: null
         commit: null
   - id: F4
     titulo: Painel
-    status: pendente
+    status: em_execucao
     subfases:
       - id: F4.1
         titulo: Fonte de chamados (token, exemplo de envio, upload, prévia) e citação de chamado no chat
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-12
         concluida_em: null
         commit: null
       - id: F4.2
@@ -99,7 +99,7 @@ fases:
         commit: null
   - id: F5
     titulo: Embedding do Gemini
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F5.1
         titulo: Embedding do Gemini pelo OpenRouter com 1536 dimensões
@@ -107,7 +107,7 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
         concluida_em: 2026-10-12
-        commit: null
+        commit: 9c3e2a7
   - id: F6
     titulo: Entrega e ensaios
     status: pendente
@@ -628,6 +628,8 @@ D1 a D12 vêm das respostas do usuário (seção 2). D13 a D16 são do agente, n
 - 2026-10-12 — F5.1 iniciada (agente em worktree).
 - 2026-10-12 — F3.1 concluída: webhook do assistente: URL validada contra SSRF, segredo kbw_ cifrado, assinatura HMAC e evento de teste, com httpx2 como dependência de runtime; backend 1983 passed com 99% de cobertura, frontend 1140
 - 2026-10-12 — F5.1 concluída: embeddings do Gemini pelo OpenRouter com 1536 dimensões (001 e 2), preços do catálogo e sugestões no formulário de coleção; backend llm e coleções 109 passed, lint e pyright limpos; frontend 1144
+- 2026-10-12 — F3.2 iniciada (agente em worktree).
+- 2026-10-12 — F4.1 iniciada (agente em worktree).
 
 ## 8. Encerramento
 
