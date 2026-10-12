@@ -5,22 +5,22 @@ slug: readme-inicio-rapido
 solicitado_por: usuario
 criado_em: 2026-10-12
 atualizado_em: 2026-10-12
-status: em_execucao
+status: concluido
 aprovado_em: 2026-10-12
 aprovado_por: usuario
-concluido_em: null
+concluido_em: 2026-10-12
 branch: plano/0005-chamados-por-api
 fases:
   - id: F1
     titulo: README
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F1.1
         titulo: Reescrever o README da raiz com início rápido, próximos passos e seção curta de desenvolvimento
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
-        concluida_em: null
+        concluida_em: 2026-10-12
         commit: null
 decisoes:
   - id: D1
@@ -108,7 +108,26 @@ Nenhuma.
 
 - 2026-10-12 — plano criado; aguardando aprovação.
 - 2026-10-12 — plano aprovado pelo usuário ("Aprovado"); F1.1 iniciada: rascunho por agente em worktree, conferência de ponta a ponta pelo orquestrador.
+- 2026-10-12 — F1.1 concluída: README reescrito (96 linhas) e conferido de ponta a ponta numa stack limpa com a chave do OpenRouter
 
 ## 8. Encerramento
 
-A preencher ao concluir.
+**Entregue**: `README.md` da raiz reescrito (96 linhas) para quem quer experimentar: requisitos, início rápido em 9 passos com os nomes exatos das telas, próximos passos com links para os guias, parar e limpar, problemas comuns, uma seção curta de desenvolvimento e onde ler mais.
+
+**Conferência**: os passos 2 a 9 foram executados pelo orquestrador numa stack limpa (projeto padrão, portas padrão) com a chave do OpenRouter. Resultados:
+
+- documentos em `deploy/sources/manual`, ignorados pelo Git;
+- `migrate` `Exited (0)`;
+- superadmin, workspace e convite aceito pelo Mailpit;
+- teste do provedor e da fonte ok;
+- sincronização concluída;
+- assistente com `openai/gpt-4.1-mini` e similaridade mínima de 0,35;
+- resposta citando o documento certo;
+- pergunta sem relação respondida "sem fonte".
+
+Ajustes depois da conferência:
+
+- o status agora diz que a Fase 0 do roadmap está concluída;
+- o passo 1 ganhou uma nota para Windows.
+
+Diferença do ambiente, que não vale para o usuário: a sub-rede padrão estava ocupada pela stack pausada do ensaio Minski, então a conferência subiu com outra `COMPOSE_SUBNET`.

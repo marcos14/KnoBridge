@@ -1,49 +1,96 @@
 # KnoBridge
 
-Plataforma open source (Apache 2.0) que conecta repositórios de código, sistemas de chamados e documentações, transforma tudo em índices para RAG por meio de pipelines visuais e incrementais, e entrega suporte em linguagem natural via API REST, API compatível com OpenAI, webhooks, MCP, Slack, Google Chat e chat embutível.
+Plataforma open source (Apache 2.0) que conecta repositórios de código, sistemas de chamados e documentações, transforma tudo em índices para RAG e responde em linguagem natural, sempre citando a fonte. Sem fonte, o assistente diz que não sabe e oferece abrir um chamado.
 
-> Status: chamados por API (plano 0005) e harness de código com runner local (plano 0004) sobre o primeiro conhecimento (plano 0003) e a plataforma navegável (plano 0002). Login por e-mail e senha, workspaces multi-tenant com papéis, painel admin, provedores de LLM (OpenAI, Anthropic, OpenRouter) e assistentes com chat em streaming. Repositórios Git e pastas locais são indexados de forma incremental (Temporal, pgvector + busca textual), manualmente ou por agendamento, e o chat responde com citações de arquivo, linhas e commit; sem fonte, o assistente diz que não sabe. O `knobridge-runner`, na máquina que tem o checkout, roda o Claude Code ou o Codex somente leitura por módulo e gera regras de negócio com evidência `arquivo:linhas` verificada, revisadas no painel e citadas no chat. Chamados de qualquer sistema entram por API com token ou por upload de JSON/JSONL, são anonimizados e citados no chat com número e status; sem fonte, o chat abre um chamado no seu sistema por um webhook assinado. Ainda não há canvas de pipelines nem canais externos.
+> **Status**: em desenvolvimento; Fase 0 do roadmap concluída. Já funcionam painel, workspaces, indexação de pastas, repositórios Git, código (via runner) e chamados, e chat com citações; ainda não há canvas de pipelines nem canais externos (Slack, Google Chat, widget). O que mudou está no [CHANGELOG.md](CHANGELOG.md).
 
-> Vai contribuir ou continuar o desenvolvimento (humano ou agente de IA)? Leia primeiro [AGENTS.md](AGENTS.md).
+## Requisitos
 
-## Como subir
+- Docker com Compose v2 (`docker compose version` responde 2.x) e cerca de 4 GB de RAM livres.
+- Uma chave de API do [OpenRouter](https://openrouter.ai/) (cobre embeddings e chat), ou da OpenAI.
 
-Com Docker e Compose v2, da raiz do repositório:
+## Início rápido
+
+Da instância vazia a uma resposta com citação sobre os seus próprios documentos. Todos os comandos rodam na raiz do repositório.
+
+1. **Ponha alguns documentos na pasta de fontes.** Copie uns poucos `.md`, `.pdf` ou `.docx` que você conhece para uma subpasta de `deploy/sources/` (ignorada pelo Git):
+
+   ```bash
+   mkdir -p deploy/sources/manual && cp ~/Documentos/*.md deploy/sources/manual/
+   ```
+
+   No Windows, crie a pasta `deploy\sources\manual` e copie os arquivos pelo Explorador. Para usar outra pasta do host, rode `cp .env.example .env` e aponte `KNOBRIDGE_SOURCES_DIR` para ela. Essa pasta aparece **somente leitura** em `/sources` dentro dos contêineres.
+
+2. **Suba a stack.**
+
+   ```bash
+   docker compose up -d --build --wait
+   ```
+
+   A primeira vez constrói as imagens e leva alguns minutos. O comando volta quando tudo está saudável; confira com `docker compose ps -a` (`migrate` aparece `exited (0)`).
+
+3. **Crie o superadmin.** Abra o painel em <http://localhost:5173>. Na tela **Configuração inicial**, informe nome, e-mail (fictício serve, ex.: `voce@example.test`) e senha de 12 caracteres ou mais, e clique em **Criar conta e entrar**. O topo deve mostrar **API: disponível**.
+
+4. **Crie o workspace e aceite o convite.** Clique em **Criar ou gerenciar workspaces** > **Criar workspace**, preencha **Nome** e, em **E-mail do proprietário**, o seu próprio e-mail; clique em **Criar**. Abra o Mailpit em <http://localhost:8025>, abra o e-mail de convite, clique no link e em **Aceitar convite**. O painel abre o workspace.
+
+5. **Cadastre o provedor.** Em **Provedores** > **Novo provedor**: **Tipo** `OpenRouter`, **Nome** `OpenRouter`, **Chave de API** a sua chave (deixe **URL base (opcional)** em branco). Clique em **Salvar** e, na linha do provedor, em **Testar conexão**: deve aparecer "Conexão com OpenRouter funcionando."
+
+   Com a OpenAI direta, use **Tipo** `OpenAI`; nos próximos passos, os modelos ficam sem o prefixo `openai/`.
+
+6. **Crie a coleção.** Em **Coleções** > **Nova coleção**: **Nome** (ex.: `Meus documentos`), **Credencial de embedding** o provedor do passo 5 e **Modelo de embedding** `openai/text-embedding-3-small`. Clique em **Salvar**.
+
+7. **Cadastre e sincronize a fonte.** Em **Fontes** > **Nova fonte**: **Nome**, **Coleção** a do passo 6, **Tipo** `Pasta` e **Caminho da pasta** `/sources/manual` (o caminho de dentro do contêiner, nunca o do host nem a raiz `/sources`). Deixe **Ativa** marcada e clique em **Salvar**. Clique no nome da fonte e use **Testar conexão** ("A fonte ... está acessível.") e **Sincronizar agora**. Em **Execuções**, a linha passa de **Na fila** a **Em execução** e termina **Concluída**, com documentos novos e trechos maiores que zero.
+
+8. **Crie o assistente.** Em **Assistentes** > **Novo assistente**: **Nome**, **Provedor** o do passo 5, **Modelo** `openai/gpt-4.1-mini` (qualquer modelo de chat do OpenRouter serve, com o prefixo do fornecedor) e, em **Coleções**, marque a coleção do passo 6. A **Similaridade mínima** padrão (0,35) é calibrada para o embedding da OpenAI; deixe como está. Clique em **Salvar**.
+
+9. **Pergunte.** Em **Chat**, escolha o **Assistente**, escreva uma pergunta sobre os seus documentos e clique em **Enviar**. A resposta chega em streaming com marcadores `[1]`, `[2]`... e, abaixo dela, as **Fontes**: clique numa para ver o trecho e o arquivo. Uma pergunta sem relação com os documentos volta com "Respondida sem fonte: o assistente ofereceu abrir chamado."
+
+Se o chat responder "sem fonte" para uma pergunta que deveria ter resposta, abra a coleção e use **Testar busca** para ver o que a busca encontra; detalhes em [indexar-uma-fonte.md](docs/guias/indexar-uma-fonte.md#problemas-comuns).
+
+## Próximos passos
+
+- **Indexar um repositório Git** (clone em `/sources` ou URL https pública): [indexar-uma-fonte.md](docs/guias/indexar-uma-fonte.md#4-cadastrar-a-fonte).
+- **Mapear código com o runner** (Claude Code ou Codex somente leitura na sua máquina, gerando regras de negócio com evidência): [mapear-codigo-com-runner.md](docs/guias/mapear-codigo-com-runner.md).
+- **Receber chamados por API** (token de envio ou upload de JSON/JSONL, com anonimização): [receber-chamados-por-api.md](docs/guias/receber-chamados-por-api.md).
+- **"Abrir chamado" no seu sistema** a partir de uma resposta sem fonte, por webhook assinado: [receber-chamados-por-api.md](docs/guias/receber-chamados-por-api.md#9-receber-abrir-chamado-do-chat).
+- Convidar pessoas, papéis e outros fluxos de conta: [primeiro-acesso.md](docs/guias/primeiro-acesso.md).
+
+## Parar e limpar
 
 ```bash
-docker compose up -d --build --wait
+docker compose stop      # para os contêineres; `docker compose up -d --wait` retoma
+docker compose down      # remove os contêineres, mantém os dados (volumes)
+docker compose down -v   # apaga também banco, MinIO e clones; deploy/sources/ não é tocada
 ```
 
-Passo a passo, portas e solução de problemas em [docs/guias/subir-ambiente.md](docs/guias/subir-ambiente.md). Depois, abra <http://localhost:5173> e siga [docs/guias/primeiro-acesso.md](docs/guias/primeiro-acesso.md): configuração inicial, primeiro workspace, provedor `fake` (sem chave real) e assistente, com os e-mails lidos no Mailpit (<http://localhost:8025>). Para o assistente responder com citações, indexe uma pasta ou um repositório seguindo [docs/guias/indexar-uma-fonte.md](docs/guias/indexar-uma-fonte.md). Para gerar conhecimento do código com o Claude Code ou o Codex na sua máquina, instale o runner seguindo [docs/guias/mapear-codigo-com-runner.md](docs/guias/mapear-codigo-com-runner.md). Para trazer chamados do seu sistema de chamados e abrir chamados a partir do chat, siga [docs/guias/receber-chamados-por-api.md](docs/guias/receber-chamados-por-api.md).
+Depois de `down -v`, a próxima subida volta à **Configuração inicial**.
 
-## Como testar
+## Problemas comuns
 
-Cada pacote tem os seus gates (cobertura mínima de 95% de linhas e branches). No Windows, exporte `PYTHONUTF8=1`.
+- **Porta já em uso**: troque a porta no `.env` (ex.: `FRONTEND_PORT`, `MAILPIT_UI_PORT`, `API_PORT`) e suba de novo.
+- **Fonte falha com "fora da pasta liberada" ou "Não foi possível ler a fonte"**: use `/sources/<subpasta>`, confira com `docker compose exec worker ls /sources` e, se mudou `KNOBRIDGE_SOURCES_DIR`, recrie com `docker compose up -d --wait`. No Windows, a pasta precisa estar num disco compartilhado com o Docker Desktop.
+- **E-mail não aparece no Mailpit**: confira `docker compose ps mailpit` e procure `email_delivery_failed` em `docker compose logs api`.
+- **Painel mostra "API: indisponível"**: confira se a `api` está `healthy` e se `curl http://localhost:5173/v1/health/ready` responde 200.
 
-```bash
-# backend/ (Python, uv; os testes de integração exigem Docker)
-cd backend && uv sync && uv run ruff check . && uv run ruff format --check . && uv run pyright && uv run pytest
+Portas, serviços e mais casos em [docs/guias/subir-ambiente.md](docs/guias/subir-ambiente.md#problemas-comuns).
 
-# frontend/ (Node 24, pnpm)
-cd frontend && pnpm install --frozen-lockfile && pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build
+## Desenvolver
 
-# runner/ (knobridge-runner, uv; sem rede nem CLI real)
-cd runner && uv sync && uv run ruff check . && uv run ruff format --check . && uv run pyright && uv run pytest
+Antes de mudar qualquer coisa (humano ou agente de IA), leia [AGENTS.md](AGENTS.md). Cada pacote tem gate de 95% de cobertura de linhas e branches; no Windows, exporte `PYTHONUTF8=1`.
 
-# scripts/ (checagens do repositório)
-cd scripts && uv sync && uv run ruff check . && uv run pyright && uv run pytest
+- `backend/`: `uv sync && uv run ruff check . && uv run ruff format --check . && uv run pyright && uv run pytest` ([README](backend/README.md)).
+- `frontend/`: `pnpm install --frozen-lockfile && pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build` ([README](frontend/README.md)).
+- `runner/`: `uv sync && uv run ruff check . && uv run ruff format --check . && uv run pyright && uv run pytest` ([README](runner/README.md)).
+- `scripts/`: `uv sync && uv run ruff check . && uv run pyright && uv run pytest` ([AGENTS.md](scripts/AGENTS.md)).
+- Hooks de pre-commit, da raiz: `uvx pre-commit run --all-files`.
 
-# hooks de pre-commit (da raiz; instale uma vez com `uvx pre-commit install`)
-uvx pre-commit run --all-files
-```
-
-Detalhes em [backend/README.md](backend/README.md), [frontend/README.md](frontend/README.md), [runner/README.md](runner/README.md) e [scripts/AGENTS.md](scripts/AGENTS.md). A CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) roda tudo isso, mais Playwright, varredura de segredos e validação do compose.
+A CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) roda tudo isso, mais o E2E da stack ([subir-ambiente.md](docs/guias/subir-ambiente.md#rodar-o-e2e-contra-a-stack)), varredura de segredos e validação do compose.
 
 ## Onde ler mais
 
 - [docs/01-visao-do-projeto.md](docs/01-visao-do-projeto.md): visão, arquitetura, stack, decisões e roadmap.
-- [AGENTS.md](AGENTS.md): regras de trabalho, testes, estrutura do monorepo e fluxo de planos.
-- [docs/specs/](docs/specs/): contratos ([autenticação e permissões](docs/specs/autenticacao.md), [chat](docs/specs/chat.md), [conectores](docs/specs/conectores.md), [indexação e busca](docs/specs/indexacao.md), [protocolo do runner](docs/specs/runner.md), [harness de código](docs/specs/harness.md), [chamados](docs/specs/chamados.md), [modelo de dados](docs/specs/modelo-de-dados.md), OpenAPI).
+- [docs/guias/](docs/guias/): guias de uso e operação.
+- [docs/specs/](docs/specs/): contratos (autenticação, chat, conectores, indexação, runner, harness, chamados, modelo de dados, OpenAPI).
 - [docs/adr/](docs/adr/): decisões de arquitetura.
 - [docs/planos/](docs/planos/): planos de execução, com andamento e decisões.
 - [CHANGELOG.md](CHANGELOG.md): o que mudou.
