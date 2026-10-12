@@ -81,7 +81,7 @@ fases:
         commit: 0e2bc36
   - id: F4
     titulo: Painel
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F4.1
         titulo: Fonte de chamados (token, exemplo de envio, upload, prévia) e citação de chamado no chat
@@ -96,7 +96,7 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
         concluida_em: 2026-10-12
-        commit: null
+        commit: d6b1056
   - id: F5
     titulo: Embedding do Gemini
     status: concluida
@@ -110,13 +110,13 @@ fases:
         commit: 9c3e2a7
   - id: F6
     titulo: Entrega e ensaios
-    status: pendente
+    status: em_execucao
     subfases:
       - id: F6.1
         titulo: Gerador sintético de chamados, E2E da stack, guia, README, CHANGELOG e AGENTS raiz
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-12
         concluida_em: null
         commit: null
       - id: F6.2
@@ -656,6 +656,7 @@ D1 a D12 vêm das respostas do usuário (seção 2). D13 a D16 são do agente, n
 - 2026-10-12 — F4.1 concluída: fonte de chamados no painel (token, exemplos, upload com relatório por linha, prévia de anonimização) e citação kind ticket no chat; frontend 1191 testes, 98,63% de branches, 3 de 4 rodadas verdes (1 falha intermitente na primeira rodada após a integração, não reproduzida em 3 rodadas seguidas; teste não identificado porque o log foi sobrescrito)
 - 2026-10-12 — F4.2 iniciada (agente em worktree), com a rota tickets/summary incluída (D27).
 - 2026-10-12 — F4.2 concluída: webhook no assistente (URL, segredo mostrado uma vez, testar entrega), Abrir chamado no chat com prévia, resumo editável e estado do pedido, e a rota tickets/summary com a situação da integração na fonte; gates do agente: backend 2083 passed com 99,87%, frontend 1240; orquestrador: lint, pyright, testes da rota e gate do frontend (1240) verdes
+- 2026-10-12 — F6.1 iniciada (agente em worktree).
 
 ## 8. Encerramento
 
