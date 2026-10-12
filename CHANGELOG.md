@@ -66,6 +66,10 @@ Bootstrap do monorepo (plano [0001](docs/planos/0001-bootstrap.md)), sem funcion
 - Deploy (`deploy/`): Docker Compose de desenvolvimento com Postgres 17 + pgvector, Temporal (server + UI), MinIO, `migrate`, `api`, `worker` e `frontend`; guia [subir-ambiente](docs/guias/subir-ambiente.md).
 - CI (`.github/workflows/ci.yml`): gates de `scripts/`, `backend/` (incluindo contrato OpenAPI em dia) e `frontend/` (incluindo `check:api`, build e Playwright), varredura de segredos com gitleaks sobre todo o histórico e validação do compose.
 
+### Changed
+
+- Deploy (plano [0006](docs/planos/0006-compose-na-raiz.md)): `docker-compose.yml`, `docker-compose.e2e.yml` e `.env.example` saíram de `deploy/` para a raiz do repositório; a stack sobe da raiz com `docker compose up -d --build --wait` e lê o `.env` da raiz. `deploy/postgres/` e `deploy/sources/` continuam em `deploy/`, e o padrão de `KNOBRIDGE_SOURCES_DIR` passou a `./deploy/sources`. Os nomes de projeto (`knobridge`, `knobridge-e2e`) não mudaram, então volumes existentes continuam valendo. Quem tinha `deploy/.env` deve movê-lo para a raiz e, se definia `KNOBRIDGE_SOURCES_DIR` relativo, ajustar o caminho à raiz.
+
 ### Fixed
 
 - Chamados: a entrega do webhook "Abrir chamado" falhava no worker com `NoReferencedTableError`, porque o worker carregava os modelos de chamados sem os de conversas, workspaces e fontes que eles referenciam; `tickets/models.py` passou a importá-los.

@@ -1,6 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 
-// End-to-end tests against the whole stack of deploy/docker-compose.yml + docker-compose.e2e.yml,
+// End-to-end tests against the whole stack of docker-compose.yml + docker-compose.e2e.yml,
 // already up (no webServer here): `pnpm e2e:stack`. URLs come from the environment so the stack
 // can run on other ports.
 const BASE_URL = process.env.E2E_BASE_URL ?? "http://localhost:5173";

@@ -83,12 +83,13 @@ Antes de começar, leia este arquivo, o `AGENTS.md` de cada pasta que for tocar 
 | `frontend/` | Painel admin em React + TypeScript (canvas de pipelines, fontes, assistentes, canais, conversas) | Existe |
 | `runner/` | Python: `knobridge-runner`, runner local do harness de código na máquina do usuário (CLI `configure`/`run`/`doctor`, cliente do protocolo `/v1/runner/*`, camada 0, executores Claude Code e Codex somente leitura, verificação de evidências e excertos); projeto uv separado que nunca importa o backend ([ADR 0005](docs/adr/0005-runner-local-do-harness.md); uso em [mapear-codigo-com-runner.md](docs/guias/mapear-codigo-com-runner.md)) | Existe |
 | `widget/` | Web Component do chat embutível (1 arquivo JS) | A criar |
-| `deploy/` | Docker Compose, Helm chart, scripts de infra | Existe |
+| `deploy/` | Infraestrutura que o compose monta (`postgres/` com a inicialização do banco, `sources/` com as fontes locais) e, no futuro, Helm chart e scripts de infra; também as convenções do compose da raiz | Existe |
 | `scripts/` | Automação do repositório (checagens de CI, geração de código e de dados sintéticos, receptor de webhook falso do E2E) | Existe |
 | `.github/` | Workflows de CI | Existe |
 
 Regras:
 
+- Na raiz também ficam os arquivos do Docker Compose: `docker-compose.yml` (ambiente de desenvolvimento), `docker-compose.e2e.yml` (camada do E2E contra a stack) e `.env.example` (a cópia local, `.env`, nunca é commitada). A stack sobe da raiz com `docker compose up -d --build --wait`; convenções em [deploy/AGENTS.md](deploy/AGENTS.md).
 - Pasta nova de primeiro nível só com justificativa no PR e linha nesta tabela.
 - **Toda pasta, em qualquer nível, criada por nós tem `AGENTS.md`.** Exceções: pastas geradas ou vendorizadas (`node_modules/`, `.venv/`, `dist/`, `build/`, `__pycache__/`, `coverage/`, `htmlcov/`, `.pytest_cache/`), pastas de arquivos gerados por ferramenta (ex.: `migrations/versions/`) e pastas que contêm só dados de fixture, sem código.
 - O `AGENTS.md` de uma pasta é curto (10 a 60 linhas) e específico: função, o que entra e o que não entra, convenções locais, como testar, para onde apontar. Não repete o que está aqui; linka.
@@ -205,7 +206,7 @@ O bootstrap (plano [0001](docs/planos/0001-bootstrap.md)) montou o esqueleto e o
 1. Raiz: `.gitignore`, `.gitattributes`, `.editorconfig`, `CHANGELOG.md` e `.pre-commit-config.yaml` (higiene de arquivos, ruff, prettier, gitleaks, `check_agents_md.py` e `check_plans.py`).
 2. `backend/`: projeto `uv` com ruff, pyright strict e pytest com gate de 95%; pacote `knobridge` com settings, logging JSON, erros, engine async do banco, `GET /v1/health/live` e `/v1/health/ready`, exportação do OpenAPI para `docs/specs/openapi.json`, migrações Alembic (pgvector), worker Temporal com workflow de saúde e `Dockerfile`.
 3. `frontend/`: Vite + React + TypeScript strict, ESLint/Prettier, Vitest com thresholds de 95, Tailwind + shadcn/ui, i18n pt-BR, cliente gerado do OpenAPI, MSW, smoke E2E com Playwright e `Dockerfile`.
-4. `deploy/docker-compose.yml`: Postgres 17 + pgvector, Temporal (server + UI), MinIO, `migrate`, `api`, `worker` e `frontend`. Como subir: [docs/guias/subir-ambiente.md](docs/guias/subir-ambiente.md).
+4. `docker-compose.yml` (em `deploy/` até o plano 0006; hoje na raiz): Postgres 17 + pgvector, Temporal (server + UI), MinIO, `migrate`, `api`, `worker` e `frontend`. Como subir: [docs/guias/subir-ambiente.md](docs/guias/subir-ambiente.md).
 5. `scripts/check_agents_md.py` e `scripts/check_plans.py` (valida o frontmatter de `docs/planos/`), com testes.
 6. `.github/workflows/ci.yml`: gates de `scripts/`, `backend/` e `frontend/` (incluindo contrato OpenAPI e Playwright), varredura de segredos com gitleaks e validação do compose.
 

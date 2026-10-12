@@ -11,7 +11,7 @@ Plataforma open source (Apache 2.0) que conecta repositórios de código, sistem
 Com Docker e Compose v2, da raiz do repositório:
 
 ```bash
-docker compose -f deploy/docker-compose.yml up -d --build --wait
+docker compose up -d --build --wait
 ```
 
 Passo a passo, portas e solução de problemas em [docs/guias/subir-ambiente.md](docs/guias/subir-ambiente.md). Depois, abra <http://localhost:5173> e siga [docs/guias/primeiro-acesso.md](docs/guias/primeiro-acesso.md): configuração inicial, primeiro workspace, provedor `fake` (sem chave real) e assistente, com os e-mails lidos no Mailpit (<http://localhost:8025>). Para o assistente responder com citações, indexe uma pasta ou um repositório seguindo [docs/guias/indexar-uma-fonte.md](docs/guias/indexar-uma-fonte.md). Para gerar conhecimento do código com o Claude Code ou o Codex na sua máquina, instale o runner seguindo [docs/guias/mapear-codigo-com-runner.md](docs/guias/mapear-codigo-com-runner.md). Para trazer chamados do seu sistema de chamados e abrir chamados a partir do chat, siga [docs/guias/receber-chamados-por-api.md](docs/guias/receber-chamados-por-api.md).

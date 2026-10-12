@@ -46,7 +46,7 @@ pnpm e2e:stack                 # Playwright contra a stack do compose já no ar 
 ```
 
 - Vitest + Testing Library para componentes e hooks; MSW para a API (nunca mockar `fetch` à mão; handlers por recurso em `src/test/handlers/`). O Vitest lê só `src/**/*.test.{ts,tsx}`.
-- Playwright só para os poucos fluxos críticos; na CI (job `frontend` de `.github/workflows/ci.yml`) rodam contra o build de produção servido pelo `vite preview`, sem backend. Fluxos que precisam da API real ficam em `e2e/stack/`, com `playwright.stack.config.ts` (projeto `stack`, `baseURL` por `E2E_BASE_URL`), e rodam no job `e2e-stack` contra `deploy/docker-compose.yml` + `deploy/docker-compose.e2e.yml`.
+- Playwright só para os poucos fluxos críticos; na CI (job `frontend` de `.github/workflows/ci.yml`) rodam contra o build de produção servido pelo `vite preview`, sem backend. Fluxos que precisam da API real ficam em `e2e/stack/`, com `playwright.stack.config.ts` (projeto `stack`, `baseURL` por `E2E_BASE_URL`), e rodam no job `e2e-stack` contra `docker-compose.yml` + `docker-compose.e2e.yml`.
 - Componentes de `components/ui/` gerados pelo shadcn podem ficar fora da medição de cobertura, com justificativa no `vitest.config.ts`.
 
 **Leia também**: `AGENTS.md` da raiz (seções 5 e 6.3); `docs/01-visao-do-projeto.md`, seções 7.2 e 8.

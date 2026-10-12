@@ -1,9 +1,9 @@
 # KnoBridge development environment: the whole product on one machine.
 #
-#   cp deploy/.env.example deploy/.env      # optional: every variable has a dev default below
-#   docker compose -f deploy/docker-compose.yml up --build
+#   cp .env.example .env      # optional: every variable has a dev default below
+#   docker compose up --build
 #
-# Variables are interpolated from deploy/.env (compose reads the .env next to this file).
+# Variables are interpolated from the .env at the repository root (compose reads the .env next to this file).
 # Defaults are DEVELOPMENT-ONLY credentials; never reuse them anywhere else.
 # Host ports bind to ${BIND_ADDRESS} (127.0.0.1 by default), so nothing is exposed to the network.
 # Sources to index: put folders and clones in deploy/sources/ (or point KNOBRIDGE_SOURCES_DIR at
@@ -13,10 +13,10 @@
 name: knobridge
 
 x-backend: &backend
-  build: ../backend
+  build: ./backend
   image: knobridge-backend:dev
   environment: &backend-env
-    # Any value but production allows the `fake` LLM provider (deploy/docker-compose.e2e.yml pins it).
+    # Any value but production allows the `fake` LLM provider (docker-compose.e2e.yml pins it).
     KNOBRIDGE_ENV: ${KNOBRIDGE_ENV:-local}
     KNOBRIDGE_LOG_LEVEL: ${KNOBRIDGE_LOG_LEVEL:-INFO}
     KNOBRIDGE_DATABASE_URL: postgresql+asyncpg://${KNOBRIDGE_DB_USER:-knobridge}:${KNOBRIDGE_DB_PASSWORD:-knobridge-dev}@postgres:5432/${KNOBRIDGE_DB_NAME:-knobridge}
@@ -24,7 +24,7 @@ x-backend: &backend
     KNOBRIDGE_TEMPORAL_NAMESPACE: ${TEMPORAL_NAMESPACE:-default}
     KNOBRIDGE_TEMPORAL_TASK_QUEUE: ${KNOBRIDGE_TEMPORAL_TASK_QUEUE:-knobridge}
     # DEV-ONLY default (the same public value as DEV_SECRET_KEY in core/settings.py); set a real
-    # secret in deploy/.env for anything beyond a local machine.
+    # secret in .env for anything beyond a local machine.
     KNOBRIDGE_SECRET_KEY: ${KNOBRIDGE_SECRET_KEY:-dev-only-insecure-secret-key-change-me}
     # DEV-ONLY: the panel is served over plain HTTP here, so cookies are not marked Secure.
     # Anywhere with HTTPS keep the application default (true).
@@ -53,7 +53,7 @@ services:
       POSTGRES_USER: ${POSTGRES_SUPERUSER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD:-postgres-dev}
       POSTGRES_DB: postgres
-      # Read by postgres/init-databases.sh on the first start (empty volume).
+      # Read by deploy/postgres/init-databases.sh on the first start (empty volume).
       KNOBRIDGE_DB_NAME: ${KNOBRIDGE_DB_NAME:-knobridge}
       KNOBRIDGE_DB_USER: ${KNOBRIDGE_DB_USER:-knobridge}
       KNOBRIDGE_DB_PASSWORD: ${KNOBRIDGE_DB_PASSWORD:-knobridge-dev}
@@ -61,7 +61,7 @@ services:
       TEMPORAL_DB_PASSWORD: ${TEMPORAL_DB_PASSWORD:-temporal-dev}
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      - ./postgres/init-databases.sh:/docker-entrypoint-initdb.d/10-init-databases.sh:ro
+      - ./deploy/postgres/init-databases.sh:/docker-entrypoint-initdb.d/10-init-databases.sh:ro
     ports:
       - ${BIND_ADDRESS:-127.0.0.1}:${POSTGRES_PORT:-5432}:5432
     healthcheck:
@@ -84,7 +84,7 @@ services:
       POSTGRES_PWD: ${TEMPORAL_DB_PASSWORD:-temporal-dev}
       DBNAME: temporal
       VISIBILITY_DBNAME: temporal_visibility
-      # The databases are created by postgres/init-databases.sh; auto-setup only applies schemas.
+      # The databases are created by deploy/postgres/init-databases.sh; auto-setup only applies schemas.
       SKIP_DB_CREATE: "true"
       DEFAULT_NAMESPACE: ${TEMPORAL_NAMESPACE:-default}
     ports:
@@ -170,7 +170,7 @@ services:
     volumes:
       # Read-only. The API only tests connections: it never clones (https checks use ls-remote),
       # so it needs no clone volume.
-      - ${KNOBRIDGE_SOURCES_DIR:-./sources}:/sources:ro
+      - ${KNOBRIDGE_SOURCES_DIR:-./deploy/sources}:/sources:ro
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -196,7 +196,7 @@ services:
     restart: unless-stopped
     volumes:
       # The same host folder as the api, read-only: indexing never writes to a source.
-      - ${KNOBRIDGE_SOURCES_DIR:-./sources}:/sources:ro
+      - ${KNOBRIDGE_SOURCES_DIR:-./deploy/sources}:/sources:ro
       # Writable: partial clones of https repositories, reused between syncs.
       - source-clones:/var/lib/knobridge/git
     depends_on:
@@ -208,7 +208,7 @@ services:
         condition: service_healthy
 
   frontend:
-    build: ../frontend
+    build: ./frontend
     image: knobridge-frontend:dev
     restart: unless-stopped
     depends_on:

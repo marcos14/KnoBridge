@@ -13,7 +13,7 @@
 **Não entra aqui**:
 - Contratos (API, modelo de dados, protocolos): `docs/specs/`.
 - Decisões de arquitetura: `docs/adr/`.
-- Arquivos de infraestrutura (compose, Helm): `deploy/`.
+- Arquivos de infraestrutura: o compose na raiz do repositório; Helm e scripts de infra em `deploy/`.
 - Segredos reais, URLs internas de clientes, dados reais.
 
 **Convenções locais**:

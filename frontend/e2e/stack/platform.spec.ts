@@ -44,7 +44,7 @@ const PROVIDER = "Fake E2E";
 const ASSISTANT = "Suporte E2E";
 const QUESTION = `Como emito a nota de devolução ${RUN}?`;
 
-// Knowledge: deploy/docker-compose.e2e.yml mounts e2e/stack/fixtures/ at /sources, so the
+// Knowledge: docker-compose.e2e.yml mounts e2e/stack/fixtures/ at /sources, so the
 // synthetic folder knowledge/ (two Markdown files and one TypeScript file) is /sources/knowledge.
 const COLLECTION = `Base E2E ${RUN}`;
 const SOURCE = `Manual E2E ${RUN}`;

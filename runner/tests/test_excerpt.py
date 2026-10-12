@@ -106,7 +106,7 @@ def test_regular_file_names(path: str) -> None:
 
 
 def test_sensitive_files_never_excerpted() -> None:
-    excerpt = make_excerpt("deploy/.env", ["TOKEN=abc"], 1, 1, 30)
+    excerpt = make_excerpt(".env", ["TOKEN=abc"], 1, 1, 30)
 
     assert excerpt.text is None
     assert excerpt.omitted == "sensitive_file"

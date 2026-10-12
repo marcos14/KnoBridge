@@ -9,7 +9,7 @@
   - `frontend`: lint, format, typecheck, Vitest com cobertura, build, `check:api` e Playwright (relatório enviado como artefato quando falha).
   - `secrets`: gitleaks sobre todo o histórico.
   - `compose`: `docker compose ... config -q` do compose e da camada de E2E (só valida).
-  - `e2e-stack`: instala o runner (`uv sync --frozen` em `runner/`, que o `runner.spec.ts` sobe no host), sobe `deploy/docker-compose.yml` + `deploy/docker-compose.e2e.yml` do zero, roda `pnpm e2e:stack` em `frontend/`, publica o relatório do Playwright e os logs dos contêineres quando falha e sempre termina com `down -v`.
+  - `e2e-stack`: instala o runner (`uv sync --frozen` em `runner/`, que o `runner.spec.ts` sobe no host), sobe `docker-compose.yml` + `docker-compose.e2e.yml` do zero, roda `pnpm e2e:stack` em `frontend/`, publica o relatório do Playwright e os logs dos contêineres quando falha e sempre termina com `down -v`.
 - Workflows futuros (release, publicação de imagens), um arquivo por propósito.
 
 **Não entra aqui**: lógica de checagem com mais de algumas linhas de shell (vira script testado em `scripts/`); segredos; workflows que escrevem no repositório sem decisão registrada.
