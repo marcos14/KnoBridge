@@ -1,9 +1,11 @@
-"""Body size limits of the runner routes (docs/specs/runner.md, "Limites de payload").
+"""Body size limits of the bearer-token routes: the runner's (docs/specs/runner.md, "Limites de
+payload") and the ingest of tickets (docs/specs/chamados.md, ``POST /v1/ingest/tickets``).
 
-A pure ASGI middleware: for ``POST /v1/runner/*`` it refuses a declared ``Content-Length``
-above the route's limit and stops reading the body as soon as it passes the limit (chunked
-bodies included), answering 413 ``payload_too_large`` with ``details.max_bytes``. Otherwise it
-replays the buffered body to the application, so FastAPI parses and validates it as usual.
+A pure ASGI middleware: for ``POST /v1/runner/*`` and ``/v1/ingest/tickets`` it refuses a
+declared ``Content-Length`` above the route's limit and stops reading the body as soon as it
+passes the limit (chunked bodies included), answering 413 ``payload_too_large`` with
+``details.max_bytes``. Otherwise it replays the buffered body to the application, so FastAPI
+parses and validates it as usual.
 """
 
 from __future__ import annotations
@@ -19,8 +21,9 @@ from knobridge.core.errors import KnoBridgeError, error_body
 KIB = 1024
 MIB = 1024 * KIB
 RUNNER_PATH_PREFIX = "/v1/runner/"
-# Most specific first; the last entry is the fallback of any other runner route.
+# Most specific first; ``^/v1/runner/`` is the fallback of any other runner route.
 _LIMITS: tuple[tuple[re.Pattern[str], int], ...] = (
+    (re.compile(r"^/v1/ingest/tickets$"), 5 * MIB),
     (re.compile(r"^/v1/runner/heartbeat$"), 64 * KIB),
     (re.compile(r"^/v1/runner/sources/[^/]+/report$"), 4 * MIB),
     (re.compile(r"^/v1/runner/jobs/claim$"), 4 * KIB),
@@ -36,14 +39,14 @@ class PayloadTooLargeError(KnoBridgeError):
 
 
 def body_limit(path: str) -> int | None:
-    """The body limit of ``path`` in bytes, or ``None`` outside the runner routes."""
+    """The body limit of ``path`` in bytes, or ``None`` outside the limited routes."""
     for pattern, limit in _LIMITS:
         if pattern.match(path):
             return limit
     return None
 
 
-class RunnerBodyLimitMiddleware:
+class BodyLimitMiddleware:
     def __init__(self, app: ASGIApp) -> None:
         self.app = app
 

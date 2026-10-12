@@ -1480,6 +1480,7 @@
     "source_tested": "Conexão com a fonte testada",
     "source_sync_started": "Sincronização da fonte iniciada",
     "source_sync_cancelled": "Sincronização da fonte cancelada",
+    "source_ingest_token_rotated": "Token de envio da fonte gerado",
     "runner_created": "Runner cadastrado",
     "runner_updated": "Runner atualizado",
     "runner_revoked": "Runner revogado",

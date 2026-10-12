@@ -9,7 +9,9 @@ cursor belongs to the connector). The schedule is validated and stored, then mir
 source is still saved and the worker's reconciliation brings the schedule in line later.
 A ``runner`` source also has its runner, its unique ``(runner_id, repository)`` pair and its
 read-only ``head_commit`` checked, and is tested by the runner's presence instead of a
-connector (``harness/runner_sources.py``).
+connector (``harness/runner_sources.py``). A ``tickets`` source refuses globs (its documents
+have no paths) and is tested by the ``ConnectionCheck`` the caller gives for its kind (the
+ingest token, ``tickets/tokens.py``).
 Deleting a source first cancels its running synchronization, then the database cascades to
 runs, documents and chunks. Audit metadata carries names, kinds and changed fields, never the
 config itself (paths and URLs stay out of the trail).
@@ -54,6 +56,7 @@ from knobridge.ingestion.schedule import (
 )
 from knobridge.ingestion.source_check import (
     TEST_CONNECTION_TIMEOUT,
+    ConnectionCheck,
     ConnectionFailure,
     check_connection,
 )
@@ -122,6 +125,19 @@ def normalized_config(kind: SourceKind, data: Mapping[str, object]) -> dict[str,
     return dumped
 
 
+def _check_no_globs(kind: SourceKind, include: Sequence[str], exclude: Sequence[str]) -> None:
+    """Globs select paths; a ``tickets`` source has none, so it refuses non-empty ones."""
+    if kind is not SourceKind.TICKETS:
+        return
+    errors: list[JSONValue] = [
+        {"type": "globs_not_allowed", "loc": [field], "msg": "Globs do not apply to tickets."}
+        for field, globs in (("include_globs", include), ("exclude_globs", exclude))
+        if globs
+    ]
+    if errors:
+        raise SourceConfigInvalidError("The source configuration is invalid.", details=errors)
+
+
 # Fields whose change can create, update, pause or remove the source's schedule.
 _SCHEDULE_FIELDS = frozenset({"schedule_cron", "schedule_enabled", "active"})
 
@@ -137,11 +153,13 @@ class SourceService:
         schedules: ScheduleManager,
         *,
         test_timeout: float = TEST_CONNECTION_TIMEOUT,
+        checks: Mapping[SourceKind, ConnectionCheck] | None = None,
     ) -> None:
         self._clock = clock
         self._audit = AuditService(clock)
         self._schedules = schedules
         self._test_timeout = test_timeout
+        self._checks: Mapping[SourceKind, ConnectionCheck] = checks or {}
 
     def _view(self, source: Source, count: int, last_run: Run | None) -> SourceView:
         return SourceView(source, count, last_run, next_run_at(source, self._clock.now()))
@@ -198,6 +216,7 @@ class SourceService:
         ip: str | None,
     ) -> SourceView:
         config = await self._config(db, workspace_id, settings.kind, settings.config, None)
+        _check_no_globs(settings.kind, settings.include_globs, settings.exclude_globs)
         cron = validate_schedule(settings.schedule_cron, enabled=settings.schedule_enabled)
         await self._lock_collection(db, workspace_id, settings.collection_id)
         source = Source(
@@ -244,6 +263,7 @@ class SourceService:
     ) -> SourceView:
         """Apply the given fields; audited only when something actually changes."""
         source = await self._get(db, workspace_id, source_id)
+        _check_no_globs(source.kind, changes.include_globs or (), changes.exclude_globs or ())
         had_schedule = desired_schedule(source) is not None
         wanted: dict[str, object] = {
             "name": changes.name,
@@ -393,7 +413,10 @@ class SourceService:
         with ``ok`` and ``error_code``) commits with the request either way.
         """
         source = await self._get(db, workspace_id, source_id)
-        if source.kind is SourceKind.RUNNER:
+        check = self._checks.get(source.kind)
+        if check is not None:
+            failure = await check(db, source)
+        elif source.kind is SourceKind.RUNNER:
             failure = await runner_connection_failure(db, source, now=self._clock.now())
         else:
             failure = await check_connection(source, connectors, limit_seconds=self._test_timeout)

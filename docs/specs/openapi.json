@@ -1034,6 +1034,7 @@
           "source.tested",
           "source.sync.started",
           "source.sync.cancelled",
+          "source.ingest_token_rotated",
           "runner.created",
           "runner.updated",
           "runner.revoked",
@@ -3058,6 +3059,31 @@
           "offset"
         ],
         "title": "HarnessRejectionPage",
+        "type": "object"
+      },
+      "IngestTokenOut": {
+        "description": "The whole token appears only here, once.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "token": {
+            "title": "Token",
+            "type": "string"
+          },
+          "token_prefix": {
+            "title": "Token Prefix",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "token_prefix",
+          "created_at"
+        ],
+        "title": "IngestTokenOut",
         "type": "object"
       },
       "InvitationOut": {
@@ -7269,6 +7295,656 @@
         "title": "Theme",
         "type": "string"
       },
+      "TicketAttachmentIn": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "TicketAttachmentIn",
+        "type": "object"
+      },
+      "TicketBodyFormat": {
+        "enum": [
+          "text",
+          "markdown",
+          "html"
+        ],
+        "title": "TicketBodyFormat",
+        "type": "string"
+      },
+      "TicketDeleteItemIn": {
+        "additionalProperties": false,
+        "properties": {
+          "deleted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deleted At"
+          },
+          "external_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "External Id",
+            "type": "string"
+          },
+          "op": {
+            "const": "delete",
+            "title": "Op",
+            "type": "string"
+          }
+        },
+        "required": [
+          "op",
+          "external_id"
+        ],
+        "title": "TicketDeleteItemIn",
+        "type": "object"
+      },
+      "TicketIn": {
+        "additionalProperties": false,
+        "description": "A ticket of the system of origin (docs/specs/chamados.md, \"Campos\").",
+        "properties": {
+          "assignees": {
+            "items": {
+              "$ref": "#/components/schemas/TicketPersonIn"
+            },
+            "maxItems": 20,
+            "title": "Assignees",
+            "type": "array"
+          },
+          "attachments": {
+            "items": {
+              "$ref": "#/components/schemas/TicketAttachmentIn"
+            },
+            "maxItems": 100,
+            "title": "Attachments",
+            "type": "array"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 0,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "custom_fields": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "maxProperties": 50,
+            "title": "Custom Fields",
+            "type": "object"
+          },
+          "external_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "External Id",
+            "type": "string"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/TicketMessageIn"
+            },
+            "maxItems": 500,
+            "title": "Messages",
+            "type": "array"
+          },
+          "number": {
+            "anyOf": [
+              {
+                "maxLength": 50,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Number"
+          },
+          "original_status": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "minLength": 0,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Status"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "maxLength": 50,
+                "minLength": 0,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority"
+          },
+          "product": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 0,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product"
+          },
+          "requester": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TicketRequesterIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resolution": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TicketResolutionIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TicketStatus"
+          },
+          "tags": {
+            "items": {
+              "maxLength": 100,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Tags",
+            "type": "array"
+          },
+          "title": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "minLength": 0,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "external_id",
+          "title",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "TicketIn",
+        "type": "object"
+      },
+      "TicketIngestCounts": {
+        "properties": {
+          "queued": {
+            "title": "Queued",
+            "type": "integer"
+          },
+          "rejected": {
+            "title": "Rejected",
+            "type": "integer"
+          },
+          "stale": {
+            "title": "Stale",
+            "type": "integer"
+          },
+          "unchanged": {
+            "title": "Unchanged",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "queued",
+          "unchanged",
+          "stale",
+          "rejected"
+        ],
+        "title": "TicketIngestCounts",
+        "type": "object"
+      },
+      "TicketIngestIn": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/TicketUpsertItemIn"
+                },
+                {
+                  "$ref": "#/components/schemas/TicketDeleteItemIn"
+                }
+              ]
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "TicketIngestIn",
+        "type": "object"
+      },
+      "TicketIngestItemError": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "details": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "details"
+        ],
+        "title": "TicketIngestItemError",
+        "type": "object"
+      },
+      "TicketIngestItemResult": {
+        "properties": {
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TicketIngestItemError"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "external_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Id"
+          },
+          "index": {
+            "title": "Index",
+            "type": "integer"
+          },
+          "op": {
+            "enum": [
+              "upsert",
+              "delete"
+            ],
+            "title": "Op",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "queued",
+              "unchanged",
+              "stale",
+              "rejected"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "index",
+          "op",
+          "external_id",
+          "status",
+          "error"
+        ],
+        "title": "TicketIngestItemResult",
+        "type": "object"
+      },
+      "TicketIngestOut": {
+        "properties": {
+          "counts": {
+            "$ref": "#/components/schemas/TicketIngestCounts"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/TicketIngestItemResult"
+            },
+            "title": "Results",
+            "type": "array"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "sync": {
+            "enum": [
+              "started",
+              "pending",
+              "deferred",
+              "none"
+            ],
+            "title": "Sync",
+            "type": "string"
+          }
+        },
+        "required": [
+          "results",
+          "counts",
+          "sync",
+          "run_id"
+        ],
+        "title": "TicketIngestOut",
+        "type": "object"
+      },
+      "TicketMessageIn": {
+        "additionalProperties": false,
+        "properties": {
+          "author_name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 0,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Name"
+          },
+          "body": {
+            "maxLength": 100000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          },
+          "body_format": {
+            "$ref": "#/components/schemas/TicketBodyFormat",
+            "default": "text"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 0,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "public": {
+            "default": true,
+            "title": "Public",
+            "type": "boolean"
+          },
+          "role": {
+            "$ref": "#/components/schemas/TicketMessageRole"
+          }
+        },
+        "required": [
+          "role",
+          "body",
+          "created_at"
+        ],
+        "title": "TicketMessageIn",
+        "type": "object"
+      },
+      "TicketMessageRole": {
+        "enum": [
+          "customer",
+          "agent",
+          "system"
+        ],
+        "title": "TicketMessageRole",
+        "type": "string"
+      },
+      "TicketPersonIn": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "maxLength": 320,
+                "minLength": 0,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 0,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "title": "TicketPersonIn",
+        "type": "object"
+      },
+      "TicketRequesterIn": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "maxLength": 320,
+                "minLength": 0,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 0,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "organization": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 0,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Organization"
+          }
+        },
+        "title": "TicketRequesterIn",
+        "type": "object"
+      },
+      "TicketResolutionIn": {
+        "additionalProperties": false,
+        "properties": {
+          "body": {
+            "maxLength": 100000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          },
+          "body_format": {
+            "$ref": "#/components/schemas/TicketBodyFormat",
+            "default": "text"
+          }
+        },
+        "required": [
+          "body"
+        ],
+        "title": "TicketResolutionIn",
+        "type": "object"
+      },
+      "TicketStatus": {
+        "description": "Normalized status of a ticket (docs/specs/chamados.md, \"Status normalizado\").",
+        "enum": [
+          "open",
+          "pending",
+          "resolved",
+          "closed"
+        ],
+        "title": "TicketStatus",
+        "type": "string"
+      },
+      "TicketUpsertItemIn": {
+        "additionalProperties": false,
+        "properties": {
+          "op": {
+            "const": "upsert",
+            "title": "Op",
+            "type": "string"
+          },
+          "ticket": {
+            "$ref": "#/components/schemas/TicketIn"
+          }
+        },
+        "required": [
+          "op",
+          "ticket"
+        ],
+        "title": "TicketUpsertItemIn",
+        "type": "object"
+      },
       "UpdateUserRequest": {
         "properties": {
           "is_superadmin": {
@@ -8284,6 +8960,56 @@
         "summary": "Ready",
         "tags": [
           "health"
+        ]
+      }
+    },
+    "/v1/ingest/tickets": {
+      "post": {
+        "description": "Validate each item, write the accepted ones to the inbox (the ``updated_at`` rule) and\nrequest the sync of the source; 202 with the result of every item, in order.",
+        "operationId": "ingest_tickets_v1_ingest_tickets_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketIngestIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketIngestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or rotated token (`invalid_ingest_token`)."
+          },
+          "403": {
+            "description": "Workspace of the source suspended (`workspace_suspended`)."
+          },
+          "409": {
+            "description": "Source deactivated (`source_inactive`): nothing written."
+          },
+          "413": {
+            "description": "Body above 5 MiB (`payload_too_large`, `details.max_bytes`)."
+          },
+          "422": {
+            "description": "Malformed body (`validation_error`)."
+          },
+          "503": {
+            "description": "Database unavailable (`service_unavailable`): nothing written."
+          }
+        },
+        "summary": "Ingest Tickets",
+        "tags": [
+          "ingest"
         ]
       }
     },
@@ -12754,6 +13480,69 @@
         "summary": "Enqueue Harness Jobs",
         "tags": [
           "harness"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/sources/{source_id}/ingest-token": {
+      "post": {
+        "description": "Issue the token of the source, or replace the current one.",
+        "operationId": "rotate_ingest_token_v1_workspaces__workspace_id__sources__source_id__ingest_token_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestTokenOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below admin (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
+          },
+          "404": {
+            "description": "Workspace not found or caller not a member, or not a `tickets` source of the workspace (`source_not_found`)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Rotate Ingest Token",
+        "tags": [
+          "sources"
         ]
       }
     },

@@ -34,6 +34,7 @@ from knobridge.harness.knowledge_connector import KnowledgeConnectorFactory
 from knobridge.ingestion.collections import CollectionService
 from knobridge.ingestion.connectors import ConnectorFactory, SettingsConnectorFactory
 from knobridge.ingestion.schedule import ScheduleManager
+from knobridge.ingestion.source_config import SourceKind
 from knobridge.ingestion.sources import SourceService
 from knobridge.ingestion.sync import SyncStarter
 from knobridge.llm.credentials import CREDENTIALS_KEY_INFO, ProviderCredentialService
@@ -58,6 +59,7 @@ from knobridge.tenancy.models import Role, WorkspaceStatus
 from knobridge.tenancy.queries import get_workspace_access
 from knobridge.tenancy.rbac import role_at_least
 from knobridge.tenancy.setup import SetupService
+from knobridge.tickets.tokens import ingest_token_failure
 
 
 def get_settings_from_app(request: Request) -> Settings:
@@ -376,7 +378,12 @@ def get_collection_service(request: Request) -> CollectionService:
 def get_source_service(
     request: Request, schedules: Annotated[ScheduleManager, Depends(get_schedule_manager)]
 ) -> SourceService:
-    return SourceService(request.app.state.clock, schedules)
+    # The ``tickets`` source is tested by its ingest token, not by a connector.
+    return SourceService(
+        request.app.state.clock,
+        schedules,
+        checks={SourceKind.TICKETS: ingest_token_failure},
+    )
 
 
 SyncStarterDep = Annotated[SyncStarter, Depends(get_sync_starter)]

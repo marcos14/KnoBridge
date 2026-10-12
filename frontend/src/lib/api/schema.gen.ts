@@ -308,6 +308,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/ingest/tickets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ingest Tickets
+         * @description Validate each item, write the accepted ones to the inbox (the ``updated_at`` rule) and
+         *     request the sync of the source; 202 with the result of every item, in order.
+         */
+        post: operations["ingest_tickets_v1_ingest_tickets_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/invites/accept": {
         parameters: {
             query?: never;
@@ -1319,6 +1340,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/workspaces/{workspace_id}/sources/{source_id}/ingest-token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rotate Ingest Token
+         * @description Issue the token of the source, or replace the current one.
+         */
+        post: operations["rotate_ingest_token_v1_workspaces__workspace_id__sources__source_id__ingest_token_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/workspaces/{workspace_id}/sources/{source_id}/knowledge": {
         parameters: {
             query?: never;
@@ -1861,7 +1902,7 @@ export interface components {
          * AuditAction
          * @enum {string}
          */
-        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted" | "provider.tested" | "assistant.created" | "assistant.updated" | "assistant.deleted" | "conversation.deleted" | "collection.created" | "collection.updated" | "collection.deleted" | "source.created" | "source.updated" | "source.deleted" | "source.tested" | "source.sync.started" | "source.sync.cancelled" | "runner.created" | "runner.updated" | "runner.revoked" | "runner.deleted" | "harness_job.cancelled" | "harness_job.enqueued" | "harness_module.created" | "harness_module.updated" | "knowledge_item.updated";
+        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted" | "provider.tested" | "assistant.created" | "assistant.updated" | "assistant.deleted" | "conversation.deleted" | "collection.created" | "collection.updated" | "collection.deleted" | "source.created" | "source.updated" | "source.deleted" | "source.tested" | "source.sync.started" | "source.sync.cancelled" | "source.ingest_token_rotated" | "runner.created" | "runner.updated" | "runner.revoked" | "runner.deleted" | "harness_job.cancelled" | "harness_job.enqueued" | "harness_module.created" | "harness_module.updated" | "knowledge_item.updated";
         /** AuditEventOut */
         AuditEventOut: {
             /** Action */
@@ -2591,6 +2632,21 @@ export interface components {
             offset: number;
             /** Total */
             total: number;
+        };
+        /**
+         * IngestTokenOut
+         * @description The whole token appears only here, once.
+         */
+        IngestTokenOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Token */
+            token: string;
+            /** Token Prefix */
+            token_prefix: string;
         };
         /** InvitationOut */
         InvitationOut: {
@@ -4100,6 +4156,198 @@ export interface components {
          * @enum {string}
          */
         Theme: "system" | "light" | "dark";
+        /** TicketAttachmentIn */
+        TicketAttachmentIn: {
+            /** Name */
+            name: string;
+        };
+        /**
+         * TicketBodyFormat
+         * @enum {string}
+         */
+        TicketBodyFormat: "text" | "markdown" | "html";
+        /** TicketDeleteItemIn */
+        TicketDeleteItemIn: {
+            /** Deleted At */
+            deleted_at?: string | null;
+            /** External Id */
+            external_id: string;
+            /**
+             * Op
+             * @constant
+             */
+            op: "delete";
+        };
+        /**
+         * TicketIn
+         * @description A ticket of the system of origin (docs/specs/chamados.md, "Campos").
+         */
+        TicketIn: {
+            /** Assignees */
+            assignees?: components["schemas"]["TicketPersonIn"][];
+            /** Attachments */
+            attachments?: components["schemas"]["TicketAttachmentIn"][];
+            /** Category */
+            category?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Custom Fields */
+            custom_fields?: {
+                [key: string]: string | number | boolean | null;
+            };
+            /** External Id */
+            external_id: string;
+            /** Messages */
+            messages?: components["schemas"]["TicketMessageIn"][];
+            /** Number */
+            number?: string | null;
+            /** Original Status */
+            original_status?: string | null;
+            /** Priority */
+            priority?: string | null;
+            /** Product */
+            product?: string | null;
+            requester?: components["schemas"]["TicketRequesterIn"] | null;
+            resolution?: components["schemas"]["TicketResolutionIn"] | null;
+            /** Resolved At */
+            resolved_at?: string | null;
+            status: components["schemas"]["TicketStatus"];
+            /** Tags */
+            tags?: string[];
+            /** Title */
+            title: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Url */
+            url?: string | null;
+        };
+        /** TicketIngestCounts */
+        TicketIngestCounts: {
+            /** Queued */
+            queued: number;
+            /** Rejected */
+            rejected: number;
+            /** Stale */
+            stale: number;
+            /** Unchanged */
+            unchanged: number;
+        };
+        /** TicketIngestIn */
+        TicketIngestIn: {
+            /** Items */
+            items: (components["schemas"]["TicketUpsertItemIn"] | components["schemas"]["TicketDeleteItemIn"])[];
+        };
+        /** TicketIngestItemError */
+        TicketIngestItemError: {
+            /** Code */
+            code: string;
+            /** Details */
+            details: unknown | null;
+            /** Message */
+            message: string;
+        };
+        /** TicketIngestItemResult */
+        TicketIngestItemResult: {
+            error: components["schemas"]["TicketIngestItemError"] | null;
+            /** External Id */
+            external_id: string | null;
+            /** Index */
+            index: number;
+            /**
+             * Op
+             * @enum {string}
+             */
+            op: "upsert" | "delete";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "queued" | "unchanged" | "stale" | "rejected";
+        };
+        /** TicketIngestOut */
+        TicketIngestOut: {
+            counts: components["schemas"]["TicketIngestCounts"];
+            /** Results */
+            results: components["schemas"]["TicketIngestItemResult"][];
+            /** Run Id */
+            run_id: string | null;
+            /**
+             * Sync
+             * @enum {string}
+             */
+            sync: "started" | "pending" | "deferred" | "none";
+        };
+        /** TicketMessageIn */
+        TicketMessageIn: {
+            /** Author Name */
+            author_name?: string | null;
+            /** Body */
+            body: string;
+            /** @default text */
+            body_format: components["schemas"]["TicketBodyFormat"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Id */
+            id?: string | null;
+            /**
+             * Public
+             * @default true
+             */
+            public: boolean;
+            role: components["schemas"]["TicketMessageRole"];
+        };
+        /**
+         * TicketMessageRole
+         * @enum {string}
+         */
+        TicketMessageRole: "customer" | "agent" | "system";
+        /** TicketPersonIn */
+        TicketPersonIn: {
+            /** Email */
+            email?: string | null;
+            /** Name */
+            name?: string | null;
+        };
+        /** TicketRequesterIn */
+        TicketRequesterIn: {
+            /** Email */
+            email?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Organization */
+            organization?: string | null;
+        };
+        /** TicketResolutionIn */
+        TicketResolutionIn: {
+            /** Body */
+            body: string;
+            /** @default text */
+            body_format: components["schemas"]["TicketBodyFormat"];
+        };
+        /**
+         * TicketStatus
+         * @description Normalized status of a ticket (docs/specs/chamados.md, "Status normalizado").
+         * @enum {string}
+         */
+        TicketStatus: "open" | "pending" | "resolved" | "closed";
+        /** TicketUpsertItemIn */
+        TicketUpsertItemIn: {
+            /**
+             * Op
+             * @constant
+             */
+            op: "upsert";
+            ticket: components["schemas"]["TicketIn"];
+        };
         /** UpdateUserRequest */
         UpdateUserRequest: {
             /** Is Superadmin */
@@ -4838,6 +5086,72 @@ export interface operations {
                 };
             };
             /** @description A dependency is unreachable (standard error shape). */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ingest_tickets_v1_ingest_tickets_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TicketIngestIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketIngestOut"];
+                };
+            };
+            /** @description Missing, malformed, unknown or rotated token (`invalid_ingest_token`). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace of the source suspended (`workspace_suspended`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Source deactivated (`source_inactive`): nothing written. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Body above 5 MiB (`payload_too_large`, `details.max_bytes`). */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Malformed body (`validation_error`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database unavailable (`service_unavailable`): nothing written. */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -8658,6 +8972,59 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    rotate_ingest_token_v1_workspaces__workspace_id__sources__source_id__ingest_token_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IngestTokenOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below admin (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace not found or caller not a member, or not a `tickets` source of the workspace (`source_not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

@@ -8,7 +8,10 @@ transaction either way (the API answers 200 ``{ok, error}``, like the provider t
 from __future__ import annotations
 
 import asyncio
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from knobridge.core.errors import KnoBridgeError
 from knobridge.core.logging import get_logger
@@ -27,6 +30,12 @@ class ConnectionFailure:
     code: str
     message: str
     details: object = None
+
+
+# The connection test of a kind checked in the database instead of by a connector (the
+# ``tickets`` source: by its ingest token); given to ``SourceService`` by the API, because
+# this package does not import the packages that own those tables.
+type ConnectionCheck = Callable[[AsyncSession, Source], Awaitable[ConnectionFailure | None]]
 
 
 async def check_connection(

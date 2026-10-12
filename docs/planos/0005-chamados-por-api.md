@@ -35,10 +35,10 @@ fases:
     subfases:
       - id: F2.1
         titulo: Fonte tickets, token de envio e endpoint de lote para a caixa de entrada
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
-        concluida_em: null
+        concluida_em: 2026-10-12
         commit: null
       - id: F2.2
         titulo: Anonimização determinística, Markdown do chamado e chunking
@@ -267,6 +267,13 @@ decisoes:
     motivo: "a spec é o contrato das próximas subfases; menos estado redundante"
     alternativas: "colunas enabled separadas; jsonb para o corpo assinado"
     adr: null
+  - id: D20
+    data: 2026-10-12
+    por: agente
+    decisao: "F2.1: teste de conexão da fonte tickets como ConnectionCheck injetado no SourceService (ingestion não importa tickets); RunnerBodyLimitMiddleware virou BodyLimitMiddleware e cobre /v1/ingest/tickets (5 MiB); duplicate_in_batch só conta item anterior aceito; sync deferred para qualquer recusa de iniciar; rotação mantém created_by e created_at da primeira emissão; 503 por OSError, OperationalError ou InterfaceError; fonte tickets recusa globs"
+    motivo: "manter as dependências apontando para baixo e o contrato da spec"
+    alternativas: "importar tickets em ingestion; middleware separado para ingest"
+    adr: null
 pendencias_usuario:
   - id: P1
     data: 2026-10-12
@@ -378,8 +385,8 @@ Fixar o formato do chamado e o modelo antes do código.
   - Gerar e rotacionar o token (`POST .../sources/{sid}/ingest-token`, owner/admin, mostrado uma vez, auditado).
   - Autenticação por token `kbi_` (401 único `invalid_ingest_token`).
   - `POST /v1/ingest/tickets`:
-    - corpo `{tickets: [...], deletes: [...]}`, até 100 itens e 5 MB (413);
-    - validação estrita por item, com o resultado por item `accepted | stale | invalid` e os erros;
+    - corpo `{items: [{op: upsert|delete, ...}]}` (D17), até 100 itens e 5 MiB (413);
+    - validação estrita por item, com o resultado por item `queued | unchanged | stale | rejected` e os erros (D17);
     - upsert na caixa pela regra do `updated_at`;
     - 202, e `request_sync` com o gatilho `ingest`;
     - fonte inativa: 409.
@@ -576,6 +583,7 @@ D1 a D12 vêm das respostas do usuário (seção 2). D13 a D16 são do agente, n
 - 2026-10-12 — F1.2 iniciada (agente em worktree).
 - 2026-10-12 — F1.2 concluída: migração 0016 com ingest_tokens, ticket_inbox, ticket_requests e webhook em assistants, RLS forçada e testes de isolamento, modelo-de-dados v0.8, subpacote tickets/; backend 1537 passed com 99% de cobertura, frontend 1140
 - 2026-10-12 — F2.1 iniciada (agente em worktree).
+- 2026-10-12 — F2.1 concluída: token de envio kbi_ (owner/admin, auditado), POST /v1/ingest/tickets com validação por item, regra do updated_at e lápide, sincronização ingest depois do commit; gates do agente: backend 1628 passed com 99,86%, frontend 1140; orquestrador: ruff, format e pyright limpos na integração
 
 ## 8. Encerramento
 

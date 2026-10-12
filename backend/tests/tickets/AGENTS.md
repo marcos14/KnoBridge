@@ -1,6 +1,6 @@
 # backend/tests/tickets/
 
-**Função**: testes de `src/knobridge/tickets/` contra Postgres real: RLS das tabelas de chamados, a busca do token de envio pelo prefixo, chaves, `CHECK`s, FKs compostas e exclusões, e a cifra do segredo do webhook.
+**Função**: testes de `src/knobridge/tickets/`: unitários da validação do chamado, dos itens do lote e do formato do token, e, contra Postgres real, a RLS das tabelas de chamados, a busca do token de envio pelo prefixo, chaves, `CHECK`s, FKs compostas e exclusões, e a cifra do segredo do webhook.
 
 **Entra aqui**:
 - `tickets_support.py`: `run_db`, `seed` (workspace novo com fonte `tickets`, token de envio, entrada `pending` na caixa, assistente, conversa e pedido `pending` sobre uma resposta "sem fonte"), `count_by_model`, `new_token`, `tickets_source`, `pending_entry`, `pending_request` e `add_answer`.
@@ -8,6 +8,9 @@
 - `test_tickets_rls.py`: RLS forçada nas três tabelas, isolamento entre workspaces (leitura, alteração, exclusão e inserção alheia recusada), token achado pelo `token_prefix` só em modo de sistema e prefixo único na instância.
 - `test_tickets_constraints.py`: fonte `tickets`, execução `ingest` e documento `ticket` aceitos; um token por fonte e formatos; `(source_id, external_id)` único; os `CHECK`s de estado da caixa e do pedido; um pedido por mensagem; FKs compostas; cascatas da fonte, da conversa, do assistente e do workspace; colunas e `CHECK`s do webhook em `assistants`.
 - `test_webhook_secret.py` (unitário): cifra e decifra do segredo, presa ao assistente e com chave própria.
+- `test_ticket_wire.py` (unitário): os exemplos válido e inválido da spec (lidos de `tests/fixtures/tickets/`), payload canônico com padrões e UTC, hash que ignora fuso e ordem de chaves, as regras extras e o teto de 50 problemas.
+- `test_ticket_items.py` (unitário): `check_items` (item inválido sem derrubar o lote, `external_id` nulo quando inválido, `ticket_too_large`, `duplicate_in_batch`, problemas da forma do item, remoções) e `count`.
+- `test_ingest_token_format.py` (unitário): formato do `kbi_`, prefixo e conferência em tempo constante.
 
 **Não entra aqui**: rotas (`tests/api/`), cadeia de migrações (`tests/migrations/`), a config da fonte (`tests/ingestion/test_source_config.py`).
 

@@ -4,7 +4,7 @@
 
 Como chamados de qualquer sistema entram no KnoBridge e viram fonte do chat, e como o chat abre um chamado quando não sabe responder. Cobre o formato do chamado (JSON Schema), o envio pela API com token, o upload no painel, a caixa de entrada e seu ciclo de vida, a anonimização, o Markdown e o chunking, a citação `kind: ticket` e o webhook de saída. A arquitetura está no [ADR 0006](../adr/0006-chamados-por-push.md); o workflow de ingestão, em [indexacao.md](indexacao.md); o formato da citação no fio, em [chat-sse.md](chat-sse.md#citations) (v0.6); as tabelas, em [modelo-de-dados.md](modelo-de-dados.md).
 
-Código (a criar no plano 0005): `backend/src/knobridge/` (validação e caixa de entrada, conector interno `tickets`, anonimização, Markdown, rotas `/v1/ingest/*`, upload, pedidos de chamado e workflow do webhook) e as telas do painel em `frontend/`.
+Código: `backend/src/knobridge/tickets/` (token de envio em `tokens.py`, formato do chamado em `wire.py`, validação por item e caixa de entrada em `ingest.py`, disparo da sincronização em `ingest_sync.py`) e as rotas `backend/src/knobridge/api/ingest.py` e `ingest_tokens.py` (plano 0005, F2.1). A criar no plano 0005: upload, conector interno `tickets`, anonimização, Markdown, pedidos de chamado e workflow do webhook, e as telas do painel em `frontend/`.
 
 ## Visão geral
 
@@ -349,6 +349,13 @@ Códigos de erro **por item** (`results[].error.code`):
 | `ticket_too_large` | Chamado acima de 1 MiB. | `{"max_bytes": 1048576}` |
 | `duplicate_in_batch` | `external_id` já apareceu num item anterior do mesmo lote. | `{"first_index"}` |
 
+Detalhes do resultado por item:
+
+- `loc` dos problemas de um `upsert` é relativo ao chamado (`["title"]`, `["messages", 0, "created_at"]`, como no [exemplo inválido](#exemplo-inválido)); só os problemas da forma do próprio item são relativos ao item (`["ticket"]` com `missing` ou `model_type`, chave extra com `extra_forbidden`). Num `delete`, `loc` é relativo ao item (`["deleted_at"]`).
+- `problem` é o tipo do erro do Pydantic (`missing`, `string_too_short`, `enum`, `timezone_aware`, `bool_type`, `extra_forbidden`…) ou uma das regras extras: `updated_at_before_created_at`, `invalid_url`, `invalid_email`, `string_contains_nul`, `not_unique` (`tags` repetidas depois de aparadas), `custom_field_key`, `custom_field_type` e `finite_number`.
+- A validação é estrita: booleano é `true`/`false`, número é número, texto é texto (nada de `"true"` ou `1` no lugar).
+- `duplicate_in_batch` aponta para o primeiro item **aceito** com o mesmo `external_id`; um item anterior rejeitado não barra um posterior válido.
+
 Códigos de erro **da requisição**:
 
 | Código | HTTP | Quando |
@@ -475,7 +482,7 @@ Depois de gravar itens `queued`, a API chama `request_sync(source_id, trigger=in
 
 - começou uma execução: `sync = started`, com `run_id`;
 - já havia execução da fonte: `sources.sync_pending = true`, `sync = pending`; a execução seguinte cobre o que chegou;
-- Temporal fora do ar (`sync_unavailable`): `sync = deferred`, sem erro para o cliente. As entradas ficam `pending` e saem na próxima sincronização (outro envio, manual ou agendada).
+- Temporal fora do ar (`sync_unavailable`) ou qualquer outra recusa ao iniciar: `sync = deferred`, sem erro para o cliente. As entradas ficam `pending` e saem na próxima sincronização (outro envio, manual ou agendada).
 
 ### Conector interno `tickets`
 

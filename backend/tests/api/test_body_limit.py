@@ -1,4 +1,5 @@
-"""Body size limits of the runner routes: declared and streamed bodies, other paths untouched."""
+"""Body size limits of the runner and ingest routes: declared and streamed bodies, other
+paths untouched."""
 
 from __future__ import annotations
 
@@ -10,7 +11,7 @@ from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
 from starlette.types import Message, Receive, Scope, Send
 
-from knobridge.api.body_limit import KIB, MIB, RunnerBodyLimitMiddleware, body_limit
+from knobridge.api.body_limit import KIB, MIB, BodyLimitMiddleware, body_limit
 
 
 def _client() -> TestClient:
@@ -21,7 +22,7 @@ def _client() -> TestClient:
     async def echo(request: Request) -> dict[str, int]:
         return {"size": len(await request.body())}
 
-    app.add_middleware(RunnerBodyLimitMiddleware)
+    app.add_middleware(BodyLimitMiddleware)
     return TestClient(app)
 
 
@@ -35,6 +36,8 @@ def _client() -> TestClient:
         ("/v1/runner/jobs/abc/result", 8 * MIB),
         ("/v1/runner/jobs/abc/fail", 8 * KIB),
         ("/v1/runner/jobs/abc/defer", 8 * KIB),
+        ("/v1/ingest/tickets", 5 * MIB),
+        ("/v1/ingest/other", None),
         ("/v1/workspaces/abc/runners", None),
     ],
 )
@@ -99,7 +102,7 @@ def _run(scope_headers: list[tuple[bytes, bytes]], messages: list[Message]) -> l
         "headers": scope_headers,
         "method": "POST",
     }
-    asyncio.run(RunnerBodyLimitMiddleware(inner)(scope, receive, send))
+    asyncio.run(BodyLimitMiddleware(inner)(scope, receive, send))
     return received or sent
 
 
@@ -151,6 +154,6 @@ def test_body_limit_skips_non_http_scopes() -> None:
         return None
 
     scope: Scope = {"type": "lifespan"}
-    asyncio.run(RunnerBodyLimitMiddleware(inner)(scope, receive, send))
+    asyncio.run(BodyLimitMiddleware(inner)(scope, receive, send))
 
     assert calls == ["lifespan"]

@@ -1,0 +1,9 @@
+{
+  "external_id": "4f6c2a10-0002",
+  "title": "",
+  "status": "em andamento",
+  "created_at": "2026-10-02 10:00:00",
+  "updated_at": "2026-10-01T10:00:00Z",
+  "requester": { "name": "Carla", "phone": "11 3333-4444" },
+  "messages": [{ "role": "customer", "body": "Não consigo emitir a nota." }]
+}

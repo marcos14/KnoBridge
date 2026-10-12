@@ -23,6 +23,8 @@ from knobridge.api import (
     harness_jobs,
     harness_modules,
     health,
+    ingest,
+    ingest_tokens,
     invites,
     knowledge,
     me,
@@ -39,7 +41,7 @@ from knobridge.api import (
     setup,
     sources,
 )
-from knobridge.api.body_limit import RunnerBodyLimitMiddleware
+from knobridge.api.body_limit import BodyLimitMiddleware
 from knobridge.core.clock import Clock, SystemClock
 from knobridge.core.db import create_engine, create_session_factory
 from knobridge.core.errors import register_error_handlers
@@ -105,7 +107,7 @@ def create_app(
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    app.add_middleware(RunnerBodyLimitMiddleware)
+    app.add_middleware(BodyLimitMiddleware)
     register_error_handlers(app)
 
     v1 = APIRouter(prefix=API_PREFIX)
@@ -138,6 +140,9 @@ def create_app(
         harness_jobs,
         harness_modules,
         knowledge,
+        # Tickets by push (plan 0005 F2.1).
+        ingest_tokens,
+        ingest,
     )
     for module in routers:
         v1.include_router(module.router)
