@@ -1,7 +1,7 @@
 #!/bin/sh
 # Runs once, when the Postgres volume is empty (docker-entrypoint-initdb.d), as the superuser.
 # Creates the KnoBridge application database and the Temporal databases, each with its own role.
-# Names and passwords come from the compose environment (see deploy/.env.example).
+# Names and passwords come from the compose environment (see .env.example).
 set -eu
 
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname postgres \

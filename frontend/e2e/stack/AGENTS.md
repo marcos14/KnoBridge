@@ -1,6 +1,6 @@
 # frontend/e2e/stack/
 
-**Função**: testes ponta a ponta do painel contra a stack inteira do compose (`deploy/docker-compose.yml` + `deploy/docker-compose.e2e.yml`): API, worker, Temporal, Postgres, Mailpit e o nginx do painel, todos reais. Configurados por `playwright.stack.config.ts` (projeto `stack`), fora do `pnpm e2e` comum.
+**Função**: testes ponta a ponta do painel contra a stack inteira do compose (`docker-compose.yml` + `docker-compose.e2e.yml`): API, worker, Temporal, Postgres, Mailpit e o nginx do painel, todos reais. Configurados por `playwright.stack.config.ts` (projeto `stack`), fora do `pnpm e2e` comum.
 
 **Entra aqui**:
 
@@ -25,6 +25,6 @@
 - Processo ou pasta temporária criados pelo teste são encerrados e apagados no `afterAll`.
 - Sem retentativas; um worker, na ordem dos arquivos.
 
-**Como testar**: com a stack no ar (`docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.e2e.yml up -d --build --wait`, da raiz) e `uv sync --frozen` feito em `runner/`, de `frontend/`: `pnpm e2e:stack`. Depois, `down -v`.
+**Como testar**: com a stack no ar (`docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build --wait`, da raiz) e `uv sync --frozen` feito em `runner/`, de `frontend/`: `pnpm e2e:stack`. Depois, `down -v`.
 
 **Leia também**: [../AGENTS.md](../AGENTS.md); [docs/guias/subir-ambiente.md](../../../docs/guias/subir-ambiente.md) (seção do E2E contra a stack); [deploy/AGENTS.md](../../../deploy/AGENTS.md); [runner/tests/fakes/AGENTS.md](../../../runner/tests/fakes/AGENTS.md).

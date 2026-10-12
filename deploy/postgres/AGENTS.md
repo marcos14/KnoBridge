@@ -13,7 +13,7 @@
 **Convenções locais**:
 - Shell POSIX (`#!/bin/sh`, `set -eu`), fim de linha LF, nomes e senhas só por variável de ambiente.
 - SQL via `psql -v ON_ERROR_STOP=1` com variáveis do psql (`:"ident"`, `:'literal'`) para citar nomes e senhas.
-- Como só roda com volume vazio, mudança aqui exige `docker compose -f deploy/docker-compose.yml down -v` para valer.
+- Como só roda com volume vazio, mudança aqui exige `docker compose down -v` para valer.
 
 **Como testar**: subir o compose do zero (`down -v` e depois `up -d --wait`) e conferir que `migrate` sai com 0, `temporal` fica saudável e `curl -f http://localhost:8000/v1/health/ready` responde 200.
 

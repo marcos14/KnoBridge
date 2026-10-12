@@ -13,11 +13,11 @@ Regras de acesso, sessões e convites em [autenticacao.md](../specs/autenticacao
 - O ambiente de desenvolvimento rodando e saudável, conforme [subir-ambiente.md](subir-ambiente.md):
 
   ```bash
-  docker compose -f deploy/docker-compose.yml up -d --build --wait
+  docker compose up -d --build --wait
   ```
 
 - Um navegador. Para testar convites com uma segunda pessoa, uma janela anônima ou outro navegador (cada um guarda a própria sessão).
-- Painel em <http://localhost:5173> e Mailpit em <http://localhost:8025> (portas padrão; mudam com `FRONTEND_PORT` e `MAILPIT_UI_PORT` no `deploy/.env`).
+- Painel em <http://localhost:5173> e Mailpit em <http://localhost:8025> (portas padrão; mudam com `FRONTEND_PORT` e `MAILPIT_UI_PORT` no `.env`).
 
 Nenhum e-mail sai para caixas reais: todos caem no Mailpit, e os links apontam para o painel (`KNOBRIDGE_PUBLIC_BASE_URL`). Use endereços fictícios, como `voce@example.test`.
 
@@ -110,8 +110,8 @@ Enquanto o assistente não tiver coleção com trechos relevantes, o chat contin
 Para voltar à instância vazia (apaga banco, usuários, workspaces e conversas):
 
 ```bash
-docker compose -f deploy/docker-compose.yml down -v
-docker compose -f deploy/docker-compose.yml up -d --build --wait
+docker compose down -v
+docker compose up -d --build --wait
 ```
 
 Sem apagar tudo: o superadmin pode suspender workspaces e usuários em **Administração da instância**, e o workspace pode excluir assistentes e provedores (um provedor em uso por assistente não pode ser excluído).

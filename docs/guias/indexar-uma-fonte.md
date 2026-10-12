@@ -29,18 +29,18 @@ Fontes de pasta e repositórios Git locais são lidos de uma pasta do host, mont
    git clone https://github.com/<org>/<repo>.git deploy/sources/meu-repo
    ```
 
-   Ou aponte `KNOBRIDGE_SOURCES_DIR` no `deploy/.env` para outra pasta do host (caminho absoluto, ou relativo a `deploy/`).
+   Ou aponte `KNOBRIDGE_SOURCES_DIR` no `.env` da raiz para outra pasta do host (caminho absoluto, ou relativo à raiz do repositório).
 
 2. Se mudou `KNOBRIDGE_SOURCES_DIR`, recrie `api` e `worker`:
 
    ```bash
-   docker compose -f deploy/docker-compose.yml up -d --wait
+   docker compose up -d --wait
    ```
 
 3. Confira o que o worker enxerga:
 
    ```bash
-   docker compose -f deploy/docker-compose.yml exec worker ls /sources
+   docker compose exec worker ls /sources
    ```
 
 No painel, o caminho é sempre o de **dentro** do contêiner: `/sources/manual`, `/sources/meu-repo`. Cadastre a subpasta, nunca a raiz `/sources`. Repositórios por URL https não usam essa pasta: o worker os clona no volume `source-clones`.
@@ -124,7 +124,7 @@ Arquivos sem mudança não chamam o provedor de embedding e não custam nada.
 Pela linha de comando, o andamento aparece no log do worker:
 
 ```bash
-docker compose -f deploy/docker-compose.yml logs -f worker
+docker compose logs -f worker
 ```
 
 O histórico do workflow `ingestion-<id da fonte>` fica na Temporal UI (<http://localhost:8080>, porta padrão).
@@ -178,12 +178,12 @@ Sem nenhuma coleção marcada, o assistente responde sempre "sem fonte".
 
 - **"O caminho está fora da pasta liberada para fontes locais"** (`path_outside_root`): o caminho cadastrado tem de estar abaixo de `/sources`, visto de dentro do contêiner, e não pode escapar dela por `..` ou por um symlink que aponte para fora. Use `/sources/<subpasta>`, nunca o caminho do host (`C:\...` ou `/home/...`). Num worktree Git ligado, o repositório principal também precisa estar dentro de `/sources`.
 - **"Não foi possível ler a fonte"** (`source_unavailable`) numa pasta ou num clone montado. Causas comuns:
-  - a pasta não existe no contêiner: confira com `docker compose -f deploy/docker-compose.yml exec worker ls /sources/<subpasta>` e, se mudou `KNOBRIDGE_SOURCES_DIR`, recrie `api` e `worker`. No Windows, a pasta precisa estar num disco compartilhado com o Docker Desktop;
+  - a pasta não existe no contêiner: confira com `docker compose exec worker ls /sources/<subpasta>` e, se mudou `KNOBRIDGE_SOURCES_DIR`, recrie `api` e `worker`. No Windows, a pasta precisa estar num disco compartilhado com o Docker Desktop;
   - num repositório Git, o caminho não é a raiz do clone (uma subpasta é recusada) ou a pasta não é um repositório.
 - **Repositório com outro dono / `safe.directory`**: a pasta montada costuma ter outro dono que o usuário do worker, e o git recusa esses repositórios ("dubious ownership"). O KnoBridge passa `-c safe.directory=<caminho>` só para o caminho cadastrado, então a indexação funciona sem configurar nada. Para inspecionar o repositório à mão dentro do contêiner, faça o mesmo:
 
   ```bash
-  docker compose -f deploy/docker-compose.yml exec worker \
+  docker compose exec worker \
     git -c safe.directory=/sources/meu-repo -C /sources/meu-repo log -1 --oneline
   ```
 
@@ -192,7 +192,7 @@ Sem nenhuma coleção marcada, o assistente responde sempre "sem fonte".
 - **"A coleção já tem documentos: o provedor e o modelo de embedding não podem mudar"** (`collection_embedding_locked`): a troca de modelo é travada para o índice não misturar vetores de modelos diferentes. Crie outra coleção com o modelo novo, cadastre as fontes nela, sincronize e troque a coleção no assistente. Depois, exclua as fontes antigas e a coleção antiga.
 - **"O modelo de embedding devolveu vetores de tamanho diferente do índice"** (`embedding_dimension_mismatch`): o modelo não gera 1536 dimensões. Use `openai/text-embedding-3-small` (OpenRouter) ou `text-embedding-3-small` (OpenAI).
 - **A execução falhou com `provider_auth_failed` ou `provider_request_failed`**: chave recusada ou modelo inexistente no provedor. Teste a credencial em **Provedores** e confira o nome do modelo, com o prefixo do fornecedor no OpenRouter. Indisponibilidade e limite de uso do provedor são repetidos automaticamente (até 5 tentativas) antes de falhar.
-- **"O serviço de sincronização está indisponível"** (`sync_unavailable`): o Temporal não respondeu. Confira `docker compose -f deploy/docker-compose.yml ps temporal worker`. Fontes salvas nesse meio tempo têm o agendamento acertado quando o worker sobe de novo.
+- **"O serviço de sincronização está indisponível"** (`sync_unavailable`): o Temporal não respondeu. Confira `docker compose ps temporal worker`. Fontes salvas nesse meio tempo têm o agendamento acertado quando o worker sobe de novo.
 - **"Esta fonte já está sincronizando"**: só uma execução por fonte roda de cada vez. Espere terminar ou cancele. Disparos agendados nesse meio tempo são pulados sem erro.
 - **Um arquivo não foi indexado**: veja se ele é ignorado pelo `.gitignore`, pelos globs, pelo tamanho (2 MiB para texto, 20 MiB para PDF/Office) ou por ser binário. No Git, só entra o que está commitado na branch: mudanças locais não commitadas não aparecem.
 - **O chat responde "sem fonte" para uma pergunta que deveria ter resposta**: confira se a coleção está marcada no assistente, se a execução concluiu e se **Testar busca** encontra trechos. Se só aparecerem trechos com pontuação vetorial abaixo do limiar, baixe a **Similaridade mínima** do assistente.

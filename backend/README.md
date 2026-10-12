@@ -66,7 +66,7 @@ uv run alembic revision -m "add sources table"   # nova revisão em migrations/v
 
 Regras das migrações em [`migrations/AGENTS.md`](migrations/AGENTS.md).
 
-Isolamento entre workspaces: as tabelas com dado de workspace têm row-level security forçada ([ADR 0001](../docs/adr/0001-tenancy-e-rls.md)). O `docker run` acima conecta como superusuário, que ignora RLS: serve para desenvolver, mas não para verificar isolamento. Para isso, use o Postgres do Docker Compose (`deploy/`), em que a aplicação conecta com o papel `knobridge`, dono do banco e não superusuário.
+Isolamento entre workspaces: as tabelas com dado de workspace têm row-level security forçada ([ADR 0001](../docs/adr/0001-tenancy-e-rls.md)). O `docker run` acima conecta como superusuário, que ignora RLS: serve para desenvolver, mas não para verificar isolamento. Para isso, use o Postgres do Docker Compose da raiz do repositório, em que a aplicação conecta com o papel `knobridge`, dono do banco e não superusuário.
 
 ## Worker Temporal
 
