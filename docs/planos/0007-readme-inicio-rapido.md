@@ -21,7 +21,7 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
         concluida_em: 2026-10-12
-        commit: null
+        commit: 4fc5b9e
 decisoes:
   - id: D1
     data: 2026-10-12
@@ -109,6 +109,7 @@ Nenhuma.
 - 2026-10-12 — plano criado; aguardando aprovação.
 - 2026-10-12 — plano aprovado pelo usuário ("Aprovado"); F1.1 iniciada: rascunho por agente em worktree, conferência de ponta a ponta pelo orquestrador.
 - 2026-10-12 — F1.1 concluída: README reescrito (96 linhas) e conferido de ponta a ponta numa stack limpa com a chave do OpenRouter
+- 2026-10-12 — Plano concluído; encerramento na seção 8.
 
 ## 8. Encerramento
 
