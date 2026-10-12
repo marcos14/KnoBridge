@@ -2,9 +2,9 @@
 
 The ingestion engine depends on ``ConnectorFactory`` (not on the concrete connectors), so tests
 inject a factory that returns an in-memory connector and no filesystem or Git is touched.
-Runner sources are served by the internal ``knowledge`` connector (``harness/``), which the
-caller hands in: it reads the database, and this module does not import the harness. Tickets
-sources are refused (``source_unavailable``) until the internal ``tickets`` connector exists.
+Runner sources are served by the internal ``knowledge`` connector (``harness/``) and tickets
+sources by the internal ``tickets`` connector (``tickets/``), which the caller hands in: they
+read the database, and this module imports neither package.
 """
 
 from __future__ import annotations
@@ -26,11 +26,18 @@ class ConnectorFactory(Protocol):
 
 class SettingsConnectorFactory:
     """The production factory: roots and size limits come from settings; ``knowledge`` builds
-    the connector of runner sources."""
+    the connector of runner sources and ``tickets`` the one of tickets sources."""
 
-    def __init__(self, settings: Settings, *, knowledge: ConnectorFactory | None = None) -> None:
+    def __init__(
+        self,
+        settings: Settings,
+        *,
+        knowledge: ConnectorFactory | None = None,
+        tickets: ConnectorFactory | None = None,
+    ) -> None:
         self._settings = settings
         self._knowledge = knowledge
+        self._tickets = tickets
 
     def __call__(self, source: Source) -> Connector:
         if source.kind == SourceKind.RUNNER:
@@ -40,8 +47,9 @@ class SettingsConnectorFactory:
                 raise SourceUnavailableError("runner sources are not indexed here")
             return self._knowledge(source)
         if source.kind == SourceKind.TICKETS:
-            # The internal ``tickets`` connector (plan 0005, F2.3) is not wired in yet.
-            raise SourceUnavailableError("tickets sources are not indexed yet")
+            if self._tickets is None:
+                raise SourceUnavailableError("tickets sources are not indexed here")
+            return self._tickets(source)
         config = source.typed_config()
         globs = {
             "include_globs": tuple(source.include_globs),

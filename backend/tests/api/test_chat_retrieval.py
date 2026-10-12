@@ -104,6 +104,10 @@ def test_chat_with_indexed_source_streams_and_cites(api: ApiEnv, chat: ChatOverr
         "date": None,
         "confidence": None,
         "evidence": None,
+        "ticket_number": None,
+        "ticket_status": None,
+        "ticket_date_kind": None,
+        "url": None,
     }
     assert (commit["title"], commit["uri"], commit["sha"]) == (
         "Corrige fechamento de caixa",
@@ -178,3 +182,71 @@ def test_chat_embedding_failure_is_an_error_before_the_stream(
     assert llm.calls == []
     # Nothing was saved: the question can be sent again.
     assert messages(api, world.workspace_id, conversation_id) == []
+
+
+TICKET_BODY = "## Solução\n\nO fechamento de caixa exige o relatório Z antes da sangria."
+TICKET = Passage(
+    f"ticket: 48213 · Erro ao fechar o caixa\nstatus: resolved\nsection: Solução\n\n{TICKET_BODY}",
+    key="4f6c2a10-0001",
+    kind=DocumentKind.TICKET,
+    meta={
+        "kind": "ticket",
+        "external_id": "4f6c2a10-0001",
+        "ticket_number": "48213",
+        "title": "Erro ao fechar o caixa",
+        "ticket_status": "resolved",
+        "original_status": None,
+        "date": "2026-10-01T12:10:00Z",
+        "date_kind": "resolved",
+        "url": "https://suporte.example.test/chamados/48213",
+        "headings": ["Chamado 48213: Erro ao fechar o caixa", "Solução"],
+        "section": "resolution",
+        "display": TICKET_BODY,
+    },
+)
+
+
+def test_chat_cites_a_ticket_with_number_status_date_and_link(
+    api: ApiEnv, chat: ChatOverrides
+) -> None:
+    provider = ScriptedLLMProvider(deltas=("Emita o relatório Z [1].",))
+    chat.provider(provider)
+    world = build_search_world(api, Role.OWNER)
+    add_passages(api, world, TICKET)
+    conversation_id = start(api, _assistant(api, world, world.collection_id))
+
+    response = ask(api, world.workspace_id, conversation_id, QUESTION)
+
+    sent = events(response)
+    (ticket,) = cast(list[dict[str, object]], sent[0][1]["citations"])
+    assert ticket == {
+        "index": 1,
+        "title": "Erro ao fechar o caixa",
+        "uri": "ticket:4f6c2a10-0001",
+        "snippet": TICKET_BODY,
+        "document_id": ticket["document_id"],
+        "kind": "ticket",
+        "path": None,
+        "symbol": None,
+        "start_line": None,
+        "end_line": None,
+        "language": None,
+        "sha": None,
+        "author": None,
+        "date": "2026-10-01T12:10:00Z",
+        "confidence": None,
+        "evidence": None,
+        "ticket_number": "48213",
+        "ticket_status": "resolved",
+        "ticket_date_kind": "resolved",
+        "url": "https://suporte.example.test/chamados/48213",
+    }
+    (call,) = provider.calls
+    rules, context = call.messages[0].content, call.messages[1].content
+    assert "Em chamados, prefira a solução de chamados resolvidos ou fechados" in rules
+    assert (
+        "[1] Erro ao fechar o caixa (ticket:4f6c2a10-0001)\n"
+        "Chamado 48213 · Resolvido · 2026-10-01T12:10:00Z · seção Solução\n"
+        f"{TICKET_BODY}"
+    ) in context
+    assert messages(api, world.workspace_id, conversation_id)[1]["citations"] == [ticket]

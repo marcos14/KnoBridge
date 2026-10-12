@@ -60,6 +60,35 @@ def test_numbered_sources_number_from_one() -> None:
     assert text == "Fontes:\n\n[1] A (a.md)\nalpha\n\n[2] B\nbeta"
 
 
+def test_instructions_prefer_resolved_tickets() -> None:
+    text = instructions(PROFILE)
+
+    assert "Em chamados, prefira a solução de chamados resolvidos ou fechados" in text
+    assert "abertos ou pendentes como problema em andamento, sem solução confirmada" in text
+    assert "diga o status deles quando os citar" in text
+
+
+def test_numbered_sources_put_the_ticket_line_before_the_content() -> None:
+    ticket = Source(
+        title="Erro 4021",
+        content="## Solução\n\nFinalizar a sangria.",
+        uri="ticket:48213",
+        kind="ticket",
+        context_line="Chamado 48213 · Resolvido · 2026-10-01T12:10:00Z · seção Solução",
+    )
+
+    text = numbered_sources([ticket])
+
+    assert text == (
+        "Fontes:\n\n[1] Erro 4021 (ticket:48213)\n"
+        "Chamado 48213 · Resolvido · 2026-10-01T12:10:00Z · seção Solução\n"
+        "## Solução\n\nFinalizar a sangria."
+    )
+    cited = citation(1, ticket)
+    assert isinstance(cited, dict)
+    assert cited["snippet"] == "## Solução\n\nFinalizar a sangria."
+
+
 def test_build_messages_orders_system_history_question() -> None:
     history = [
         HistoryItem(MessageRole.USER, "Oi"),
@@ -114,6 +143,10 @@ def test_citation_keeps_a_snippet() -> None:
         "date": None,
         "confidence": None,
         "evidence": None,
+        "ticket_number": None,
+        "ticket_status": None,
+        "ticket_date_kind": None,
+        "url": None,
     }
 
 

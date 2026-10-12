@@ -59,6 +59,7 @@ from knobridge.tenancy.models import Role, WorkspaceStatus
 from knobridge.tenancy.queries import get_workspace_access
 from knobridge.tenancy.rbac import role_at_least
 from knobridge.tenancy.setup import SetupService
+from knobridge.tickets.connector import TicketsConnectorFactory
 from knobridge.tickets.tokens import ingest_token_failure
 
 
@@ -365,9 +366,11 @@ def get_schedule_manager(request: Request) -> ScheduleManager:
 
 def get_connector_factory(request: Request) -> ConnectorFactory:
     """Builds the connector of a source (connection test); tests override it with fakes."""
+    sessions = get_session_factory(request)
     return SettingsConnectorFactory(
         get_settings_from_app(request),
-        knowledge=KnowledgeConnectorFactory(get_session_factory(request)),
+        knowledge=KnowledgeConnectorFactory(sessions),
+        tickets=TicketsConnectorFactory(sessions, get_clock(request)),
     )
 
 

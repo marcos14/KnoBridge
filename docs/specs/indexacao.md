@@ -123,6 +123,14 @@ Fontes `runner` (plano 0004, decisão D15) passam pelo mesmo workflow, com o con
 - **Chunking**: por títulos, como Markdown, sem linhas (o Markdown é gerado). Texto embedado com o cabeçalho `item: <chave>` e `section: …`. `meta` de cada trecho: `kind` (`knowledge`), `item_key`, `module`, `confidence`, `title`, `headings` e `evidence` (`[{path, start_line, end_line, symbol, excerpt}]`): as evidências que o trecho cita com `[n]` (enriquecimento do módulo, até 10), ou, sem marcador (regras e seções sem citação), as 5 primeiras do item.
 - **Citação**: `kind: knowledge`, com a confiança e as evidências ([Da busca à citação](#da-busca-à-citação)).
 
+## Chamados
+
+Fontes `tickets` (plano 0005) passam pelo mesmo workflow, com o conector interno `tickets` (`tickets/connector.py`), que `SettingsConnectorFactory` recebe em `tickets=` (a API e o worker passam o `TicketsConnectorFactory`; `ingestion/` não importa `tickets/`). Ele lê a caixa de entrada da fonte, no escopo do workspace, sem usuário; cada envio de chamados pede a sincronização com o gatilho `ingest`. Contrato completo em [chamados.md](chamados.md#conector-interno-tickets):
+
+- **Incremental pela caixa de entrada**: entradas `pending` com status em `statuses` são adicionadas ou alteradas, as fora de `statuses` e as lápides são removidas; o cursor (`{"kind": "tickets", "version": 1}`) só identifica o conector.
+- **Documento**: `natural_key` = `external_id`, `kind = ticket`, `uri = ticket:<external_id>`, Markdown anonimizado (`tickets/markdown.py`), hash do Markdown e dos metadados de citação; parsing direto (`ParsedKind.TICKET`) e chunking por seção (`chunk_ticket`).
+- **Fechamento do item**: o conector implementa `settle` (`ingestion/settle.py`), que o lote chama na transação de cada documento ([Um lote](#workflow-knobridgeingestionv1)): a entrada sai de `pending` e o payload bruto é apagado junto com a gravação do documento, nunca antes.
+
 ## Embeddings
 
 - **A coleção define o embedding** (ADR 0004): credencial de provedor e modelo. A credencial tem de ser do mesmo workspace e de um tipo com embeddings (OpenAI, OpenRouter ou, fora de produção, `fake`). A Anthropic não oferece embeddings: `provider_embeddings_unsupported` (422).
@@ -140,7 +148,7 @@ Fontes `runner` (plano 0004, decisão D15) passam pelo mesmo workflow, com o con
 `start_sync` (`ingestion/sync.py`) é a entrada comum da API (`POST .../sources/{id}/sync`, papel editor ou acima) e do agendamento:
 
 1. confere a fonte (`source_not_found` 404; fonte desativada, `source_inactive` 409);
-2. grava um `Run` `queued` com o gatilho (`manual`, `schedule` ou `harness`);
+2. grava um `Run` `queued` com o gatilho (`manual`, `schedule`, `harness` ou `ingest`);
 3. inicia o workflow `knobridge.ingestion.v1` com id `ingestion-<source_id>`, `ALLOW_DUPLICATE` + `FAIL`: depois de uma execução terminada pode vir outra, mas não duas ao mesmo tempo. **Uma execução por fonte**: se já há uma, o run recém-criado é apagado e a API responde `sync_already_running` (409). Temporal fora do ar: `sync_unavailable` (503) e nada é iniciado.
 
 ### Sincronização pendente
@@ -178,6 +186,7 @@ A lista de mudanças não passa pelo histórico do Temporal, que limita payloads
 - cada upsert é lido (`fetch`) e comparado ao hash indexado: igual = pulado, sem custo;
 - o que mudou passa por parsing e chunking, e depois pelo embedding com cache (seção anterior);
 - erro de leitura (`ConnectorError`, menos `source_unavailable`) vira `RunError` na etapa `fetch`, e erro de parsing vira `RunError` na etapa `parse`. O lote segue.
+- um conector que fecha os próprios itens (`SettlingConnector` de `ingestion/settle.py`, hoje só o `tickets`) recebe o desfecho de cada item (indexado, removido ou com erro) dentro da transação que o grava, logo abaixo.
 
 **Uma transação por documento** (`ingestion/store.py`): upsert do `Document` pela chave natural, troca de todos os trechos dele, `run_items.done` e soma dos contadores da execução (`documents_new`, `documents_changed`, `documents_removed`, `documents_failed`, `chunks_written`) na mesma transação. Um lote reexecutado não grava nem conta duas vezes. Nenhuma transação fica aberta durante IO do conector ou do provedor. O worker não tem usuário: toda sessão é `scoped_session(workspace_id=<da execução>, user_id=None)`, e a RLS continua limitando ao workspace da execução.
 
@@ -239,6 +248,7 @@ O `HybridRetriever` (`retrieval/retriever.py`) lê as coleções e a similaridad
 | `uri` | `<caminho>#L<início>-L<fim>` (texto, Markdown e código), `<caminho>` (documento convertido, sem linhas) ou `commit:<sha>` |
 | `kind`, `path`, `symbol`, `start_line`, `end_line`, `language`, `sha`, `author`, `date` | `meta` do trecho (`null` quando não se aplica) |
 | item de conhecimento (`kind = knowledge`) | `title` = título do item, `uri` = `knowledge:<chave>`, `confidence` e `evidence` (arquivo, linhas, símbolo, excerto) do `meta`; sem `path` nem linhas ([Conhecimento do harness](#conhecimento-do-harness)) |
+| chamado (`kind = ticket`) | `title` = título do chamado (anonimizado), `uri` = `ticket:<external_id>`, `date`, `ticket_number`, `ticket_status`, `ticket_date_kind` e `url` do `meta`; o LLM lê antes do conteúdo a linha `Chamado <número> · <status> · <data> · seção <Seção>`, que não entra na citação ([Chamados](#chamados)) |
 
 As fontes ficam na ordem da busca e são cortadas pelo orçamento de 6000 tokens estimados; a numeração `[n]` é a posição nessa lista. Sem nenhuma fonte, o chat responde a mensagem de "sem fonte" sem chamar o LLM. Detalhes em [chat.md](chat.md#recuperação-de-fontes) e formato no fio em [chat-sse.md](chat-sse.md#citations).
 

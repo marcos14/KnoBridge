@@ -47,6 +47,10 @@ _NO_LOCATION: dict[str, object] = {
     "date": None,
     "confidence": None,
     "evidence": None,
+    "ticket_number": None,
+    "ticket_status": None,
+    "ticket_date_kind": None,
+    "url": None,
 }
 
 

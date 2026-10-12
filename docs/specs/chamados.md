@@ -4,7 +4,7 @@
 
 Como chamados de qualquer sistema entram no KnoBridge e viram fonte do chat, e como o chat abre um chamado quando não sabe responder. Cobre o formato do chamado (JSON Schema), o envio pela API com token, o upload no painel, a caixa de entrada e seu ciclo de vida, a anonimização, o Markdown e o chunking, a citação `kind: ticket` e o webhook de saída. A arquitetura está no [ADR 0006](../adr/0006-chamados-por-push.md); o workflow de ingestão, em [indexacao.md](indexacao.md); o formato da citação no fio, em [chat-sse.md](chat-sse.md#citations) (v0.6); as tabelas, em [modelo-de-dados.md](modelo-de-dados.md).
 
-Código: `backend/src/knobridge/tickets/` (token de envio em `tokens.py`, formato do chamado em `wire.py`, validação por item e caixa de entrada em `ingest.py`, disparo da sincronização em `ingest_sync.py`) e as rotas `backend/src/knobridge/api/ingest.py` e `ingest_tokens.py` (plano 0005, F2.1). A criar no plano 0005: upload, conector interno `tickets`, anonimização, Markdown, pedidos de chamado e workflow do webhook, e as telas do painel em `frontend/`.
+Código: `backend/src/knobridge/tickets/` (token de envio em `tokens.py`, formato do chamado em `wire.py`, validação por item e caixa de entrada em `ingest.py`, disparo da sincronização em `ingest_sync.py`) e as rotas `backend/src/knobridge/api/ingest.py` e `ingest_tokens.py` (plano 0005, F2.1); anonimização em `anonymize.py` e Markdown em `markdown.py` (F2.2); conector interno em `connector.py` e citação no chat em `retrieval/context.py` (F2.3). A criar no plano 0005: upload, pedidos de chamado e workflow do webhook, e as telas do painel em `frontend/`.
 
 ## Visão geral
 
@@ -486,21 +486,23 @@ Depois de gravar itens `queued`, a API chama `request_sync(source_id, trigger=in
 
 ### Conector interno `tickets`
 
-`SettingsConnectorFactory` usa o conector `tickets` para todo tipo `tickets`. Como o `knowledge`, ele lê o banco numa transação no escopo do workspace, sem usuário.
+`SettingsConnectorFactory` usa o conector `tickets` (`tickets/connector.py`, `TicketsConnectorFactory(sessions, clock)`, que a API e o worker passam com `tickets=`) para todo tipo `tickets`; sem a fábrica, a sincronização falha com `source_unavailable`. Como o `knowledge`, ele lê o banco numa transação no escopo do workspace, sem usuário.
 
-- **`list_changes`**: lê as entradas `pending` e `pending_delete` da fonte. `pending` com status em `statuses` → `added` (sem `indexed_hash`) ou `changed`. `pending` com status fora de `statuses` → `removed` (a entrada vira `filtered` no fim). `pending_delete` → `removed`. Remover um documento que não existe no índice não faz nada, mas conta como item feito. Cada referência leva o `content_hash` listado. Cursor: `{"kind": "tickets", "version": 1}` (a caixa de entrada é o estado; o cursor só identifica o conector).
-- **`fetch`**: lê o payload, valida de novo contra o schema, aplica a [anonimização](#anonimização) (se ligada), monta o [Markdown](#markdown-do-chamado) e devolve o documento. Payload ausente ou com hash diferente do listado (chegou versão nova no meio da execução) → `document_not_found`, que vira `RunError` sem derrubar a execução; a versão nova sai na próxima sincronização, já pedida pelo envio.
+- **`list_changes`**: lê as entradas `pending` e `pending_delete` da fonte. `pending` com status em `statuses` → `added` (sem `indexed_hash`) ou `changed`. `pending` com status fora de `statuses` → `removed` (a entrada vira `filtered` ao ser processada). `pending_delete` → `removed`. Remover um documento que não existe no índice não faz nada, mas conta como item feito. Cursor: `{"kind": "tickets", "version": 1}` (a caixa de entrada é o estado; o cursor só identifica o conector; outro cursor → `invalid_cursor`).
+- **`fetch`**: lê o payload da entrada `pending` (a versão atual, e guarda o `content_hash` dela para o fechamento), valida de novo contra o schema, aplica a [anonimização](#anonimização) (se ligada), monta o [Markdown](#markdown-do-chamado) e devolve o documento. Entrada que não está mais `pending` (processada, ou virou lápide) ou cuja versão atual tem status fora de `statuses` → `document_not_found`; payload que não passa mais no schema → `ticket_invalid` (422). Os dois viram `RunError` sem derrubar a execução. Versão nova chegada entre a listagem e o `fetch` é a indexada.
 - **`permissions`**: a fonte não traz ACL por chamado (D7); vale a permissão da coleção.
 - **`test_connection`**: como em [Fonte do tipo tickets](#fonte-do-tipo-tickets).
 - **Documento**: `natural_key` = `external_id`, `kind = ticket`, `title` = título anonimizado, `uri = ticket:<external_id>`. `content_hash` = SHA-256 do Markdown e dos metadados de citação.
 
 ### Fim do processamento e apagamento do bruto
 
-`finish_run` (em qualquer desfecho), para cada item feito na execução, numa transação por lote de entradas:
+Cada item é fechado na activity `process_batch`, **na mesma transação** em que o motor grava o documento, o remove ou registra o erro e marca o `run_items` como feito (o conector implementa o gancho `settle` de `ingestion/settle.py`; [indexacao.md](indexacao.md#workflow-knobridgeingestionv1)). Ou os dois acontecem, ou nenhum: o bruto só some junto com a gravação do documento, e um lote reexecutado não perde chamado nem fecha duas vezes. Vale em qualquer desfecho da execução, para os itens já feitos.
 
-- se o `content_hash` da entrada ainda é o listado: `pending` → `indexed` ou `filtered`, `pending_delete` → `deleted`; `payload = null`, `indexed_hash = content_hash` (ou `null` em `filtered` e `deleted`), `processed_at`, `last_error = null`;
-- se o hash mudou (versão nova chegou no meio), a entrada fica como está, com o payload novo;
-- item com erro: a entrada fica `pending`, com o payload, e `last_error` = `<código>: <mensagem>` (até 500 caracteres, sem conteúdo do chamado). Ela é tentada de novo na próxima sincronização.
+- documento gravado (ou já indexado com o mesmo hash): se o `content_hash` da entrada ainda é o lido no `fetch`, `pending` → `indexed`, `payload = null`, `indexed_hash = content_hash`, `processed_at`, `last_error = null`; se mudou (versão nova chegou depois do `fetch`), a entrada fica como está, com o payload novo, para a próxima sincronização, já pedida pelo envio;
+- remoção aplicada: `pending_delete` → `deleted`; `pending` cuja versão atual ainda tem status fora de `statuses` → `filtered` com `payload = null`; nos dois, `indexed_hash = null`, `processed_at`, `last_error = null`. Entrada que entrou em `statuses` nesse meio fica `pending`;
+- item com erro (`fetch` ou parsing): a entrada fica `pending`, com o payload, e `last_error` = `<código>: <mensagem>` (até 500 caracteres, sem conteúdo do chamado). Ela é tentada de novo na próxima sincronização.
+
+`processed_at` vem do relógio injetado na fábrica do conector.
 
 Só restam, depois do processamento: o Markdown anonimizado no índice e, na entrada, `external_id`, estado, hashes e datas.
 
@@ -637,7 +639,7 @@ Por títulos, como Markdown ([indexacao.md](indexacao.md#chunking)), sem linhas 
 
 ### Contexto enviado ao LLM
 
-Cada fonte de chamado entra na mensagem de fontes como as demais (`[n] título (uri)` + conteúdo, [chat.md](chat.md)), com o conteúdo precedido de uma linha `Chamado <número> · <status em pt-BR> · <data> · seção <Problema|Solução|Conversa|…>`. As regras fixas do prompt ganham uma: "Em chamados, prefira a solução de chamados resolvidos ou fechados; trate chamados abertos ou pendentes como problema em andamento, sem solução confirmada" (D9).
+Cada fonte de chamado entra na mensagem de fontes como as demais (`[n] título (uri)` + conteúdo, [chat.md](chat.md)), com o conteúdo precedido de uma linha `Chamado <número> · <status em pt-BR> · <data> · seção <Problema|Solução|Conversa|…>`. A linha não entra na citação (o `snippet` continua só o trecho). As regras fixas do prompt ganham uma: "Em chamados, prefira a solução de chamados resolvidos ou fechados; trate chamados abertos ou pendentes como problema em andamento, sem solução confirmada, e diga o status deles quando os citar" (D9). Código: `retrieval/context.py` (`ticket_source`, `ticket_context_line`) e `conversations/prompt.py`.
 
 ### Citação `kind: ticket`
 

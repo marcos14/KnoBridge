@@ -1388,6 +1388,49 @@
             ],
             "title": "Symbol"
           },
+          "ticket_date_kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "resolved",
+                  "updated"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticket Date Kind"
+          },
+          "ticket_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticket Number"
+          },
+          "ticket_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "open",
+                  "pending",
+                  "resolved",
+                  "closed"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticket Status"
+          },
           "title": {
             "title": "Title",
             "type": "string"
@@ -1402,6 +1445,17 @@
               }
             ],
             "title": "Uri"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
           }
         },
         "required": [

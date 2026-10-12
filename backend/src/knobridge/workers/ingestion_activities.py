@@ -35,6 +35,7 @@ from knobridge.ingestion.runs import RunLifecycle, RunScope
 from knobridge.llm.credentials import CREDENTIALS_KEY_INFO, ProviderCredentialService
 from knobridge.llm.factory import create_embedding_provider
 from knobridge.llm.pricing import EmbeddingPriceTable
+from knobridge.tickets.connector import TicketsConnectorFactory
 from knobridge.workers.ingestion import (
     BATCH_SIZE,
     FINISH_RUN_ACTIVITY,
@@ -90,7 +91,9 @@ class IngestionActivities:
         box = SecretBox.derive(settings.secret_key.get_secret_value(), info=CREDENTIALS_KEY_INFO)
         credentials = ProviderCredentialService(clock, box, allow_fake=settings.env != "production")
         connectors = SettingsConnectorFactory(
-            settings, knowledge=KnowledgeConnectorFactory(factory)
+            settings,
+            knowledge=KnowledgeConnectorFactory(factory),
+            tickets=TicketsConnectorFactory(factory, clock),
         )
         return cls(
             RunLifecycle(factory, clock, connectors, EmbeddingPriceTable.from_settings(settings)),

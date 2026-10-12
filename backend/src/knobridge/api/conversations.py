@@ -13,7 +13,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 from http import HTTPStatus
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, StringConstraints
@@ -113,7 +113,7 @@ class CitationOut(BaseModel):
     uri: str | None
     snippet: str
     document_id: str | None
-    # ``file``, ``commit`` or ``knowledge``.
+    # ``file``, ``commit``, ``knowledge`` or ``ticket``.
     kind: str | None = None
     path: str | None = None
     symbol: str | None = None
@@ -128,6 +128,12 @@ class CitationOut(BaseModel):
     # Knowledge items only (v0.5): ``inferido`` or ``revisado``, and the verified evidence.
     confidence: str | None = None
     evidence: list[CitationEvidenceOut] | None = None
+    # Tickets only (v0.6): number (or external id), status, which date ``date`` is and the
+    # link in the system of origin (shown as a link only when http or https).
+    ticket_number: str | None = None
+    ticket_status: Literal["open", "pending", "resolved", "closed"] | None = None
+    ticket_date_kind: Literal["resolved", "updated"] | None = None
+    url: str | None = None
 
 
 class FeedbackOut(BaseModel):

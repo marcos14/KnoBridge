@@ -1998,10 +1998,18 @@ export interface components {
             start_line?: number | null;
             /** Symbol */
             symbol?: string | null;
+            /** Ticket Date Kind */
+            ticket_date_kind?: ("resolved" | "updated") | null;
+            /** Ticket Number */
+            ticket_number?: string | null;
+            /** Ticket Status */
+            ticket_status?: ("open" | "pending" | "resolved" | "closed") | null;
             /** Title */
             title: string;
             /** Uri */
             uri: string | null;
+            /** Url */
+            url?: string | null;
         };
         /** CollectionCreate */
         CollectionCreate: {

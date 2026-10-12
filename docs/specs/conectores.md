@@ -160,6 +160,10 @@ Na listagem:
 
 Fontes `runner` não são lidas por um conector de arquivos: o repositório está na máquina do usuário e o servidor só recebe itens de conhecimento verificados ([harness.md](harness.md)). O `SettingsConnectorFactory` atende o tipo `runner` com o conector interno `knowledge` (`backend/src/knobridge/harness/knowledge_connector.py`), sem validar a config da fonte. Ele cumpre o mesmo contrato, mas lê os `knowledge_items` do banco, no escopo do workspace; `RawDocument.digest` leva o hash do Markdown e dos metadados de citação, que o motor usa no lugar do SHA-256 do conteúdo. Detalhes em [indexacao.md](indexacao.md#conhecimento-do-harness).
 
+## Conector interno de chamados
+
+Fontes `tickets` também não são lidas por um conector de arquivos: os chamados chegam por envio e ficam na caixa de entrada (`ticket_inbox`, [chamados.md](chamados.md)). O `SettingsConnectorFactory` atende o tipo `tickets` com o conector interno `tickets` (`backend/src/knobridge/tickets/connector.py`), que cumpre o mesmo contrato (está na suíte de contrato, sobre Postgres real) lendo a caixa de entrada no escopo do workspace; `RawDocument.digest` leva o hash do Markdown e dos metadados de citação. Ele também implementa o gancho opcional `settle` (`backend/src/knobridge/ingestion/settle.py`), pelo qual o motor fecha a entrada da caixa na mesma transação em que grava, remove ou registra o erro do documento. Detalhes em [indexacao.md](indexacao.md#chamados).
+
 ## Suíte de contrato
 
 Todo conector passa pela mesma suíte (`backend/tests/connectors/contract/`), parametrizada por fonte. Hoje roda contra:
@@ -167,14 +171,15 @@ Todo conector passa pela mesma suíte (`backend/tests/connectors/contract/`), pa
 - um conector fake em memória;
 - uma pasta em `tmp_path`;
 - um repositório Git local em que cada mutação é um commit com data fixa;
-- o mesmo repositório clonado por uma URL https reescrita para `file://`.
+- o mesmo repositório clonado por uma URL https reescrita para `file://`;
+- uma fonte `tickets` no Postgres real (conector interno `tickets`), em que cada documento é um chamado gravado pelas regras da caixa de entrada; como a caixa é o estado, o que foi listado só sai da listagem depois de processado (a fonte simula o motor: `fetch` e `settle`).
 
 | Teste | Garante |
 |---|---|
 | `test_contract_first_listing_adds_every_document` | A primeira listagem (`cursor=None`) põe tudo em `added`. |
-| `test_contract_listing_with_own_cursor_is_empty` | Listar de novo com o cursor devolvido não muda nada, inclusive depois de o cursor ir e voltar como JSON. |
+| `test_contract_listing_with_own_cursor_is_empty` | Listar de novo com o cursor devolvido, depois de o motor tratar a listagem, não muda nada, inclusive depois de o cursor ir e voltar como JSON. |
 | `test_contract_lists_added_changed_and_removed` | Adicionado, alterado e removido aparecem cada um na sua lista. |
-| `test_contract_fetch_returns_content_and_sha256` | `fetch` devolve o conteúdo e o SHA-256 dele. |
+| `test_contract_fetch_returns_content_and_hash` | `fetch` devolve o conteúdo e o hash esperados: os bytes e o SHA-256 deles nos conectores de arquivos; o Markdown e o hash do Markdown com os metadados de citação no `tickets`. |
 | `test_contract_fetch_unknown_ref_raises_not_found`, `test_contract_fetch_removed_ref_raises_not_found` | Referência desconhecida ou removida dá `DocumentNotFoundError`. |
 | `test_contract_permissions_are_open` | Pasta e Git devolvem ACL aberta. |
 | `test_contract_test_connection_succeeds_on_readable_source`, `test_contract_test_connection_fails_on_broken_source` | `test_connection` passa na fonte legível e falha com `ConnectorError` na quebrada. |

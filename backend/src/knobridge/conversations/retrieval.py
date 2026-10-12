@@ -39,9 +39,11 @@ class Source:
 
     ``content`` is what the LLM reads (and the snippet's origin). The optional location
     fields let the panel show where it came from: ``kind`` is the document kind (``file``,
-    ``commit`` or ``knowledge``), lines are 1-based and only known for text and code; ``sha``,
-    ``author`` and ``date`` only for commits; ``confidence`` (``inferido``/``revisado``) and
-    ``evidence`` only for knowledge items.
+    ``commit``, ``knowledge`` or ``ticket``), lines are 1-based and only known for text and
+    code; ``sha``, ``author`` and ``date`` only for commits (``date`` also for tickets);
+    ``confidence`` (``inferido``/``revisado``) and ``evidence`` only for knowledge items; the
+    ``ticket_*`` fields and ``url`` only for tickets. ``context_line`` is read by the LLM
+    before the content (a ticket's number, status, date and section) and is not cited.
     """
 
     title: str
@@ -61,6 +63,13 @@ class Source:
     # Knowledge items only (chat-sse v0.5).
     confidence: str | None = None
     evidence: tuple[EvidenceRef, ...] | None = None
+    # Tickets only (chat-sse v0.6): number (or external id), normalized status, which date
+    # ``date`` is (``resolved`` or ``updated``) and the link in the system of origin.
+    ticket_number: str | None = None
+    ticket_status: str | None = None
+    ticket_date_kind: str | None = None
+    url: str | None = None
+    context_line: str | None = None
 
 
 @dataclass(frozen=True)
@@ -101,6 +110,10 @@ def citation(index: int, source: Source) -> JSONValue:
         "date": source.date,
         "confidence": source.confidence,
         "evidence": None if source.evidence is None else [_evidence(e) for e in source.evidence],
+        "ticket_number": source.ticket_number,
+        "ticket_status": source.ticket_status,
+        "ticket_date_kind": source.ticket_date_kind,
+        "url": source.url,
     }
 
 

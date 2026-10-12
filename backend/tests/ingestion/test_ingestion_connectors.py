@@ -83,7 +83,26 @@ def test_connector_factory_without_knowledge_refuses_runner_sources(tmp_path: Pa
         factory(_source(SourceKind.RUNNER, {}))
 
 
-def test_connector_factory_refuses_tickets_sources_until_their_connector(tmp_path: Path) -> None:
+def test_connector_factory_serves_tickets_sources_with_the_tickets_connector(
+    tmp_path: Path,
+) -> None:
+    built: list[Source] = []
+    fake = FakeConnector()
+
+    def tickets(source: Source) -> Connector:
+        built.append(source)
+        return fake
+
+    factory = SettingsConnectorFactory(
+        Settings(env="test", local_sources_root=tmp_path), tickets=tickets
+    )
+    source = _source(SourceKind.TICKETS, {})
+
+    assert factory(source) is fake
+    assert built == [source]
+
+
+def test_connector_factory_without_tickets_refuses_tickets_sources(tmp_path: Path) -> None:
     def knowledge(source: Source) -> Connector:
         return FakeConnector()
 

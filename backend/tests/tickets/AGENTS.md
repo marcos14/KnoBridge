@@ -1,6 +1,6 @@
 # backend/tests/tickets/
 
-**Função**: testes de `src/knobridge/tickets/`: unitários da validação do chamado, dos itens do lote, do formato do token, da cifra do segredo do webhook, da anonimização e do Markdown, e, contra Postgres real, a RLS das tabelas de chamados, a busca do token de envio pelo prefixo, chaves, `CHECK`s, FKs compostas e exclusões.
+**Função**: testes de `src/knobridge/tickets/`: unitários da validação do chamado, dos itens do lote, do formato do token, da cifra do segredo do webhook, da anonimização e do Markdown, e, contra Postgres real, o conector interno `tickets`, a RLS das tabelas de chamados, a busca do token de envio pelo prefixo, chaves, `CHECK`s, FKs compostas e exclusões.
 
 **Entra aqui**:
 - `tickets_support.py`: `run_db`, `seed` (workspace novo com fonte `tickets`, token de envio, entrada `pending` na caixa, assistente, conversa e pedido `pending` sobre uma resposta "sem fonte"), `count_by_model`, `new_token`, `tickets_source`, `pending_entry`, `pending_request` e `add_answer`.
@@ -15,6 +15,8 @@
 - `test_ticket_model.py` (unitário): o `TicketIn` como o Markdown o usa: padrões, número e data da citação e tipos de `custom_fields` (os problemas de validação ficam em `test_ticket_wire.py`).
 - `test_anonymize.py` (unitário): cada regra com positivos e negativos (e-mail em URL, versão x IP, CPF/CNPJ que não validam, Luhn, telefone com e sem DDI/DDD, limites de dígito), nomes declarados em várias grafias, precedência e numeração, marcador nunca olhado de novo.
 - `test_ticket_markdown.py` (unitário): Markdown igual ao da spec, metadados, notas internas fora por padrão e dentro quando ligadas, sem anonimização, marcador estável entre campos, seções omitidas, conversão dos corpos, hash estável e os chunks do chamado renderizado.
+- `tickets_connector_support.py`: `World` (fonte `tickets` com config por teste e token de envio, opcional; `connector()` pela fábrica de produção com relógio fixo), `world`, `ticket`, `upsert`, `delete`, `push` (itens pelas regras reais da caixa: `check_items` + `apply_items`), `entry` e `settle` (um fechamento numa transação no escopo do workspace, como a do motor).
+- `test_tickets_connector.py`: o conector `tickets` sobre Postgres real: listagem (adicionado, alterado, lápide e status fora de `statuses` como remoção), `fetch` com Markdown anonimizado e metadados, notas internas e anonimização conforme a fonte, recusas de `fetch` (não pendente, lápide, versão nova filtrada, ausente, payload inválido `ticket_invalid`), fechamento indexado que apaga o bruto e é idempotente, versão chegada depois do `fetch` preservada, remoções (`deleted`, `filtered`, entrada de novo em `statuses` intocada), erro truncado com o payload mantido, teste de conexão pelo token, ACL aberta, cursor alheio, fábrica com fonte de outro tipo e isolamento entre workspaces. O contrato compartilhado fica em `tests/connectors/contract/`; o workflow, em `tests/workers/test_tickets_ingestion.py`.
 
 **Não entra aqui**: rotas (`tests/api/`), cadeia de migrações (`tests/migrations/`), a config da fonte (`tests/ingestion/test_source_config.py`).
 

@@ -1,25 +1,34 @@
-"""Behaviour every ``Connector`` must have, run against each source in ``CONTRACT_SOURCES``."""
+"""Behaviour every ``Connector`` must have, run against each source in ``CONTRACT_SOURCES`` and
+``DATABASE_CONTRACT_SOURCES``."""
 
 from __future__ import annotations
 
 import asyncio
-import hashlib
 import json
 from pathlib import Path
 
 import pytest
-from contract_support import CONTRACT_SOURCES, ContractSource
+from contract_support import CONTRACT_SOURCES, DATABASE_CONTRACT_SOURCES, ContractSource
 
 from knobridge.connectors.base import OPEN_ACL, ChangeSet, Cursor, DocumentRef
 from knobridge.connectors.errors import ConnectorError, DocumentNotFoundError, InvalidCursorError
-from knobridge.ingestion.models import DocumentKind
 
 INITIAL = {"guide.md": b"# Guide\n\nHow to log in.\n", "src/app.py": b"print('hi')\n"}
+SOURCES = [
+    *sorted(CONTRACT_SOURCES),
+    *(
+        pytest.param(name, marks=pytest.mark.integration)
+        for name in sorted(DATABASE_CONTRACT_SOURCES)
+    ),
+]
 
 
-@pytest.fixture(params=sorted(CONTRACT_SOURCES))
+@pytest.fixture(params=SOURCES)
 def source(request: pytest.FixtureRequest, tmp_path: Path) -> ContractSource:
     name: str = request.param
+    if name in DATABASE_CONTRACT_SOURCES:
+        database_url: str = request.getfixturevalue("app_database_url")
+        return DATABASE_CONTRACT_SOURCES[name](database_url, tmp_path)
     return CONTRACT_SOURCES[name](tmp_path)
 
 
@@ -36,14 +45,14 @@ def _list(source: ContractSource, cursor: Cursor | None) -> ChangeSet:
     )
 
 
-def _files(refs: tuple[DocumentRef, ...]) -> list[DocumentRef]:
+def _docs(source: ContractSource, refs: tuple[DocumentRef, ...]) -> list[DocumentRef]:
     # Sources may list documents of other kinds too (the Git connector's commits); the
-    # contract is about the files every source has.
-    return [ref for ref in refs if ref.kind is DocumentKind.FILE]
+    # contract is about the documents every source of its kind has.
+    return [ref for ref in refs if ref.kind is source.kind]
 
 
-def _keys(refs: tuple[DocumentRef, ...]) -> list[str]:
-    return [ref.key for ref in _files(refs)]
+def _keys(source: ContractSource, refs: tuple[DocumentRef, ...]) -> list[str]:
+    return [ref.key for ref in _docs(source, refs)]
 
 
 def test_contract_first_listing_adds_every_document(source: ContractSource) -> None:
@@ -51,13 +60,14 @@ def test_contract_first_listing_adds_every_document(source: ContractSource) -> N
 
     changes = _list(source, None)
 
-    assert _keys(changes.added) == sorted(INITIAL)
+    assert _keys(source, changes.added) == sorted(INITIAL)
     assert (changes.changed, changes.removed) == ((), ())
 
 
 def test_contract_listing_with_own_cursor_is_empty(source: ContractSource) -> None:
     _seed(source)
     first = _list(source, None)
+    source.processed(first)
 
     second = _list(source, first.cursor)
 
@@ -68,27 +78,29 @@ def test_contract_listing_with_own_cursor_is_empty(source: ContractSource) -> No
 def test_contract_lists_added_changed_and_removed(source: ContractSource) -> None:
     _seed(source)
     first = _list(source, None)
+    source.processed(first)
     source.add("notes/new.txt", b"new\n")
     source.change("guide.md", b"# Guide\n\nHow to log in, updated.\n")
     source.remove("src/app.py")
 
     changes = _list(source, first.cursor)
 
-    assert _keys(changes.added) == ["notes/new.txt"]
-    assert _keys(changes.changed) == ["guide.md"]
-    assert _keys(changes.removed) == ["src/app.py"]
+    assert _keys(source, changes.added) == ["notes/new.txt"]
+    assert _keys(source, changes.changed) == ["guide.md"]
+    assert _keys(source, changes.removed) == ["src/app.py"]
 
 
-def test_contract_fetch_returns_content_and_sha256(source: ContractSource) -> None:
+def test_contract_fetch_returns_content_and_hash(source: ContractSource) -> None:
     _seed(source)
-    ref = _files(_list(source, None).added)[0]
+    ref = _docs(source, _list(source, None).added)[0]
+    content, digest = source.expected(ref.key, INITIAL[ref.key])
 
     document = asyncio.run(source.connector().fetch(ref))
 
     assert document.ref == ref
-    assert document.content == INITIAL[ref.key]
-    assert document.content_hash == hashlib.sha256(INITIAL[ref.key]).hexdigest()
-    assert document.text == INITIAL[ref.key].decode()
+    assert document.content == content
+    assert document.content_hash == digest
+    assert document.text == content.decode()
     assert document.title
     assert document.uri
 
@@ -97,7 +109,7 @@ def test_contract_fetch_unknown_ref_raises_not_found(source: ContractSource) -> 
     _seed(source)
 
     with pytest.raises(DocumentNotFoundError):
-        asyncio.run(source.connector().fetch(DocumentRef("missing.md")))
+        asyncio.run(source.connector().fetch(DocumentRef("missing.md", source.kind)))
 
 
 def test_contract_fetch_removed_ref_raises_not_found(source: ContractSource) -> None:
@@ -105,13 +117,13 @@ def test_contract_fetch_removed_ref_raises_not_found(source: ContractSource) -> 
     source.remove("guide.md")
 
     with pytest.raises(DocumentNotFoundError):
-        asyncio.run(source.connector().fetch(DocumentRef("guide.md")))
+        asyncio.run(source.connector().fetch(DocumentRef("guide.md", source.kind)))
 
 
 def test_contract_permissions_are_open(source: ContractSource) -> None:
     _seed(source)
 
-    acl = asyncio.run(source.connector().permissions(DocumentRef("guide.md")))
+    acl = asyncio.run(source.connector().permissions(DocumentRef("guide.md", source.kind)))
 
     assert acl == OPEN_ACL
     assert acl.public

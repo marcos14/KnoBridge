@@ -26,17 +26,11 @@ from knobridge.ingestion.chunking import (
 )
 from knobridge.ingestion.models import DocumentKind
 from knobridge.ingestion.parsing import html_to_markdown
-from knobridge.ingestion.source_config import TicketStatus
+from knobridge.ingestion.source_config import TICKET_STATUS_LABELS
 from knobridge.tickets.anonymize import TicketAnonymizer
 from knobridge.tickets.wire import TicketBodyFormat, TicketIn, TicketMessageIn, TicketMessageRole
 
 URI_PREFIX = "ticket:"
-STATUS_LABELS = {
-    TicketStatus.OPEN: "Aberto",
-    TicketStatus.PENDING: "Pendente",
-    TicketStatus.RESOLVED: "Resolvido",
-    TicketStatus.CLOSED: "Fechado",
-}
 ROLE_LABELS = {
     TicketMessageRole.CUSTOMER: "Cliente",
     TicketMessageRole.AGENT: "Atendente",
@@ -117,7 +111,7 @@ class _Renderer:
 
 
 def _metadata_lines(ticket: TicketIn, render: _Renderer, original: str) -> list[str]:
-    label = STATUS_LABELS[ticket.status]
+    label = TICKET_STATUS_LABELS[ticket.status]
     status = label
     if original and original.casefold() != label.casefold():
         status += f" (original: {original})"

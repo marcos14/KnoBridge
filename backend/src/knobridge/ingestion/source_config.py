@@ -47,6 +47,15 @@ class TicketStatus(StrEnum):
     CLOSED = "closed"
 
 
+# How a status is shown (the ticket's Markdown and the chat context), in pt-BR.
+TICKET_STATUS_LABELS = {
+    TicketStatus.OPEN: "Aberto",
+    TicketStatus.PENDING: "Pendente",
+    TicketStatus.RESOLVED: "Resolvido",
+    TicketStatus.CLOSED: "Fechado",
+}
+
+
 def _absolute_path(value: str) -> str:
     # The worker reads the path on its own filesystem; a relative path would depend on its cwd.
     if not Path(value).is_absolute():

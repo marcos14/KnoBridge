@@ -2,11 +2,13 @@
 
 A ``ContractSource`` builds a connector over a synthetic source and mutates that source the way
 its real counterpart changes (write a file, commit, delete). To put a new connector under the
-contract, implement ``ContractSource`` for it and register its factory in ``CONTRACT_SOURCES``.
+contract, implement ``ContractSource`` for it and register its factory in ``CONTRACT_SOURCES``
+(or in ``DATABASE_CONTRACT_SOURCES`` when it needs Postgres).
 """
 
 from __future__ import annotations
 
+import hashlib
 import os
 import shutil
 import subprocess
@@ -15,11 +17,13 @@ from pathlib import Path
 from typing import Protocol
 
 from pydantic import AnyUrl
+from tickets_contract_support import TicketsContractSource
 
 from fakes.connector import FakeConnector
-from knobridge.connectors.base import Connector
+from knobridge.connectors.base import ChangeSet, Connector
 from knobridge.connectors.folder import FolderConnector
 from knobridge.connectors.git import GitConnector
+from knobridge.ingestion.models import DocumentKind
 from knobridge.ingestion.source_config import FolderSourceConfig, GitSourceConfig
 
 # Fixed, increasing mtimes: a rewrite never depends on the real clock's resolution.
@@ -28,6 +32,11 @@ MTIME_STEP_NS = 1_000_000_000
 
 
 class ContractSource(Protocol):
+    @property
+    def kind(self) -> DocumentKind:
+        """The kind of the documents the contract is about."""
+        ...
+
     def connector(self) -> Connector: ...
 
     def add(self, key: str, content: bytes) -> None: ...
@@ -40,8 +49,29 @@ class ContractSource(Protocol):
         """Make the source unreadable, so ``test_connection`` must fail."""
         ...
 
+    def expected(self, key: str, content: bytes) -> tuple[bytes, str]:
+        """What ``fetch`` returns for a document written with ``content``: bytes and hash."""
+        ...
 
-class FakeContractSource:
+    def processed(self, changes: ChangeSet) -> None:
+        """The engine handled ``changes`` (a source whose state is not a tree settles them)."""
+        ...
+
+
+class FileContractSource:
+    """Defaults of a tree of files: fetch returns the bytes written and their SHA-256, and
+    listing does not depend on what the engine did."""
+
+    kind = DocumentKind.FILE
+
+    def expected(self, key: str, content: bytes) -> tuple[bytes, str]:
+        return content, hashlib.sha256(content).hexdigest()
+
+    def processed(self, changes: ChangeSet) -> None:
+        return None
+
+
+class FakeContractSource(FileContractSource):
     def __init__(self, tmp_path: Path) -> None:
         self._connector = FakeConnector()
 
@@ -61,7 +91,7 @@ class FakeContractSource:
         self._connector.available = False
 
 
-class FolderContractSource:
+class FolderContractSource(FileContractSource):
     def __init__(self, tmp_path: Path) -> None:
         self._allowed_root = tmp_path / "sources"
         self._folder = self._allowed_root / "docs"
@@ -108,7 +138,7 @@ def _git(repo: Path, *args: str, commits: int = 0) -> None:
     subprocess.run(command, check=True, capture_output=True, env=env)  # noqa: S603
 
 
-class GitContractSource:
+class GitContractSource(FileContractSource):
     """A repository under the allowed root; every mutation is one commit."""
 
     def __init__(self, tmp_path: Path) -> None:
@@ -174,4 +204,8 @@ CONTRACT_SOURCES: dict[str, Callable[[Path], ContractSource]] = {
     "folder": FolderContractSource,
     "git": GitContractSource,
     "git_url": GitUrlContractSource,
+}
+# Sources that need the migrated database (``app_database_url``); their tests are integration.
+DATABASE_CONTRACT_SOURCES: dict[str, Callable[[str, Path], ContractSource]] = {
+    "tickets": TicketsContractSource,
 }

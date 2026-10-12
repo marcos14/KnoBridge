@@ -177,7 +177,108 @@ def test_citation_kind_knowledge_has_confidence_and_evidence() -> None:
                 "excerpt": None,
             },
         ],
+        "ticket_number": None,
+        "ticket_status": None,
+        "ticket_date_kind": None,
+        "url": None,
     }
+
+
+def _ticket_meta(**changes: JSONValue) -> dict[str, JSONValue]:
+    meta: dict[str, JSONValue] = {
+        "kind": "ticket",
+        "external_id": "4f6c2a10-0001",
+        "ticket_number": "48213",
+        "title": "Erro 4021 ao fechar o caixa",
+        "ticket_status": "resolved",
+        "original_status": "Resolvido pelo atendente",
+        "date": "2026-10-01T12:10:00Z",
+        "date_kind": "resolved",
+        "url": "https://suporte.example.test/chamados/48213",
+        "headings": ["Chamado 48213: Erro 4021 ao fechar o caixa", "Solução"],
+        "section": "resolution",
+        "display": "## Solução\n\nFinalizar a sangria libera o fechamento.",
+    }
+    meta.update(changes)
+    return meta
+
+
+def test_citation_kind_ticket_has_number_status_date_and_url() -> None:
+    hit = _hit(
+        "ticket: 48213 · Erro\n\ncorpo",
+        _ticket_meta(),
+        kind=DocumentKind.TICKET,
+        key="4f6c2a10-0001",
+        title="Erro",
+    )
+
+    source = source_from_hit(hit)
+
+    assert source == Source(
+        title="Erro 4021 ao fechar o caixa",
+        content="## Solução\n\nFinalizar a sangria libera o fechamento.",
+        uri="ticket:4f6c2a10-0001",
+        document_id=str(DOCUMENT_ID),
+        kind="ticket",
+        date="2026-10-01T12:10:00Z",
+        ticket_number="48213",
+        ticket_status="resolved",
+        ticket_date_kind="resolved",
+        url="https://suporte.example.test/chamados/48213",
+        context_line="Chamado 48213 · Resolvido · 2026-10-01T12:10:00Z · seção Solução",
+    )
+    assert citation(2, source) == {
+        "index": 2,
+        "title": "Erro 4021 ao fechar o caixa",
+        "uri": "ticket:4f6c2a10-0001",
+        "snippet": "## Solução\n\nFinalizar a sangria libera o fechamento.",
+        "document_id": str(DOCUMENT_ID),
+        "kind": "ticket",
+        "path": None,
+        "symbol": None,
+        "start_line": None,
+        "end_line": None,
+        "language": None,
+        "sha": None,
+        "author": None,
+        "date": "2026-10-01T12:10:00Z",
+        "confidence": None,
+        "evidence": None,
+        "ticket_number": "48213",
+        "ticket_status": "resolved",
+        "ticket_date_kind": "resolved",
+        "url": "https://suporte.example.test/chamados/48213",
+    }
+
+
+def test_ticket_source_falls_back_and_drops_values_out_of_the_contract() -> None:
+    meta: dict[str, JSONValue] = {
+        "ticket_status": "reaberto",
+        "date_kind": "created",
+        "section": "outra",
+        "url": "",
+    }
+    hit = _hit("corpo", meta, kind=DocumentKind.TICKET, key="A-17", title="Sem acesso")
+
+    source = source_from_hit(hit)
+
+    assert (source.title, source.uri, source.ticket_number) == ("Sem acesso", "ticket:A-17", "A-17")
+    assert (source.ticket_status, source.ticket_date_kind, source.url, source.date) == (
+        None,
+        None,
+        None,
+        None,
+    )
+    assert source.context_line == "Chamado A-17"
+
+
+def test_ticket_context_line_counts_in_the_budget() -> None:
+    plain = Source(title="t", content="x" * 40, uri="ticket:1")
+    ticket = Source(
+        title="t", content="x" * 40, uri="ticket:1", context_line="Chamado 1 · Aberto" * 10
+    )
+
+    assert source_tokens(1, ticket) > source_tokens(1, plain)
 
 
 def test_knowledge_source_falls_back_to_the_document() -> None:

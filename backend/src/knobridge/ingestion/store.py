@@ -2,7 +2,9 @@
 
 Each function marks its ``run_items`` row done and bumps the run counters in the same
 transaction as the document change, so a batch that is retried after a crash neither writes a
-document twice nor counts it twice. Sessions are scoped to the run's workspace (see ``runs``).
+document twice nor counts it twice. A connector that settles its items (``ingestion.settle``)
+runs that step in the same transaction too. Sessions are scoped to the run's workspace (see
+``runs``).
 """
 
 from __future__ import annotations
@@ -28,6 +30,7 @@ from knobridge.ingestion.models import (
     RunItem,
 )
 from knobridge.ingestion.runs import RunScope, workspace_session
+from knobridge.ingestion.settle import Settle
 
 TITLE_MAX_LENGTH = 500
 ERROR_CODE_MAX_LENGTH = 64
@@ -98,13 +101,21 @@ class BatchStore:
         async with workspace_session(self._factory, scope) as db:
             await _bump(db, scope, embedding_tokens=tokens)
 
-    async def skip(self, scope: RunScope, ordinal: int) -> None:
+    async def skip(self, scope: RunScope, ordinal: int, settle: Settle | None = None) -> None:
         """The document is already indexed with this content: nothing to write."""
         async with workspace_session(self._factory, scope) as db:
             await _mark_done(db, scope, ordinal)
+            await _settle(db, settle)
 
     async def fail(
-        self, scope: RunScope, ordinal: int, key: str, stage: RunErrorStage, code: str, message: str
+        self,
+        scope: RunScope,
+        ordinal: int,
+        key: str,
+        stage: RunErrorStage,
+        code: str,
+        message: str,
+        settle: Settle | None = None,
     ) -> None:
         async with workspace_session(self._factory, scope) as db:
             db.add(
@@ -119,8 +130,11 @@ class BatchStore:
             )
             await _mark_done(db, scope, ordinal)
             await _bump(db, scope, documents_failed=1)
+            await _settle(db, settle)
 
-    async def remove(self, scope: RunScope, ordinal: int, key: str) -> None:
+    async def remove(
+        self, scope: RunScope, ordinal: int, key: str, settle: Settle | None = None
+    ) -> None:
         async with workspace_session(self._factory, scope) as db:
             removed = await db.scalar(
                 delete(Document)
@@ -134,6 +148,7 @@ class BatchStore:
             await _mark_done(db, scope, ordinal)
             if removed is not None:
                 await _bump(db, scope, documents_removed=1)
+            await _settle(db, settle)
 
     async def store(
         self,
@@ -142,6 +157,7 @@ class BatchStore:
         document: PreparedDocument,
         vectors: Mapping[str, list[float]],
         now: datetime,
+        settle: Settle | None = None,
     ) -> None:
         """Upsert the document and replace its chunks."""
         async with workspace_session(self._factory, scope) as db:
@@ -198,6 +214,12 @@ class BatchStore:
                 documents_changed=0 if is_new else 1,
                 chunks_written=len(document.chunks),
             )
+            await _settle(db, settle)
+
+
+async def _settle(db: AsyncSession, settle: Settle | None) -> None:
+    if settle is not None:
+        await settle(db)
 
 
 async def _mark_done(db: AsyncSession, scope: RunScope, ordinal: int) -> None:

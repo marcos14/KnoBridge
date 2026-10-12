@@ -49,10 +49,10 @@ fases:
         commit: f8217a9
       - id: F2.3
         titulo: Conector interno tickets no workflow de ingestão e citação de chamado no chat
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
-        concluida_em: null
+        concluida_em: 2026-10-12
         commit: null
       - id: F2.4
         titulo: Upload JSON/JSONL pelo painel e prévia de anonimização
@@ -280,6 +280,13 @@ decisoes:
     decisao: "F2.2: um só modelo do chamado (TicketIn em tickets/wire.py, o publicado no OpenAPI), com display_number e reference_date; cartão em grupos exige grupos de 3 a 6 dígitos (evita telefone virar cartão por Luhn); IPv6 confirmado por ipaddress; CRLF normalizado e cerca de código aberta fechada nos corpos; campos de uma linha colapsados; chamado sem seções vira um chunk section problem; numeração de autores pela ordem das mensagens; telefone só BR com +55 opcional e chunking por seção como na spec (o plano dizia internacional e problema+solução juntos)"
     motivo: "seguir a spec como contrato e evitar falsos positivos da anonimização"
     alternativas: "dois modelos do chamado; telefone internacional"
+    adr: null
+  - id: D22
+    data: 2026-10-12
+    por: agente
+    decisao: "F2.3: a entrada da caixa é fechada (e o bruto apagado) dentro do process_batch, na mesma transação que grava, remove ou registra o erro do documento e marca run_items.done, conferindo o content_hash da versão buscada no fetch; versão nova que chega depois do fetch fica pendente para a próxima execução; payload guardado que não valida mais vira ticket_invalid (422); gancho settle opcional em ingestion/settle.py; a fábrica de chamados recebe o relógio"
+    motivo: "atomicidade: retentativa não perde chamado nem fecha duas vezes, sem coluna nova em run_items"
+    alternativas: "fechar no finish_run com o hash listado (exigiria migração)"
     adr: null
 pendencias_usuario:
   - id: P1
@@ -594,6 +601,7 @@ D1 a D12 vêm das respostas do usuário (seção 2). D13 a D16 são do agente, n
 - 2026-10-12 — F2.2 concluída: anonimização determinística, Markdown do chamado e chunk_ticket, integrados sobre a F2.1 com o TicketIn único de wire.py; backend 1740 passed com 99% de cobertura
 - 2026-10-12 — F2.3 iniciada (agente em worktree).
 - 2026-10-12 — F2.4 iniciada (agente em worktree).
+- 2026-10-12 — F2.3 concluída: conector interno tickets no workflow de ingestão com fechamento da caixa na transação do documento, citação kind ticket no contexto e no SSE v0.6, regra de chamados no prompt e suíte de contrato estendida; gates do agente: backend 1776 passed com 99,86%, frontend 1140; orquestrador: ruff, pyright e AGENTS na integração
 
 ## 8. Encerramento
 
