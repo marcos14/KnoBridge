@@ -89,12 +89,12 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
         concluida_em: 2026-10-12
-        commit: null
+        commit: 6ef3ba9
       - id: F4.2
         titulo: Webhook no assistente e "Abrir chamado" no chat
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-12
         concluida_em: null
         commit: null
   - id: F5
@@ -552,6 +552,7 @@ Fixar o formato do chamado e o modelo antes do código.
 - **Objetivo**: configurar o destino e abrir o chamado no chat.
 - **Entregáveis**:
   - no formulário do assistente: URL, segredo mostrado uma vez, rotacionar, ligar e desligar, "Testar entrega" com o resultado;
+  - na fonte de chamados: a rota `GET .../sources/{sid}/tickets/summary` da spec (prefixo e data do token atual e contagens da caixa de entrada por estado), que a F2.4 não fez, e a exibição dela na aba Integração (D27);
   - no chat: botão "Abrir chamado" na resposta sem fonte (e no menu da conversa), diálogo com o que será enviado (pergunta, resumo, nome, e-mail) e confirmação, estado da solicitação (enviando, entregue com número e link, falhou com o motivo).
 - **Contexto necessário**: `frontend/AGENTS.md`; `features/assistants` e `features/chat`; `lib/api/chatStream.ts`; tipos gerados.
 - **Critérios de aceite**: testes do formulário, do segredo, do teste de entrega, do botão só quando o assistente oferece, do diálogo, da confirmação, do polling de estado que para ao concluir e dos erros; cobertura ≥ 95%.
@@ -646,6 +647,7 @@ D1 a D12 vêm das respostas do usuário (seção 2). D13 a D16 são do agente, n
 - 2026-10-12 — F4.1 iniciada (agente em worktree).
 - 2026-10-12 — F3.2 concluída: pedido de chamado com prévia e resumo, confirmação e entrega assinada no workflow knobridge.ticket_webhook.v1 com retentativas e prazo de 24 h; backend 2074 passed com 99% de cobertura, frontend 1144
 - 2026-10-12 — F4.1 concluída: fonte de chamados no painel (token, exemplos, upload com relatório por linha, prévia de anonimização) e citação kind ticket no chat; frontend 1191 testes, 98,63% de branches, 3 de 4 rodadas verdes (1 falha intermitente na primeira rodada após a integração, não reproduzida em 3 rodadas seguidas; teste não identificado porque o log foi sobrescrito)
+- 2026-10-12 — F4.2 iniciada (agente em worktree), com a rota tickets/summary incluída (D27).
 
 ## 8. Encerramento
 
