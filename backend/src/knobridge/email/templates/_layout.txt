@@ -1,0 +1,12 @@
+Olá,
+
+{% block content %}{% endblock %}
+
+{{ link }}
+
+Este link vale por {{ expires_in }} e só pode ser usado uma vez.
+{% block ignore_note %}{% endblock %}
+
+
+--
+E-mail automático do KnoBridge ({{ base_url }}). Não responda a esta mensagem.

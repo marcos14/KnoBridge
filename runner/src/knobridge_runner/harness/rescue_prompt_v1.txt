@@ -1,0 +1,1 @@
+Sua execução anterior terminou sem emitir a saída final no formato pedido. O trabalho de leitura já foi feito acima: não o refaça e não use ferramentas. Emita agora, uma única vez, o objeto JSON completo que segue o schema, com todos os campos obrigatórios e textos curtos.

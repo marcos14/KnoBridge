@@ -1,0 +1,11 @@
+#!/usr/bin/env python3
+"""Fake Claude Code CLI of the runner tests (docs/specs/harness.md, "Executáveis falsos")."""
+
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from fake_harness import main  # noqa: E402
+
+sys.exit(main("claude_code", sys.argv[1:]))

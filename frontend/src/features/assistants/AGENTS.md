@@ -1,0 +1,24 @@
+# frontend/src/features/assistants/
+
+**Função**: configuração dos assistentes do workspace em `/w/:workspaceId/assistants` (owner, admin e editor; viewer recebe 403 na rota e não vê o item de menu). Lista com status, criação, edição e exclusão.
+
+**Entra aqui**:
+
+- `AssistantsPage.tsx`: `h1`, "Novo assistente" (só quando há provedor; sem nenhum, um aviso com link para `/providers`), tabela paginada no navegador (20 por página) com nome e descrição, provedor e modelo, quantas coleções usa ("Nenhuma (sem fonte)" sem nenhuma), status ("Ativo"/"Inativo") e as ações "Editar" e "Excluir" (com `ConfirmDialog`, que avisa que as conversas do assistente também são excluídas e sugere desativar).
+- `AssistantDialog.tsx`: diálogo de criar/editar com react-hook-form + zod: nome, descrição, prompt de sistema, provedor (lista de `useProviders`), modelo, temperatura, idioma, tom, coleções (caixas de seleção de `useCollections`, carregadas só com o diálogo aberto; sem coleção cadastrada, link para `/collections`; nenhuma marcada, aviso de que responderá sempre "sem fonte"), similaridade mínima (0 a 1, padrão 0,35, do [ensaio](../../../../docs/pesquisa/0001-ensaio-minski.md), com a ajuda "mais alto = mais exigente"), mensagem de "sem fonte", o webhook de chamados ("Abrir chamado") e ativo.
+- `TicketWebhookFields.tsx` (no formulário): "Oferecer "Abrir chamado" no chat" e a URL do webhook (só com a opção ligada; desligar envia `ticket_webhook_url: null`). `TicketWebhookPanel.tsx` (só ao editar, sobre o que está salvo): data do segredo atual; "Gerar segredo" (owner e admin; com segredo atual, "Gerar novo segredo" pede confirmação na própria seção) mostra o `kbw_` uma única vez com "Copiar segredo", só no estado do componente (some ao fechar o diálogo); editor vê o aviso de que owner ou admin gera; "Testar entrega" (desabilitado sem URL e segredo salvos) com o resultado (`ok`, ou o erro com o motivo ou o status HTTP) e o id da entrega.
+- `ticketWebhook.ts` (puro, com teste): `isWebhookUrl` (http ou https, sem usuário e senha; o servidor aplica o resto), `WEBHOOK_REASONS`, `webhookErrorText` (mensagem do código + motivo de `details.reason` ou status de `details.status`) e `webhookApiErrorText` (o mesmo para um erro de `lib/api`, usado ao salvar e no teste).
+- `assistantForm.ts`: schema com os limites do contrato (e a URL obrigatória e válida com o webhook ligado), `parseTemperature` (aceita vírgula ou ponto, 0 a 2), `parseMinSimilarity` (0 a 1), valores iniciais e o corpo enviado (funções puras, com teste).
+
+**Não entra aqui**: chamadas de API (`lib/api/assistants.ts`, `lib/api/providers.ts`), credenciais (`features/providers/`), chat de teste e conversas (próximas áreas), textos (`i18n/locales/`, chaves `assistants.*`).
+
+**Convenções locais**:
+
+- Criação e edição enviam todos os campos, menos `ticket_webhook_url` igual à salva (o servidor verifica o destino de novo sempre que recebe a URL); `collection_ids` vai sempre inteiro e, no PATCH, troca o conjunto.
+- O segredo do webhook é credencial: só owner e admin geram (`canManageSecret`, de `canManageWorkspace`); nada o guarda fora do estado do painel. Mensagem de "sem fonte" em branco faz o backend gravar a mensagem padrão (que volta preenchida na próxima edição).
+- Excluir apaga as conversas do assistente (`ON DELETE CASCADE`); desativar preserva o histórico e bloqueia conversa nova.
+- Erros da API (`assistant_name_taken`, `assistant_provider_invalid`, `assistant_collection_invalid`, …) aparecem no `FormAlert` pelo `code`.
+
+**Como testar**: de `frontend/`, `pnpm test -- --coverage`. Pela árvore real (`renderWithProviders({ path: "/w/<id>/assistants" })`) com MSW: `assistantStore(initial, { webhookTest })` (mudanças persistem; `created`, `changes`, `deleted`, `secretRotations`, `webhookTests`; mensagem vazia vira `DEFAULT_NO_SOURCE_MESSAGE`; o segredo "gerado" é `WEBHOOK_SECRET`, e `ticket_webhook_configured` segue URL e segredo), `makeWebhookTest`, `rotateWebhookSecretFails`, `assistantsAs`, `providersAs`, `collectionsAs`, `collectionsServerError`, `assistantsServerError`, `createAssistantFails`, `updateAssistantFails`, `deleteAssistantFails`.
+
+**Leia também**: [../AGENTS.md](../AGENTS.md); [../providers/AGENTS.md](../providers/AGENTS.md); `docs/specs/openapi.json` (`/v1/workspaces/{workspace_id}/assistants`).

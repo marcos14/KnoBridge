@@ -1,0 +1,42 @@
+{
+  "external_id": "4f6c2a10-0001",
+  "number": "48213",
+  "title": "Erro 4021 ao fechar o caixa",
+  "status": "resolved",
+  "original_status": "Resolvido pelo atendente",
+  "priority": "alta",
+  "category": "Financeiro",
+  "product": "Caixa",
+  "tags": ["caixa", "fechamento"],
+  "url": "https://suporte.exemplo.com.br/chamados/48213",
+  "created_at": "2026-09-30T14:02:00-03:00",
+  "updated_at": "2026-10-01T09:15:00-03:00",
+  "resolved_at": "2026-10-01T09:10:00-03:00",
+  "requester": { "name": "Ana Souza", "email": "ana.souza@exemplo.com.br", "organization": "Padaria Exemplo" },
+  "assignees": [{ "name": "Bruno Lima", "email": "bruno@suporte.exemplo.com.br" }],
+  "messages": [
+    {
+      "role": "customer",
+      "author_name": "Ana Souza",
+      "body": "Ao fechar o caixa aparece o erro 4021. Meu telefone é (11) 98765-4321.",
+      "created_at": "2026-09-30T14:02:00-03:00"
+    },
+    {
+      "role": "agent",
+      "author_name": "Bruno Lima",
+      "public": false,
+      "body": "Cliente com sangria pendente no turno anterior.",
+      "created_at": "2026-09-30T15:20:00-03:00"
+    },
+    {
+      "role": "agent",
+      "author_name": "Bruno Lima",
+      "body_format": "html",
+      "body": "<p>Olá Ana, finalize a <b>sangria pendente</b> e tente de novo.</p>",
+      "created_at": "2026-10-01T09:05:00-03:00"
+    }
+  ],
+  "resolution": { "body": "O erro 4021 indica sangria pendente. Finalizar a sangria do turno anterior libera o fechamento.", "body_format": "text" },
+  "attachments": [{ "name": "tela-erro-4021.png" }],
+  "custom_fields": { "versao_sistema": "12.4.1", "loja": 3 }
+}

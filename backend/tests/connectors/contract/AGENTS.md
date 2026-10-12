@@ -1,0 +1,16 @@
+# backend/tests/connectors/contract/
+
+**Função**: a suíte de contrato que todo `Connector` precisa passar (seção 5 do [AGENTS.md da raiz](../../../../AGENTS.md)), escrita uma vez e rodada contra cada conector.
+
+**Entra aqui**:
+- `contract_support.py`: o `Protocol` `ContractSource` (`kind`, `connector()`, `add`, `change`, `remove`, `break_source`, `expected` (bytes e hash que o `fetch` devolve para o conteúdo escrito) e `processed` (o motor tratou uma listagem)), a base `FileContractSource` (documentos `file`, bytes escritos com SHA-256, listagem que não depende do motor), uma implementação por conector (`FakeContractSource` sobre `fakes.connector.FakeConnector`, `FolderContractSource` sobre uma pasta em `tmp_path` com mtimes fixos, `GitContractSource` sobre um repositório local em que cada mutação é um commit com data fixa e `GitUrlContractSource`, o mesmo repositório clonado pelo conector por uma URL https reescrita para `file://`) e os registros `CONTRACT_SOURCES` (nome → fábrica que recebe `tmp_path`) e `DATABASE_CONTRACT_SOURCES` (nome → fábrica que recebe o `app_database_url` e `tmp_path`; esses parâmetros levam `integration`).
+- `tickets_contract_support.py`: `TicketsContractSource`, o conector interno `tickets` sobre uma fonte `tickets` no Postgres real: cada documento é um chamado cuja primeira mensagem do cliente é o conteúdo do contrato, gravado pelas regras reais da caixa (`check_items` + `apply_items`), com `updated_at` crescente; remover é uma lápide; quebrar é apagar o token de envio; `expected` é o Markdown e o hash de `render_ticket`; `processed` busca e fecha a listagem como o motor (`settle`).
+- `test_connector_contract.py`: os testes `test_contract_*`, parametrizados pela fixture `source` sobre os dois registros: primeira listagem adiciona tudo; listar com o próprio cursor depois de processar não muda nada; adicionado, alterado e removido; cursor sobrevive a ida e volta em JSON; `fetch` devolve o conteúdo e o hash esperados; ref desconhecida ou removida dá `DocumentNotFoundError`; ACL aberta; `test_connection` passa na fonte legível e falha com `ConnectorError` na quebrada; cursor alheio dá `InvalidCursorError`.
+
+**Não entra aqui**: testes específicos de um conector (ficam em `tests/connectors/test_<conector>_connector.py`, ou na pasta do módulo dono do conector interno, como `tests/tickets/test_tickets_connector.py`).
+
+**Convenções locais**: conector novo entra implementando `ContractSource` aqui e registrando a fábrica em `CONTRACT_SOURCES` (ou em `DATABASE_CONTRACT_SOURCES`, se precisar do banco). Os documentos do contrato são texto pequeno, com chaves em subpastas, para valerem em qualquer conector de árvore. As asserções olham só os refs do `kind` da fonte: documentos de outro tipo (os commits do Git) podem aparecer na listagem sem quebrar o contrato. Fonte cujo estado não é uma árvore (a caixa de entrada) implementa `processed`, porque o que foi listado continua pendente até o motor tratar.
+
+**Como testar**: de `backend/`, `uv run pytest tests/connectors/contract` (o parâmetro `tickets` exige Docker; só os de arquivo: `-m "not integration"`).
+
+**Leia também**: [tests/connectors/AGENTS.md](../AGENTS.md); [connectors/AGENTS.md](../../../src/knobridge/connectors/AGENTS.md); [tickets/AGENTS.md](../../../src/knobridge/tickets/AGENTS.md).

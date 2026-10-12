@@ -1,0 +1,15 @@
+# backend/tests/llm/
+
+**Função**: testes de `src/knobridge/llm/`: isolamento por RLS de `provider_credentials`, a cifra da chave amarrada à linha, os adaptadores sobre os SDKs oficiais, o mapeamento de erros, o `FakeLLMProvider` e a fábrica.
+
+**Entra aqui**: `test_provider_credentials.py` (RLS como dono e não dono pela fixture `rls_database_url`, inserção em workspace alheio, chave gravada cifrada e revelada, texto cifrado movido para outra linha recusado); `test_openai_adapter.py` (OpenAI, servidor compatível e OpenRouter: deltas, uso, parâmetros, `base_url`, modelos, `check_connection`, erros por status, de rede e no meio do stream); `test_anthropic_adapter.py` (o mesmo para Anthropic); `test_fake_provider.py` (determinismo do fake e `create_provider` por tipo); `test_openai_embeddings.py` (adaptadores de embedding OpenAI e OpenRouter: lotes por itens e por tokens, ordem dos vetores, `base_url`, `usage` ausente, `dimensions` enviado só ao Gemini, quantidade e dimensão erradas, erros por status e de rede); `test_fake_embeddings.py` (`FakeEmbeddingProvider` determinístico e com textos parecidos próximos, `plan_batches`, `create_embedding_provider` por tipo e `embedding_provider_for`); `test_embedding_pricing.py` (tabela de preços e `KNOBRIDGE_EMBEDDING_PRICES`); `llm_support.py` (`FakeHttp`: `httpx2.MockTransport` que grava as requisições e responde JSON ou SSE sintético; `collect`, `run`). As regras de negócio pela API (papéis, máscara, nome repetido, `fake` em produção, teste de conexão) ficam em `tests/api/test_providers.py` e `tests/api/test_provider_connection.py`; a primitiva de cifra, em `tests/core/test_crypto.py`.
+**Não entra aqui**: testes de rotas (`tests/api/`), da cadeia de migrações (`tests/migrations/`), chamadas a provedores reais.
+
+**Convenções locais**:
+- Testes com banco levam `@pytest.mark.integration`; o banco é compartilhado, então cada teste cria seus workspaces e usuários com slugs e e-mails únicos.
+- Chaves de API só sintéticas (ex.: `sk-test-...`); segredo raiz de teste fixo no próprio arquivo.
+- Relógio `FrozenClock`; sem rede. Adaptadores rodam o SDK de verdade com `http_client=FakeHttp(...).client()` e `max_retries=0` (retry do SDK dormiria entre tentativas).
+
+**Como testar**: de `backend/`, `uv run pytest tests/llm` (exige Docker).
+
+**Leia também**: [llm/AGENTS.md](../../src/knobridge/llm/AGENTS.md); [tests/AGENTS.md](../AGENTS.md).

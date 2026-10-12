@@ -1,0 +1,24 @@
+# backend/src/knobridge/connectors/
+
+**Função**: os conectores, que leem documentos das fontes externas atrás de um contrato único e pequeno (seção 7.1 da [visão](../../../../docs/01-visao-do-projeto.md)), e a seleção de arquivos compartilhada pelos conectores de árvore, pasta e Git (decisões D4 e D6 do [plano 0003](../../../../docs/planos/0003-primeiro-conhecimento.md)).
+
+**Entra aqui**:
+- `base.py`: o `Protocol` `Connector` (async: `list_changes(cursor) -> ChangeSet`, `fetch(ref) -> RawDocument`, `permissions(ref) -> Acl`, `test_connection()`) e os valores trocados: `DocumentRef` (chave natural: caminho POSIX relativo à raiz para `file`, `commit:<sha>` para `commit`; `kind` é o `DocumentKind` de `ingestion/`), `ChangeSet` (`added`, `changed`, `removed`, cada um ordenado por chave, e o novo `cursor`), `RawDocument` (bytes, `title`, `uri`, `extension`, `language`, `metadata`, `digest` opcional; `content_hash` = `digest` ou o SHA-256 do conteúdo, e `text` UTF-8 tolerante), `Acl` e `OPEN_ACL` (público no workspace; sem ACL por documento neste bloco) e o tipo `Cursor` (objeto JSON).
+- `errors.py`: `ConnectorError` (502) e as subclasses `SourceUnavailableError` (502), `PathOutsideRootError` (422), `DocumentNotFoundError` (404), `BranchNotFoundError` (422) e `InvalidCursorError` (500).
+- `selection.py`: `resolve_root` (raiz da fonte resolvida, com symlinks, dentro de `KNOBRIDGE_LOCAL_SOURCES_ROOT`), `FileSelector` (`iter_files` caminha a árvore aplicando as regras de caminho; `select(key)` revalida uma chave para o `fetch`; `read` devolve os bytes ou `None` para binário/grande demais/sumiu), `PathRules` (as regras que dependem só do caminho e do tamanho, com o carregador de `.gitignore` injetado: disco no `FileSelector`, árvore do commit no Git; `accepts_content` faz tamanho e NUL sobre os bytes), `SelectionRules` (`max_file_bytes` e `max_document_bytes`), `split_key`, `parse_gitignore`, `is_document` e as listas padrão (`DEFAULT_EXCLUDED_DIRS`, `LOCKFILE_NAMES`, `BINARY_EXTENSIONS`, `DOCUMENT_EXTENSIONS`, `LANGUAGES`).
+- Um subpacote por conector: `folder/` e `git/`. O conector interno `knowledge` das fontes `runner` mora em `harness/knowledge_connector.py`, porque lê o banco (os itens de conhecimento), o que os conectores daqui nunca fazem.
+
+**Não entra aqui**: acesso a banco (o motor de ingestão grava o cursor em `sources.cursor` e os documentos), parsing e chunking (`ingestion/`), workflows e activities (`workers/`), validação da configuração da fonte (`ingestion/source_config.py`; o conector recebe a configuração já validada).
+
+**Convenções locais**:
+- Ordem das regras de seleção: diretórios padrão (`.git`, `node_modules`, `dist`, `build`, `vendor`) → `.gitignore` aninhado (o mais profundo decide primeiro, semântica gitwildmatch via `pathspec`; diretório ignorado não é percorrido) → lockfile ou extensão binária conhecida → globs da fonte (inclusão vazia = tudo; padrões gitignore relativos à raiz: `*.md` casa em qualquer nível, `docs/**` só na raiz) → tamanho (`KNOBRIDGE_MAX_SOURCE_FILE_BYTES`) → byte NUL nos primeiros 8 KiB (só no `read`, para a listagem não abrir arquivo à toa).
+- Documentos binários parseáveis (`DOCUMENT_EXTENSIONS`: `.pdf`, `.docx`, `.xlsx`, `.pptx`) pulam a checagem de NUL, têm limite próprio (`KNOBRIDGE_MAX_SOURCE_DOCUMENT_BYTES`, 20 MiB) e chegam ao parser como bytes no `RawDocument`. Zips, imagens, executáveis e demais binários continuam excluídos. Formato novo só entra na lista quando o parsing souber convertê-lo.
+- Os globs são colunas da `Source`: quem monta o conector os repassa; o conector só os aplica por meio da seleção.
+- Segurança: toda raiz e todo arquivo são resolvidos com `Path.resolve()` e recusados fora da raiz permitida, inclusive via `..`, symlink ou junção do Windows. Symlink de arquivo dentro da raiz é seguido; symlink e junção de diretório nunca (evita ciclos e duplicatas). Chave malformada (absoluta, com `..`, `\`, drive ou parte vazia) é `PathOutsideRootError`.
+- No Git, a seleção vale para os blobs do HEAD: o `.gitignore` vem da árvore do commit e se aplica até a arquivo rastreado; symlinks e submódulos ficam de fora.
+- IO bloqueante roda em `asyncio.to_thread` (o Git usa subprocesso async); o cursor tem `kind` e `version` e todo conector recusa cursor alheio com `InvalidCursorError`.
+- Conector novo: subpacote com `AGENTS.md`, implementa `Connector` e entra na suíte de contrato (`tests/connectors/contract/`).
+
+**Como testar**: de `backend/`, `uv run pytest tests/connectors` (gate da suíte inteira: `uv run pytest`).
+
+**Leia também**: [folder/AGENTS.md](folder/AGENTS.md); [git/AGENTS.md](git/AGENTS.md); [tests/connectors/AGENTS.md](../../../tests/connectors/AGENTS.md); [ingestion/AGENTS.md](../ingestion/AGENTS.md); seção 9 do [AGENTS.md da raiz](../../../../AGENTS.md).

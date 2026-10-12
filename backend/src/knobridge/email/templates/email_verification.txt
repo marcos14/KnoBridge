@@ -1,0 +1,6 @@
+{% extends "_layout.txt" %}
+{% block content %}
+Confirme que este endereço de e-mail é seu para concluir o cadastro no KnoBridge.
+Abra o endereço abaixo:
+{% endblock %}
+{% block ignore_note %}Se você não criou uma conta no KnoBridge, ignore este e-mail.{% endblock %}

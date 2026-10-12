@@ -1,0 +1,41 @@
+# Environment files (keep only the example)
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# Node
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+npm-debug.log*
+pnpm-debug.log*
+playwright-report/
+test-results/
+blob-report/
+
+# Editors and OS
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local sources mounted by Docker Compose (deploy/sources/AGENTS.md): never commit them
+/deploy/sources/*
+!/deploy/sources/AGENTS.md
+
+# Claude Code agent worktrees
+.claude/worktrees/

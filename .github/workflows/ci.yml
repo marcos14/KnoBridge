@@ -1,0 +1,226 @@
+# CI gates of the monorepo (AGENTS.md, section 8). Every job must pass before merging into main.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  FORCE_COLOR: "1"
+  UV_PYTHON: "3.12"
+
+jobs:
+  repo-checks:
+    name: repo checks (scripts, AGENTS.md, plans)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: scripts
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      # setup-uv publishes no floating major tag since v8; pinned by commit SHA.
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: scripts/uv.lock
+      - run: uv sync --frozen
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run pyright
+      - run: uv run pytest
+      - run: uv run python check_agents_md.py
+      - run: uv run python check_plans.py
+
+  backend:
+    name: backend
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+      - run: uv sync --frozen
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run pyright
+      # Integration tests start Postgres + pgvector through testcontainers on the runner's Docker
+      # and the Temporal test server from the SDK.
+      - run: uv run pytest
+      - name: OpenAPI contract is up to date
+        run: |
+          uv run knobridge-openapi
+          git diff --exit-code -- ../docs/specs/openapi.json
+
+  runner:
+    name: runner
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: runner
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: runner/uv.lock
+      - run: uv sync --frozen
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run pyright
+      # Real claude/codex tests (marker real_harness) stay skipped: KNOBRIDGE_RUNNER_REAL_HARNESS
+      # is never set in CI (decision D17 of plan 0004).
+      - run: uv run pytest
+
+  frontend:
+    name: frontend
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      # The pnpm version comes from "packageManager" in frontend/package.json.
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: frontend/package.json
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm format:check
+      - run: pnpm typecheck
+      # Coverage is always on in vitest.config.ts, with thresholds of 95.
+      - run: pnpm test
+      - run: pnpm build
+      - run: pnpm check:api
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm e2e
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: |
+            frontend/playwright-report/
+            frontend/test-results/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  secrets:
+    name: secret scan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      GITLEAKS_VERSION: 8.30.1
+      GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      # Pinned binary verified by checksum instead of gitleaks-action, which requires a paid
+      # license on organization repositories.
+      - name: Install gitleaks
+        run: |
+          archive="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -fsSL -o "$archive" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${archive}"
+          echo "${GITLEAKS_SHA256}  ${archive}" | sha256sum --check --strict
+          tar -xzf "$archive" gitleaks
+          sudo install -m 0755 gitleaks /usr/local/bin/gitleaks
+          rm -f "$archive" gitleaks
+      - name: Scan the full git history
+        run: gitleaks git --redact --verbose --exit-code 1 .
+
+  compose:
+    name: compose config
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      # Validation only; the e2e-stack job brings the stack up.
+      - run: docker compose -f deploy/docker-compose.yml config -q
+      - run: docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.e2e.yml config -q
+
+  e2e-stack:
+    name: e2e against the stack
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      # The same commands as frontend/AGENTS.md and docs/guias/subir-ambiente.md.
+      COMPOSE: docker compose -f deploy/docker-compose.yml -f deploy/docker-compose.e2e.yml
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: frontend/package.json
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: frontend
+      - run: pnpm exec playwright install --with-deps chromium
+        working-directory: frontend
+      # runner.spec.ts starts knobridge-runner on this host (outside the compose) with
+      # `uv run --frozen`, the fake claude of runner/tests/fakes on PATH.
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: runner/uv.lock
+      - run: uv sync --frozen
+        working-directory: runner
+      # Fresh volumes on every run: the tests start from the initial setup.
+      - name: Start the stack
+        run: $COMPOSE up -d --build --wait --wait-timeout 600
+      - run: pnpm e2e:stack
+        working-directory: frontend
+      - name: Collect container logs
+        if: failure()
+        run: $COMPOSE logs --no-color --timestamps > compose-logs.txt
+      - name: Upload Playwright report and container logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-stack-report
+          path: |
+            frontend/playwright-report/stack/
+            frontend/test-results/stack/
+            compose-logs.txt
+          retention-days: 7
+          if-no-files-found: ignore
+      - name: Stop the stack
+        if: always()
+        run: $COMPOSE down -v

@@ -1,0 +1,64 @@
+# Pre-commit hooks of the monorepo (AGENTS.md, sections 8 and 9).
+# Install once with `uvx pre-commit install`; run everything with `uvx pre-commit run --all-files`.
+# Hook versions are fixed; updating them is a PR of its own.
+
+# Generated files and lockfiles are never rewritten by hooks; plans in docs/planos/ are edited
+# only by the orchestrator of each plan.
+exclude: ^(frontend/src/lib/api/schema\.gen\.ts|docs/specs/openapi\.json|frontend/pnpm-lock\.yaml|(backend|runner|scripts)/uv\.lock)$
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        # Two trailing spaces are a line break in Markdown (.editorconfig keeps them too).
+        args: [--markdown-linebreak-ext=md]
+        exclude: ^docs/planos/
+      - id: end-of-file-fixer
+        exclude: ^docs/planos/
+      - id: check-yaml
+      - id: check-merge-conflict
+      - id: check-added-large-files
+      - id: mixed-line-ending
+        args: [--fix=lf]
+        # Windows scripts keep CRLF (.gitattributes).
+        exclude: \.(bat|cmd|ps1)$
+
+  # Same version as ruff in backend/, runner/ and scripts/uv.lock. Ruff reads the nearest
+  # pyproject.toml of each file, so each Python project keeps its own settings.
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.0
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+        files: ^(backend|runner|scripts)/
+      - id: ruff-format
+        files: ^(backend|runner|scripts)/
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+
+  - repo: local
+    hooks:
+      # Runs the prettier pinned in frontend/pnpm-lock.yaml over the whole package, honoring
+      # frontend/.prettierignore. Needs `pnpm install` in frontend/ first.
+      - id: prettier-frontend
+        name: prettier (frontend)
+        entry: pnpm --dir frontend exec prettier --write --log-level warn .
+        language: system
+        files: ^frontend/
+        pass_filenames: false
+      - id: check-agents-md
+        name: every folder has an AGENTS.md
+        entry: uv run --project scripts python scripts/check_agents_md.py
+        language: system
+        pass_filenames: false
+        always_run: true
+      - id: check-plans
+        name: plan frontmatter is valid
+        entry: uv run --project scripts python scripts/check_plans.py
+        language: system
+        files: ^docs/planos/
+        pass_filenames: false
