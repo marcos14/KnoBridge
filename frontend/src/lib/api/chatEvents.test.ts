@@ -32,13 +32,24 @@ describe("parseChatEvent", () => {
     });
     expect(
       parseChatEvent({ event: "done", data: '{"message_id":"a","status":"no_source"}' }),
-    ).toEqual({ type: "done", messageId: "a", status: "no_source" });
+    ).toEqual({ type: "done", messageId: "a", status: "no_source", ticketRequestsEnabled: false });
     expect(
       parseChatEvent({
         event: "error",
         data: '{"message_id":"a","status":"failed","error":{"code":"provider_unavailable"}}',
       }),
     ).toEqual({ type: "error", messageId: "a", code: "provider_unavailable" });
+  });
+
+  it("test_parse_chat_event_done_reads_ticket_requests_enabled", () => {
+    const data = '{"message_id":"a","status":"no_source","ticket_requests_enabled":true}';
+
+    expect(parseChatEvent({ event: "done", data })).toEqual({
+      type: "done",
+      messageId: "a",
+      status: "no_source",
+      ticketRequestsEnabled: true,
+    });
   });
 
   it("test_parse_chat_event_error_without_code_is_chat_failed", () => {

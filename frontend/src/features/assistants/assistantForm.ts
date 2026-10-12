@@ -4,6 +4,8 @@ import { z } from "zod";
 import type { Assistant, AssistantInput, AssistantTone } from "@/lib/api/assistants";
 import { NAME_MAX_LENGTH } from "@/lib/schemas";
 
+import { isWebhookUrl, WEBHOOK_URL_MAX_LENGTH } from "./ticketWebhook";
+
 /** Tones offered by the form, in display order. */
 export const ASSISTANT_TONES: readonly AssistantTone[] = ["neutral", "formal", "friendly"];
 
@@ -60,33 +62,54 @@ export interface AssistantFormValues {
   active: boolean;
   collectionIds: string[];
   minSimilarity: string;
+  /** Whether the chat offers "Abrir chamado" (off sends `ticket_webhook_url: null`). */
+  ticketWebhookEnabled: boolean;
+  ticketWebhookUrl: string;
 }
 
 export function assistantFormSchema(t: TFunction) {
   const tooLong = (max: number) => ({ error: t("auth.validation.tooLong", { max }) });
   const text = (max: number) => z.string().trim().max(max, tooLong(max));
-  return z.object({
-    name: text(NAME_MAX_LENGTH).min(1, { error: t("assistants.form.validation.nameRequired") }),
-    description: text(DESCRIPTION_MAX_LENGTH),
-    systemPrompt: text(SYSTEM_PROMPT_MAX_LENGTH),
-    providerId: z.string().min(1, { error: t("assistants.form.validation.providerRequired") }),
-    model: text(MODEL_MAX_LENGTH)
-      .min(1, { error: t("assistants.form.validation.modelRequired") })
-      .regex(/^\S+$/, { error: t("assistants.form.validation.modelInvalid") }),
-    temperature: z.string().refine((value) => parseTemperature(value) !== null, {
-      error: t("assistants.form.validation.temperatureInvalid"),
-    }),
-    language: text(LANGUAGE_MAX_LENGTH).regex(LANGUAGE_PATTERN, {
-      error: t("assistants.form.validation.languageInvalid"),
-    }),
-    tone: z.enum(ASSISTANT_TONES),
-    noSourceMessage: text(NO_SOURCE_MESSAGE_MAX_LENGTH),
-    active: z.boolean(),
-    collectionIds: z.array(z.string()),
-    minSimilarity: z.string().refine((value) => parseMinSimilarity(value) !== null, {
-      error: t("assistants.form.validation.minSimilarityInvalid"),
-    }),
-  });
+  return z
+    .object({
+      name: text(NAME_MAX_LENGTH).min(1, { error: t("assistants.form.validation.nameRequired") }),
+      description: text(DESCRIPTION_MAX_LENGTH),
+      systemPrompt: text(SYSTEM_PROMPT_MAX_LENGTH),
+      providerId: z.string().min(1, { error: t("assistants.form.validation.providerRequired") }),
+      model: text(MODEL_MAX_LENGTH)
+        .min(1, { error: t("assistants.form.validation.modelRequired") })
+        .regex(/^\S+$/, { error: t("assistants.form.validation.modelInvalid") }),
+      temperature: z.string().refine((value) => parseTemperature(value) !== null, {
+        error: t("assistants.form.validation.temperatureInvalid"),
+      }),
+      language: text(LANGUAGE_MAX_LENGTH).regex(LANGUAGE_PATTERN, {
+        error: t("assistants.form.validation.languageInvalid"),
+      }),
+      tone: z.enum(ASSISTANT_TONES),
+      noSourceMessage: text(NO_SOURCE_MESSAGE_MAX_LENGTH),
+      active: z.boolean(),
+      collectionIds: z.array(z.string()),
+      minSimilarity: z.string().refine((value) => parseMinSimilarity(value) !== null, {
+        error: t("assistants.form.validation.minSimilarityInvalid"),
+      }),
+      ticketWebhookEnabled: z.boolean(),
+      ticketWebhookUrl: text(WEBHOOK_URL_MAX_LENGTH),
+    })
+    .superRefine((values, ctx) => {
+      // Off, the URL is not sent (it is cleared), so whatever is typed does not matter.
+      if (!values.ticketWebhookEnabled) {
+        return;
+      }
+      const message =
+        values.ticketWebhookUrl === ""
+          ? t("assistants.webhook.validation.urlRequired")
+          : isWebhookUrl(values.ticketWebhookUrl)
+            ? null
+            : t("assistants.webhook.validation.urlInvalid");
+      if (message !== null) {
+        ctx.addIssue({ code: "custom", path: ["ticketWebhookUrl"], message });
+      }
+    });
 }
 
 /**
@@ -111,6 +134,8 @@ export function assistantFormDefaults(
       active: true,
       collectionIds: [],
       minSimilarity: String(DEFAULT_MIN_SIMILARITY),
+      ticketWebhookEnabled: false,
+      ticketWebhookUrl: "",
     };
   }
   return {
@@ -126,15 +151,23 @@ export function assistantFormDefaults(
     active: assistant.active,
     collectionIds: [...assistant.collection_ids],
     minSimilarity: String(assistant.min_similarity),
+    ticketWebhookEnabled: assistant.ticket_webhook_url !== null,
+    ticketWebhookUrl: assistant.ticket_webhook_url ?? "",
   };
 }
 
 /**
  * Body of both `POST` and `PATCH` (every field is sent): a blank `no_source_message` makes the
- * backend store its default message; `collection_ids` replaces the whole set.
+ * backend store its default message; `collection_ids` replaces the whole set. The webhook URL
+ * (`null` when off) is left out when it is the one `current` already has: the server checks the
+ * destination again whenever it receives one, and an unchanged URL needs no new check.
  */
-export function assistantBody(values: AssistantFormValues): AssistantInput {
+export function assistantBody(values: AssistantFormValues, current?: Assistant): AssistantInput {
+  const webhookUrl = values.ticketWebhookEnabled ? values.ticketWebhookUrl : null;
+  const webhook =
+    current?.ticket_webhook_url === webhookUrl ? {} : { ticket_webhook_url: webhookUrl };
   return {
+    ...webhook,
     name: values.name,
     description: values.description,
     system_prompt: values.systemPrompt,

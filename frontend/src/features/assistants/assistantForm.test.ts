@@ -62,6 +62,8 @@ describe("assistantForm", () => {
       active: true,
       collectionIds: [],
       minSimilarity: "0.35",
+      ticketWebhookEnabled: false,
+      ticketWebhookUrl: "",
     });
   });
 
@@ -86,7 +88,77 @@ describe("assistantForm", () => {
       active: false,
       collection_ids: [COLLECTION_ID, OTHER_COLLECTION_ID],
       min_similarity: 0.55,
+      ticket_webhook_url: null,
     });
+  });
+
+  it("test_assistant_form_reads_the_webhook_of_an_assistant", () => {
+    const assistant = makeAssistant({ ticket_webhook_url: "https://chamados.example.test/kb" });
+
+    const values = assistantFormDefaults(assistant, "");
+
+    expect([values.ticketWebhookEnabled, values.ticketWebhookUrl]).toEqual([
+      true,
+      "https://chamados.example.test/kb",
+    ]);
+  });
+
+  it("test_assistant_body_leaves_an_unchanged_webhook_out_of_the_patch", () => {
+    const assistant = makeAssistant({ ticket_webhook_url: "https://chamados.example.test/kb" });
+    const values = assistantFormDefaults(assistant, "");
+
+    expect(assistantBody(values, assistant)).not.toHaveProperty("ticket_webhook_url");
+    expect(
+      assistantBody({ ...values, ticketWebhookUrl: "https://novo.example.test/kb" }, assistant),
+    ).toHaveProperty("ticket_webhook_url", "https://novo.example.test/kb");
+    expect(assistantBody({ ...values, ticketWebhookEnabled: false }, assistant)).toHaveProperty(
+      "ticket_webhook_url",
+      null,
+    );
+  });
+
+  it.each([
+    ["", "Informe a URL do webhook."],
+    ["chamados.example.test", "Informe uma URL http ou https válida, sem usuário e senha."],
+  ])("test_assistant_form_schema_checks_the_webhook_url_%s", (url, message) => {
+    const values = {
+      ...assistantFormDefaults(undefined, PROVIDER_ID),
+      name: "Ok",
+      model: "m",
+      ticketWebhookEnabled: true,
+      ticketWebhookUrl: url,
+    };
+
+    const result = assistantFormSchema(t).safeParse(values);
+
+    expect(result.error?.issues.map((issue) => [issue.path, issue.message])).toEqual([
+      [["ticketWebhookUrl"], message],
+    ]);
+  });
+
+  it("test_assistant_form_schema_ignores_the_url_with_the_webhook_off", () => {
+    const values = {
+      ...assistantFormDefaults(undefined, PROVIDER_ID),
+      name: "Ok",
+      model: "m",
+      ticketWebhookUrl: "não é url",
+    };
+
+    expect(assistantFormSchema(t).safeParse(values).success).toBe(true);
+  });
+
+  it("test_assistant_form_schema_accepts_a_webhook_url", () => {
+    const values = {
+      ...assistantFormDefaults(undefined, PROVIDER_ID),
+      name: "Ok",
+      model: "m",
+      ticketWebhookEnabled: true,
+      ticketWebhookUrl: " https://chamados.example.test/kb ",
+    };
+
+    const result = assistantFormSchema(t).safeParse(values);
+
+    expect(result.data?.ticketWebhookUrl).toBe("https://chamados.example.test/kb");
   });
 
   it("test_assistant_body_falls_back_to_default_temperature", () => {

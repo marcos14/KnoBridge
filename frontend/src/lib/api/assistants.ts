@@ -8,6 +8,8 @@ export type Assistant = components["schemas"]["AssistantOut"];
 export type AssistantTone = components["schemas"]["AssistantTone"];
 export type AssistantInput = components["schemas"]["AssistantCreate"];
 export type AssistantChanges = components["schemas"]["AssistantUpdate"];
+export type TicketWebhookSecret = components["schemas"]["TicketWebhookSecretOut"];
+export type TicketWebhookTest = components["schemas"]["TicketWebhookTestOut"];
 
 export function assistantsQueryKey(workspaceId: string) {
   return ["api", "workspaces", workspaceId, "assistants"] as const;
@@ -75,6 +77,42 @@ export function useUpdateAssistant(workspaceId: string) {
         }),
       ),
     onSuccess: refresh,
+  });
+}
+
+/**
+ * `POST .../assistants/{assistant_id}/ticket-webhook/secret` (201, owner or admin): generates the
+ * `kbw_` secret that signs the ticket webhook, replacing the current one at once. The whole secret
+ * comes only in this answer; the list is reloaded for `ticket_webhook_configured` and the date.
+ */
+export function useRotateTicketWebhookSecret(workspaceId: string) {
+  const refresh = useRefreshAssistants(workspaceId);
+  return useMutation({
+    mutationFn: async (assistantId: string) =>
+      unwrap(
+        await apiClient.POST(
+          "/v1/workspaces/{workspace_id}/assistants/{assistant_id}/ticket-webhook/secret",
+          { params: { path: { workspace_id: workspaceId, assistant_id: assistantId } } },
+        ),
+      ),
+    onSuccess: refresh,
+  });
+}
+
+/**
+ * `POST .../assistants/{assistant_id}/ticket-webhook/test` (editor or above): one signed
+ * `ticket.test` event to the saved URL, without retries. 200 also when the destination fails
+ * (`ok: false` with `error`); 409 `ticket_webhook_not_configured` without URL or secret.
+ */
+export function useTestTicketWebhook(workspaceId: string) {
+  return useMutation({
+    mutationFn: async (assistantId: string) =>
+      unwrap(
+        await apiClient.POST(
+          "/v1/workspaces/{workspace_id}/assistants/{assistant_id}/ticket-webhook/test",
+          { params: { path: { workspace_id: workspaceId, assistant_id: assistantId } } },
+        ),
+      ),
   });
 }
 

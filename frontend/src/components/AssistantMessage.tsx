@@ -1,5 +1,5 @@
-import { AlertTriangle, LifeBuoy, RotateCcw } from "lucide-react";
-import { type ReactNode, useId } from "react";
+import { AlertTriangle, RotateCcw } from "lucide-react";
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,8 @@ interface AssistantMessageProps {
   onResend?: () => void;
   /** Rating controls (chat) or the ratings received (conversations), for finished answers. */
   feedback?: ReactNode;
+  /** "Abrir chamado" or the state of the ticket asked for this answer (chat only). */
+  ticket?: ReactNode;
   /** Someone else's answer seen by an administrator: no ticket offer, the status said in words. */
   readOnly?: boolean;
 }
@@ -35,10 +37,10 @@ export function AssistantMessage({
   onCitation,
   onResend,
   feedback,
+  ticket,
   readOnly = false,
 }: AssistantMessageProps) {
   const { t } = useTranslation();
-  const ticketHintId = useId();
   const problem =
     status === "failed"
       ? translateApiErrorCode(errorCode ?? "chat_failed", t)
@@ -104,23 +106,7 @@ export function AssistantMessage({
       {status === "no_source" && readOnly && (
         <p className="text-muted-foreground text-xs">{t("chat.message.noSource")}</p>
       )}
-      {status === "no_source" && !readOnly && (
-        <div className="flex flex-col items-start gap-1">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled
-            aria-describedby={ticketHintId}
-          >
-            <LifeBuoy aria-hidden="true" />
-            {t("chat.message.openTicket")}
-          </Button>
-          <p id={ticketHintId} className="text-muted-foreground text-xs">
-            {t("chat.message.openTicketHint")}
-          </p>
-        </div>
-      )}
+      {ticket}
       {problem !== null && (
         <div className="border-destructive/40 text-destructive flex flex-wrap items-center gap-2 rounded-md border px-3 py-2 text-sm">
           <AlertTriangle aria-hidden="true" className="size-4" />

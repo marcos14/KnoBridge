@@ -36,7 +36,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { translateApiError } from "@/i18n/apiErrors";
 import { type Assistant, useCreateAssistant, useUpdateAssistant } from "@/lib/api/assistants";
 import { useCollections } from "@/lib/api/collections";
 import type { Provider } from "@/lib/api/providers";
@@ -48,6 +47,9 @@ import {
   assistantFormSchema,
   type AssistantFormValues,
 } from "./assistantForm";
+import { webhookApiErrorText } from "./ticketWebhook";
+import { TicketWebhookFields } from "./TicketWebhookFields";
+import { TicketWebhookPanel } from "./TicketWebhookPanel";
 
 interface AssistantDialogProps {
   workspaceId: string;
@@ -57,15 +59,21 @@ interface AssistantDialogProps {
   providers: readonly Provider[];
   /** The element that opens the dialog (a `Button`). */
   trigger: ReactElement;
+  /** Owners and admins generate the webhook secret (a credential); editors only test it. */
+  canManageSecret: boolean;
   onSaved: (assistant: Assistant) => void;
 }
 
-/** Create or edit an assistant: prompt, provider and model, behavior and whether it is active. */
+/**
+ * Create or edit an assistant: prompt, provider and model, behavior, the ticket webhook and
+ * whether it is active. Editing also offers the webhook secret and the test delivery.
+ */
 export function AssistantDialog({
   workspaceId,
   assistant,
   providers,
   trigger,
+  canManageSecret,
   onSaved,
 }: AssistantDialogProps) {
   const { t } = useTranslation();
@@ -90,7 +98,7 @@ export function AssistantDialog({
   }
 
   function onSubmit(values: AssistantFormValues) {
-    const body = assistantBody(values);
+    const body = assistantBody(values, assistant);
     const done = {
       onSuccess: (saved: Assistant) => {
         setOpen(false);
@@ -120,7 +128,7 @@ export function AssistantDialog({
             className="flex flex-col gap-4"
             onSubmit={(event) => void form.handleSubmit(onSubmit)(event)}
           >
-            {save.isError && <FormAlert message={translateApiError(save.error, t)} />}
+            {save.isError && <FormAlert message={webhookApiErrorText(save.error, t)} />}
             <TextField control={form.control} name="name" label={t("assistants.form.name")} />
             <TextField
               control={form.control}
@@ -173,6 +181,14 @@ export function AssistantDialog({
               label={t("assistants.form.noSourceMessage")}
               description={t("assistants.form.noSourceMessageHint")}
             />
+            <TicketWebhookFields control={form.control} />
+            {editing && (
+              <TicketWebhookPanel
+                workspaceId={workspaceId}
+                assistant={assistant}
+                canManageSecret={canManageSecret}
+              />
+            )}
             <FormField
               control={form.control}
               name="active"

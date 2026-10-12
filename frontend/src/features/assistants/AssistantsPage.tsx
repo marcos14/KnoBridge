@@ -12,6 +12,7 @@ import { translateApiError } from "@/i18n/apiErrors";
 import { type Assistant, useAssistants, useDeleteAssistant } from "@/lib/api/assistants";
 import { useProviders } from "@/lib/api/providers";
 import { clampOffset, pageOf } from "@/lib/pagination";
+import { canManageWorkspace } from "@/lib/roles";
 
 import { AssistantDialog } from "./AssistantDialog";
 
@@ -32,7 +33,11 @@ export function AssistantsPage() {
   return (
     <div className="flex max-w-5xl flex-col gap-6">
       {workspace !== undefined ? (
-        <AssistantsList key={workspace.id} workspaceId={workspace.id} />
+        <AssistantsList
+          key={workspace.id}
+          workspaceId={workspace.id}
+          canManageSecret={canManageWorkspace(workspace.role)}
+        />
       ) : (
         <h1 className="text-xl font-semibold">{t("assistants.title")}</h1>
       )}
@@ -40,7 +45,13 @@ export function AssistantsPage() {
   );
 }
 
-function AssistantsList({ workspaceId }: { workspaceId: string }) {
+function AssistantsList({
+  workspaceId,
+  canManageSecret,
+}: {
+  workspaceId: string;
+  canManageSecret: boolean;
+}) {
   const { t } = useTranslation();
   const [requestedOffset, setRequestedOffset] = useState(0);
   const [feedback, setFeedback] = useState<Feedback>(null);
@@ -157,6 +168,7 @@ function AssistantsList({ workspaceId }: { workspaceId: string }) {
             workspaceId={workspaceId}
             assistant={item}
             providers={providerList}
+            canManageSecret={canManageSecret}
             trigger={
               <Button
                 type="button"
@@ -202,6 +214,7 @@ function AssistantsList({ workspaceId }: { workspaceId: string }) {
           <AssistantDialog
             workspaceId={workspaceId}
             providers={providerList}
+            canManageSecret={canManageSecret}
             trigger={<Button type="button">{t("assistants.create")}</Button>}
             onSaved={showSaved("assistants.created")}
           />

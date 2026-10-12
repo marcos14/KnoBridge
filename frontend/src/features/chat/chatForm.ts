@@ -80,6 +80,42 @@ export function visibleMessages(
     : messages;
 }
 
+/** Longest summary `POST .../ticket-requests` accepts. */
+export const TICKET_SUMMARY_MAX_LENGTH = 2000;
+
+export function ticketSummarySchema(t: TFunction) {
+  return z.object({
+    summary: z
+      .string()
+      .trim()
+      .min(1, t("chat.ticket.summaryRequired"))
+      .max(
+        TICKET_SUMMARY_MAX_LENGTH,
+        t("chat.ticket.summaryTooLong", { max: TICKET_SUMMARY_MAX_LENGTH }),
+      ),
+  });
+}
+
+export type TicketSummaryValues = z.infer<ReturnType<typeof ticketSummarySchema>>;
+
+/** Whether a ticket can still be asked for this answer: finished and without a request. */
+export function canRequestTicket(message: Message): boolean {
+  return (
+    message.role === "assistant" &&
+    (message.status === "completed" || message.status === "no_source") &&
+    (message.ticket_request ?? null) === null
+  );
+}
+
+/**
+ * The answer "Abrir chamado" of the conversation menu asks a ticket for: the last finished answer
+ * when it has no request yet; `null` otherwise.
+ */
+export function ticketCandidate(messages: readonly Message[]): Message | null {
+  const last = messages.findLast((message) => message.role === "assistant");
+  return last !== undefined && canRequestTicket(last) ? last : null;
+}
+
 /** Whether Enter in the composer sends: plain Enter, not Shift+Enter nor while composing (IME). */
 export function isSendKey(event: { key: string; shiftKey: boolean; isComposing: boolean }) {
   return event.key === "Enter" && !event.shiftKey && !event.isComposing;

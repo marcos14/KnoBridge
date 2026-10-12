@@ -4,7 +4,7 @@
 
 Como chamados de qualquer sistema entram no KnoBridge e viram fonte do chat, e como o chat abre um chamado quando não sabe responder. Cobre o formato do chamado (JSON Schema), o envio pela API com token, o upload no painel, a caixa de entrada e seu ciclo de vida, a anonimização, o Markdown e o chunking, a citação `kind: ticket` e o webhook de saída. A arquitetura está no [ADR 0006](../adr/0006-chamados-por-push.md); o workflow de ingestão, em [indexacao.md](indexacao.md); o formato da citação no fio, em [chat-sse.md](chat-sse.md#citations) (v0.6); as tabelas, em [modelo-de-dados.md](modelo-de-dados.md).
 
-Código: `backend/src/knobridge/tickets/` (token de envio em `tokens.py`, formato do chamado em `wire.py`, validação por item e caixa de entrada em `ingest.py`, disparo da sincronização em `ingest_sync.py`) e as rotas `backend/src/knobridge/api/ingest.py` e `ingest_tokens.py` (plano 0005, F2.1); anonimização em `anonymize.py` e Markdown em `markdown.py` (F2.2); conector interno em `connector.py` e citação no chat em `retrieval/context.py` (F2.3); upload e prévia em `upload.py` e `upload_files.py`, com as rotas em `api/ticket_uploads.py` (F2.4); webhook do assistente (URL, segredo e evento de teste) em `webhook.py` e `signature.py`, proteção contra SSRF e cliente de saída em `core/outbound.py`, e as rotas em `api/ticket_webhook.py` e `api/assistants.py` (F3.1); pedidos de chamado em `requests.py` e `summary.py`, a entrega em `delivery.py`, o workflow em `workers/ticket_webhook.py` e `workers/ticket_webhook_activities.py`, e as rotas em `api/ticket_requests.py` (F3.2). A criar no plano 0005: as telas do painel em `frontend/`.
+Código: `backend/src/knobridge/tickets/` (token de envio em `tokens.py`, formato do chamado em `wire.py`, validação por item e caixa de entrada em `ingest.py`, disparo da sincronização em `ingest_sync.py`) e as rotas `backend/src/knobridge/api/ingest.py` e `ingest_tokens.py` (plano 0005, F2.1); anonimização em `anonymize.py` e Markdown em `markdown.py` (F2.2); conector interno em `connector.py` e citação no chat em `retrieval/context.py` (F2.3); upload e prévia em `upload.py` e `upload_files.py`, com as rotas em `api/ticket_uploads.py` (F2.4); webhook do assistente (URL, segredo e evento de teste) em `webhook.py` e `signature.py`, proteção contra SSRF e cliente de saída em `core/outbound.py`, e as rotas em `api/ticket_webhook.py` e `api/assistants.py` (F3.1); pedidos de chamado em `requests.py` e `summary.py`, a entrega em `delivery.py`, o workflow em `workers/ticket_webhook.py` e `workers/ticket_webhook_activities.py`, e as rotas em `api/ticket_requests.py` (F3.2); o resumo da fonte no painel em `inbox_summary.py`, com a rota em `api/ingest_tokens.py` (F4.2). Telas do painel: `frontend/src/features/sources/tickets/` (fonte de chamados, F4.1, e o resumo na aba Integração, F4.2), o webhook no formulário do assistente (`features/assistants/`) e "Abrir chamado" no chat (`features/chat/`) (F4.2).
 
 ## Visão geral
 
@@ -33,7 +33,7 @@ sequenceDiagram
 - **Textos**: sem NUL (`\u0000`). Espaços nas pontas são removidos antes de validar comprimento. Comprimentos em caracteres (pontos de código Unicode).
 - **Requisições** validadas com campos desconhecidos recusados. **Respostas** podem ganhar campos novos; o cliente ignora o que não conhece.
 - **Erros** no formato único da API: `{"error": {"code": "...", "message": "...", "details": ...}}`.
-- **Nomes dos schemas no OpenAPI**: `TicketIn` (o chamado), `TicketMessageIn`, `TicketRequesterIn`, `TicketPersonIn`, `TicketResolutionIn`, `TicketAttachmentIn`, `TicketUpsertItemIn`, `TicketDeleteItemIn`, `TicketIngestIn`, `TicketIngestOut`, `TicketIngestItemResult`, `TicketUploadOut`, `TicketUploadError`, `TicketPreviewIn`, `TicketPreviewOut`, `TicketPreviewMarker`, `TicketsSourceConfig`, `TicketsSummaryOut`, `IngestTokenOut`, `TicketRequestPreviewIn`, `TicketRequestPreviewOut`, `TicketRequestIn`, `TicketRequestOut`, `TicketWebhookSecretOut`, `TicketWebhookTestOut`, `TicketWebhookTestError`.
+- **Nomes dos schemas no OpenAPI**: `TicketIn` (o chamado), `TicketMessageIn`, `TicketRequesterIn`, `TicketPersonIn`, `TicketResolutionIn`, `TicketAttachmentIn`, `TicketUpsertItemIn`, `TicketDeleteItemIn`, `TicketIngestIn`, `TicketIngestOut`, `TicketIngestItemResult`, `TicketUploadOut`, `TicketUploadError`, `TicketPreviewIn`, `TicketPreviewOut`, `TicketPreviewMarker`, `TicketsSourceConfig`, `TicketsSummaryOut`, `TicketsInboxCounts`, `IngestTokenOut`, `TicketRequestPreviewIn`, `TicketRequestPreviewOut`, `TicketRequestIn`, `TicketRequestOut`, `TicketWebhookSecretOut`, `TicketWebhookTestOut`, `TicketWebhookTestError`.
 
 ## Formato do chamado
 
@@ -539,9 +539,9 @@ Só restam, depois do processamento: o Markdown anonimizado no índice e, na ent
 
 | Campo | Descrição |
 |---|---|
-| `counts` | `{pending, indexed, filtered, pending_delete, deleted}`. |
-| `failed` | Entradas `pending` com `last_error`. |
-| `last_received_at` | Última gravação de item `queued`, ou `null`. |
+| `counts` | `TicketsInboxCounts` `{pending, indexed, filtered, pending_delete, deleted}`: entradas da caixa de entrada da fonte em cada estado (zero quando não há). |
+| `failed` | Entradas `pending` com `last_error` (já contadas em `counts.pending`). |
+| `last_received_at` | Última gravação de item `queued` (o maior `received_at` da caixa de entrada da fonte), ou `null` sem entradas. |
 | `token_prefix` | Prefixo do token atual, ou `null` sem token. |
 | `token_created_at` | Data do token atual, ou `null`. |
 

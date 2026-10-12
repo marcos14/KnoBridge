@@ -463,6 +463,57 @@
         "minSimilarityInvalid": "Informe um número de 0 a 1.",
         "languageInvalid": "Informe um código de idioma válido, como pt-BR."
       }
+    },
+    "webhook": {
+      "title": "Abrir chamado",
+      "description": "Quando o assistente não souber responder, o chat oferece abrir um chamado. O pedido vai, assinado, para a URL do seu sistema de chamados, que abre o chamado e devolve o número.",
+      "enabled": "Oferecer \"Abrir chamado\" no chat",
+      "enabledHint": "Desligado, a URL é apagada e o chat deixa de oferecer o pedido. O segredo continua guardado.",
+      "url": "URL do webhook",
+      "urlHint": "Endereço https que recebe o pedido. Endereços internos ou reservados são recusados.",
+      "secretTitle": "Segredo e teste do webhook",
+      "secretDescription": "O segredo assina cada pedido (cabeçalho KnoBridge-Signature) para o destino conferir que veio do KnoBridge.",
+      "noSecret": "Nenhum segredo gerado ainda: sem ele, o chat não oferece abrir chamado.",
+      "secretCreated": "Segredo atual gerado em {{date}}.",
+      "secretManagersOnly": "Um owner ou admin do workspace gera o segredo.",
+      "generateSecret": "Gerar segredo",
+      "replaceSecret": "Gerar novo segredo",
+      "generating": "Gerando…",
+      "replaceWarning": "O segredo atual deixa de valer assim que o novo for gerado. Atualize o destino em seguida.",
+      "replaceConfirm": "Gerar e substituir",
+      "replaceCancel": "Cancelar",
+      "secretIssued": "Copie o segredo agora: ele não aparece de novo. Guarde-o no destino para conferir as assinaturas.",
+      "secretLabel": "Segredo do webhook",
+      "copySecret": "Copiar segredo",
+      "test": "Testar entrega",
+      "testing": "Enviando teste…",
+      "testHint": "Envia um evento ticket.test assinado para a URL salva, sem abrir chamado.",
+      "notConfigured": "Salve a URL e gere o segredo para testar.",
+      "testOk": "O destino aceitou a entrega de teste.",
+      "testFailed": "A entrega de teste falhou. {{reason}}",
+      "deliveryId": "Id da entrega: {{id}}",
+      "withReason": "{{message}} Motivo: {{reason}}.",
+      "withStatus": "{{message}} O destino respondeu HTTP {{status}}.",
+      "reasons": {
+        "malformed": "URL ou porta inválida",
+        "scheme_not_https": "a URL precisa usar https",
+        "host_missing": "a URL não tem host",
+        "credentials_in_url": "a URL não pode ter usuário e senha",
+        "host_unresolvable": "o host não foi encontrado",
+        "loopback": "o host aponta para o próprio servidor",
+        "private": "o host aponta para uma rede privada",
+        "link_local": "o host aponta para um endereço link-local",
+        "cgnat": "o host aponta para uma faixa de CGNAT",
+        "unspecified": "o host aponta para um endereço não especificado",
+        "multicast": "o host aponta para um endereço multicast",
+        "reserved": "o host aponta para um endereço reservado",
+        "timeout": "o destino não respondeu a tempo",
+        "network": "não houve conexão com o destino"
+      },
+      "validation": {
+        "urlRequired": "Informe a URL do webhook.",
+        "urlInvalid": "Informe uma URL http ou https válida, sem usuário e senha."
+      }
     }
   },
   "collections": {
@@ -864,6 +915,26 @@
       "upload": "Upload",
       "preview": "Prévia",
       "indexing": "Indexação"
+    },
+    "inbox": {
+      "title": "Situação da integração",
+      "loading": "Carregando a situação da integração…",
+      "loadFailed": "Não foi possível carregar a situação da integração.",
+      "retry": "Tentar novamente",
+      "token": "Token atual: kbi_{{prefix}}_…, gerado em {{date}}.",
+      "noToken": "Nenhum token de envio gerado ainda.",
+      "countsLabel": "Chamados recebidos por estado",
+      "states": {
+        "pending": "Aguardando processamento",
+        "indexed": "Indexados",
+        "filtered": "Fora dos status indexados",
+        "pending_delete": "Remoções aguardando",
+        "deleted": "Removidos"
+      },
+      "failed_one": "{{formatted}} chamado falhou no último processamento e será tentado de novo.",
+      "failed_other": "{{formatted}} chamados falharam no último processamento e serão tentados de novo.",
+      "lastReceived": "Último chamado recebido em {{date}}.",
+      "nothingReceived": "Nenhum chamado recebido ainda."
     },
     "token": {
       "title": "Token de envio",
@@ -1392,7 +1463,8 @@
       "loading": "Carregando conversa…",
       "loadFailed": "Não foi possível carregar a conversa.",
       "notFound": "Conversa não encontrada",
-      "assistant": "Assistente: {{name}}"
+      "assistant": "Assistente: {{name}}",
+      "openTicket": "Abrir chamado da conversa"
     },
     "thread": {
       "label": "Mensagens da conversa"
@@ -1404,8 +1476,30 @@
       "interrupted": "A resposta foi interrompida antes do fim.",
       "resend": "Reenviar pergunta",
       "openTicket": "Abrir chamado",
-      "openTicketHint": "Disponível quando houver integração de chamados.",
       "noSource": "Respondida sem fonte: o assistente ofereceu abrir chamado."
+    },
+    "ticket": {
+      "title": "Abrir chamado",
+      "description": "Confira o que será enviado ao sistema de chamados. O resumo pode ser editado antes de confirmar.",
+      "preparing": "Preparando o pedido…",
+      "close": "Fechar",
+      "cancel": "Cancelar",
+      "question": "Pergunta",
+      "summary": "Resumo",
+      "summaryHint": "Escrito pelo assistente a partir da conversa. Revise antes de enviar.",
+      "summaryFallback": "Não foi possível gerar o resumo: o texto é a sua pergunta. Revise antes de enviar.",
+      "summaryRequired": "Escreva o resumo do pedido.",
+      "summaryTooLong": "O resumo pode ter até {{max}} caracteres.",
+      "requester": "Solicitante: {{name}} ({{email}})",
+      "messages_one": "{{count}} mensagem da conversa vai junto.",
+      "messages_other": "{{count}} mensagens da conversa vão junto.",
+      "submit": "Confirmar e abrir chamado",
+      "submitting": "Enviando…",
+      "sending": "Enviando o chamado…",
+      "delivered": "Chamado aberto no sistema de chamados.",
+      "deliveredNumber": "Chamado {{number}} aberto.",
+      "openLink": "Abrir o chamado",
+      "failed": "Não foi possível abrir o chamado. {{reason}}"
     },
     "citations": {
       "title": "Fontes",
@@ -1807,6 +1901,14 @@
     "ticket_too_large": "O chamado passa de 1 MiB.",
     "upload_format_unsupported": "Use um arquivo .json ou .jsonl.",
     "upload_invalid_json": "O arquivo .json não é válido: ele deve ser uma lista ou um objeto {\"items\": [...]}.",
-    "upload_empty": "O arquivo não tem nenhum chamado."
+    "upload_empty": "O arquivo não tem nenhum chamado.",
+    "webhook_url_invalid": "A URL do webhook é inválida.",
+    "webhook_destination_blocked": "O destino do webhook não é permitido.",
+    "webhook_unreachable": "Não foi possível alcançar o destino do webhook.",
+    "webhook_rejected": "O destino recusou o envio.",
+    "webhook_expired": "O destino não aceitou o pedido em 24 horas.",
+    "ticket_webhook_not_configured": "O webhook de chamados deste assistente não está configurado.",
+    "ticket_request_exists": "Já existe um pedido de chamado para esta resposta.",
+    "ticket_delivery_unavailable": "O serviço de entrega de chamados está indisponível. Tente de novo em instantes."
   }
 }

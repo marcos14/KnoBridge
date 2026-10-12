@@ -1641,6 +1641,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/workspaces/{workspace_id}/sources/{source_id}/tickets/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Tickets Summary
+         * @description Inbox counts by state, pending entries that failed, the last item queued and the current
+         *     token (prefix and date).
+         */
+        get: operations["get_tickets_summary_v1_workspaces__workspace_id__sources__source_id__tickets_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/workspaces/{workspace_id}/sources/{source_id}/tickets/upload": {
         parameters: {
             query?: never;
@@ -4717,6 +4738,34 @@ export interface components {
             ok: boolean;
             /** Status */
             status: number | null;
+        };
+        /** TicketsInboxCounts */
+        TicketsInboxCounts: {
+            /** Deleted */
+            deleted: number;
+            /** Filtered */
+            filtered: number;
+            /** Indexed */
+            indexed: number;
+            /** Pending */
+            pending: number;
+            /** Pending Delete */
+            pending_delete: number;
+        };
+        /**
+         * TicketsSummaryOut
+         * @description States and dates only: no route lists the payloads of the inbox.
+         */
+        TicketsSummaryOut: {
+            counts: components["schemas"]["TicketsInboxCounts"];
+            /** Failed */
+            failed: number;
+            /** Last Received At */
+            last_received_at: string | null;
+            /** Token Created At */
+            token_created_at: string | null;
+            /** Token Prefix */
+            token_prefix: string | null;
         };
         /** UpdateUserRequest */
         UpdateUserRequest: {
@@ -10269,6 +10318,59 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    get_tickets_summary_v1_workspaces__workspace_id__sources__source_id__tickets_summary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketsSummaryOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace suspended (`workspace_suspended`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace not found or caller not a member, or not a `tickets` source of the workspace (`source_not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

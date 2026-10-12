@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { i18n } from "@/i18n";
 import { makeMessage, makeQuestion, messageId } from "@/test/factories";
+import { makeTicketRequest } from "@/test/ticketFactories";
 
 import {
   feedbackCommentSchema,
@@ -10,6 +11,8 @@ import {
   QUESTION_MAX_LENGTH,
   questionBefore,
   questionSchema,
+  ticketCandidate,
+  ticketSummarySchema,
   visibleMessages,
 } from "./chatForm";
 
@@ -91,5 +94,26 @@ describe("chatForm", () => {
     expect(isSendKey({ key: "Enter", shiftKey: true, isComposing: false })).toBe(false);
     expect(isSendKey({ key: "Enter", shiftKey: false, isComposing: true })).toBe(false);
     expect(isSendKey({ key: "a", shiftKey: false, isComposing: false })).toBe(false);
+  });
+
+  it("test_ticket_candidate_is_the_last_finished_answer_without_request", () => {
+    const question = makeQuestion("Pergunta?");
+    const answer = makeMessage({ status: "no_source" });
+
+    expect(ticketCandidate([question, answer])).toBe(answer);
+    expect(ticketCandidate([question])).toBeNull();
+    expect(ticketCandidate([question, { ...answer, status: "failed" }])).toBeNull();
+    expect(ticketCandidate([question, { ...answer, ticket_request: makeTicketRequest() }])).toBe(
+      null,
+    );
+  });
+
+  it("test_ticket_summary_schema_trims_and_limits", () => {
+    const schema = ticketSummarySchema(t);
+
+    expect(schema.parse({ summary: "  Resumo.  " })).toEqual({ summary: "Resumo." });
+    expect(schema.safeParse({ summary: "x".repeat(2001) }).error?.issues[0]?.message).toBe(
+      "O resumo pode ter até 2000 caracteres.",
+    );
   });
 });

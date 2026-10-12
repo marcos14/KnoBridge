@@ -93,7 +93,11 @@ describe("useChatStream", () => {
       source.close();
     });
     await waitFor(() => {
-      expect(result.current.pending?.outcome).toEqual({ kind: "done", status: "completed" });
+      expect(result.current.pending?.outcome).toEqual({
+        kind: "done",
+        status: "completed",
+        ticketRequestsEnabled: false,
+      });
     });
     expect(result.current.pending?.text).toBe("Confira os lançamentos [1].");
     expect(refresh.spy).toHaveBeenCalledTimes(2);

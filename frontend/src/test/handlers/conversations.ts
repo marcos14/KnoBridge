@@ -8,6 +8,7 @@ import type {
   Message,
   MessageStatus,
 } from "@/lib/api/conversations";
+import type { TicketRequest, TicketRequestPreview } from "@/lib/api/ticketRequests";
 
 import {
   makeConversation,
@@ -17,6 +18,7 @@ import {
   makeQuestion,
   messageId,
 } from "../factories";
+import { makeTicketRequest, makeTicketRequestPreview, TICKET_REQUEST_ID } from "../ticketFactories";
 import { apiErrorResponse } from "./errors";
 import { page } from "./page";
 
@@ -25,6 +27,10 @@ const CONVERSATION = "*/v1/workspaces/:workspaceId/conversations/:conversationId
 const MESSAGES = "*/v1/workspaces/:workspaceId/conversations/:conversationId/messages";
 const FEEDBACK =
   "*/v1/workspaces/:workspaceId/conversations/:conversationId/messages/:messageId/feedback";
+const TICKET_REQUESTS =
+  "*/v1/workspaces/:workspaceId/conversations/:conversationId/ticket-requests";
+const TICKET_PREVIEW = `${TICKET_REQUESTS}/preview`;
+const TICKET_REQUEST = `${TICKET_REQUESTS}/:requestId`;
 
 const encoder = new TextEncoder();
 
@@ -40,6 +46,8 @@ export interface AnswerScript {
   deltas?: string[];
   /** Final event: `done` with this status, or `error` with this code. */
   end?: { status: "completed" | "no_source" } | { error: string };
+  /** `ticket_requests_enabled` of the `done` event (v0.7; default `false`). */
+  ticketRequestsEnabled?: boolean;
 }
 
 /** The frames of a whole answer, in the contract's order: citations, deltas, done or error. */
@@ -49,6 +57,7 @@ export function answerFrames({
   citations = [],
   deltas = [],
   end = { status: "completed" },
+  ticketRequestsEnabled = false,
 }: AnswerScript = {}): string[] {
   const final =
     "status" in end
@@ -59,6 +68,7 @@ export function answerFrames({
           input_tokens: null,
           output_tokens: null,
           latency_ms: 10,
+          ticket_requests_enabled: ticketRequestsEnabled,
         })
       : sseFrame("error", {
           message_id: answerId,
@@ -125,19 +135,27 @@ interface ChatStoreOptions {
   messages?: Record<string, Message[]>;
   /** Answer to each question; default: a completed "Resposta." without sources. */
   reply?: (question: string, conversationId: string) => ChatReply | Response;
+  /** `ticket_requests_enabled` of every conversation detail (default: `false`). */
+  ticketRequestsEnabled?: boolean;
+  /** Answer of the ticket preview of an answer; default `makeTicketRequestPreview`. */
+  ticketPreview?: (messageId: string) => TicketRequestPreview | Response;
 }
 
 /**
  * Conversations and messages that really change, like the backend: `POST` creates a conversation
  * (409 `assistant_inactive` for an assistant id in `inactive`), `DELETE` removes it, a question is
  * saved with its answer (and names an untitled conversation) before the reply streams, and
- * feedback is stored on the message. `created`, `deleted`, `questions` and `feedback` keep what
- * was asked, in order.
+ * feedback is stored on the message. A ticket request is stored on its answer (`pending`; 409
+ * `ticket_request_exists` for a second one) and `settleTicket` moves it on, as the delivery would.
+ * `created`, `deleted`, `questions`, `feedback`, `ticketPreviews` and `ticketCreations` keep what
+ * was asked, in order; `ticketReads()` counts the reads of a request.
  */
 export function chatStore({
   conversations: initial = makeConversations(),
   messages: initialMessages = {},
   reply = () => ({ body: answerFrames({ deltas: ["Resposta."] }).join("") }),
+  ticketRequestsEnabled = false,
+  ticketPreview = (id) => makeTicketRequestPreview({ message_id: id }),
 }: ChatStoreOptions = {}) {
   let conversations = [...initial];
   const threads = new Map<string, Message[]>(Object.entries(initialMessages));
@@ -145,10 +163,42 @@ export function chatStore({
   const deleted: string[] = [];
   const questions: { conversationId: string; content: string }[] = [];
   const feedback: { messageId: string; body: FeedbackInput }[] = [];
+  const ticketPreviews: string[] = [];
+  const ticketCreations: { messageId: string; summary: string }[] = [];
+  // Requests already on the initial messages exist on the "server" too.
+  const requests = new Map<string, TicketRequest>(
+    Object.values(initialMessages)
+      .flat()
+      .flatMap((message) => (message.ticket_request ? [message.ticket_request] : []))
+      .map((request) => [request.id, request]),
+  );
+  let ticketReads = 0;
   let sequence = 0;
   const find = (id: string) => conversations.find((item) => item.id === id);
-  const detail = (conversation: Conversation) =>
-    makeConversationDetail(conversation, threads.get(conversation.id) ?? []);
+  const detail = (conversation: Conversation) => ({
+    ...makeConversationDetail(conversation, threads.get(conversation.id) ?? []),
+    ticket_requests_enabled: ticketRequestsEnabled,
+  });
+  const updateMessage = (id: string, change: (message: Message) => Message) => {
+    for (const [conversationId, thread] of threads) {
+      threads.set(
+        conversationId,
+        thread.map((message) => (message.id === id ? change(message) : message)),
+      );
+    }
+  };
+  const storeRequest = (request: TicketRequest) => {
+    requests.set(request.id, request);
+    updateMessage(request.message_id, (message) => ({ ...message, ticket_request: request }));
+  };
+  /** Moves the request on (default: the only one) with `changes`, as the delivery would. */
+  const settleTicket = (changes: Partial<TicketRequest>, requestId = TICKET_REQUEST_ID) => {
+    const request = requests.get(requestId);
+    if (request === undefined) {
+      throw new Error(`No ticket request ${requestId}`);
+    }
+    storeRequest({ ...request, ...changes });
+  };
 
   const handlers = [
     http.get(CONVERSATIONS, ({ request }) => page(request, conversations)),
@@ -206,17 +256,53 @@ export function chatStore({
       const body = (await request.json()) as FeedbackInput;
       const id = String(params.messageId);
       const saved = { ...body, updated_at: "2026-10-10T12:00:00Z" };
-      for (const [conversationId, thread] of threads) {
-        threads.set(
-          conversationId,
-          thread.map((message) => (message.id === id ? { ...message, feedback: saved } : message)),
-        );
-      }
+      updateMessage(id, (message) => ({ ...message, feedback: saved }));
       feedback.push({ messageId: id, body });
       return HttpResponse.json(saved);
     }),
+    http.post(TICKET_PREVIEW, async ({ request }) => {
+      const { message_id: id } = (await request.json()) as { message_id: string };
+      ticketPreviews.push(id);
+      const answer = ticketPreview(id);
+      return answer instanceof Response ? answer : HttpResponse.json<TicketRequestPreview>(answer);
+    }),
+    http.post(TICKET_REQUESTS, async ({ params, request }) => {
+      const body = (await request.json()) as { message_id: string; summary: string };
+      const existing = [...requests.values()].find((item) => item.message_id === body.message_id);
+      if (existing !== undefined) {
+        return apiErrorResponse(409, "ticket_request_exists", {
+          ticket_request_id: existing.id,
+        });
+      }
+      ticketCreations.push({ messageId: body.message_id, summary: body.summary });
+      const stored = makeTicketRequest({
+        id:
+          requests.size === 0 ? TICKET_REQUEST_ID : `${TICKET_REQUEST_ID}-${String(requests.size)}`,
+        conversation_id: String(params.conversationId),
+        message_id: body.message_id,
+      });
+      storeRequest(stored);
+      return HttpResponse.json<TicketRequest>(stored, { status: 202 });
+    }),
+    http.get(TICKET_REQUEST, ({ params }) => {
+      ticketReads += 1;
+      const found = requests.get(String(params.requestId));
+      return found === undefined
+        ? apiErrorResponse(404, "not_found")
+        : HttpResponse.json<TicketRequest>(found);
+    }),
   ];
-  return { handlers, created, deleted, questions, feedback };
+  return {
+    handlers,
+    created,
+    deleted,
+    questions,
+    feedback,
+    ticketPreviews,
+    ticketCreations,
+    ticketReads: () => ticketReads,
+    settleTicket,
+  };
 }
 
 /** Ids `chatStore` gives the `n`-th exchange (question and answer), to script matching frames. */

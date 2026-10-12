@@ -8588,6 +8588,95 @@
         "title": "TicketWebhookTestOut",
         "type": "object"
       },
+      "TicketsInboxCounts": {
+        "properties": {
+          "deleted": {
+            "title": "Deleted",
+            "type": "integer"
+          },
+          "filtered": {
+            "title": "Filtered",
+            "type": "integer"
+          },
+          "indexed": {
+            "title": "Indexed",
+            "type": "integer"
+          },
+          "pending": {
+            "title": "Pending",
+            "type": "integer"
+          },
+          "pending_delete": {
+            "title": "Pending Delete",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "pending",
+          "indexed",
+          "filtered",
+          "pending_delete",
+          "deleted"
+        ],
+        "title": "TicketsInboxCounts",
+        "type": "object"
+      },
+      "TicketsSummaryOut": {
+        "description": "States and dates only: no route lists the payloads of the inbox.",
+        "properties": {
+          "counts": {
+            "$ref": "#/components/schemas/TicketsInboxCounts"
+          },
+          "failed": {
+            "title": "Failed",
+            "type": "integer"
+          },
+          "last_received_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Received At"
+          },
+          "token_created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Token Created At"
+          },
+          "token_prefix": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Token Prefix"
+          }
+        },
+        "required": [
+          "counts",
+          "failed",
+          "last_received_at",
+          "token_prefix",
+          "token_created_at"
+        ],
+        "title": "TicketsSummaryOut",
+        "type": "object"
+      },
       "UpdateUserRequest": {
         "properties": {
           "is_superadmin": {
@@ -15343,6 +15432,69 @@
           }
         },
         "summary": "Preview Ticket Markdown",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/sources/{source_id}/tickets/summary": {
+      "get": {
+        "description": "Inbox counts by state, pending entries that failed, the last item queued and the current\ntoken (prefix and date).",
+        "operationId": "get_tickets_summary_v1_workspaces__workspace_id__sources__source_id__tickets_summary_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketsSummaryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Workspace suspended (`workspace_suspended`)."
+          },
+          "404": {
+            "description": "Workspace not found or caller not a member, or not a `tickets` source of the workspace (`source_not_found`)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Tickets Summary",
         "tags": [
           "sources"
         ]

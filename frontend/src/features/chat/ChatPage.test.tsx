@@ -361,8 +361,8 @@ describe("ChatPage", () => {
     expect(await screen.findByText(NO_COLLECTIONS_HINT)).toBeVisible();
   });
 
-  it("test_chat_no_source_answer_offers_disabled_ticket", async () => {
-    useStore({
+  it("test_chat_no_source_answer_offers_no_ticket_without_the_webhook", async () => {
+    const store = useStore({
       reply: () => ({
         body: answerFrames({
           ...exchangeIds(1),
@@ -377,10 +377,12 @@ describe("ChatPage", () => {
 
     await user.type(composer(), "Qual a cor do céu?{Enter}");
 
-    const ticket = await screen.findByRole("button", { name: "Abrir chamado" });
-    expect(ticket).toBeDisabled();
-    expect(ticket).toHaveAccessibleDescription("Disponível quando houver integração de chamados.");
-    expect(screen.getByText("Não encontrei isso nas fontes.")).toBeVisible();
+    expect(await screen.findByText("Não encontrei isso nas fontes.")).toBeVisible();
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: "Parar" })).not.toBeInTheDocument();
+    });
+    expect(screen.queryByRole("button", { name: /Abrir chamado/ })).not.toBeInTheDocument();
+    expect(store.ticketPreviews).toEqual([]);
   });
 
   it("test_chat_failed_answer_can_be_resent", async () => {

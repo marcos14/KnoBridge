@@ -1,12 +1,15 @@
+import { LifeBuoy } from "lucide-react";
 import { useLayoutEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 
 import { AssistantMessage } from "@/components/AssistantMessage";
+import { Button } from "@/components/ui/button";
 import type { PendingAnswer } from "@/lib/api/chatStream";
 import type { Citation, Message } from "@/lib/api/conversations";
 
 import { isAtEnd, questionBefore, visibleMessages } from "./chatForm";
 import { FeedbackControls } from "./FeedbackControls";
+import { TicketRequestState } from "./TicketRequestState";
 
 interface MessageListProps {
   workspaceId: string;
@@ -18,6 +21,44 @@ interface MessageListProps {
   onCitation: (citation: Citation) => void;
   /** Sends a question again; absent while an answer streams. */
   onResend?: (question: string) => void;
+  /**
+   * Opens "Abrir chamado" for an answer; absent when the assistant does not offer it (or while
+   * an answer streams). Offered on the answers without a source.
+   */
+  onOpenTicket?: (messageId: string) => void;
+}
+
+function TicketSlot({
+  workspaceId,
+  message,
+  onOpenTicket,
+}: {
+  workspaceId: string;
+  message: Message;
+  onOpenTicket?: (messageId: string) => void;
+}) {
+  const { t } = useTranslation();
+  const request = message.ticket_request ?? null;
+  if (request !== null) {
+    return <TicketRequestState workspaceId={workspaceId} request={request} />;
+  }
+  if (onOpenTicket === undefined || message.status !== "no_source") {
+    return null;
+  }
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      className="w-fit"
+      onClick={() => {
+        onOpenTicket(message.id);
+      }}
+    >
+      <LifeBuoy aria-hidden="true" />
+      {t("chat.message.openTicket")}
+    </Button>
+  );
 }
 
 function UserMessage({ content }: { content: string }) {
@@ -42,6 +83,7 @@ export function MessageList({
   pending,
   onCitation,
   onResend,
+  onOpenTicket,
 }: MessageListProps) {
   const { t } = useTranslation();
   const boxRef = useRef<HTMLDivElement | null>(null);
@@ -87,6 +129,13 @@ export function MessageList({
                 errorCode={message.error_code}
                 onCitation={onCitation}
                 onResend={resendFor(message)}
+                ticket={
+                  <TicketSlot
+                    workspaceId={workspaceId}
+                    message={message}
+                    onOpenTicket={onOpenTicket}
+                  />
+                }
                 feedback={
                   message.status === "completed" || message.status === "no_source" ? (
                     <FeedbackControls

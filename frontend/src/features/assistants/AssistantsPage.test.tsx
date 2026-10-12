@@ -246,6 +246,7 @@ describe("AssistantsPage create", () => {
         active: false,
         collection_ids: [COLLECTION_ID],
         min_similarity: 0.45,
+        ticket_webhook_url: null,
       },
     ]);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();

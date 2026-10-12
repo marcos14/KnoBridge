@@ -8,7 +8,7 @@ import { readSseEvents } from "./sse";
 
 /** How the answer being streamed ended; `null` while it is still arriving. */
 export type ChatOutcome =
-  | { kind: "done"; status: "completed" | "no_source" }
+  | { kind: "done"; status: "completed" | "no_source"; ticketRequestsEnabled: boolean }
   | { kind: "error"; code: string }
   /** Stopped by the user, connection lost or stream cut: the server records `interrupted`. */
   | { kind: "interrupted" };
@@ -57,7 +57,14 @@ function applyEvent(pending: PendingAnswer, event: ChatEvent): PendingAnswer {
     case "delta":
       return { ...pending, text: pending.text + event.text };
     case "done":
-      return { ...pending, outcome: { kind: "done", status: event.status } };
+      return {
+        ...pending,
+        outcome: {
+          kind: "done",
+          status: event.status,
+          ticketRequestsEnabled: event.ticketRequestsEnabled,
+        },
+      };
     case "error":
       return { ...pending, outcome: { kind: "error", code: event.code } };
   }

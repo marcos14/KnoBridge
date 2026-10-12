@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { CopyButton } from "@/components/CopyButton";
 import type { Source } from "@/lib/api/sources";
 
+import { InboxSummary } from "./InboxSummary";
 import { INGEST_TOKEN_VARIABLE, ticketIngestCurl, ticketIngestPython } from "./ingestExamples";
 import { IngestTokenDialog } from "./IngestTokenDialog";
 
@@ -13,7 +14,8 @@ interface IntegrationTabProps {
 }
 
 /**
- * How another system sends tickets: the send token (issued or replaced by owners and admins, shown
+ * How another system sends tickets: where the integration stands (current token and inbox
+ * counts), the send token (issued or replaced by owners and admins, shown
  * once) and the `curl` and Python examples, with the panel's origin as the server and the token
  * read from an environment variable.
  */
@@ -25,6 +27,12 @@ export function IntegrationTab({ workspaceId, source, canManageToken }: Integrat
 
   return (
     <div className="flex flex-col gap-6">
+      <section aria-labelledby="ingest-inbox-title" className="flex flex-col gap-2">
+        <h2 id="ingest-inbox-title" className="text-lg font-semibold">
+          {t("tickets.inbox.title")}
+        </h2>
+        <InboxSummary workspaceId={workspaceId} sourceId={source.id} />
+      </section>
       <section aria-labelledby="ingest-token-title" className="flex flex-col gap-2">
         <h2 id="ingest-token-title" className="text-lg font-semibold">
           {t("tickets.token.title")}

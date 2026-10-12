@@ -1,13 +1,15 @@
 import type { Citation } from "@/lib/api/conversations";
 import type { Source } from "@/lib/api/sources";
+import type { TicketRequest, TicketRequestPreview } from "@/lib/api/ticketRequests";
 import type {
   IngestToken,
   TicketPreview,
+  TicketsSummary,
   TicketUploadError,
   TicketUploadReport,
 } from "@/lib/api/tickets";
 
-import { makeCitation, makeSource } from "./factories";
+import { ASSISTANT_ID, CONVERSATION_ID, makeCitation, makeSource, messageId } from "./factories";
 
 /** Synthetic data of the tickets source "suporte" (plan 0005); nothing comes from a real system. */
 export const TICKETS_SOURCE_ID = "00000000-0000-4000-8000-0000000001b4";
@@ -39,6 +41,21 @@ export function makeIngestToken(overrides: Partial<IngestToken> = {}): IngestTok
     token: INGEST_TOKEN,
     token_prefix: "ab12cd34",
     created_at: "2026-10-10T12:00:00Z",
+    ...overrides,
+  };
+}
+
+/**
+ * The summary of "suporte" before any token or ticket: zero everywhere, no token, nothing
+ * received. Tests override the counts and dates they read.
+ */
+export function makeTicketsSummary(overrides: Partial<TicketsSummary> = {}): TicketsSummary {
+  return {
+    counts: { pending: 0, indexed: 0, filtered: 0, pending_delete: 0, deleted: 0 },
+    failed: 0,
+    last_received_at: null,
+    token_prefix: null,
+    token_created_at: null,
     ...overrides,
   };
 }
@@ -124,6 +141,52 @@ export function makeTicketUploadReport(
     errors_truncated: false,
     sync: "started",
     run_id: "00000000-0000-4000-8000-0000000001c9",
+    ...overrides,
+  };
+}
+
+export const TICKET_REQUEST_ID = "00000000-0000-4000-8000-0000000001e1";
+
+/** A ticket asked for answer `messageId(2)` of the default conversation, still being sent. */
+export function makeTicketRequest(overrides: Partial<TicketRequest> = {}): TicketRequest {
+  return {
+    id: TICKET_REQUEST_ID,
+    conversation_id: CONVERSATION_ID,
+    message_id: messageId(2),
+    assistant_id: ASSISTANT_ID,
+    status: "pending",
+    attempts: 0,
+    external_ticket_id: null,
+    external_url: null,
+    error_code: null,
+    created_at: "2026-10-12T13:00:00Z",
+    delivered_at: null,
+    ...overrides,
+  };
+}
+
+/** What `POST .../ticket-requests/preview` shows: Ana's question with a generated summary. */
+export function makeTicketRequestPreview(
+  overrides: Partial<TicketRequestPreview> = {},
+): TicketRequestPreview {
+  return {
+    message_id: messageId(2),
+    question: "Como emito nota fiscal para cliente do exterior?",
+    summary: "A usuária quer emitir nota de exportação e não achou o passo a passo.",
+    summary_generated: true,
+    requester: { name: "Ana Teste", email: "ana@example.test" },
+    messages: [
+      {
+        role: "user",
+        content: "Como emito nota fiscal para cliente do exterior?",
+        created_at: "2026-10-12T12:59:50Z",
+      },
+      {
+        role: "assistant",
+        content: "Não encontrei isso nas fontes.",
+        created_at: "2026-10-12T12:59:51Z",
+      },
+    ],
     ...overrides,
   };
 }

@@ -1,21 +1,49 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { apiClient, unwrap } from "./client";
 import type { components } from "./schema.gen";
-import { useRefreshSources } from "./sources";
+import { sourceQueryKey, useRefreshSources } from "./sources";
 
 export type IngestToken = components["schemas"]["IngestTokenOut"];
+export type TicketsSummary = components["schemas"]["TicketsSummaryOut"];
+export type TicketsInboxCounts = components["schemas"]["TicketsInboxCounts"];
 export type TicketIn = components["schemas"]["TicketIn"];
 export type TicketPreview = components["schemas"]["TicketPreviewOut"];
 export type TicketUploadReport = components["schemas"]["TicketUploadOut"];
 export type TicketUploadError = components["schemas"]["TicketUploadError"];
 
 /**
+ * Under the source's key, so whatever reloads the source (an upload, a sync) reloads it too.
+ */
+export function ticketsSummaryQueryKey(workspaceId: string, sourceId: string) {
+  return [...sourceQueryKey(workspaceId, sourceId), "tickets-summary"] as const;
+}
+
+/**
+ * `GET .../sources/{source_id}/tickets/summary` (any member): the inbox counts by state, the
+ * pending entries that failed, the last ticket received and the prefix and date of the current
+ * send token. 404 `source_not_found`.
+ */
+export function useTicketsSummary(workspaceId: string, sourceId: string) {
+  return useQuery({
+    queryKey: ticketsSummaryQueryKey(workspaceId, sourceId),
+    queryFn: async ({ signal }) =>
+      unwrap(
+        await apiClient.GET("/v1/workspaces/{workspace_id}/sources/{source_id}/tickets/summary", {
+          params: { path: { workspace_id: workspaceId, source_id: sourceId } },
+          signal,
+        }),
+      ),
+  });
+}
+
+/**
  * `POST .../sources/{source_id}/ingest-token` (201, owner or admin): issues the source's send
  * token, or replaces the current one, which stops working at once. The whole token comes only in
- * this answer; the server keeps its prefix and hash. Nothing cached changes.
+ * this answer; the server keeps its prefix and hash, so the summary (prefix and date) is reloaded.
  */
 export function useRotateIngestToken(workspaceId: string) {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (sourceId: string) =>
       unwrap(
@@ -23,6 +51,8 @@ export function useRotateIngestToken(workspaceId: string) {
           params: { path: { workspace_id: workspaceId, source_id: sourceId } },
         }),
       ),
+    onSuccess: (_, sourceId) =>
+      queryClient.invalidateQueries({ queryKey: ticketsSummaryQueryKey(workspaceId, sourceId) }),
   });
 }
 

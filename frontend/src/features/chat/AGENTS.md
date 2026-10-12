@@ -1,6 +1,6 @@
 # frontend/src/features/chat/
 
-**Função**: o chat dos membros em `/w/:workspaceId/chat` e `/w/:workspaceId/chat/:conversationId` (todo membro, inclusive viewer). Lista das próprias conversas, início de conversa com um assistente ativo, thread com a resposta em streaming, citações, fallback "sem fonte" e avaliação.
+**Função**: o chat dos membros em `/w/:workspaceId/chat` e `/w/:workspaceId/chat/:conversationId` (todo membro, inclusive viewer). Lista das próprias conversas, início de conversa com um assistente ativo, thread com a resposta em streaming, citações, fallback "sem fonte", avaliação e "Abrir chamado".
 
 **Entra aqui**:
 
@@ -11,6 +11,7 @@
 - `NoCollectionsHint.tsx`: dica discreta acima do composer (nova conversa e conversa aberta) quando o assistente não tem coleção e, portanto, responderá sempre "sem fonte".
 - `MessageList.tsx`: thread em `ol`; a resposta em andamento num `aria-live="polite"`; acompanha o fim só se o leitor já estiver no fim. As mensagens gravadas que já aparecem como a troca em andamento saem por `visibleMessages` (`chatForm.ts`): pelos ids do evento `citations` ou, antes dele (a conversa nova recarregada logo ao abrir), pela cauda com a mesma pergunta e a resposta `streaming`.
 - A resposta (`AssistantMessage`, `ChatMarkdown`) e o painel da fonte (`CitationSheet`) vêm de `components/`, compartilhados com a tela de conversas; o plugin dos marcadores `[n]` fica em `lib/citationMarkers.ts`.
+- "Abrir chamado" (plano 0005, [chamados.md](../../../../docs/specs/chamados.md#pedido-no-chat)), só quando o detalhe da conversa traz `ticket_requests_enabled` (recarregado ao fim de cada resposta, com o mesmo valor do `done` v0.7) e nada está em streaming: botão nas respostas `no_source` sem pedido (pelo slot `ticket` da `AssistantMessage`) e "Abrir chamado da conversa" no cabeçalho para a última resposta `completed`/`no_source` sem pedido (`ticketCandidate`). `ConversationView` guarda a resposta escolhida e pede a prévia; `TicketRequestDialog.tsx` mostra "Preparando o pedido…", o erro da prévia, ou a pergunta, o resumo editável (1 a 2000, `ticketSummarySchema`; aviso quando o resumo é a própria pergunta), solicitante e quantas mensagens vão junto, e só cria com "Confirmar e abrir chamado" (409 `ticket_request_exists` recarrega a conversa). `TicketRequestState.tsx`: estado do pedido na resposta: "Enviando o chamado…" (relido a cada `TICKET_REQUEST_POLL_INTERVAL_MS` enquanto `pending`, depois nunca mais), entregue com o número e o link (só `http(s)`, nova aba, `rel="noopener noreferrer"`) ou falhou com o motivo pelo `error_code`.
 - `FeedbackControls.tsx` (👍/👎 com comentário opcional), `Composer.tsx` (Enter envia, Shift+Enter quebra linha, "Parar" durante o stream, foco devolvido), `chatForm.ts` (schemas zod e funções puras, incluindo `visibleMessages`).
 
 **Não entra aqui**: SSE, `fetch` e hooks de API (`lib/api/chatStream.ts`, `lib/api/conversations.ts`), visualização administrativa de conversas (`features/conversations/`), renderização de respostas compartilhada (`components/`), textos (`i18n/locales/`, chaves `chat.*`).
@@ -21,6 +22,6 @@
 - Sair de uma conversa com resposta em andamento a interrompe (o servidor grava `interrupted`).
 - Nada de HTML vindo da resposta: só Markdown renderizado pelo `react-markdown`.
 
-**Como testar**: de `frontend/`, `pnpm test -- --coverage`. Pela árvore real (`renderWithProviders({ path: "/w/<id>/chat" })`) com `chatStore` (conversas e mensagens com estado, resposta por `reply`), `controlledStream()` para empurrar o SSE pedaço a pedaço sem timers e `answerFrames`/`exchangeIds` para os eventos. E2E em `e2e/chat.spec.ts`.
+**Como testar**: de `frontend/`, `pnpm test -- --coverage`. Pela árvore real (`renderWithProviders({ path: "/w/<id>/chat" })`) com `chatStore` (conversas e mensagens com estado, resposta por `reply`), `controlledStream()` para empurrar o SSE pedaço a pedaço sem timers e `answerFrames`/`exchangeIds` para os eventos. Pedido de chamado: `chatStore({ ticketRequestsEnabled, ticketPreview })` grava o pedido na resposta (409 no segundo), `settleTicket(changes)` faz o papel da entrega, `ticketPreviews`, `ticketCreations` e `ticketReads()` registram o que foi pedido; o polling com `vi.useFakeTimers({ shouldAdvanceTime: true })` e `vi.advanceTimersByTimeAsync` (`TicketRequest.test.tsx`). E2E em `e2e/chat.spec.ts`.
 
 **Leia também**: [../AGENTS.md](../AGENTS.md); [docs/specs/chat-sse.md](../../../../docs/specs/chat-sse.md); [../../lib/api/AGENTS.md](../../lib/api/AGENTS.md).

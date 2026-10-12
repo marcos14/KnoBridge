@@ -5,7 +5,13 @@ import type { SseEvent } from "./sse";
 export type ChatEvent =
   | { type: "citations"; messageId: string; userMessageId: string; citations: Citation[] }
   | { type: "delta"; text: string }
-  | { type: "done"; messageId: string; status: Extract<MessageStatus, "completed" | "no_source"> }
+  | {
+      type: "done";
+      messageId: string;
+      status: Extract<MessageStatus, "completed" | "no_source">;
+      /** The assistant offers "Abrir chamado" (v0.7; absent, as before it, `false`). */
+      ticketRequestsEnabled: boolean;
+    }
   | { type: "error"; messageId: string; code: string };
 
 /** Raised when the stream carries something the contract does not allow (bad JSON, bad shape). */
@@ -67,7 +73,12 @@ export function parseChatEvent(event: SseEvent): ChatEvent | null {
       if (status !== "completed" && status !== "no_source") {
         throw new ChatProtocolError(`Chat event "done" has unknown status "${status}"`);
       }
-      return { type: "done", messageId: stringField(data, "message_id"), status };
+      return {
+        type: "done",
+        messageId: stringField(data, "message_id"),
+        status,
+        ticketRequestsEnabled: data.ticket_requests_enabled === true,
+      };
     }
     case "error": {
       const data = parseData(event);

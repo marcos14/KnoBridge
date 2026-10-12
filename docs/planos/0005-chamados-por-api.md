@@ -92,10 +92,10 @@ fases:
         commit: 6ef3ba9
       - id: F4.2
         titulo: Webhook no assistente e "Abrir chamado" no chat
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
-        concluida_em: null
+        concluida_em: 2026-10-12
         commit: null
   - id: F5
     titulo: Embedding do Gemini
@@ -322,6 +322,13 @@ decisoes:
     decisao: "F4.1: fonte de chamados no painel com abas Integração, Upload, Prévia e Indexação (viewer só vê execuções e documentos); config montada dos campos do formulário; exemplos curl e Python com window.location.origin e o token em KNOBRIDGE_INGEST_TOKEN; link do chamado só http(s) em nova aba com noopener; a rota GET .../tickets/summary da spec (prefixo do token e contagens da caixa) ficou sem implementação e entra na F4.2 (backend e painel)"
     motivo: "a tela usa só contrato existente; a lacuna é do backend, que a F4.2 já toca"
     alternativas: "inventar o resumo no frontend; subfase nova"
+    adr: null
+  - id: D28
+    data: 2026-10-12
+    por: agente
+    decisao: "F4.2: rota tickets/summary aberta a qualquer membro (prefixo e data do token, contagens por estado, failed = pending com last_error, last_received_at) em tickets/inbox_summary.py; botão Abrir chamado decidido por ticket_requests_enabled do detalhe da conversa (recarregado ao fim de cada resposta), na resposta no_source e no cabeçalho; sem webhook não aparece botão; polling do pedido a cada 3 s enquanto pending; PATCH do assistente só envia a URL quando ela muda; https exigido só pelo servidor (hosts liberados em dev)"
+    motivo: "evitar estado duplicado entre SSE e detalhe e não repetir a checagem SSRF a cada salvamento"
+    alternativas: "decidir pelo done do SSE; botão desabilitado sem webhook"
     adr: null
 pendencias_usuario:
   - id: P1
@@ -648,6 +655,7 @@ D1 a D12 vêm das respostas do usuário (seção 2). D13 a D16 são do agente, n
 - 2026-10-12 — F3.2 concluída: pedido de chamado com prévia e resumo, confirmação e entrega assinada no workflow knobridge.ticket_webhook.v1 com retentativas e prazo de 24 h; backend 2074 passed com 99% de cobertura, frontend 1144
 - 2026-10-12 — F4.1 concluída: fonte de chamados no painel (token, exemplos, upload com relatório por linha, prévia de anonimização) e citação kind ticket no chat; frontend 1191 testes, 98,63% de branches, 3 de 4 rodadas verdes (1 falha intermitente na primeira rodada após a integração, não reproduzida em 3 rodadas seguidas; teste não identificado porque o log foi sobrescrito)
 - 2026-10-12 — F4.2 iniciada (agente em worktree), com a rota tickets/summary incluída (D27).
+- 2026-10-12 — F4.2 concluída: webhook no assistente (URL, segredo mostrado uma vez, testar entrega), Abrir chamado no chat com prévia, resumo editável e estado do pedido, e a rota tickets/summary com a situação da integração na fonte; gates do agente: backend 2083 passed com 99,87%, frontend 1240; orquestrador: lint, pyright, testes da rota e gate do frontend (1240) verdes
 
 ## 8. Encerramento
 

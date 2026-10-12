@@ -112,7 +112,7 @@ function ticketStatus(value: string | null | undefined): TicketStatus | null {
 }
 
 /** An `http(s)` link, the only kind the panel opens; anything else is dropped. */
-function webUrl(value: string | null | undefined): string | null {
+export function webUrl(value: string | null | undefined): string | null {
   const url = present(value);
   return url !== null && /^https?:\/\//i.test(url) ? url : null;
 }
