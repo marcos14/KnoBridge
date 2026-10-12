@@ -21,7 +21,7 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
         concluida_em: 2026-10-12
-        commit: null
+        commit: 7c29916
 decisoes:
   - id: D1
     data: 2026-10-12
@@ -100,6 +100,7 @@ Nenhuma.
 - 2026-10-12 — plano criado; aguardando aprovação.
 - 2026-10-12 — plano aprovado pelo usuário ("aprovado"); F1.1 iniciada (agente em worktree).
 - 2026-10-12 — F1.1 concluída: composes e .env.example na raiz com caminhos ajustados, .env do usuário movido, referências vigentes atualizadas; compose config, scripts 98, runner 436, frontend 1240 e E2E da stack 3/3 a partir da raiz
+- 2026-10-12 — Plano concluído; encerramento na seção 8.
 
 ## 8. Encerramento
 
