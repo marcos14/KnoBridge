@@ -21,17 +21,17 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
         concluida_em: 2026-10-12
-        commit: null
+        commit: acbb83e
       - id: F1.2
         titulo: Migração 0017 (chaves de API, custo e canal por resposta) com RLS
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-12
         concluida_em: null
         commit: null
   - id: F2
     titulo: Servidor
-    status: pendente
+    status: em_execucao
     subfases:
       - id: F2.1
         titulo: Setup que cria o primeiro workspace e superadmin entrando num workspace como admin auditado
@@ -63,9 +63,9 @@ fases:
         commit: null
       - id: F2.5
         titulo: Ações e listagens que faltam no backend (reindexar fonte, sincronizar a coleção, duplicar assistente, busca e ordenação)
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-12
         concluida_em: null
         commit: null
   - id: F3
@@ -396,6 +396,8 @@ Nenhuma.
 - 2026-10-12 — plano criado; aguardando aprovação.
 - 2026-10-12 — plano aprovado pelo usuário ("Aprovado"); F1.1 iniciada (agente em worktree).
 - 2026-10-12 — F1.1 concluída: ADR 0007, specs api-publica.md e uso-e-custos.md e atualizações em autenticação, chat, chat-sse, indexação, runner e visão v0.5; links e checagens verdes
+- 2026-10-12 — F1.2 iniciada (agente em worktree).
+- 2026-10-12 — F2.5 iniciada (agente em worktree).
 
 ## 8. Encerramento
 
