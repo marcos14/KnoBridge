@@ -46,19 +46,19 @@ fases:
         agente: null
         iniciada_em: null
         concluida_em: 2026-10-12
-        commit: null
+        commit: f8217a9
       - id: F2.3
         titulo: Conector interno tickets no workflow de ingestão e citação de chamado no chat
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-12
         concluida_em: null
         commit: null
       - id: F2.4
         titulo: Upload JSON/JSONL pelo painel e prévia de anonimização
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-12
         concluida_em: null
         commit: null
   - id: F3
@@ -592,6 +592,8 @@ D1 a D12 vêm das respostas do usuário (seção 2). D13 a D16 são do agente, n
 - 2026-10-12 — F2.1 iniciada (agente em worktree).
 - 2026-10-12 — F2.1 concluída: token de envio kbi_ (owner/admin, auditado), POST /v1/ingest/tickets com validação por item, regra do updated_at e lápide, sincronização ingest depois do commit; gates do agente: backend 1628 passed com 99,86%, frontend 1140; orquestrador: ruff, format e pyright limpos na integração
 - 2026-10-12 — F2.2 concluída: anonimização determinística, Markdown do chamado e chunk_ticket, integrados sobre a F2.1 com o TicketIn único de wire.py; backend 1740 passed com 99% de cobertura
+- 2026-10-12 — F2.3 iniciada (agente em worktree).
+- 2026-10-12 — F2.4 iniciada (agente em worktree).
 
 ## 8. Encerramento
 
