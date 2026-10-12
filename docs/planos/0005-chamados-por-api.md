@@ -125,13 +125,13 @@ fases:
         agente: orquestrador
         iniciada_em: 2026-10-12
         concluida_em: 2026-10-12
-        commit: null
+        commit: 3654867
       - id: F6.3
         titulo: Comparação de embeddings OpenAI x Gemini em pt-BR
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: orquestrador
+        iniciada_em: 2026-10-12
+        concluida_em: 2026-10-12
         commit: null
 decisoes:
   - id: D1
@@ -343,6 +343,13 @@ decisoes:
     decisao: "F6.2: a seção Solução do chamado vai no primeiro trecho junto do título, metadados e problema quando cabem em MAX_TOKENS (senão fica separada); a execução criada por sincronização pendente recebe o gatilho pelo tipo da fonte (ingest em tickets, harness em runner)"
     motivo: "no ensaio, 4 de 15 respostas diziam não sei com o trecho do problema recuperado sem a solução (11 para 14 acertos depois); o upload pendente atrás de um envio virava execução harness"
     alternativas: "expandir o contexto com a solução no momento da busca (consulta extra); coluna com o gatilho pendente"
+    adr: null
+  - id: D31
+    data: 2026-10-12
+    por: agente
+    decisao: "F6.3: o embedding padrão continua openai/text-embedding-3-small; google/gemini-embedding-001 é a melhor opção de qualidade (recall@5 1,0 contra 0,958, artigo no top 5 0,917 contra 0,688, acerta a paráfrase da TEF) mas exige limiar em torno de 0,60 (sem relação chega a 0,54) e custa 7,5 vezes mais; gemini-embedding-2 não recomendado (folga de 0,04); modelos Gemini com lotes de até 100 textos (limite do Google); troca do padrão fica para depois de limiar por modelo e confirmação no Minski, com ADR"
+    motivo: "dados sintéticos e limiar fixo de 0,35 quebrariam a regra 8 com o Gemini"
+    alternativas: "trocar o padrão para o gemini-embedding-001 já; gemini-embedding-2"
     adr: null
 pendencias_usuario:
   - id: P1
@@ -673,7 +680,48 @@ D1 a D12 vêm das respostas do usuário (seção 2). D13 a D16 são do agente, n
 - 2026-10-12 — F6.1 iniciada (agente em worktree).
 - 2026-10-12 — F6.1 concluída: gerador sintético com gabarito e perguntas, receptor fake de webhook, E2E da stack de chamados (duas rodadas verdes, 3/3 specs cada), guia receber-chamados-por-api.md revisado pelo orquestrador, README, CHANGELOG e AGENTS raiz 12.5; correção do worker que não entregava o webhook; gates do agente: backend 2084 passed, frontend 1240, scripts 98; orquestrador: lint, pyright, scripts e frontend verdes
 - 2026-10-12 — F6.2 concluída: ensaio sintético com 300 chamados (API e upload): 1612 dados pessoais semeados todos anonimizados, 130 versões preservadas, 38 nomes de terceiros não declarados no texto (limite conhecido), bruto apagado, 14 de 15 perguntas citando o chamado certo e Abrir chamado entregue com assinatura; correções com teste: solução no primeiro trecho e gatilho da sincronização pendente; relatório docs/pesquisa/0003; backend 2087 passed com 99% de cobertura; gasto US$ 0,03
+- 2026-10-12 — F6.3 concluída: comparação de três embeddings sobre 330 documentos sintéticos e 53 perguntas (relatório docs/pesquisa/0004), padrão mantido no OpenAI, aviso do limiar do Gemini na spec, correção do lote de até 100 textos do Gemini com teste; backend 2089 passed com 99% de cobertura; gasto US$ 0,08
 
 ## 8. Encerramento
 
-A preencher ao concluir.
+**Entregue**: chamados de qualquer sistema entram no KnoBridge por push, num formato padrão, sem conector por provedor ([ADR 0006](../adr/0006-chamados-por-push.md); contrato em [chamados.md](../specs/chamados.md)).
+
+- **Fonte `tickets`**: token de envio, `POST /v1/ingest/tickets` com resultado por item e a regra do `updated_at` (reenvio idempotente, remoção com lápide), upload JSON/JSONL em fluxo, prévia da anonimização e situação da integração.
+- **Conector interno `tickets` no workflow de ingestão**: anonimização determinística, Markdown com a solução junto do problema, notas internas e status por fonte, bruto apagado junto com a gravação. Citação `kind: ticket` no chat.
+- **"Abrir chamado"**: webhook por assistente, com segredo cifrado, proteção contra SSRF, assinatura HMAC, entrega no Temporal com retentativas por 24 h e número do chamado mostrado no chat.
+- **Embeddings do Gemini** pelo OpenRouter, com 1536 dimensões.
+- **Teste e documentação**: gerador sintético com gabarito, receptor de webhook falso, E2E da stack e o guia [receber chamados por API](../guias/receber-chamados-por-api.md).
+
+**Ensaios**:
+
+- [0003](../pesquisa/0003-ensaio-chamados-sinteticos.md), chamados sintéticos:
+  - 1.612 dados pessoais semeados, todos anonimizados; 130 versões preservadas;
+  - nomes de terceiros não declarados continuam no texto, o limite conhecido;
+  - 14 de 15 perguntas com o chamado certo;
+  - "Abrir chamado" entregue com a assinatura conferida.
+- [0004](../pesquisa/0004-embeddings-openai-x-gemini.md), embeddings:
+  - o `gemini-embedding-001` recupera melhor paráfrases e o artigo de solução;
+  - mas exige limiar de similaridade em torno de 0,60;
+  - o padrão segue OpenAI (D31).
+- Correções reveladas pelos ensaios e pelo E2E, todas com teste:
+  - webhook não entregue pelo worker;
+  - gatilho da sincronização pendente;
+  - solução separada do problema no chunking;
+  - lote de embeddings do Gemini acima do limite do Google.
+
+**Fora do escopo, com o motivo**:
+
+- Conector por provedor, CSV e mapeamento de webhook nativo (D1, D2).
+- Anonimização por LLM (D5).
+- ACL por chamado (D7).
+- Tela administrativa de conversas com o estado do pedido de chamado: não estava na F4.2.
+- Similaridade mínima com padrão por modelo de embedding e troca do embedding padrão: recomendadas na pesquisa 0004 para um próximo lote, com a comparação repetida no índice real do Minski e ADR.
+
+**Como demonstrar**: siga o guia [receber chamados por API](../guias/receber-chamados-por-api.md).
+
+1. Crie a fonte **Chamados** e gere o token.
+2. Envie chamados por `curl` ou faça o upload do `tickets.jsonl` gerado por `uv run python -m synthetic_tickets`.
+3. Ligue a coleção ao assistente e pergunte no chat.
+4. Com o webhook configurado, use **Abrir chamado** numa resposta sem fonte.
+
+Sem stack manual, o E2E `frontend/e2e/stack/tickets.spec.ts` percorre o mesmo caminho com o receptor falso do compose de E2E.

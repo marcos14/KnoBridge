@@ -108,6 +108,28 @@ def test_openai_embeddings_batches_requests() -> None:
     assert result.tokens_estimated is False
 
 
+def test_gemini_batches_hold_at_most_100_texts() -> None:
+    # Ensaio 0003: Google refuses more than 100 texts per batch ("at most 100 requests can be
+    # in one batch"), which the default of 128 items exceeded for google/gemini-embedding-2.
+    http = FakeHttp(_echo)
+    provider = _openrouter(http)
+    texts = [f"text {number}" for number in range(150)]
+
+    run(lambda: provider.embed(texts, "google/gemini-embedding-2"))
+
+    assert [len(_inputs(request)) for request in http.requests] == [100, 50]
+
+
+def test_other_models_keep_the_default_batch_size() -> None:
+    http = FakeHttp(_echo)
+    provider = _openrouter(http)
+    texts = [f"text {number}" for number in range(150)]
+
+    run(lambda: provider.embed(texts, "openai/text-embedding-3-small"))
+
+    assert [len(_inputs(request)) for request in http.requests] == [128, 22]
+
+
 def test_openai_embeddings_batches_by_estimated_tokens() -> None:
     http = FakeHttp(_echo)
     # "word 1" is 6 characters, two estimated tokens each.

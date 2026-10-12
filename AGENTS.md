@@ -250,10 +250,11 @@ O plano [0005](docs/planos/0005-chamados-por-api.md) trouxe os chamados por push
 3. "Abrir chamado": webhook por assistente com segredo `kbw_...` cifrado, proteção contra SSRF em toda tentativa, assinatura HMAC-SHA256, entrega pelo workflow `knobridge.ticket_webhook.v1` com retentativas por 24 h e o número devolvido pelo destino mostrado no chat.
 4. Embeddings do Gemini pelo OpenRouter, reduzidos a 1536 dimensões; painel com a fonte de chamados (Integração, Upload, Prévia, Indexação), o webhook no assistente e "Abrir chamado" no chat.
 5. Gerador de chamados sintéticos com gabarito da anonimização (`scripts/synthetic_tickets/`), receptor de webhook falso no compose de E2E e E2E da stack do envio à citação e ao chamado aberto. Passo a passo em [docs/guias/receber-chamados-por-api.md](docs/guias/receber-chamados-por-api.md).
+6. Ensaios com dados sintéticos: chamados ([docs/pesquisa/0003-ensaio-chamados-sinteticos.md](docs/pesquisa/0003-ensaio-chamados-sinteticos.md): 1.612 dados pessoais semeados, todos anonimizados; 14 de 15 perguntas com o chamado certo, depois de juntar a solução ao trecho do problema) e embeddings OpenAI x Gemini ([docs/pesquisa/0004-embeddings-openai-x-gemini.md](docs/pesquisa/0004-embeddings-openai-x-gemini.md): o `gemini-embedding-001` recupera melhor paráfrases, mas exige limiar de similaridade em torno de 0,60; o padrão continua `openai/text-embedding-3-small`).
 
 ### 12.6 Próximos passos
 
-Siga o roadmap da visão. Da Fase 0 ainda falta a comparação OpenAI x Gemini embedding em pt-BR, em andamento no plano 0005.
+Siga o roadmap da visão. A Fase 0 está completa. Candidatos levantados pelos ensaios: similaridade mínima com padrão por modelo de embedding e a comparação OpenAI x Gemini repetida no índice real do Minski (antes de trocar o embedding padrão, com ADR); ação "reindexar fonte" no painel; aviso de arquivos gerados que dominam o índice.
 
 ## 13. Template de `AGENTS.md` de pasta
 

@@ -30,6 +30,9 @@ from knobridge.llm.openai_adapter import OPENROUTER_BASE_URL, sdk_errors
 # Matched on the id without the vendor prefix: ``google/gemini-embedding-001`` on OpenRouter,
 # ``gemini-embedding-001`` on Google's OpenAI-compatible endpoint, and later versions.
 _DIMENSIONS_MODEL_PREFIXES = ("gemini-embedding",)
+# Google refuses more than 100 texts per batch request ("at most 100 requests can be in one
+# batch"); OpenRouter passes the refusal through for google/gemini-embedding-2 (ensaio 0003).
+GEMINI_MAX_BATCH_ITEMS = 100
 
 
 def sends_dimensions(model: str) -> bool:
@@ -68,7 +71,12 @@ class OpenAIEmbeddingProvider:
         vectors: list[list[float]] = []
         tokens = 0
         estimated = False
-        for batch in plan_batches(texts, max_items=self._max_items, max_tokens=self._max_tokens):
+        max_items = (
+            min(self._max_items, GEMINI_MAX_BATCH_ITEMS)
+            if sends_dimensions(model)
+            else self._max_items
+        )
+        for batch in plan_batches(texts, max_items=max_items, max_tokens=self._max_tokens):
             inputs = [texts[index] for index in batch]
             with sdk_errors(self.name):
                 # ``float`` explicitly: the SDK otherwise asks for base64 and decodes it itself.
