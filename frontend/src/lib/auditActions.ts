@@ -63,6 +63,8 @@ const ACTIONS: Record<AuditAction, true> = {
   "workspace.updated": true,
   "workspace.suspended": true,
   "workspace.reactivated": true,
+  "superadmin.workspace_entered": true,
+  "superadmin.workspace_exited": true,
   "setup.completed": true,
 };
 

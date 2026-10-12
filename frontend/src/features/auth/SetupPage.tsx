@@ -40,8 +40,9 @@ export function SetupPage() {
   });
 
   function onSubmit({ name, email, password }: z.infer<typeof schema>) {
+    // The first workspace gets a default name until the form asks for it (plan 0008 F3.1).
     setup.mutate(
-      { name, email, password },
+      { name, email, password, workspace_name: t("auth.setup.defaultWorkspaceName") },
       {
         onSuccess: () => {
           void navigate("/", { replace: true });

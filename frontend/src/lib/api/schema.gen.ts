@@ -64,6 +64,26 @@ export interface paths {
         patch: operations["update_user_v1_admin_users__user_id__patch"];
         trace?: never;
     };
+    "/v1/admin/workspace-access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Exit Workspace
+         * @description Leave the workspace entered in this session; without one, nothing changes.
+         */
+        delete: operations["exit_workspace_v1_admin_workspace_access_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/workspaces": {
         parameters: {
             query?: never;
@@ -106,6 +126,26 @@ export interface paths {
          * @description Rename, suspend (members lose access) or reactivate a workspace.
          */
         patch: operations["update_workspace_v1_admin_workspaces__workspace_id__patch"];
+        trace?: never;
+    };
+    "/v1/admin/workspaces/{workspace_id}/enter": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Enter Workspace
+         * @description Enter the workspace as effective admin in this session (idempotent).
+         */
+        post: operations["enter_workspace_v1_admin_workspaces__workspace_id__enter_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/auth/csrf": {
@@ -380,7 +420,7 @@ export interface paths {
         };
         /**
          * Me
-         * @description Who is logged in and which workspaces they can open.
+         * @description Who is logged in, which workspaces they can open and any superadmin access.
          */
         get: operations["me_v1_me_get"];
         put?: never;
@@ -606,7 +646,7 @@ export interface paths {
         put?: never;
         /**
          * Run Setup
-         * @description Create the first superadmin (e-mail already verified) and log them in.
+         * @description Create the first superadmin (e-mail verified) and workspace (as owner); log them in.
          */
         post: operations["run_setup_v1_setup_post"];
         delete?: never;
@@ -2149,7 +2189,7 @@ export interface components {
          * AuditAction
          * @enum {string}
          */
-        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted" | "provider.tested" | "assistant.created" | "assistant.updated" | "assistant.deleted" | "assistant.ticket_webhook_secret_rotated" | "assistant.ticket_webhook_tested" | "conversation.deleted" | "ticket_request.created" | "collection.created" | "collection.updated" | "collection.deleted" | "source.created" | "source.updated" | "source.deleted" | "source.tested" | "source.sync.started" | "source.sync.cancelled" | "source.reindex.started" | "source.ingest_token_rotated" | "source.tickets_uploaded" | "runner.created" | "runner.updated" | "runner.revoked" | "runner.deleted" | "harness_job.cancelled" | "harness_job.enqueued" | "harness_module.created" | "harness_module.updated" | "knowledge_item.updated";
+        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "superadmin.workspace_entered" | "superadmin.workspace_exited" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted" | "provider.tested" | "assistant.created" | "assistant.updated" | "assistant.deleted" | "assistant.ticket_webhook_secret_rotated" | "assistant.ticket_webhook_tested" | "conversation.deleted" | "ticket_request.created" | "collection.created" | "collection.updated" | "collection.deleted" | "source.created" | "source.updated" | "source.deleted" | "source.tested" | "source.sync.started" | "source.sync.cancelled" | "source.reindex.started" | "source.ingest_token_rotated" | "source.tickets_uploaded" | "runner.created" | "runner.updated" | "runner.revoked" | "runner.deleted" | "harness_job.cancelled" | "harness_job.enqueued" | "harness_module.created" | "harness_module.updated" | "knowledge_item.updated";
         /** AuditEventOut */
         AuditEventOut: {
             /** Action */
@@ -3124,6 +3164,7 @@ export interface components {
         MeResponse: {
             /** Is Superadmin */
             is_superadmin: boolean;
+            superadmin_access: components["schemas"]["SuperadminAccessOut"] | null;
             user: components["schemas"]["UserOut"];
             /** Workspaces */
             workspaces: components["schemas"]["UserWorkspaceOut"][];
@@ -4290,6 +4331,8 @@ export interface components {
             name: string;
             /** Password */
             password: string;
+            /** Workspace Name */
+            workspace_name: string;
         };
         /** SetupStatusResponse */
         SetupStatusResponse: {
@@ -4456,6 +4499,21 @@ export interface components {
              * Format: uuid
              */
             source_id: string;
+        };
+        /** SuperadminAccessOut */
+        SuperadminAccessOut: {
+            /**
+             * Entered At
+             * Format: date-time
+             */
+            entered_at: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /** Workspace Name */
+            workspace_name: string;
         };
         /**
          * Theme
@@ -4921,6 +4979,7 @@ export interface components {
         UserStatus: "active" | "suspended";
         /** UserWorkspaceOut */
         UserWorkspaceOut: {
+            access: components["schemas"]["WorkspaceAccessKind"];
             /**
              * Id
              * Format: uuid
@@ -4951,6 +5010,11 @@ export interface components {
             /** Token */
             token: string;
         };
+        /**
+         * WorkspaceAccessKind
+         * @enum {string}
+         */
+        WorkspaceAccessKind: "member" | "superadmin";
         /** WorkspaceOut */
         WorkspaceOut: {
             /**
@@ -5144,6 +5208,40 @@ export interface operations {
             };
         };
     };
+    exit_workspace_v1_admin_workspace_access_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeResponse"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a superadmin (`forbidden`) or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     list_workspaces_v1_admin_workspaces_get: {
         parameters: {
             query?: {
@@ -5285,6 +5383,58 @@ export interface operations {
                 content?: never;
             };
             /** @description Workspace not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    enter_workspace_v1_admin_workspaces__workspace_id__enter_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeResponse"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a superadmin (`forbidden`), CSRF failure (`csrf_failed`) or suspended workspace (`workspace_suspended`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace not found (`not_found`). */
             404: {
                 headers: {
                     [name: string]: unknown;

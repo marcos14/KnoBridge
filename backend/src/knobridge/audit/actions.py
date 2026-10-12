@@ -21,6 +21,9 @@ class AuditAction(StrEnum):
     WORKSPACE_UPDATED = "workspace.updated"
     WORKSPACE_SUSPENDED = "workspace.suspended"
     WORKSPACE_REACTIVATED = "workspace.reactivated"
+    # Superadmin access to a workspace (recorded in the instance and the workspace trails).
+    SUPERADMIN_WORKSPACE_ENTERED = "superadmin.workspace_entered"
+    SUPERADMIN_WORKSPACE_EXITED = "superadmin.workspace_exited"
     # Authentication and account.
     AUTH_LOGIN_SUCCEEDED = "auth.login.succeeded"
     AUTH_LOGIN_FAILED = "auth.login.failed"

@@ -24,11 +24,11 @@ Teste rápido: `curl http://127.0.0.1:8000/v1/health/live` (processo de pé) e `
 
 ## Primeiro acesso
 
-Com o banco migrado e a API de pé, `GET /v1/setup/status` responde `{"needs_setup": true}` enquanto não existe nenhum usuário. O setup cria o superadmin e já devolve os cookies de sessão e CSRF:
+Com o banco migrado e a API de pé, `GET /v1/setup/status` responde `{"needs_setup": true}` enquanto não existe nenhum usuário. O setup cria o superadmin e o primeiro workspace (com ele como owner) e já devolve os cookies de sessão e CSRF:
 
 ```sh
 curl -c cookies.txt -H 'Content-Type: application/json' \
-  -d '{"name":"Admin","email":"admin@example.com","password":"uma senha bem longa"}' \
+  -d '{"name":"Admin","email":"admin@example.com","password":"uma senha bem longa","workspace_name":"Suporte"}' \
   http://localhost:8000/v1/setup
 curl -b cookies.txt http://localhost:8000/v1/me
 ```

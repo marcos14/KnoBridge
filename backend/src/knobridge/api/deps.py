@@ -4,7 +4,8 @@ Chain used by workspace routes::
 
     current_user -> workspace_context(workspace_id) -> require_role(min_role)
 
-``workspace_context`` checks the caller's membership and the workspace status, then hands
+``workspace_context`` checks the caller's membership (or the session's superadmin access to
+the workspace, docs/specs/autenticacao.md) and the workspace status, then hands
 the route a session whose transaction is scoped (``SET LOCAL``) to that workspace and user;
 the transaction commits before the response is sent (``scope="function"``).
 """
@@ -56,9 +57,10 @@ from knobridge.tenancy.auth import AuthConfig, AuthenticatedUser, AuthService
 from knobridge.tenancy.invitations import InvitationService
 from knobridge.tenancy.members import MemberService
 from knobridge.tenancy.models import Role, WorkspaceStatus
-from knobridge.tenancy.queries import get_workspace_access
+from knobridge.tenancy.queries import get_workspace, get_workspace_access
 from knobridge.tenancy.rbac import role_at_least
 from knobridge.tenancy.setup import SetupService
+from knobridge.tenancy.superadmin_access import SuperadminAccessService, effective_role
 from knobridge.tickets.connector import TicketsConnectorFactory
 from knobridge.tickets.tokens import ingest_token_failure
 
@@ -135,6 +137,10 @@ def get_admin_user_service(request: Request) -> AdminUserService:
     return AdminUserService(request.app.state.clock, settings.session_ttl)
 
 
+def get_superadmin_access_service(request: Request) -> SuperadminAccessService:
+    return SuperadminAccessService(request.app.state.clock)
+
+
 def get_provider_credential_service(request: Request) -> ProviderCredentialService:
     settings = get_settings_from_app(request)
     # HKDF is cheap, so the data key is derived per request instead of kept in app state.
@@ -179,6 +185,9 @@ InvitationAcceptanceDep = Annotated[InvitationAcceptance, Depends(get_invitation
 MemberServiceDep = Annotated[MemberService, Depends(get_member_service)]
 AdminWorkspaceServiceDep = Annotated[AdminWorkspaceService, Depends(get_admin_workspace_service)]
 AdminUserServiceDep = Annotated[AdminUserService, Depends(get_admin_user_service)]
+SuperadminAccessServiceDep = Annotated[
+    SuperadminAccessService, Depends(get_superadmin_access_service)
+]
 ProviderCredentialServiceDep = Annotated[
     ProviderCredentialService, Depends(get_provider_credential_service)
 ]
@@ -316,20 +325,29 @@ class WorkspaceContext:
 async def workspace_context(
     workspace_id: uuid.UUID, current: CurrentUserDep, factory: SessionFactoryDep
 ) -> AsyncGenerator[WorkspaceContext]:
-    """Open the request's session scoped to ``workspace_id`` once membership is confirmed.
+    """Open the request's session scoped to ``workspace_id`` once access is confirmed.
 
     The path only selects the workspace; access comes from the membership of the session's
-    user. Non-members get 404 (existence is not revealed); members of a suspended workspace
-    get 403 ``workspace_suspended``.
+    user or from the session's superadmin access to that workspace (role: the higher of the
+    membership's and ``admin``). Without either, 404 (existence is not revealed); a
+    suspended workspace gives 403 ``workspace_suspended``.
     """
     user_id = current.user.id
     async with scoped_session(factory, workspace_id=workspace_id, user_id=user_id) as db:
         access = await get_workspace_access(db, workspace_id=workspace_id, user_id=user_id)
-        if access is None:
+        role, status = (None, None) if access is None else (access.role, access.status)
+        entered = current.superadmin_access
+        if entered is not None and entered.workspace_id == workspace_id:
+            # Only a superadmin's session carries the access (``tenancy.auth``).
+            if status is None:
+                workspace = await get_workspace(db, workspace_id=workspace_id)
+                status = None if workspace is None else workspace.status
+            role = effective_role(role)
+        if role is None or status is None:
             raise NotFoundError("Workspace not found.")
-        if access.status != WorkspaceStatus.ACTIVE:
+        if status != WorkspaceStatus.ACTIVE:
             raise ForbiddenError("Workspace is suspended.", code="workspace_suspended")
-        yield WorkspaceContext(workspace_id=workspace_id, current=current, role=access.role, db=db)
+        yield WorkspaceContext(workspace_id=workspace_id, current=current, role=role, db=db)
 
 
 WorkspaceContextDep = Annotated[WorkspaceContext, Depends(workspace_context, scope="function")]

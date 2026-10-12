@@ -54,3 +54,12 @@ async def get_workspace_access(
         )
     ).one_or_none()
     return None if row is None else WorkspaceAccess(role=row[0], status=row[1])
+
+
+async def get_workspace(db: AsyncSession, *, workspace_id: uuid.UUID) -> Workspace | None:
+    """The workspace by id, when visible: selected in the scope (or system mode) under RLS.
+
+    Used for a superadmin's access, which comes from the session and not from a membership.
+    """
+    statement = select(Workspace).where(Workspace.id == workspace_id)
+    return (await db.scalars(statement)).one_or_none()

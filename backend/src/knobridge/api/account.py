@@ -95,7 +95,7 @@ async def update_profile(
         theme=body.theme,
         ip=ip,
     )
-    return await build_me(factory, user)
+    return await build_me(factory, user, current.superadmin_access)
 
 
 @router.post(

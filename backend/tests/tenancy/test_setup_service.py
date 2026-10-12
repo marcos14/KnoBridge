@@ -15,7 +15,7 @@ from knobridge.core.clock import FrozenClock
 from knobridge.core.db import create_session_factory, system_session
 from knobridge.security.passwords import Argon2Params, PasswordHasher
 from knobridge.tenancy.auth import AuthConfig, AuthService, StartedSession
-from knobridge.tenancy.models import User
+from knobridge.tenancy.models import User, Workspace
 from knobridge.tenancy.setup import SetupAlreadyCompletedError, SetupService
 
 pytestmark = pytest.mark.integration
@@ -51,13 +51,14 @@ def _service() -> SetupService:
 def test_setup_concurrent_requests_create_single_admin(empty_database_url: str) -> None:
     service = _service()
 
-    async def scenario(factory: SessionFactory) -> tuple[list[object], int]:
+    async def scenario(factory: SessionFactory) -> tuple[list[object], int, int]:
         async def attempt(index: int) -> StartedSession:
             return await service.run(
                 factory,
                 name=f"Admin {index}",
                 email=f"admin{index}@example.test",
                 password=PASSWORD,
+                workspace_name=f"Workspace {index}",
                 ip=None,
                 user_agent=None,
             )
@@ -68,10 +69,11 @@ def test_setup_concurrent_requests_create_single_admin(empty_database_url: str) 
         )
         async with system_session(factory) as db:
             count = await db.scalar(select(func.count()).select_from(User))
-        return results, count or 0
+            workspaces = await db.scalar(select(func.count()).select_from(Workspace))
+        return results, count or 0, workspaces or 0
 
-    results, users = _run(empty_database_url, scenario)
+    results, users, workspaces = _run(empty_database_url, scenario)
 
     created = [r for r in results if isinstance(r, StartedSession)]
     refused = [r for r in results if isinstance(r, SetupAlreadyCompletedError)]
-    assert (len(created), len(refused), users) == (1, 3, 1)
+    assert (len(created), len(refused), users, workspaces) == (1, 3, 1, 1)

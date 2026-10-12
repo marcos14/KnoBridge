@@ -119,7 +119,8 @@
     "setup": {
       "title": "Configuração inicial",
       "description": "Crie a conta do primeiro superadministrador desta instância do KnoBridge.",
-      "submit": "Criar conta e entrar"
+      "submit": "Criar conta e entrar",
+      "defaultWorkspaceName": "Meu workspace"
     },
     "login": {
       "title": "Entrar",
@@ -1700,6 +1701,8 @@
     "workspace_updated": "Workspace atualizado",
     "workspace_suspended": "Workspace suspenso",
     "workspace_reactivated": "Workspace reativado",
+    "superadmin_workspace_entered": "Superadmin entrou no workspace",
+    "superadmin_workspace_exited": "Superadmin saiu do workspace",
     "setup_completed": "Configuração inicial concluída",
     "collection_created": "Coleção criada",
     "collection_updated": "Coleção atualizada",

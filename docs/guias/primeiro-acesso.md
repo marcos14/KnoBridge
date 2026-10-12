@@ -28,11 +28,11 @@ Nenhum e-mail sai para caixas reais: todos caem no Mailpit, e os links apontam p
 1. Abra <http://localhost:5173>. Com a instância vazia, o painel leva para **Configuração inicial** (`/setup`).
 2. Informe nome, e-mail e senha (de 12 a 1024 caracteres) e clique em **Criar conta e entrar**.
 
-Essa conta é o **superadmin** da instância, com e-mail já verificado. A tela de configuração só existe enquanto não há nenhum usuário; depois, quem chega vai para **Entrar** (`/login`).
+Essa conta é o **superadmin** da instância, com e-mail já verificado. Junto com ela nasce o primeiro workspace (por enquanto com o nome "Meu workspace"), com o superadmin como owner; renomeie-o em **Configurações** do workspace. A tela de configuração só existe enquanto não há nenhum usuário; depois, quem chega vai para **Entrar** (`/login`).
 
-### 2. Criar o primeiro workspace
+### 2. Criar outros workspaces
 
-O superadmin administra a instância, mas não participa de nenhum workspace por padrão. Por isso o painel mostra "Você ainda não participa de nenhum workspace".
+Para os próximos workspaces, o superadmin usa a administração da instância. Ele não vira membro dos workspaces que cria: o proprietário é quem recebe o convite.
 
 1. Clique em **Criar ou gerenciar workspaces** (ou vá em **Administração da instância > Workspaces**, `/admin/workspaces`).
 2. Clique em **Criar workspace** e preencha:

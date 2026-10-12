@@ -13,7 +13,7 @@ import asyncio
 import math
 import uuid
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -23,6 +23,7 @@ from knobridge.audit.service import AuditService, AuditTarget
 from knobridge.core.clock import Clock
 from knobridge.core.db import scoped_session, system_session
 from knobridge.core.errors import TooManyRequestsError, UnauthenticatedError
+from knobridge.security.models import Session
 from knobridge.security.passwords import PasswordHasher
 from knobridge.security.sessions import SessionService
 from knobridge.security.throttle import LoginThrottle, throttle_key
@@ -42,11 +43,24 @@ class TooManyLoginAttemptsError(TooManyRequestsError):
 
 
 @dataclass(frozen=True)
+class SuperadminAccess:
+    """The workspace a superadmin's session entered (effective admin role there)."""
+
+    workspace_id: uuid.UUID
+    entered_at: datetime
+
+
+@dataclass(frozen=True)
 class AuthenticatedUser:
-    """The user behind a valid session cookie. ``user`` is detached: read, do not modify."""
+    """The user behind a valid session cookie. ``user`` is detached: read, do not modify.
+
+    ``superadmin_access`` is set only while the user is still a superadmin: the mark stored
+    on the session of anyone else (or of a former superadmin) grants nothing.
+    """
 
     user: User
     session_id: uuid.UUID
+    superadmin_access: SuperadminAccess | None = None
 
 
 @dataclass(frozen=True)
@@ -74,6 +88,14 @@ async def find_user_by_email(db: AsyncSession, email: str) -> User | None:
     return (await db.scalars(statement)).one_or_none()
 
 
+def superadmin_access(user: User, session: Session) -> SuperadminAccess | None:
+    """The session's superadmin access, honoured only while ``user`` is a superadmin."""
+    workspace_id, entered_at = session.superadmin_workspace_id, session.superadmin_entered_at
+    if not user.is_superadmin or workspace_id is None or entered_at is None:
+        return None
+    return SuperadminAccess(workspace_id=workspace_id, entered_at=entered_at)
+
+
 class AuthService:
     def __init__(self, clock: Clock, hasher: PasswordHasher, config: AuthConfig) -> None:
         self._hasher = hasher
@@ -98,7 +120,9 @@ class AuthService:
             user = await db.get(User, session.user_id)
             if user is None or user.status != UserStatus.ACTIVE:
                 raise UnauthenticatedError("Session is invalid or has expired.")
-            return AuthenticatedUser(user=user, session_id=session.id)
+            return AuthenticatedUser(
+                user=user, session_id=session.id, superadmin_access=superadmin_access(user, session)
+            )
 
     async def login(
         self,

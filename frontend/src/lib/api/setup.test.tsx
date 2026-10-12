@@ -30,7 +30,12 @@ describe("useSetupStatus", () => {
 });
 
 describe("useRunSetup", () => {
-  const input = { name: "Ana Teste", email: "ana@example.test", password: "a-long-passphrase" };
+  const input = {
+    name: "Ana Teste",
+    email: "ana@example.test",
+    password: "a-long-passphrase",
+    workspace_name: "Acme Suporte",
+  };
 
   it("test_use_run_setup_fills_me_and_marks_setup_done", async () => {
     const { result, queryClient } = renderQueryHook(() => useRunSetup());

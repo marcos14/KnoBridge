@@ -14,6 +14,7 @@ from knobridge import __version__
 from knobridge.api import (
     account,
     admin,
+    admin_access,
     admin_conversations,
     assistants,
     audit,
@@ -136,6 +137,8 @@ def create_app(
         admin_conversations,
         search,
         admin,
+        # Superadmin access to a workspace (plan 0008 F2.1).
+        admin_access,
         # Knowledge index (plan 0003 F3.2).
         collections,
         sources,

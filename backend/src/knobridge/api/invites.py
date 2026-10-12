@@ -317,7 +317,10 @@ async def accept_invite(
     )
     if accepted.session_token is not None:
         start_browser_session(response, accepted.session_token, settings)
-    return await build_me(factory, accepted.user)
+        return await build_me(factory, accepted.user)
+    # Joined with the logged-in account: its session keeps any superadmin access.
+    access = None if current is None else current.superadmin_access
+    return await build_me(factory, accepted.user, access)
 
 
 router = APIRouter()

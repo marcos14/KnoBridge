@@ -64,7 +64,12 @@ describe("SetupPage", () => {
     ).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/");
     expect(setup.bodies).toEqual([
-      { name: "Ana Teste", email: "ana@example.test", password: PASSWORD },
+      {
+        name: "Ana Teste",
+        email: "ana@example.test",
+        password: PASSWORD,
+        workspace_name: "Meu workspace",
+      },
     ]);
   });
 

@@ -30,6 +30,7 @@ export function makeWorkspace(overrides: Partial<UserWorkspace> = {}): UserWorks
     slug: "acme-suporte",
     status: "active",
     role: "owner",
+    access: "member",
     ...overrides,
   };
 }
@@ -47,6 +48,7 @@ export function makeMe(overrides: Partial<Me> = {}): Me {
     },
     is_superadmin: false,
     workspaces: [makeWorkspace()],
+    superadmin_access: null,
     ...overrides,
   };
 }

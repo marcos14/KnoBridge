@@ -1077,6 +1077,8 @@
           "workspace.updated",
           "workspace.suspended",
           "workspace.reactivated",
+          "superadmin.workspace_entered",
+          "superadmin.workspace_exited",
           "auth.login.succeeded",
           "auth.login.failed",
           "auth.logout.succeeded",
@@ -3759,6 +3761,16 @@
             "title": "Is Superadmin",
             "type": "boolean"
           },
+          "superadmin_access": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SuperadminAccessOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "user": {
             "$ref": "#/components/schemas/UserOut"
           },
@@ -3773,7 +3785,8 @@
         "required": [
           "user",
           "is_superadmin",
-          "workspaces"
+          "workspaces",
+          "superadmin_access"
         ],
         "title": "MeResponse",
         "type": "object"
@@ -7079,12 +7092,19 @@
             "maxLength": 1024,
             "title": "Password",
             "type": "string"
+          },
+          "workspace_name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Workspace Name",
+            "type": "string"
           }
         },
         "required": [
           "name",
           "email",
-          "password"
+          "password",
+          "workspace_name"
         ],
         "title": "SetupRequest",
         "type": "object"
@@ -7528,6 +7548,31 @@
           "run_id"
         ],
         "title": "StartedSync",
+        "type": "object"
+      },
+      "SuperadminAccessOut": {
+        "properties": {
+          "entered_at": {
+            "format": "date-time",
+            "title": "Entered At",
+            "type": "string"
+          },
+          "workspace_id": {
+            "format": "uuid",
+            "title": "Workspace Id",
+            "type": "string"
+          },
+          "workspace_name": {
+            "title": "Workspace Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "workspace_name",
+          "entered_at"
+        ],
+        "title": "SuperadminAccessOut",
         "type": "object"
       },
       "Theme": {
@@ -8904,6 +8949,9 @@
       },
       "UserWorkspaceOut": {
         "properties": {
+          "access": {
+            "$ref": "#/components/schemas/WorkspaceAccessKind"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -8929,7 +8977,8 @@
           "name",
           "slug",
           "status",
-          "role"
+          "role",
+          "access"
         ],
         "title": "UserWorkspaceOut",
         "type": "object"
@@ -8988,6 +9037,14 @@
         ],
         "title": "VerifyEmailRequest",
         "type": "object"
+      },
+      "WorkspaceAccessKind": {
+        "enum": [
+          "member",
+          "superadmin"
+        ],
+        "title": "WorkspaceAccessKind",
+        "type": "string"
       },
       "WorkspaceOut": {
         "properties": {
@@ -9326,6 +9383,34 @@
         ]
       }
     },
+    "/v1/admin/workspace-access": {
+      "delete": {
+        "description": "Leave the workspace entered in this session; without one, nothing changes.",
+        "operationId": "exit_workspace_v1_admin_workspace_access_delete",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Not a superadmin (`forbidden`) or CSRF failure (`csrf_failed`)."
+          }
+        },
+        "summary": "Exit Workspace",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
     "/v1/admin/workspaces": {
       "get": {
         "description": "Every workspace, by name; ``q`` searches name and slug.",
@@ -9515,6 +9600,59 @@
           }
         },
         "summary": "Update Workspace",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/workspaces/{workspace_id}/enter": {
+      "post": {
+        "description": "Enter the workspace as effective admin in this session (idempotent).",
+        "operationId": "enter_workspace_v1_admin_workspaces__workspace_id__enter_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Not a superadmin (`forbidden`), CSRF failure (`csrf_failed`) or suspended workspace (`workspace_suspended`)."
+          },
+          "404": {
+            "description": "Workspace not found (`not_found`)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Enter Workspace",
         "tags": [
           "admin"
         ]
@@ -9954,7 +10092,7 @@
     },
     "/v1/me": {
       "get": {
-        "description": "Who is logged in and which workspaces they can open.",
+        "description": "Who is logged in, which workspaces they can open and any superadmin access.",
         "operationId": "me_v1_me_get",
         "responses": {
           "200": {
@@ -10580,7 +10718,7 @@
     },
     "/v1/setup": {
       "post": {
-        "description": "Create the first superadmin (e-mail already verified) and log them in.",
+        "description": "Create the first superadmin (e-mail verified) and workspace (as owner); log them in.",
         "operationId": "run_setup_v1_setup_post",
         "requestBody": {
           "content": {

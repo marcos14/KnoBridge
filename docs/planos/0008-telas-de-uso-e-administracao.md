@@ -35,10 +35,10 @@ fases:
     subfases:
       - id: F2.1
         titulo: Setup que cria o primeiro workspace e superadmin entrando num workspace como admin auditado
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
-        concluida_em: null
+        concluida_em: 2026-10-12
         commit: null
       - id: F2.2
         titulo: Preços de modelos de chat, custo por resposta e as consultas de uso e custos e dos painéis
@@ -67,7 +67,7 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
         concluida_em: 2026-10-12
-        commit: null
+        commit: 80a245f
   - id: F3
     titulo: Painel
     status: pendente
@@ -181,6 +181,13 @@ decisoes:
     decisao: "F2.5: reindexar roda na transação da requisição (zera cursor e content_hash e inicia a sync; falha ao iniciar desfaz tudo; a linha da fonte fica travada até o commit e o workflow espera); recusa tickets, fonte inativa e sync em andamento; sincronizar coleção pula o resto com sync_unavailable se o Temporal cair no meio e responde 503 se nada iniciou; duplicar gera (cópia), (cópia 2)...; listas com query, filtros e sort em core/listing.py (nulos por último, 422 para sort inválido); lógica nova em módulos pequenos (reindex.py, source_listing.py, assistants/listing.py e duplicate.py); os commits do plano até a F1.2 foram parar na main local por engano (a árvore principal tinha sido trocada para a main fora da sessão) e foram movidos para a branch plano/0008-telas-de-uso-e-administracao, com a main local de volta em origin/main"
     motivo: "contrato da F1.1; arquivos abaixo de 400 linhas"
     alternativas: "FOR UPDATE na fonte (deadlock com o insert da execução)"
+    adr: null
+  - id: D11
+    data: 2026-10-12
+    por: agente
+    decisao: "F2.1: POST /v1/setup exige workspace_name (cria superadmin, workspace com slug, membership owner e sessão numa transação, auditando workspace.created nas duas trilhas); entrar e sair em api/admin_access.py e tenancy/superadmin_access.py; o acesso fica no AuthenticatedUser só enquanto o usuário é superadmin (sessão adulterada ou superadmin perdido não concede nada); workspace_context aceita o acesso sem membership, com o mesmo SET LOCAL; /v1/me inclui o workspace acessado; a tela de setup envia o nome padrão Meu workspace até a F3.1"
+    motivo: "contrato da F1.1 e segurança do acesso"
+    alternativas: "acesso por membership temporário"
     adr: null
 pendencias_usuario: []
 ---
@@ -415,6 +422,7 @@ Nenhuma.
 - 2026-10-12 — F1.2 concluída: migração 0017 com api_keys, dono do tipo chave em conversations, custo e canal por resposta e acesso de superadmin em sessions, RLS e testes; gates do agente: backend 2130 passed com 99,87%, frontend 1240; orquestrador: ruff, pyright e AGENTS na integração
 - 2026-10-12 — F2.1 iniciada (agente em worktree).
 - 2026-10-12 — F2.5 concluída: reindexar fonte, sincronizar coleção, duplicar assistente e busca, filtros e ordenação em seis listas; backend 2166 passed com 99% de cobertura, frontend 1240
+- 2026-10-12 — F2.1 concluída: setup que cria o primeiro workspace e acesso de superadmin a qualquer workspace como admin auditado, integrados sobre a F2.5; backend 2203 passed com 99% de cobertura, frontend 1240
 
 ## 8. Encerramento
 

@@ -1,7 +1,8 @@
 """First-run setup: ``GET /v1/setup/status`` and ``POST /v1/setup`` (only while no user exists).
 
 ``POST /v1/setup`` is exempt from CSRF for the same reason as login: it only works before
-any session (or user) exists. It creates the superadmin and logs them in.
+any session (or user) exists. It creates the superadmin and the first workspace (with them as
+owner) and logs them in.
 """
 
 from __future__ import annotations
@@ -35,6 +36,10 @@ class SetupRequest(BaseModel):
     email: str = Field(max_length=EMAIL_MAX_LENGTH, pattern=EMAIL_PATTERN)
     # The policy (12+ characters) is checked by the service, answering `weak_password`.
     password: str = Field(max_length=MAX_PASSWORD_LENGTH)
+    # The first workspace, created with the superadmin as owner.
+    workspace_name: Annotated[
+        str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)
+    ]
 
 
 @router.get("/status")
@@ -61,12 +66,13 @@ async def run_setup(
     setup: SetupServiceDep,
     ip: ClientIpDep,
 ) -> MeResponse:
-    """Create the first superadmin (e-mail already verified) and log them in."""
+    """Create the first superadmin (e-mail verified) and workspace (as owner); log them in."""
     started = await setup.run(
         factory,
         name=body.name,
         email=body.email,
         password=body.password,
+        workspace_name=body.workspace_name,
         ip=ip,
         user_agent=request.headers.get("user-agent"),
     )

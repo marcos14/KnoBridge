@@ -11,10 +11,10 @@ from collections.abc import Generator
 from typing import Annotated
 
 import pytest
-from api_support import CHEAP, START, ApiEnv, db_settings
+from api_support import CHEAP, START, ApiEnv, SessionFactory, db_settings, run_db
 from fastapi import APIRouter, Depends, FastAPI, Request
 from fastapi.testclient import TestClient
-from sqlalchemy import text
+from sqlalchemy import text, update
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from fakes.email_sender import FakeEmailSender
@@ -27,6 +27,8 @@ from knobridge.api.deps import (
     require_superadmin,
 )
 from knobridge.core.clock import FrozenClock
+from knobridge.core.db import system_session
+from knobridge.security.models import Session
 from knobridge.security.passwords import PasswordHasher
 from knobridge.tenancy.auth import AuthenticatedUser
 from knobridge.tenancy.models import Role, WorkspaceStatus
@@ -175,6 +177,84 @@ def test_require_role_error_names_required_role(probe_api: ApiEnv) -> None:
         "message": "Your role does not allow this action.",
         "details": {"required_role": "admin"},
     }
+
+
+def _mark_sessions(env: ApiEnv, user_id: uuid.UUID, workspace_id: uuid.UUID) -> None:
+    """Write the superadmin access straight into the user's sessions (as a tampered row)."""
+
+    async def scenario(factory: SessionFactory) -> None:
+        async with system_session(factory) as db:
+            await db.execute(
+                update(Session)
+                .where(Session.user_id == user_id)
+                .values(superadmin_workspace_id=workspace_id, superadmin_entered_at=START)
+            )
+
+    run_db(env.database_url, scenario)
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize(
+    ("membership", "expected"),
+    [(None, "admin"), (Role.VIEWER, "admin"), (Role.ADMIN, "admin"), (Role.OWNER, "owner")],
+)
+def test_workspace_context_superadmin_access_gives_effective_role(
+    probe_api: ApiEnv, membership: Role | None, expected: str
+) -> None:
+    admin = probe_api.create_user(superadmin=True)
+    members = {} if membership is None else {admin.id: membership}
+    workspace = probe_api.create_workspace(members)
+    probe_api.login(admin)
+    _mark_sessions(probe_api, admin.id, workspace)
+
+    response = probe_api.client.get(f"/v1/probe/workspaces/{workspace}/context")
+
+    assert response.status_code == 200
+    assert response.json() == {"role": expected, "scoped_workspace": str(workspace)}
+
+
+@pytest.mark.integration
+def test_workspace_context_superadmin_access_opens_only_that_workspace(
+    probe_api: ApiEnv,
+) -> None:
+    admin = probe_api.create_user(superadmin=True)
+    entered, other = probe_api.create_workspace({}), probe_api.create_workspace({})
+    probe_api.login(admin)
+    _mark_sessions(probe_api, admin.id, entered)
+
+    response = probe_api.client.get(f"/v1/probe/workspaces/{other}/context")
+
+    assert response.status_code == 404
+    assert response.json()["error"]["code"] == "not_found"
+
+
+@pytest.mark.integration
+def test_workspace_context_ignores_access_mark_of_non_superadmin(probe_api: ApiEnv) -> None:
+    user = probe_api.create_user()
+    workspace = probe_api.create_workspace({})
+    viewer_of = probe_api.create_workspace({user.id: Role.VIEWER})
+    probe_api.login(user)
+    _mark_sessions(probe_api, user.id, workspace)
+
+    foreign = probe_api.client.get(f"/v1/probe/workspaces/{workspace}/context")
+    _mark_sessions(probe_api, user.id, viewer_of)
+    own = probe_api.client.get(f"/v1/probe/workspaces/{viewer_of}/context")
+
+    assert foreign.status_code == 404
+    assert own.json()["role"] == "viewer"
+
+
+@pytest.mark.integration
+def test_workspace_context_superadmin_access_to_suspended_workspace(probe_api: ApiEnv) -> None:
+    admin = probe_api.create_user(superadmin=True)
+    workspace = probe_api.create_workspace({}, status=WorkspaceStatus.SUSPENDED)
+    probe_api.login(admin)
+    _mark_sessions(probe_api, admin.id, workspace)
+
+    response = probe_api.client.get(f"/v1/probe/workspaces/{workspace}/at-least-admin")
+
+    assert response.status_code == 403
+    assert response.json()["error"]["code"] == "workspace_suspended"
 
 
 def test_client_ip_is_none_without_peer() -> None:
