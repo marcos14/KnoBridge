@@ -1481,6 +1481,7 @@
     "source_sync_started": "Sincronização da fonte iniciada",
     "source_sync_cancelled": "Sincronização da fonte cancelada",
     "source_ingest_token_rotated": "Token de envio da fonte gerado",
+    "source_tickets_uploaded": "Arquivo de chamados enviado",
     "runner_created": "Runner cadastrado",
     "runner_updated": "Runner atualizado",
     "runner_revoked": "Runner revogado",

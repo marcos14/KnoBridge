@@ -1519,6 +1519,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/workspaces/{workspace_id}/sources/{source_id}/tickets/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview Ticket Markdown
+         * @description The Markdown the index would get for this ticket, anonymized with the source's settings;
+         *     nothing is written.
+         */
+        post: operations["preview_ticket_markdown_v1_workspaces__workspace_id__sources__source_id__tickets_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/sources/{source_id}/tickets/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload Ticket File
+         * @description Validate and write every ticket or removal of the file (the rules of the API, in blocks
+         *     of 100), then ask for the sync of the source; the counts and the rejected items.
+         */
+        post: operations["upload_ticket_file_v1_workspaces__workspace_id__sources__source_id__tickets_upload_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1902,7 +1944,7 @@ export interface components {
          * AuditAction
          * @enum {string}
          */
-        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted" | "provider.tested" | "assistant.created" | "assistant.updated" | "assistant.deleted" | "conversation.deleted" | "collection.created" | "collection.updated" | "collection.deleted" | "source.created" | "source.updated" | "source.deleted" | "source.tested" | "source.sync.started" | "source.sync.cancelled" | "source.ingest_token_rotated" | "runner.created" | "runner.updated" | "runner.revoked" | "runner.deleted" | "harness_job.cancelled" | "harness_job.enqueued" | "harness_module.created" | "harness_module.updated" | "knowledge_item.updated";
+        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted" | "provider.tested" | "assistant.created" | "assistant.updated" | "assistant.deleted" | "conversation.deleted" | "collection.created" | "collection.updated" | "collection.deleted" | "source.created" | "source.updated" | "source.deleted" | "source.tested" | "source.sync.started" | "source.sync.cancelled" | "source.ingest_token_rotated" | "source.tickets_uploaded" | "runner.created" | "runner.updated" | "runner.revoked" | "runner.deleted" | "harness_job.cancelled" | "harness_job.enqueued" | "harness_module.created" | "harness_module.updated" | "knowledge_item.updated";
         /** AuditEventOut */
         AuditEventOut: {
             /** Action */
@@ -4325,6 +4367,34 @@ export interface components {
             /** Name */
             name?: string | null;
         };
+        /**
+         * TicketPreviewIn
+         * @description The ticket is validated like an upsert item (strict), so it arrives raw.
+         */
+        TicketPreviewIn: {
+            /** Ticket */
+            ticket: components["schemas"]["TicketIn"];
+        };
+        /** TicketPreviewMarker */
+        TicketPreviewMarker: {
+            /** Count */
+            count: number;
+            /** Marker */
+            marker: string;
+        };
+        /** TicketPreviewOut */
+        TicketPreviewOut: {
+            /** Anonymize */
+            anonymize: boolean;
+            /** Include Internal Notes */
+            include_internal_notes: boolean;
+            /** Markdown */
+            markdown: string;
+            /** Markers */
+            markers: components["schemas"]["TicketPreviewMarker"][];
+            /** Title */
+            title: string;
+        };
         /** TicketRequesterIn */
         TicketRequesterIn: {
             /** Email */
@@ -4347,6 +4417,43 @@ export interface components {
          * @enum {string}
          */
         TicketStatus: "open" | "pending" | "resolved" | "closed";
+        /** TicketUploadError */
+        TicketUploadError: {
+            /** Code */
+            code: string;
+            /** Details */
+            details: unknown | null;
+            /** External Id */
+            external_id: string | null;
+            /** Index */
+            index: number | null;
+            /** Line */
+            line: number | null;
+            /** Message */
+            message: string;
+        };
+        /** TicketUploadOut */
+        TicketUploadOut: {
+            counts: components["schemas"]["TicketIngestCounts"];
+            /** Errors */
+            errors: components["schemas"]["TicketUploadError"][];
+            /** Errors Truncated */
+            errors_truncated: boolean;
+            /**
+             * Format
+             * @enum {string}
+             */
+            format: "json" | "jsonl";
+            /** Run Id */
+            run_id: string | null;
+            /**
+             * Sync
+             * @enum {string}
+             */
+            sync: "started" | "pending" | "deferred" | "none";
+            /** Total */
+            total: number;
+        };
         /** TicketUpsertItemIn */
         TicketUpsertItemIn: {
             /**
@@ -9554,6 +9661,143 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    preview_ticket_markdown_v1_workspaces__workspace_id__sources__source_id__tickets_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TicketPreviewIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketPreviewOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace not found or caller not a member, or not a `tickets` source of the workspace (`source_not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Body above 2 MiB (`payload_too_large`). */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Ticket outside the format (`validation_error` with `{loc, problem}` relative to the ticket) or above 1 MiB (`ticket_too_large`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    upload_ticket_file_v1_workspaces__workspace_id__sources__source_id__tickets_upload_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * Format: binary
+                     * @description A .json (list or {items}) or .jsonl file, up to 50 MiB.
+                     */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketUploadOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace not found or caller not a member, or not a `tickets` source of the workspace (`source_not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Source deactivated (`source_inactive`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description File above 50 MiB (`payload_too_large`, `details.max_bytes`). */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a .json/.jsonl file (`upload_format_unsupported`), malformed JSON (`upload_invalid_json`), empty file (`upload_empty`) or no file field (`validation_error`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

@@ -38,6 +38,9 @@ def _client() -> TestClient:
         ("/v1/runner/jobs/abc/defer", 8 * KIB),
         ("/v1/ingest/tickets", 5 * MIB),
         ("/v1/ingest/other", None),
+        ("/v1/workspaces/abc/sources/def/tickets/preview", 2 * MIB),
+        # The upload streams and enforces its own limit while reading.
+        ("/v1/workspaces/abc/sources/def/tickets/upload", None),
         ("/v1/workspaces/abc/runners", None),
     ],
 )

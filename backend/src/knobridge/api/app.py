@@ -40,6 +40,7 @@ from knobridge.api import (
     search,
     setup,
     sources,
+    ticket_uploads,
 )
 from knobridge.api.body_limit import BodyLimitMiddleware
 from knobridge.core.clock import Clock, SystemClock
@@ -143,6 +144,8 @@ def create_app(
         # Tickets by push (plan 0005 F2.1).
         ingest_tokens,
         ingest,
+        # Tickets from the panel (plan 0005 F2.4).
+        ticket_uploads,
     )
     for module in routers:
         v1.include_router(module.router)

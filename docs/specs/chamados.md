@@ -4,7 +4,7 @@
 
 Como chamados de qualquer sistema entram no KnoBridge e viram fonte do chat, e como o chat abre um chamado quando não sabe responder. Cobre o formato do chamado (JSON Schema), o envio pela API com token, o upload no painel, a caixa de entrada e seu ciclo de vida, a anonimização, o Markdown e o chunking, a citação `kind: ticket` e o webhook de saída. A arquitetura está no [ADR 0006](../adr/0006-chamados-por-push.md); o workflow de ingestão, em [indexacao.md](indexacao.md); o formato da citação no fio, em [chat-sse.md](chat-sse.md#citations) (v0.6); as tabelas, em [modelo-de-dados.md](modelo-de-dados.md).
 
-Código: `backend/src/knobridge/tickets/` (token de envio em `tokens.py`, formato do chamado em `wire.py`, validação por item e caixa de entrada em `ingest.py`, disparo da sincronização em `ingest_sync.py`) e as rotas `backend/src/knobridge/api/ingest.py` e `ingest_tokens.py` (plano 0005, F2.1); anonimização em `anonymize.py` e Markdown em `markdown.py` (F2.2); conector interno em `connector.py` e citação no chat em `retrieval/context.py` (F2.3). A criar no plano 0005: upload, pedidos de chamado e workflow do webhook, e as telas do painel em `frontend/`.
+Código: `backend/src/knobridge/tickets/` (token de envio em `tokens.py`, formato do chamado em `wire.py`, validação por item e caixa de entrada em `ingest.py`, disparo da sincronização em `ingest_sync.py`) e as rotas `backend/src/knobridge/api/ingest.py` e `ingest_tokens.py` (plano 0005, F2.1); anonimização em `anonymize.py` e Markdown em `markdown.py` (F2.2); conector interno em `connector.py` e citação no chat em `retrieval/context.py` (F2.3); upload e prévia em `upload.py` e `upload_files.py`, com as rotas em `api/ticket_uploads.py` (F2.4). A criar no plano 0005: pedidos de chamado e workflow do webhook, e as telas do painel em `frontend/`.
 
 ## Visão geral
 
@@ -33,7 +33,7 @@ sequenceDiagram
 - **Textos**: sem NUL (`\u0000`). Espaços nas pontas são removidos antes de validar comprimento. Comprimentos em caracteres (pontos de código Unicode).
 - **Requisições** validadas com campos desconhecidos recusados. **Respostas** podem ganhar campos novos; o cliente ignora o que não conhece.
 - **Erros** no formato único da API: `{"error": {"code": "...", "message": "...", "details": ...}}`.
-- **Nomes dos schemas no OpenAPI**: `TicketIn` (o chamado), `TicketMessageIn`, `TicketRequesterIn`, `TicketPersonIn`, `TicketResolutionIn`, `TicketAttachmentIn`, `TicketUpsertItemIn`, `TicketDeleteItemIn`, `TicketIngestIn`, `TicketIngestOut`, `TicketIngestItemResult`, `TicketUploadOut`, `TicketsSourceConfig`, `TicketsSummaryOut`, `IngestTokenOut`, `TicketRequestPreviewIn`, `TicketRequestPreviewOut`, `TicketRequestIn`, `TicketRequestOut`.
+- **Nomes dos schemas no OpenAPI**: `TicketIn` (o chamado), `TicketMessageIn`, `TicketRequesterIn`, `TicketPersonIn`, `TicketResolutionIn`, `TicketAttachmentIn`, `TicketUpsertItemIn`, `TicketDeleteItemIn`, `TicketIngestIn`, `TicketIngestOut`, `TicketIngestItemResult`, `TicketUploadOut`, `TicketUploadError`, `TicketPreviewIn`, `TicketPreviewOut`, `TicketPreviewMarker`, `TicketsSourceConfig`, `TicketsSummaryOut`, `IngestTokenOut`, `TicketRequestPreviewIn`, `TicketRequestPreviewOut`, `TicketRequestIn`, `TicketRequestOut`.
 
 ## Formato do chamado
 
@@ -405,10 +405,12 @@ A comparação e a gravação de cada item são atômicas por linha (`INSERT …
   - `.json`: uma lista de elementos, ou um objeto `{"items": [...]}` igual ao corpo da API;
   - `.jsonl`: um elemento por linha (linhas em branco ignoradas).
 - **Elemento**: um item da API (`{"op": "upsert", "ticket": …}` ou `{"op": "delete", …}`) ou um chamado puro, sem `op` (lido como upsert). Assim, um export de chamados já no formato pode ser enviado direto.
-- **Limite: 50 MiB** por arquivo (413 `payload_too_large`). Sem limite de quantidade de itens; o servidor processa em lotes de 100, cada um numa transação, com as mesmas regras da API (validação, `duplicate_in_batch` dentro do arquivo inteiro, regra do `updated_at`).
-- Erros do arquivo inteiro: extensão diferente de `.json` ou `.jsonl` → 422 `upload_format_unsupported`; `.json` que não é JSON válido, nem lista, nem `{"items"}` → 422 `upload_invalid_json`; arquivo vazio → 422 `upload_empty`. Fonte que não é `tickets` do workspace → 404 `source_not_found`; desativada → 409 `source_inactive`.
-- Em `.jsonl`, uma linha que não é JSON válido vira um erro daquela linha (`invalid_json`) e as outras seguem.
-- O processamento é síncrono. Ao fim, um único `request_sync` com o gatilho `ingest`.
+- Elemento que não é objeto, ou objeto com `op` diferente de `upsert`/`delete`, é rejeitado naquela linha ou posição (`validation_error`, `details` = `[{"loc": [], "problem": "model_type"}]` ou `[{"loc": ["op"], "problem": "literal_error"}]`); os outros seguem.
+- **Limite: 50 MiB** por arquivo (413 `payload_too_large`, `details.max_bytes = 52428800`). `Content-Length` acima do limite (mais 64 KiB do envelope multipart) é recusado antes da leitura, e a leitura para assim que o corpo passa dele. Sem limite de quantidade de itens; o servidor processa em lotes de 100, cada um numa transação, com as mesmas regras da API (validação, `duplicate_in_batch` dentro do arquivo inteiro, com `details.first_index` = linha ou posição do primeiro, regra do `updated_at`).
+- **Leitura em fluxo**: o arquivo nunca é carregado inteiro na memória. `.jsonl` é lido linha a linha; `.json` é decodificado um elemento por vez. Como um `.json` malformado é erro do arquivo inteiro, ele é conferido numa primeira passada antes de gravar qualquer lote.
+- Erros do arquivo inteiro (nada é gravado): extensão diferente de `.json` ou `.jsonl` → 422 `upload_format_unsupported`; `.json` que não é JSON válido (UTF-8), nem lista, nem exatamente `{"items": [...]}` → 422 `upload_invalid_json`; arquivo vazio, só com espaços, `[]`, `{"items": []}` ou `.jsonl` só com linhas em branco → 422 `upload_empty`; corpo que não é `multipart/form-data` ou sem o arquivo no campo `file` → 422 `validation_error` (`details` = `[{"loc": ["body", "file"], "problem": "multipart_required" | "multipart_invalid" | "missing"}]`). Fonte que não é `tickets` do workspace → 404 `source_not_found`; desativada → 409 `source_inactive`.
+- Em `.jsonl`, uma linha que não é JSON válido vira um erro daquela linha (`invalid_json`, `details = null`) e as outras seguem.
+- O processamento é síncrono. Ao fim, com algum item `queued`, um único `request_sync` com o gatilho `ingest` (`sync` e `run_id` como na API).
 
 Resposta **200** (`TicketUploadOut`):
 
@@ -427,7 +429,32 @@ Resposta **200** (`TicketUploadOut`):
 ```
 
 - `errors`: só os itens `rejected`, na ordem, até 1000 (`errors_truncated = true` quando há mais). Em `.jsonl`, `line` (a partir de 1) e `index = null`; em `.json`, `index` (a partir de 0) e `line = null`.
-- O arquivo não é guardado: só os itens aceitos vão para a caixa de entrada. Auditoria: `source.tickets_uploaded` com o nome do arquivo e os `counts`.
+- O arquivo não é guardado: só os itens aceitos vão para a caixa de entrada. Auditoria: `source.tickets_uploaded` com `name` (da fonte), `filename` (até 255 caracteres), `format`, `total` e os `counts`; nunca o conteúdo.
+- Uma falha no meio (banco fora, fonte excluída) deixa gravados os lotes já confirmados; reenviar o arquivo é seguro (o que já entrou volta `unchanged`).
+
+### Prévia do chamado
+
+`POST /v1/workspaces/{wid}/sources/{sid}/tickets/preview`: sessão, CSRF, papel editor. Corpo (`TicketPreviewIn`) `{"ticket": {…}}`, até **2 MiB**, com um chamado validado como um `upsert` da API (estrito, até 1 MiB). Monta o [Markdown](#markdown-do-chamado) com a configuração atual da fonte (`anonymize`, `include_internal_notes`) e **não grava nada**: nem caixa de entrada, nem execução, nem auditoria. Funciona com a fonte desativada.
+
+Resposta **200** (`TicketPreviewOut`):
+
+```json
+{
+  "title": "Erro 4021 ao fechar o caixa",
+  "markdown": "# Chamado 48213: Erro 4021 ao fechar o caixa\n\n- Status: …",
+  "markers": [
+    { "marker": "[TELEFONE]", "count": 1 },
+    { "marker": "[ATENDENTE_1]", "count": 1 },
+    { "marker": "[SOLICITANTE]", "count": 1 }
+  ],
+  "anonymize": true,
+  "include_internal_notes": false
+}
+```
+
+- `title`: o título como vai para o índice (anonimizado, se for o caso).
+- `markers` (`TicketPreviewMarker`): os marcadores que a anonimização aplicou e quantas vezes, na ordem da primeira aparição no Markdown. Um marcador já escrito no próprio chamado não conta. Vazio com `anonymize: false`.
+- Erros: chamado fora do formato → 422 `validation_error` com `details` = `[{"loc", "problem"}]` relativos ao chamado (como em `results[].error` da API); chamado acima de 1 MiB → 422 `ticket_too_large`; corpo acima de 2 MiB → 413 `payload_too_large`; envelope inválido (`ticket` ausente, chave extra) → 422 `validation_error`; fonte que não é `tickets` do workspace → 404 `source_not_found`.
 
 ## Fonte do tipo `tickets`
 

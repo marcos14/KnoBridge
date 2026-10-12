@@ -53,13 +53,13 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
         concluida_em: 2026-10-12
-        commit: null
+        commit: 195ad2b
       - id: F2.4
         titulo: Upload JSON/JSONL pelo painel e prévia de anonimização
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
-        concluida_em: null
+        concluida_em: 2026-10-12
         commit: null
   - id: F3
     titulo: Servidor — abrir chamado por webhook
@@ -288,6 +288,13 @@ decisoes:
     motivo: "atomicidade: retentativa não perde chamado nem fecha duas vezes, sem coluna nova em run_items"
     alternativas: "fechar no finish_run com o hash listado (exigiria migração)"
     adr: null
+  - id: D23
+    data: 2026-10-12
+    por: agente
+    decisao: "F2.4: dependência nova python-multipart (exigida pelo Starlette para multipart); limite de 50 MiB do upload aplicado na rota em fluxo (não no middleware, que guarda o corpo em memória), arquivo em disco temporário lido em blocos de 100; leitor JSON incremental próprio com uma passada de conferência antes de gravar; duplicado detectado no arquivo inteiro; prévia: editor+, até 2 MiB, funciona com fonte inativa, devolve título, Markdown e marcadores aplicados com contagem; arquivo vazio upload_empty; falha no meio mantém os blocos já gravados (reenvio seguro, unchanged)"
+    motivo: "carga histórica grande sem estourar memória e sem dependência pesada de parsing"
+    alternativas: "biblioteca de JSON em streaming; limite no middleware"
+    adr: null
 pendencias_usuario:
   - id: P1
     data: 2026-10-12
@@ -459,7 +466,7 @@ Fixar o formato do chamado e o modelo antes do código.
 
 - **Objetivo**: carga histórica sem código e conferência da anonimização.
 - **Entregáveis**:
-  - `POST .../sources/{sid}/tickets/upload` (sessão, editor ou acima, CSRF, multipart até 50 MB, JSON em lista ou JSONL lido em fluxo, a mesma validação e o mesmo upsert, relatório por linha com contagens e até 100 erros);
+  - `POST .../sources/{sid}/tickets/upload` (sessão, editor ou acima, CSRF, multipart até 50 MB, JSON em lista ou JSONL lido em fluxo, a mesma validação e o mesmo upsert, relatório por linha com contagens e até 1000 erros, como na spec);
   - `POST .../sources/{sid}/tickets/preview` (um chamado → Markdown anonimizado e marcadores aplicados, sem gravar);
   - auditoria do upload (contagens, nunca o conteúdo).
 - **Contexto necessário**: AGENTS de `api/` e `tests/api/`; o endpoint de F2.1; `tickets/anonymize.py` e `markdown.py` (F2.2); `docs/specs/chamados.md`.
@@ -602,6 +609,7 @@ D1 a D12 vêm das respostas do usuário (seção 2). D13 a D16 são do agente, n
 - 2026-10-12 — F2.3 iniciada (agente em worktree).
 - 2026-10-12 — F2.4 iniciada (agente em worktree).
 - 2026-10-12 — F2.3 concluída: conector interno tickets no workflow de ingestão com fechamento da caixa na transação do documento, citação kind ticket no contexto e no SSE v0.6, regra de chamados no prompt e suíte de contrato estendida; gates do agente: backend 1776 passed com 99,86%, frontend 1140; orquestrador: ruff, pyright e AGENTS na integração
+- 2026-10-12 — F2.4 concluída: upload JSON/JSONL em fluxo com relatório por linha e prévia de anonimização, integrados sobre a F2.3; backend 1866 passed com 99% de cobertura, frontend 1140
 
 ## 8. Encerramento
 

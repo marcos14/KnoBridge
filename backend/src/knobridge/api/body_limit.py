@@ -1,7 +1,8 @@
 """Body size limits of the bearer-token routes: the runner's (docs/specs/runner.md, "Limites de
-payload") and the ingest of tickets (docs/specs/chamados.md, ``POST /v1/ingest/tickets``).
+payload") and the ingest of tickets (docs/specs/chamados.md, ``POST /v1/ingest/tickets``), plus
+the preview of one ticket in the panel (``.../tickets/preview``).
 
-A pure ASGI middleware: for ``POST /v1/runner/*`` and ``/v1/ingest/tickets`` it refuses a
+A pure ASGI middleware: for these routes it refuses a
 declared ``Content-Length`` above the route's limit and stops reading the body as soon as it
 passes the limit (chunked bodies included), answering 413 ``payload_too_large`` with
 ``details.max_bytes``. Otherwise it replays the buffered body to the application, so FastAPI
@@ -24,6 +25,9 @@ RUNNER_PATH_PREFIX = "/v1/runner/"
 # Most specific first; ``^/v1/runner/`` is the fallback of any other runner route.
 _LIMITS: tuple[tuple[re.Pattern[str], int], ...] = (
     (re.compile(r"^/v1/ingest/tickets$"), 5 * MIB),
+    # One ticket (at most 1 MiB) and its envelope. The upload of a file streams instead: its
+    # route enforces its own limit while reading (``ticket_uploads.py``).
+    (re.compile(r"^/v1/workspaces/[^/]+/sources/[^/]+/tickets/preview$"), 2 * MIB),
     (re.compile(r"^/v1/runner/heartbeat$"), 64 * KIB),
     (re.compile(r"^/v1/runner/sources/[^/]+/report$"), 4 * MIB),
     (re.compile(r"^/v1/runner/jobs/claim$"), 4 * KIB),

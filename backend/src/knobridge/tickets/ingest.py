@@ -12,7 +12,7 @@ happen, the stored entry tells ``unchanged`` from ``stale``.
 from __future__ import annotations
 
 import uuid
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
@@ -92,7 +92,7 @@ def _invalid(details: list[Problem]) -> ItemError:
     return ItemError("validation_error", "The item does not match the ticket format.", details)
 
 
-def _readable_id(value: object) -> str | None:
+def readable_id(value: object) -> str | None:
     """The ``external_id`` of an invalid item, when that field alone is valid."""
     try:
         return _EXTERNAL_ID.validate_python(value, strict=True)
@@ -111,7 +111,7 @@ def _check_upsert(index: int, raw: Mapping[str, object]) -> UpsertItem | ItemRes
         )
         return _rejected(index, "upsert", None, _invalid(item_problems))
     fields = cast("Mapping[str, object]", ticket)
-    external_id = _readable_id(fields.get("external_id"))
+    external_id = readable_id(fields.get("external_id"))
     encoded = serialized(fields)
     if len(encoded) > MAX_TICKET_BYTES:
         error = ItemError(
@@ -133,7 +133,7 @@ def _check_delete(index: int, raw: Mapping[str, object]) -> DeleteItem | ItemRes
     try:
         validated = TicketDeleteItemIn.model_validate_json(serialized(raw), strict=True)
     except PydanticValidationError as exc:
-        external_id = _readable_id(raw.get("external_id"))
+        external_id = readable_id(raw.get("external_id"))
         return _rejected(index, "delete", external_id, _invalid(problems(exc)))
     return DeleteItem(index, validated.external_id, validated.deleted_at)
 
@@ -144,9 +144,17 @@ def check_items(items: Sequence[Mapping[str, object]]) -> list[CheckedItem]:
     A repeated ``external_id`` is rejected as ``duplicate_in_batch`` when an earlier item with
     it was accepted; a rejected item never blocks a later valid one.
     """
+    return check_indexed_items(enumerate(items), {})
+
+
+def check_indexed_items(
+    items: Iterable[tuple[int, Mapping[str, object]]], first_index: dict[str, int]
+) -> list[CheckedItem]:
+    """``check_items`` over items numbered by the caller (the upload numbers them by line or
+    position), with ``first_index`` (``external_id`` → index of the first accepted item) kept
+    across calls, so ``duplicate_in_batch`` covers a whole file read in blocks."""
     checked: list[CheckedItem] = []
-    first_index: dict[str, int] = {}
-    for index, raw in enumerate(items):
+    for index, raw in items:
         item = _check_upsert(index, raw) if raw["op"] == "upsert" else _check_delete(index, raw)
         if not isinstance(item, ItemResult):
             if item.external_id in first_index:

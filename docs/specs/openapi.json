@@ -1035,6 +1035,7 @@
           "source.sync.started",
           "source.sync.cancelled",
           "source.ingest_token_rotated",
+          "source.tickets_uploaded",
           "runner.created",
           "runner.updated",
           "runner.revoked",
@@ -7903,6 +7904,75 @@
         "title": "TicketPersonIn",
         "type": "object"
       },
+      "TicketPreviewIn": {
+        "additionalProperties": false,
+        "description": "The ticket is validated like an upsert item (strict), so it arrives raw.",
+        "properties": {
+          "ticket": {
+            "$ref": "#/components/schemas/TicketIn",
+            "title": "Ticket"
+          }
+        },
+        "required": [
+          "ticket"
+        ],
+        "title": "TicketPreviewIn",
+        "type": "object"
+      },
+      "TicketPreviewMarker": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "marker": {
+            "title": "Marker",
+            "type": "string"
+          }
+        },
+        "required": [
+          "marker",
+          "count"
+        ],
+        "title": "TicketPreviewMarker",
+        "type": "object"
+      },
+      "TicketPreviewOut": {
+        "properties": {
+          "anonymize": {
+            "title": "Anonymize",
+            "type": "boolean"
+          },
+          "include_internal_notes": {
+            "title": "Include Internal Notes",
+            "type": "boolean"
+          },
+          "markdown": {
+            "title": "Markdown",
+            "type": "string"
+          },
+          "markers": {
+            "items": {
+              "$ref": "#/components/schemas/TicketPreviewMarker"
+            },
+            "title": "Markers",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "markdown",
+          "markers",
+          "anonymize",
+          "include_internal_notes"
+        ],
+        "title": "TicketPreviewOut",
+        "type": "object"
+      },
       "TicketRequesterIn": {
         "additionalProperties": false,
         "properties": {
@@ -7979,6 +8049,133 @@
         ],
         "title": "TicketStatus",
         "type": "string"
+      },
+      "TicketUploadError": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "details": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details"
+          },
+          "external_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Id"
+          },
+          "index": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Index"
+          },
+          "line": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Line"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "line",
+          "index",
+          "external_id",
+          "code",
+          "message",
+          "details"
+        ],
+        "title": "TicketUploadError",
+        "type": "object"
+      },
+      "TicketUploadOut": {
+        "properties": {
+          "counts": {
+            "$ref": "#/components/schemas/TicketIngestCounts"
+          },
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/TicketUploadError"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
+          "errors_truncated": {
+            "title": "Errors Truncated",
+            "type": "boolean"
+          },
+          "format": {
+            "enum": [
+              "json",
+              "jsonl"
+            ],
+            "title": "Format",
+            "type": "string"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "sync": {
+            "enum": [
+              "started",
+              "pending",
+              "deferred",
+              "none"
+            ],
+            "title": "Sync",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "format",
+          "total",
+          "counts",
+          "errors",
+          "errors_truncated",
+          "sync",
+          "run_id"
+        ],
+        "title": "TicketUploadOut",
+        "type": "object"
       },
       "TicketUpsertItemIn": {
         "additionalProperties": false,
@@ -14345,6 +14542,158 @@
           }
         },
         "summary": "Test Source",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/sources/{source_id}/tickets/preview": {
+      "post": {
+        "description": "The Markdown the index would get for this ticket, anonymized with the source's settings;\nnothing is written.",
+        "operationId": "preview_ticket_markdown_v1_workspaces__workspace_id__sources__source_id__tickets_preview_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketPreviewIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketPreviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
+          },
+          "404": {
+            "description": "Workspace not found or caller not a member, or not a `tickets` source of the workspace (`source_not_found`)."
+          },
+          "413": {
+            "description": "Body above 2 MiB (`payload_too_large`)."
+          },
+          "422": {
+            "description": "Ticket outside the format (`validation_error` with `{loc, problem}` relative to the ticket) or above 1 MiB (`ticket_too_large`)."
+          }
+        },
+        "summary": "Preview Ticket Markdown",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/sources/{source_id}/tickets/upload": {
+      "post": {
+        "description": "Validate and write every ticket or removal of the file (the rules of the API, in blocks\nof 100), then ask for the sync of the source; the counts and the rejected items.",
+        "operationId": "upload_ticket_file_v1_workspaces__workspace_id__sources__source_id__tickets_upload_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "file": {
+                    "description": "A .json (list or {items}) or .jsonl file, up to 50 MiB.",
+                    "format": "binary",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "file"
+                ],
+                "title": "TicketUploadIn",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketUploadOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
+          },
+          "404": {
+            "description": "Workspace not found or caller not a member, or not a `tickets` source of the workspace (`source_not_found`)."
+          },
+          "409": {
+            "description": "Source deactivated (`source_inactive`)."
+          },
+          "413": {
+            "description": "File above 50 MiB (`payload_too_large`, `details.max_bytes`)."
+          },
+          "422": {
+            "description": "Not a .json/.jsonl file (`upload_format_unsupported`), malformed JSON (`upload_invalid_json`), empty file (`upload_empty`) or no file field (`validation_error`)."
+          }
+        },
+        "summary": "Upload Ticket File",
         "tags": [
           "sources"
         ]

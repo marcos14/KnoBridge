@@ -30,6 +30,7 @@ dependencies = [
     "tree-sitter-javascript>=0.25",
     "tree-sitter-go>=0.25",
     "croniter>=6.2.4",
+    "python-multipart>=0.0.20",
 ]
 
 [project.scripts]
