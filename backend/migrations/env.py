@@ -14,6 +14,7 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
+from knobridge.apikeys import models as apikeys_models
 from knobridge.assistants import models as assistants_models
 from knobridge.audit import models as audit_models
 from knobridge.conversations import models as conversations_models
@@ -43,6 +44,7 @@ _MODEL_MODULES = (
     ingestion_models,
     harness_models,
     tickets_models,
+    apikeys_models,
 )
 target_metadata = Base.metadata
 

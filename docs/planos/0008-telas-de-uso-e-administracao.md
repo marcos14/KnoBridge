@@ -24,10 +24,10 @@ fases:
         commit: acbb83e
       - id: F1.2
         titulo: Migração 0017 (chaves de API, custo e canal por resposta) com RLS
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
-        concluida_em: null
+        concluida_em: 2026-10-12
         commit: null
   - id: F2
     titulo: Servidor
@@ -167,6 +167,13 @@ decisoes:
     decisao: "F1.1: contrato do lote em api-publica.md, uso-e-custos.md e nas specs de autenticação, chat, chat-sse, indexação e runner, com ADR 0007; a migração 0017 também traz conversations.user_id opcional, conversations.api_key_id e o canal api, e sessions.superadmin_workspace_id/superadmin_entered_at; acesso de superadmin por sessão, um workspace por vez, papel efetivo = maior entre o do membership e admin; conversas da API pertencem à chave; /v1/chat/completions aceita nome ou id do assistente, cria uma conversa por chamada, ignora system/developer, usa as 10 últimas mensagens como histórico e acrescenta Fontes ao texto por padrão (knobridge.append_sources desliga); reindexar zera cursor e content_hash e recusa fontes tickets (bruto apagado, 409 source_reindex_unsupported); duplicar assistente copia a URL do webhook mas não o segredo; listas ganham query, filtros e sort; preços de chat em USD por milhão (input/output), os da OpenAI conferidos na F2.2 pelo catálogo público do OpenRouter"
     motivo: "detalhes de contrato que o plano não fixava, revisados pelo orquestrador"
     alternativas: "chave com escopo obrigatório; conversa da API ligada a um usuário; reindexar tickets reenviando a caixa"
+    adr: null
+  - id: D9
+    data: 2026-10-12
+    por: agente
+    decisao: "F1.2: chave com conversas não pode ser apagada (FK sem ação; chaves só são revogadas); conversations com CHECK de dono único (user_id ou api_key_id) e api_key_id só no canal api; assistant_ids uuid[] de 1 a 100 sem FK (ids do workspace pela aplicação, assistente excluído sai do escopo); messages.cost_usd numeric(12,6) só em respostas; messages.channel com padrão panel; sessions.superadmin_workspace_id ON DELETE SET NULL; downgrade da 0017 recusa com conversas da API; conversas da API ficam fora das leituras do painel (404 no detalhe, fora da lista administrativa) até a F2.3"
+    motivo: "integridade do dono da conversa e do histórico"
+    alternativas: "SET NULL ou CASCADE na chave"
     adr: null
 pendencias_usuario: []
 ---
@@ -398,6 +405,7 @@ Nenhuma.
 - 2026-10-12 — F1.1 concluída: ADR 0007, specs api-publica.md e uso-e-custos.md e atualizações em autenticação, chat, chat-sse, indexação, runner e visão v0.5; links e checagens verdes
 - 2026-10-12 — F1.2 iniciada (agente em worktree).
 - 2026-10-12 — F2.5 iniciada (agente em worktree).
+- 2026-10-12 — F1.2 concluída: migração 0017 com api_keys, dono do tipo chave em conversations, custo e canal por resposta e acesso de superadmin em sessions, RLS e testes; gates do agente: backend 2130 passed com 99,87%, frontend 1240; orquestrador: ruff, pyright e AGENTS na integração
 
 ## 8. Encerramento
 

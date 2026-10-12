@@ -2266,10 +2266,10 @@ export interface components {
         };
         /**
          * ConversationChannel
-         * @description Where the conversation happens; other channels (widget, Slack...) come later.
+         * @description Where the conversation happens (also kept on each message); widget, Slack... come later.
          * @enum {string}
          */
-        ConversationChannel: "panel";
+        ConversationChannel: "panel" | "api";
         /** ConversationCreate */
         ConversationCreate: {
             /**

@@ -1720,9 +1720,10 @@
         "type": "object"
       },
       "ConversationChannel": {
-        "description": "Where the conversation happens; other channels (widget, Slack...) come later.",
+        "description": "Where the conversation happens (also kept on each message); widget, Slack... come later.",
         "enum": [
-          "panel"
+          "panel",
+          "api"
         ],
         "title": "ConversationChannel",
         "type": "string"

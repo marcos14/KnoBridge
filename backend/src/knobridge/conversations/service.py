@@ -91,9 +91,15 @@ async def get_readable_conversation(
     *,
     lock: bool = False,
 ) -> Conversation:
-    """The conversation, if ``reader`` owns it or may read all; 404 otherwise."""
+    """The conversation, if ``reader`` owns it or may read all; 404 otherwise.
+
+    Only conversations of a person: one made through the public API belongs to its key, and
+    people read it in the administrative view, never here.
+    """
     query = select(Conversation).where(
-        Conversation.workspace_id == workspace_id, Conversation.id == conversation_id
+        Conversation.workspace_id == workspace_id,
+        Conversation.id == conversation_id,
+        Conversation.user_id.is_not(None),
     )
     if lock:
         # Serializes turns of the same conversation (message positions stay unique).

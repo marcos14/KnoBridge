@@ -32,6 +32,13 @@ class Session(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     """A server-side login session; the browser holds only the opaque token in a cookie."""
 
     __tablename__ = "sessions"
+    __table_args__ = (
+        # Deleting the workspace clears only the workspace, so a date may outlive it.
+        CheckConstraint(
+            "superadmin_workspace_id IS NULL OR superadmin_entered_at IS NOT NULL",
+            name="superadmin_access_dated",
+        ),
+    )
 
     user_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey(User.id, ondelete="CASCADE"), nullable=False, index=True
@@ -43,6 +50,12 @@ class Session(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     ip_prefix: Mapped[str | None] = mapped_column(String(64))
     user_agent: Mapped[str | None] = mapped_column(String(200))
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Superadmin access of this session only (effective admin role there, without membership);
+    # whether the user is still a superadmin is checked on every request.
+    superadmin_workspace_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey(Workspace.id, ondelete="SET NULL"), index=True
+    )
+    superadmin_entered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class UserToken(UUIDPrimaryKeyMixin, TimestampMixin, Base):

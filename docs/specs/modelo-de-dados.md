@@ -1,6 +1,8 @@
 # Modelo de dados
 
-> Rascunho v0.8 · 2026-10-12 · Em uso (planos 0002 a 0005)
+> Rascunho v0.9 · 2026-10-12 · Em uso (planos 0002 a 0005 e 0008)
+>
+> **Mudanças da v0.9**: migração `0017` (plano 0008, F1.2): tabela `api_keys` (chaves da API pública, [ADR 0007](../adr/0007-chaves-e-api-publica.md), contrato em [api-publica.md](api-publica.md)); `conversations` aceita o canal `api` e um dono do tipo chave (`user_id` opcional, `api_key_id`, exatamente um dos dois); `messages` ganha `channel` e `cost_usd` ([chat.md](chat.md#custo-e-canal-por-resposta)); `sessions` ganha o acesso de superadmin da sessão (`superadmin_workspace_id`, `superadmin_entered_at`; [autenticacao.md](autenticacao.md#acesso-de-superadmin-a-um-workspace)).
 >
 > **Mudanças da v0.8**: migração `0016` (plano 0005, F1.2): tabelas de chamados `ingest_tokens`, `ticket_inbox` e `ticket_requests` ([ADR 0006](../adr/0006-chamados-por-push.md), contrato em [chamados.md](chamados.md)); `assistants` ganha o webhook de pedido de chamado (`ticket_webhook_url`, `ticket_webhook_secret_ciphertext`, `ticket_webhook_secret_created_at`); `sources.kind` aceita `tickets`, `runs.trigger` aceita `ingest` e `documents.kind`/`run_items.document_kind` aceitam `ticket`.
 >
@@ -14,7 +16,7 @@
 >
 > **Mudanças da v0.3**: índice de conhecimento da migração `0010` (plano 0003, F1.1): `collections`, `sources`, `runs`, `run_errors`, `documents` e `chunks`, com `vector(1536)`, HNSW e `tsvector` gerado ([ADR 0004](../adr/0004-indice-de-conhecimento.md)). Migração `0011` (plano 0003, F3.1): `run_items` (trabalho pendente de uma execução), `runs.pending_cursor` e o índice do cache de embedding em `chunks`.
 
-Tabelas do Postgres do KnoBridge, criadas pelas migrações em [`backend/migrations/`](../../backend/migrations/AGENTS.md). Modelos ORM em `backend/src/knobridge/<módulo>/models.py`. Regras de tenancy e RLS no [ADR 0001](../adr/0001-tenancy-e-rls.md); sessão, tokens e limitação de login no [ADR 0002](../adr/0002-sessao-server-side.md); segredos cifrados no [ADR 0003](../adr/0003-segredos-cifrados.md); índice de conhecimento no [ADR 0004](../adr/0004-indice-de-conhecimento.md); harness de código com runner local no [ADR 0005](../adr/0005-runner-local-do-harness.md); chamados por push no [ADR 0006](../adr/0006-chamados-por-push.md). Autenticação e papéis em [autenticacao.md](autenticacao.md); chat em [chat.md](chat.md).
+Tabelas do Postgres do KnoBridge, criadas pelas migrações em [`backend/migrations/`](../../backend/migrations/AGENTS.md). Modelos ORM em `backend/src/knobridge/<módulo>/models.py`. Regras de tenancy e RLS no [ADR 0001](../adr/0001-tenancy-e-rls.md); sessão, tokens e limitação de login no [ADR 0002](../adr/0002-sessao-server-side.md); segredos cifrados no [ADR 0003](../adr/0003-segredos-cifrados.md); índice de conhecimento no [ADR 0004](../adr/0004-indice-de-conhecimento.md); harness de código com runner local no [ADR 0005](../adr/0005-runner-local-do-harness.md); chamados por push no [ADR 0006](../adr/0006-chamados-por-push.md); chaves e API pública no [ADR 0007](../adr/0007-chaves-e-api-publica.md). Autenticação e papéis em [autenticacao.md](autenticacao.md); chat em [chat.md](chat.md).
 
 ## Migrações
 
@@ -36,6 +38,7 @@ Tabelas do Postgres do KnoBridge, criadas pelas migrações em [`backend/migrati
 | `0014` | `20261011_0014_harness.py` | Harness de código: `runners`, `harness_modules`, `harness_jobs`, `knowledge_items`, `harness_rejections` (RLS forçada); `sources.kind` aceita `runner` e ganha `uq_sources_workspace_id_runner_repository`; `documents.kind` e `run_items.document_kind` aceitam `knowledge`. O `downgrade` falha se houver fonte `runner` ou documento `knowledge` (não apaga dados). |
 | `0015` | `20261011_0015_harness_sync.py` | `runs.trigger` aceita `harness`; `sources.sync_pending` (`boolean`, padrão `false`). O `downgrade` falha se houver execução `harness` (não reescreve o histórico). |
 | `0016` | `20261012_0016_tickets.py` | Chamados: `ingest_tokens`, `ticket_inbox`, `ticket_requests` (RLS forçada); `assistants.ticket_webhook_url`, `ticket_webhook_secret_ciphertext` e `ticket_webhook_secret_created_at`; `sources.kind` aceita `tickets`, `runs.trigger` aceita `ingest`, `documents.kind` e `run_items.document_kind` aceitam `ticket`. O `downgrade` falha se houver fonte `tickets`, execução `ingest` ou documento `ticket` (não apaga dados). |
+| `0017` | `20261012_0017_api_keys_and_usage.py` | `api_keys` (RLS forçada); `conversations.user_id` opcional, `conversations.api_key_id` e canal `api`; `messages.channel` (as existentes ficam `panel`) e `messages.cost_usd`; `sessions.superadmin_workspace_id` e `superadmin_entered_at`. O `downgrade` falha se houver conversa da API (não apaga dados). |
 
 Toda migração tem `downgrade` que desfaz o `upgrade`; o teste `test_migrations_match_orm_models` compara as migrações com os modelos ORM.
 
@@ -97,6 +100,7 @@ Todas as tabelas abaixo têm `ENABLE` + `FORCE ROW LEVEL SECURITY`. `users` é a
 | `ingest_tokens` | `ingest_tokens_workspace` | `ALL` | workspace, ou sistema (a verificação do token de envio busca por `token_prefix` em modo de sistema) |
 | `ticket_inbox` | `ticket_inbox_workspace` | `ALL` | workspace, ou sistema |
 | `ticket_requests` | `ticket_requests_workspace` | `ALL` | workspace, ou sistema |
+| `api_keys` | `api_keys_workspace` | `ALL` | workspace, ou sistema (a autenticação da chave busca por `key_prefix` em modo de sistema) |
 
 A RLS isola workspaces; regras dentro do workspace (papel mínimo, privacidade de conversa entre membros) são da aplicação ([autenticacao.md](autenticacao.md#matriz-de-permissões)). Cada consulta tem teste de isolamento contra Postgres real, junto dos testes do seu módulo (ex.: `backend/tests/tenancy/test_invitations_rls.py`).
 
@@ -150,14 +154,29 @@ erDiagram
         uuid collection_id PK "mesmo workspace"
     }
     assistants ||--o{ conversations : "atende"
-    users ||--o{ conversations : "conversa"
+    users |o--o{ conversations : "conversa"
+    workspaces ||--o{ api_keys : "emite"
+    users |o--o{ api_keys : "criou"
+    api_keys {
+        uuid id PK
+        uuid workspace_id FK
+        varchar name "único por workspace"
+        varchar key_prefix "único na instância"
+        varchar key_hash "SHA-256"
+        uuid_array assistant_ids "nulo = todos"
+        uuid created_by FK
+        timestamptz last_used_at
+        timestamptz revoked_at
+    }
+    api_keys |o--o{ conversations : "conversa"
     conversations {
         uuid id PK
         uuid workspace_id FK
         uuid assistant_id FK "mesmo workspace"
-        uuid user_id FK "dono"
+        uuid user_id FK "dono no painel"
+        uuid api_key_id FK "dona na API, mesmo workspace"
         varchar title "da primeira pergunta"
-        varchar channel "panel"
+        varchar channel "panel | api"
     }
     conversations ||--o{ messages : "contém"
     messages {
@@ -172,6 +191,8 @@ erDiagram
         varchar error_code
         varchar model
         integer latency_ms
+        numeric cost_usd "estimado; nulo sem preço"
+        varchar channel "panel | api"
     }
     messages ||--o{ feedback : "recebe"
     users ||--o{ feedback : "avalia"
@@ -391,6 +412,8 @@ erDiagram
         varchar ip_prefix
         varchar user_agent
         timestamptz revoked_at
+        uuid superadmin_workspace_id FK "acesso de superadmin"
+        timestamptz superadmin_entered_at
     }
     user_tokens {
         uuid id PK
@@ -480,6 +503,8 @@ Sessão de login server-side ([ADR 0002](../adr/0002-sessao-server-side.md)). Da
 | `ip_prefix` | `varchar(64)` | Prefixo de rede do IP (IPv4 /24, IPv6 /48); opcional. |
 | `user_agent` | `varchar(200)` | User-agent truncado; opcional. |
 | `revoked_at` | `timestamptz` | Nulo enquanto a sessão vale. |
+| `superadmin_workspace_id` | `uuid` | Workspace em que o superadmin entrou **nesta sessão** ([acesso de superadmin](autenticacao.md#acesso-de-superadmin-a-um-workspace)); nulo sem acesso. FK `workspaces.id`, `ON DELETE SET NULL`; índice `ix_sessions_superadmin_workspace_id`. Vale só enquanto o usuário ainda é superadmin (checado por requisição). |
+| `superadmin_entered_at` | `timestamptz` | Quando entrou (relógio da aplicação). Obrigatório com acesso (`ck_sessions_superadmin_access_dated`: `superadmin_workspace_id` nulo ou data presente); excluir o workspace anula só `superadmin_workspace_id`. |
 
 `created_at` vem do relógio da aplicação (o mesmo da expiração).
 
@@ -599,17 +624,20 @@ Coleções em que o chat de um assistente busca as fontes (plano 0003, F4.2), N:
 
 ### `conversations`
 
-Conversa de um membro com um assistente (plano 0002, F4.4), em [`backend/src/knobridge/conversations/`](../../backend/src/knobridge/conversations/AGENTS.md). Dado de workspace com RLS forçada e uma política padrão (`conversations_workspace`, `USING` e `WITH CHECK`). A privacidade entre membros é regra da aplicação: só o dono envia mensagens e exclui; owner e admin do workspace leem qualquer conversa; os demais recebem 404. Owner e admin também têm a visão administrativa (plano 0002, F4.5: `/v1/workspaces/{id}/admin/conversations`, com contagens por conversa e totais do período, em consultas de número constante de statements). Só a exclusão é auditada (`conversation.deleted`, com `assistant_id` e `message_count`, sem conteúdo).
+Conversa de um membro (canal `panel`) ou de uma chave de API (canal `api`, desde a `0017`; [api-publica.md](api-publica.md#conversas-da-api)) com um assistente (plano 0002, F4.4), em [`backend/src/knobridge/conversations/`](../../backend/src/knobridge/conversations/AGENTS.md). Dado de workspace com RLS forçada e uma política padrão (`conversations_workspace`, `USING` e `WITH CHECK`). A privacidade entre membros é regra da aplicação: só o dono envia mensagens e exclui; owner e admin do workspace leem qualquer conversa; os demais recebem 404. Owner e admin também têm a visão administrativa (plano 0002, F4.5: `/v1/workspaces/{id}/admin/conversations`, com contagens por conversa e totais do período, em consultas de número constante de statements). Só a exclusão é auditada (`conversation.deleted`, com `assistant_id` e `message_count`, sem conteúdo).
 
 | Coluna | Tipo | Regras |
 |---|---|---|
 | `workspace_id` | `uuid` | FK `workspaces.id`, `ON DELETE CASCADE`. |
 | `assistant_id` | `uuid` | FK composta `(workspace_id, assistant_id)` → `assistants (workspace_id, id)` (`fk_conversations_workspace_id_assistants`), `ON DELETE CASCADE`. |
-| `user_id` | `uuid` | Dono da conversa. FK `users.id`, `ON DELETE CASCADE`. |
+| `user_id` | `uuid` | Dono da conversa no painel. FK `users.id`, `ON DELETE CASCADE`. Nulo nas conversas da API. |
+| `api_key_id` | `uuid` | Chave dona de uma conversa da API. FK composta `(workspace_id, api_key_id)` → `api_keys (workspace_id, id)` (`fk_conversations_workspace_id_api_keys`), sem ação: chaves são revogadas, nunca excluídas, e uma chave com conversas não pode ser apagada (excluir o workspace apaga as duas). |
 | `title` | `varchar(200)` | Nulo até a primeira pergunta; depois, a pergunta numa linha, cortada em 80 caracteres (sem LLM). |
-| `channel` | `varchar(32)` | `panel` (`ck_conversations_channel`; outros canais depois). |
+| `channel` | `varchar(32)` | `panel` ou `api` (`ck_conversations_channel`). |
 
-Únicos e índices: `uq_conversations_workspace_id_id` (alvo da FK de `messages`) e `ix_conversations_workspace_id_user_id_updated_at` ("minhas conversas", da mais recente). `updated_at` muda a cada pergunta.
+Exatamente um dono: `ck_conversations_one_owner` (`user_id` nulo se e somente se `api_key_id` presente) e `ck_conversations_api_key_when_api` (`api_key_id` presente se e somente se o canal é `api`). As leituras do painel (detalhe da conversa e lista administrativa) mostram só conversas de membros até a visão administrativa ganhar o canal ([chat.md](chat.md#visão-administrativa)).
+
+Únicos e índices: `uq_conversations_workspace_id_id` (alvo da FK de `messages`), `ix_conversations_workspace_id_user_id_updated_at` ("minhas conversas", da mais recente) e `ix_conversations_workspace_id_api_key_id` (conversas de uma chave). `updated_at` muda a cada pergunta.
 
 ### `messages`
 
@@ -628,6 +656,8 @@ Pergunta ou resposta de uma conversa. RLS forçada, política `messages_workspac
 | `model` | `varchar(200)` | Modelo que respondeu; nulo em perguntas e em `no_source`. |
 | `input_tokens`, `output_tokens` | `integer` | Uso informado pelo provedor, quando há. |
 | `latency_ms` | `integer` | Da pergunta ao fim da resposta, pelo relógio injetado. |
+| `cost_usd` | `numeric(12,6)` | Custo estimado da resposta pela tabela de preços do chat ([chat.md](chat.md#custo-e-canal-por-resposta)); nulo em perguntas, em `no_source`, sem preço do modelo ou sem tokens, nunca zero por desconhecimento. ≥ 0 (`ck_messages_cost_usd_not_negative`) e só em respostas (`ck_messages_cost_usd_only_answers`). |
+| `channel` | `varchar(32)` | `panel` ou `api` (`ck_messages_channel`), o canal da requisição que gravou a mensagem (o mesmo da conversa, repetido para as agregações de [uso-e-custos.md](uso-e-custos.md) não precisarem do join); padrão `panel`, valor das mensagens anteriores à `0017`. |
 
 Único extra `uq_messages_workspace_id_id`, alvo da FK de `feedback`.
 
@@ -913,3 +943,24 @@ Um pedido de chamado feito a partir de uma resposta do assistente, entregue pelo
 | `last_http_status` | `integer` | Status HTTP da última tentativa respondida, de 100 a 599 (`ck_ticket_requests_last_http_status_range`). |
 | `last_error` | `varchar(500)` | `<código>: <mensagem>` da última tentativa com falha; nunca o corpo nem a resposta. |
 | `delivered_at` | `timestamptz` | Presente se e somente se `delivered` (`ck_ticket_requests_delivered_at_when_delivered`). |
+
+## API pública
+
+Tabela das chaves da API pública (plano 0008, F1.2; [ADR 0007](../adr/0007-chaves-e-api-publica.md)), em [`backend/src/knobridge/apikeys/`](../../backend/src/knobridge/apikeys/AGENTS.md). Formato da chave, escopo, autenticação e conversas em [api-publica.md](api-publica.md).
+
+### `api_keys`
+
+A chave `kbk_<prefixo>_<segredo>` de um workspace, mostrada uma vez e nunca gravada. Dado de workspace com RLS forçada e a política padrão (`api_keys_workspace`). Não há exclusão: revogar grava `revoked_at` e as conversas da chave continuam apontando para ela.
+
+| Coluna | Tipo | Regras |
+|---|---|---|
+| `workspace_id` | `uuid` | FK `workspaces.id`, `ON DELETE CASCADE`. |
+| `name` | `varchar(200)` | Não vazio (`ck_api_keys_name_not_empty`); **único no workspace** (`uq_api_keys_workspace_id_name`, 409 `api_key_name_taken`). |
+| `key_prefix` | `varchar(8)` | `[a-z0-9]{8}` (`ck_api_keys_key_prefix_format`); **único na instância** (`uq_api_keys_key_prefix`): a autenticação busca por ele em modo de sistema (`system_session`), antes de conhecer o workspace, e depois abre o escopo do workspace da chave. |
+| `key_hash` | `varchar(64)` | SHA-256 hex da chave inteira (`ck_api_keys_key_hash_format`), comparado em tempo constante. |
+| `assistant_ids` | `uuid[]` | Escopo: nulo = todos os assistentes ativos do workspace; senão de 1 a 100 ids, sem nulos (`ck_api_keys_assistant_ids_size`). Sem FK: um assistente excluído sai do escopo sem erro; ids do workspace e sem repetição são regra da aplicação. |
+| `created_by` | `uuid` | FK `users.id`, `ON DELETE SET NULL`. |
+| `last_used_at` | `timestamptz` | Última requisição autenticada, gravada no máximo uma vez por minuto (relógio injetado). |
+| `revoked_at` | `timestamptz` | Preenchido ao revogar (irreversível); chave revogada responde 401. |
+
+Únicos: `uq_api_keys_workspace_id_id` (alvo da FK composta de `conversations`), além dos dois acima.

@@ -196,7 +196,11 @@ def _summary(row: Row[*tuple[Any, ...]]) -> AdminConversation:
 def _conditions(
     workspace_id: uuid.UUID, filters: AdminConversationFilter
 ) -> list[ColumnElement[bool]]:
-    conditions: list[ColumnElement[bool]] = [Conversation.workspace_id == workspace_id]
+    conditions: list[ColumnElement[bool]] = [
+        Conversation.workspace_id == workspace_id,
+        # Conversations of members only: the page joins their owner, so the total must too.
+        Conversation.user_id.is_not(None),
+    ]
     if filters.assistant_id is not None:
         conditions.append(Conversation.assistant_id == filters.assistant_id)
     if filters.user_id is not None:

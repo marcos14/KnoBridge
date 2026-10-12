@@ -14,6 +14,7 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.pool import NullPool
 
+from knobridge.apikeys import models as apikeys_models
 from knobridge.assistants import models as assistants_models
 from knobridge.audit import models as audit_models
 from knobridge.conversations import models as conversations_models
@@ -37,6 +38,7 @@ _MODEL_MODULES = (
     ingestion_models,
     harness_models,
     tickets_models,
+    apikeys_models,
 )
 _HARNESS_TABLES = (
     "runners",
@@ -70,6 +72,7 @@ _TENANCY_TABLES = (
     "assistant_collections",
     *_HARNESS_TABLES,
     *_TICKETS_TABLES,
+    "api_keys",
 )
 _INDEX_TABLES = ("collections", "sources", "runs", "run_errors", "documents", "chunks")
 
@@ -163,6 +166,7 @@ def test_migration_upgrade_downgrade_tenancy(postgres_url: str) -> None:
         "assistant_collections": (True, True, 1),
         **dict.fromkeys(_HARNESS_TABLES, (True, True, 1)),
         **dict.fromkeys(_TICKETS_TABLES, (True, True, 1)),
+        "api_keys": (True, True, 1),
     }
     assert after_downgrade == {}
 
