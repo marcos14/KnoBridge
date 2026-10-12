@@ -1083,6 +1083,7 @@
           "assistant.ticket_webhook_secret_rotated",
           "assistant.ticket_webhook_tested",
           "conversation.deleted",
+          "ticket_request.created",
           "collection.created",
           "collection.updated",
           "collection.deleted",
@@ -1762,6 +1763,11 @@
           },
           "messages": {
             "$ref": "#/components/schemas/MessagePage"
+          },
+          "ticket_requests_enabled": {
+            "default": false,
+            "title": "Ticket Requests Enabled",
+            "type": "boolean"
           },
           "title": {
             "anyOf": [
@@ -3886,6 +3892,16 @@
           },
           "status": {
             "$ref": "#/components/schemas/MessageStatus"
+          },
+          "ticket_request": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TicketRequestOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -8031,6 +8047,228 @@
         "title": "TicketPreviewOut",
         "type": "object"
       },
+      "TicketRequestIn": {
+        "properties": {
+          "message_id": {
+            "format": "uuid",
+            "title": "Message Id",
+            "type": "string"
+          },
+          "summary": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message_id",
+          "summary"
+        ],
+        "title": "TicketRequestIn",
+        "type": "object"
+      },
+      "TicketRequestMessage": {
+        "properties": {
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/MessageRole"
+          }
+        },
+        "required": [
+          "role",
+          "content",
+          "created_at"
+        ],
+        "title": "TicketRequestMessage",
+        "type": "object"
+      },
+      "TicketRequestOut": {
+        "properties": {
+          "assistant_id": {
+            "format": "uuid",
+            "title": "Assistant Id",
+            "type": "string"
+          },
+          "attempts": {
+            "title": "Attempts",
+            "type": "integer"
+          },
+          "conversation_id": {
+            "format": "uuid",
+            "title": "Conversation Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "delivered_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivered At"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "external_ticket_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Ticket Id"
+          },
+          "external_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Url"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "message_id": {
+            "format": "uuid",
+            "title": "Message Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TicketRequestStatus"
+          }
+        },
+        "required": [
+          "id",
+          "conversation_id",
+          "message_id",
+          "assistant_id",
+          "status",
+          "attempts",
+          "external_ticket_id",
+          "external_url",
+          "error_code",
+          "created_at",
+          "delivered_at"
+        ],
+        "title": "TicketRequestOut",
+        "type": "object"
+      },
+      "TicketRequestPreviewIn": {
+        "properties": {
+          "message_id": {
+            "format": "uuid",
+            "title": "Message Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message_id"
+        ],
+        "title": "TicketRequestPreviewIn",
+        "type": "object"
+      },
+      "TicketRequestPreviewOut": {
+        "properties": {
+          "message_id": {
+            "format": "uuid",
+            "title": "Message Id",
+            "type": "string"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/TicketRequestMessage"
+            },
+            "title": "Messages",
+            "type": "array"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "requester": {
+            "$ref": "#/components/schemas/TicketRequestRequester"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "summary_generated": {
+            "title": "Summary Generated",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "message_id",
+          "question",
+          "summary",
+          "summary_generated",
+          "requester",
+          "messages"
+        ],
+        "title": "TicketRequestPreviewOut",
+        "type": "object"
+      },
+      "TicketRequestRequester": {
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "email"
+        ],
+        "title": "TicketRequestRequester",
+        "type": "object"
+      },
+      "TicketRequestStatus": {
+        "enum": [
+          "pending",
+          "delivered",
+          "failed"
+        ],
+        "title": "TicketRequestStatus",
+        "type": "string"
+      },
       "TicketRequesterIn": {
         "additionalProperties": false,
         "properties": {
@@ -11965,6 +12203,217 @@
           }
         },
         "summary": "Set Feedback",
+        "tags": [
+          "conversations"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/conversations/{conversation_id}/ticket-requests": {
+      "post": {
+        "description": "Ask for a ticket about the answer; the webhook delivery follows in the background.",
+        "operationId": "create_ticket_request_v1_workspaces__workspace_id__conversations__conversation_id__ticket_requests_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketRequestIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketRequestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Not the owner of the conversation (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
+          },
+          "404": {
+            "description": "Conversation or message not found, or not visible to the caller."
+          },
+          "409": {
+            "description": "Assistant inactive (`assistant_inactive`), webhook without URL or secret (`ticket_webhook_not_configured`) or a request already exists for the answer (`ticket_request_exists`, with `details.ticket_request_id`)."
+          },
+          "422": {
+            "description": "Invalid body, or the message is not a `completed` or `no_source` answer (`validation_error`)."
+          }
+        },
+        "summary": "Create Ticket Request",
+        "tags": [
+          "conversations"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/conversations/{conversation_id}/ticket-requests/preview": {
+      "post": {
+        "description": "What a ticket request about the answer would send; nothing is written.",
+        "operationId": "preview_ticket_request_v1_workspaces__workspace_id__conversations__conversation_id__ticket_requests_preview_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TicketRequestPreviewIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketRequestPreviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Not the owner of the conversation (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
+          },
+          "404": {
+            "description": "Conversation or message not found, or not visible to the caller."
+          },
+          "409": {
+            "description": "Assistant inactive (`assistant_inactive`), webhook without URL or secret (`ticket_webhook_not_configured`) or a request already exists for the answer (`ticket_request_exists`, with `details.ticket_request_id`)."
+          },
+          "422": {
+            "description": "Invalid body, or the message is not a `completed` or `no_source` answer (`validation_error`)."
+          }
+        },
+        "summary": "Preview Ticket Request",
+        "tags": [
+          "conversations"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/conversations/{conversation_id}/ticket-requests/{request_id}": {
+      "get": {
+        "description": "The state of a ticket request (whoever reads the conversation).",
+        "operationId": "get_ticket_request_v1_workspaces__workspace_id__conversations__conversation_id__ticket_requests__request_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketRequestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Workspace suspended."
+          },
+          "404": {
+            "description": "Conversation or request not found, or not visible to the caller."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Ticket Request",
         "tags": [
           "conversations"
         ]

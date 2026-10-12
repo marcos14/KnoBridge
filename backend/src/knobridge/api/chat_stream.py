@@ -43,6 +43,7 @@ def sse_frame(event: ChatEvent) -> bytes:
                 "input_tokens": event.input_tokens,
                 "output_tokens": event.output_tokens,
                 "latency_ms": event.latency_ms,
+                "ticket_requests_enabled": event.ticket_requests_enabled,
             }
         case _:  # ErrorEvent, the only type left
             name = "error"

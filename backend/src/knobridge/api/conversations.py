@@ -26,6 +26,7 @@ from knobridge.api.deps import (
     WorkspaceContext,
     WorkspaceContextDep,
 )
+from knobridge.api.ticket_requests import TicketRequestOut, ticket_request_out
 from knobridge.conversations.models import (
     FEEDBACK_COMMENT_MAX_LENGTH,
     Conversation,
@@ -39,6 +40,8 @@ from knobridge.conversations.service import MessageView, Reader
 from knobridge.security.csrf import require_csrf
 from knobridge.tenancy.models import Role
 from knobridge.tenancy.rbac import role_at_least
+from knobridge.tickets.models import TicketRequest
+from knobridge.tickets.requests import requests_by_message, ticket_requests_enabled
 
 DEFAULT_LIMIT = 50
 MAX_LIMIT = 200
@@ -156,6 +159,9 @@ class MessageOut(BaseModel):
     created_at: datetime
     # The caller's own feedback on this message.
     feedback: FeedbackOut | None
+    # The ticket requested about this answer, if any (``null`` for questions). Always sent;
+    # the default only keeps the field additive in the published schema (plan 0005).
+    ticket_request: TicketRequestOut | None = None
 
 
 class MessagePage(BaseModel):
@@ -166,6 +172,9 @@ class MessagePage(BaseModel):
 
 
 class ConversationDetail(ConversationOut):
+    # The assistant offers to open a ticket (its webhook has a URL and a secret). Always sent;
+    # the default only keeps the field additive in the published schema.
+    ticket_requests_enabled: bool = False
     messages: MessagePage
 
 
@@ -202,7 +211,7 @@ def _feedback_out(feedback: Feedback) -> FeedbackOut:
     )
 
 
-def _message_out(view: MessageView) -> MessageOut:
+def _message_out(view: MessageView, request: TicketRequest | None) -> MessageOut:
     message = view.message
     return MessageOut(
         id=message.id,
@@ -217,6 +226,7 @@ def _message_out(view: MessageView) -> MessageOut:
         latency_ms=message.latency_ms,
         created_at=message.created_at,
         feedback=None if view.feedback is None else _feedback_out(view.feedback),
+        ticket_request=None if request is None else ticket_request_out(request),
     )
 
 
@@ -291,11 +301,18 @@ async def get_conversation(
         limit=limit,
         offset=offset,
     )
+    requests = await requests_by_message(
+        context.db, context.workspace_id, [view.message.id for view in views]
+    )
+    enabled = await ticket_requests_enabled(
+        context.db, context.workspace_id, conversation.assistant_id
+    )
     return ConversationDetail.model_validate(
         {
             **_conversation_fields(conversation),
+            "ticket_requests_enabled": enabled,
             "messages": MessagePage(
-                items=[_message_out(view) for view in views],
+                items=[_message_out(view, requests.get(view.message.id)) for view in views],
                 total=total,
                 limit=limit,
                 offset=offset,

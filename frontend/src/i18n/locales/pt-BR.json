@@ -1468,6 +1468,7 @@
     "assistant_ticket_webhook_secret_rotated": "Segredo do webhook de chamados gerado",
     "assistant_ticket_webhook_tested": "Webhook de chamados testado",
     "conversation_deleted": "Conversa excluída",
+    "ticket_request_created": "Chamado solicitado no chat",
     "workspace_created": "Workspace criado",
     "workspace_updated": "Workspace atualizado",
     "workspace_suspended": "Workspace suspenso",

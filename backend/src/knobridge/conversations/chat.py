@@ -164,6 +164,7 @@ class ChatService:
                 started_at=started_at,
                 fallback=answer.content,
                 latency_ms=answer.latency_ms,
+                ticket_requests_enabled=assistant.ticket_webhook_configured,
                 settled=True,
             )
         citations = [citation(index, source) for index, source in enumerate(sources, start=1)]
@@ -200,6 +201,7 @@ class ChatService:
                 messages=build_messages(profile, sources, history, question),
                 params=ChatParams(temperature=assistant.temperature),
             ),
+            ticket_requests_enabled=assistant.ticket_webhook_configured,
         )
 
     def stream(self, turn: PreparedTurn) -> AsyncGenerator[ChatEvent]:
@@ -232,6 +234,7 @@ class ChatService:
             input_tokens=None,
             output_tokens=None,
             latency_ms=turn.latency_ms,
+            ticket_requests_enabled=turn.ticket_requests_enabled,
         )
 
     async def _stream_llm(self, turn: PreparedTurn, call: LLMCall) -> AsyncGenerator[ChatEvent]:
@@ -292,6 +295,7 @@ class ChatService:
             input_tokens=usage.input_tokens,
             output_tokens=usage.output_tokens,
             latency_ms=latency_ms,
+            ticket_requests_enabled=turn.ticket_requests_enabled,
         )
 
     async def _save(self, turn: PreparedTurn, outcome: _Outcome) -> None:

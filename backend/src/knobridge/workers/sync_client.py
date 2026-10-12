@@ -1,11 +1,12 @@
-"""What the API uses to talk to Temporal: a ``SyncStarter`` and a ``ScheduleManager`` whose
-client is opened lazily.
+"""What the API uses to talk to Temporal: a ``SyncStarter``, a ``ScheduleManager`` and a
+``TicketWebhookStarter`` whose client is opened lazily.
 
 The API must start (and answer everything else) while Temporal is down, so the client is not
 opened at startup: the first call connects, and the client is kept for the next ones. An
 unreachable server, at connect time or on a call, becomes the given "unavailable" error
 (``SyncUnavailableError``, 503 ``sync_unavailable``, for syncs; ``ScheduleUnavailableError``
-for schedules, which the source service tolerates); the next call tries again.
+for schedules, which the source service tolerates; ``TicketDeliveryUnavailableError`` for
+ticket deliveries, which the API tolerates); the next call tries again.
 """
 
 from __future__ import annotations
@@ -13,6 +14,7 @@ from __future__ import annotations
 import asyncio
 import uuid
 from collections.abc import Awaitable, Callable
+from datetime import timedelta
 
 from temporalio.client import Client
 from temporalio.service import RPCError, RPCStatusCode
@@ -23,8 +25,10 @@ from knobridge.core.settings import Settings
 from knobridge.ingestion.errors import ScheduleUnavailableError, SyncUnavailableError
 from knobridge.ingestion.schedule import ScheduleChange, ScheduleManager, SourceSchedule
 from knobridge.ingestion.sync import SyncStarter
+from knobridge.tickets.delivery import TicketDeliveryUnavailableError, TicketWebhookStarter
 from knobridge.workers.ingestion_activities import TemporalSyncStarter
 from knobridge.workers.schedules import TemporalScheduleManager
+from knobridge.workers.ticket_webhook_activities import TemporalTicketWebhookStarter
 from knobridge.workers.worker import connect
 
 UNAVAILABLE_MESSAGE = "The synchronization service is unavailable; try again later."
@@ -35,6 +39,7 @@ _log = get_logger(__name__)
 type Connect = Callable[[Settings], Awaitable[Client]]
 type StarterFactory = Callable[[Client], SyncStarter]
 type ManagerFactory = Callable[[Client], ScheduleManager]
+type TicketStarterFactory = Callable[[Client], TicketWebhookStarter]
 
 
 class _Lazy[T]:
@@ -135,5 +140,33 @@ class LazyTemporalScheduleManager:
         manager = await self._lazy.ready()
         try:
             return await manager.scheduled_sources()
+        except RPCError as error:
+            raise self._lazy.translate(error) from error
+
+
+class LazyTemporalTicketWebhookStarter:
+    """The ``TicketWebhookStarter`` of the API: ``TicketDeliveryUnavailableError`` while
+    Temporal is down (the request stays pending and the worker starts it when it comes up)."""
+
+    def __init__(
+        self,
+        settings: Settings,
+        *,
+        connect_client: Connect = connect,
+        starter_factory: TicketStarterFactory | None = None,
+    ) -> None:
+        factory: TicketStarterFactory = starter_factory or (
+            lambda client: TemporalTicketWebhookStarter(client, settings.temporal_task_queue)
+        )
+        self._lazy = _Lazy(settings, connect_client, factory, TicketDeliveryUnavailableError)
+
+    async def start(
+        self, *, workspace_id: uuid.UUID, request_id: uuid.UUID, remaining: timedelta
+    ) -> None:
+        starter = await self._lazy.ready()
+        try:
+            await starter.start(
+                workspace_id=workspace_id, request_id=request_id, remaining=remaining
+            )
         except RPCError as error:
             raise self._lazy.translate(error) from error

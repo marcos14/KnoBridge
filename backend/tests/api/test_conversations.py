@@ -127,7 +127,10 @@ def test_get_conversation_paginates_messages(api: ApiEnv) -> None:
         "latency_ms",
         "created_at",
         "feedback",
+        "ticket_request",
     }
+    assert only["ticket_request"] is None
+    assert response.json()["ticket_requests_enabled"] is False
 
 
 def test_member_cannot_read_others_conversation(api: ApiEnv) -> None:

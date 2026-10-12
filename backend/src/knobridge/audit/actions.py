@@ -54,6 +54,9 @@ class AuditAction(StrEnum):
     ASSISTANT_TICKET_WEBHOOK_TESTED = "assistant.ticket_webhook_tested"
     # Conversations: only the deletion is audited (no content: ids and counts only).
     CONVERSATION_DELETED = "conversation.deleted"
+    # Ticket request sent from an answer (conversation, message and assistant ids; never the
+    # question, the summary or the requester's data).
+    TICKET_REQUEST_CREATED = "ticket_request.created"
     # Knowledge index configuration: collections, sources and their runs (names, kinds,
     # changed fields and ids; never document content). Indexed documents are not audited.
     COLLECTION_CREATED = "collection.created"

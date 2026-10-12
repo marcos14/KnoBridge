@@ -10,6 +10,8 @@
 - `test_webhook_secret.py` (unitário): cifra e decifra do segredo, presa ao assistente e com chave própria.
 - `test_webhook_signature.py` (unitário): HMAC do `t.corpo`, cabeçalho e a verificação do destino (tolerância nas bordas, corpo ou segredo trocados, pares extras, vários `v1`, cabeçalho malformado).
 - `test_webhook_send.py` (unitário): formato do `kbw_`, `check_webhook_url` com os motivos, cabeçalhos, corpo compacto, destino verificado de novo antes de enviar e uma tentativa assinada para um receptor HTTP local (`127.0.0.1` na lista de permissão) que confere a assinatura. O serviço com banco fica em `tests/api/test_ticket_webhook.py`.
+- `test_ticket_receipt.py` (unitário): a resposta 2xx lida em `ticket_id` e `url` (número como texto, campos inválidos ignorados, corpo vazio ou não JSON) e `start_delivery` com o Temporal fora (só loga). A entrega com banco fica em `tests/workers/test_ticket_delivery.py`.
+- `test_ticket_summary.py` (unitário): o resumo do pedido (conversa como dado, parâmetros, corte em 600, resposta vazia, falha do provedor e provedor que não abre → `None`).
 - `test_ticket_wire.py` (unitário): os exemplos válido e inválido da spec (lidos de `tests/fixtures/tickets/`), payload canônico com padrões e UTC, hash que ignora fuso e ordem de chaves, as regras extras e o teto de 50 problemas.
 - `test_ticket_items.py` (unitário): `check_items` (item inválido sem derrubar o lote, `external_id` nulo quando inválido, `ticket_too_large`, `duplicate_in_batch`, problemas da forma do item, remoções) e `count`.
 - `test_ingest_token_format.py` (unitário): formato do `kbi_`, prefixo e conferência em tempo constante.

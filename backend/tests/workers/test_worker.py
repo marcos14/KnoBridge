@@ -15,6 +15,7 @@ from knobridge.workers import worker as worker_module
 from knobridge.workers.health import HealthWorkflow, ping
 from knobridge.workers.ingestion import IngestionWorkflow
 from knobridge.workers.scheduled_sync import ScheduledSyncWorkflow
+from knobridge.workers.ticket_webhook import TicketWebhookWorkflow
 from knobridge.workers.worker import build_worker, connect, main, run
 
 # Stand-in for a real client: the fakes below never touch it.
@@ -53,7 +54,12 @@ def test_build_worker_registers_workflows_and_activities() -> None:
     config = asyncio.run(build())
 
     assert config["task_queue"] == "queue-test"
-    assert list(config["workflows"]) == [HealthWorkflow, IngestionWorkflow, ScheduledSyncWorkflow]
+    assert list(config["workflows"]) == [
+        HealthWorkflow,
+        IngestionWorkflow,
+        ScheduledSyncWorkflow,
+        TicketWebhookWorkflow,
+    ]
     activities = list(config["activities"])
     assert activities[0] is ping
     assert [activity.__name__ for activity in activities[1:]] == [
@@ -62,6 +68,8 @@ def test_build_worker_registers_workflows_and_activities() -> None:
         "process_batch",
         "finish_run",
         "start_scheduled_sync",
+        "deliver",
+        "expire",
     ]
 
 

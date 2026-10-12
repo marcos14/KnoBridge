@@ -11,20 +11,32 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from temporalio.client import Client
 from temporalio.worker import Worker
 
+from knobridge.core.clock import SystemClock
 from knobridge.core.db import create_engine, create_session_factory
 from knobridge.core.logging import configure_logging, get_logger
 from knobridge.core.settings import Settings, get_settings
 from knobridge.ingestion.schedule import reconcile_schedules
+from knobridge.tickets.delivery import resume_pending_deliveries
 from knobridge.workers.health import HealthWorkflow, ping
 from knobridge.workers.ingestion import IngestionWorkflow
 from knobridge.workers.ingestion_activities import IngestionActivities
 from knobridge.workers.scheduled_sync import ScheduledSyncWorkflow
 from knobridge.workers.scheduled_sync_activities import ScheduledSyncActivities
 from knobridge.workers.schedules import TemporalScheduleManager
+from knobridge.workers.ticket_webhook import TicketWebhookWorkflow
+from knobridge.workers.ticket_webhook_activities import (
+    TemporalTicketWebhookStarter,
+    TicketWebhookActivities,
+)
 
 # Central registry: every workflow the worker serves is listed here, and every activity in
 # ``build_activities``.
-WORKFLOWS: Sequence[type] = (HealthWorkflow, IngestionWorkflow, ScheduledSyncWorkflow)
+WORKFLOWS: Sequence[type] = (
+    HealthWorkflow,
+    IngestionWorkflow,
+    ScheduledSyncWorkflow,
+    TicketWebhookWorkflow,
+)
 
 type Reconcile = Callable[[Client, Settings], Awaitable[None]]
 
@@ -51,6 +63,7 @@ def build_activities(
         ping,
         *IngestionActivities.from_settings(settings, factory).all(),
         *ScheduledSyncActivities.from_settings(settings, factory).all(),
+        *TicketWebhookActivities.from_settings(settings, factory).all(),
     ]
 
 
@@ -70,20 +83,30 @@ def build_worker(client: Client, settings: Settings) -> Worker:
 
 
 async def reconcile_on_startup(client: Client, settings: Settings) -> None:
-    """Bring every source's Temporal Schedule in line with the database.
+    """Bring every source's Temporal Schedule in line with the database and start the
+    delivery of every pending ticket request.
 
-    Schedule changes the API could not apply (Temporal down) are fixed here. A failure is
-    logged and the worker starts anyway: serving syncs matters more, and the next start
-    reconciles again.
+    Schedule changes and ticket deliveries the API could not hand to Temporal (Temporal down)
+    are picked up here. Each failure is logged and the worker starts anyway: serving syncs
+    matters more, and the next start tries again.
     """
     engine = create_engine(settings)
+    factory = create_session_factory(engine)
     try:
-        await reconcile_schedules(
-            create_session_factory(engine),
-            TemporalScheduleManager(client, settings.temporal_task_queue),
-        )
-    except Exception:
-        logger.exception("source_schedules_reconcile_failed")
+        try:
+            await reconcile_schedules(
+                factory, TemporalScheduleManager(client, settings.temporal_task_queue)
+            )
+        except Exception:
+            logger.exception("source_schedules_reconcile_failed")
+        try:
+            await resume_pending_deliveries(
+                factory,
+                TemporalTicketWebhookStarter(client, settings.temporal_task_queue),
+                SystemClock(),
+            )
+        except Exception:
+            logger.exception("ticket_deliveries_resume_failed")
     finally:
         await engine.dispose()
 

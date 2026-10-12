@@ -74,10 +74,10 @@ fases:
         commit: fd993f5
       - id: F3.2
         titulo: Solicitação de chamado na conversa, resumo, entrega assinada com retentativas no Temporal
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
-        concluida_em: null
+        concluida_em: 2026-10-12
         commit: null
   - id: F4
     titulo: Painel
@@ -308,6 +308,13 @@ decisoes:
     decisao: "F5.1: google/gemini-embedding-001 (US$ 0,15/M) e google/gemini-embedding-2 (US$ 0,20/M) pelo OpenRouter, conferidos no catálogo e numa chamada real em 2026-10-12 (3072 dimensões por padrão, 1536 com dimensions=1536); dimensions=1536 enviado a todo id gemini-embedding*; dimensão diferente de 1536 recusada para qualquer modelo; campo de modelo segue texto livre com sugestões por credencial"
     motivo: "comparar os dois Gemini com o OpenAI na F6.3 sem migração do índice"
     alternativas: "lista fixa de ids; só o gemini-embedding-001"
+    adr: null
+  - id: D26
+    data: 2026-10-12
+    por: agente
+    decisao: "F3.2: rotas POST .../ticket-requests/preview (sem gravar), POST .../ticket-requests (202, pending) e GET .../ticket-requests/{rid}; retentativas como timers do workflow (10 s dobrando até 1 h, prazo exato de 24 h, activity expire grava webhook_expired), activity de entrega faz uma tentativa; Temporal fora: pedido pending, 202 e retomada pelo worker ao subir; cada tentativa usa a URL e o segredo atuais do assistente; host que não resolve repete, destino bloqueado falha; flag ticket_requests_enabled no done (chat-sse v0.7); link da conversa no payload aponta para a visão admin; auditoria só ticket_request.created"
+    motivo: "prazo de 24 h exato e testável com o servidor de teste do Temporal (que pula timers)"
+    alternativas: "política de retentativa da activity; falhar o pedido sem Temporal"
     adr: null
 pendencias_usuario:
   - id: P1
@@ -630,6 +637,7 @@ D1 a D12 vêm das respostas do usuário (seção 2). D13 a D16 são do agente, n
 - 2026-10-12 — F5.1 concluída: embeddings do Gemini pelo OpenRouter com 1536 dimensões (001 e 2), preços do catálogo e sugestões no formulário de coleção; backend llm e coleções 109 passed, lint e pyright limpos; frontend 1144
 - 2026-10-12 — F3.2 iniciada (agente em worktree).
 - 2026-10-12 — F4.1 iniciada (agente em worktree).
+- 2026-10-12 — F3.2 concluída: pedido de chamado com prévia e resumo, confirmação e entrega assinada no workflow knobridge.ticket_webhook.v1 com retentativas e prazo de 24 h; backend 2074 passed com 99% de cobertura, frontend 1144
 
 ## 8. Encerramento
 

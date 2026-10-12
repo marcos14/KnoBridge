@@ -40,6 +40,7 @@ from knobridge.api import (
     search,
     setup,
     sources,
+    ticket_requests,
     ticket_uploads,
     ticket_webhook,
 )
@@ -52,7 +53,11 @@ from knobridge.core.settings import Settings, get_settings
 from knobridge.email.rendering import EmailComposer
 from knobridge.email.sender import EmailSender, SmtpEmailSender
 from knobridge.security.passwords import PasswordHasher
-from knobridge.workers.sync_client import LazyTemporalScheduleManager, LazyTemporalSyncStarter
+from knobridge.workers.sync_client import (
+    LazyTemporalScheduleManager,
+    LazyTemporalSyncStarter,
+    LazyTemporalTicketWebhookStarter,
+)
 
 API_PREFIX = "/v1"
 
@@ -85,6 +90,7 @@ def create_app(
         # Both connect on first use, so the API starts even with Temporal down.
         app.state.sync_starter = LazyTemporalSyncStarter(resolved)
         app.state.schedule_manager = LazyTemporalScheduleManager(resolved)
+        app.state.ticket_webhook_starter = LazyTemporalTicketWebhookStarter(resolved)
         try:
             yield
         finally:
@@ -149,6 +155,8 @@ def create_app(
         ticket_uploads,
         # Ticket webhook of the assistants (plan 0005 F3.1).
         ticket_webhook,
+        # Ticket requests from the chat (plan 0005 F3.2).
+        ticket_requests,
     )
     for module in routers:
         v1.include_router(module.router)

@@ -44,6 +44,8 @@ class DoneEvent:
     input_tokens: int | None
     output_tokens: int | None
     latency_ms: int | None
+    # The assistant offers to open a ticket (its webhook has a URL and a secret).
+    ticket_requests_enabled: bool = False
 
 
 @dataclass(frozen=True)
@@ -81,5 +83,7 @@ class PreparedTurn:
     fallback: str | None = None
     llm: LLMCall | None = None
     latency_ms: int | None = None
+    # Sent in the ``done`` event: the assistant offers to open a ticket.
+    ticket_requests_enabled: bool = False
     # True once the assistant message reached a final status.
     settled: bool = field(default=False)

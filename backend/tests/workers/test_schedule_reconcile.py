@@ -106,6 +106,7 @@ def test_reconcile_on_startup_failure_is_logged_not_raised() -> None:
 
     events = [json.loads(line)["event"] for line in stream.getvalue().splitlines()]
     assert "source_schedules_reconcile_failed" in events
+    assert "ticket_deliveries_resume_failed" in events
 
 
 def _client(fake: FakeScheduleClient) -> Client:

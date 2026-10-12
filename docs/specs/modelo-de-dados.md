@@ -909,7 +909,7 @@ Um pedido de chamado feito a partir de uma resposta do assistente, entregue pelo
 | `body` | `text` | O JSON exato enviado ao webhook (texto, não `jsonb`, para reenviar byte a byte o que foi assinado); **só em `pending`** (`ck_ticket_requests_body_when_pending`), apagado ao entregar ou falhar. |
 | `external_ticket_id` | `varchar(200)` | `ticket_id` devolvido pelo destino, como texto. |
 | `external_url` | `varchar(2000)` | `url` devolvida pelo destino (`http`/`https`, validada na aplicação). |
-| `error_code` | `varchar(64)` | `webhook_rejected`, `webhook_expired` ou `webhook_destination_blocked`; presente se e somente se `failed` (`ck_ticket_requests_error_when_failed`). |
+| `error_code` | `varchar(64)` | `webhook_rejected`, `webhook_expired`, `webhook_destination_blocked`, `webhook_url_invalid` ou `ticket_webhook_not_configured`; presente se e somente se `failed` (`ck_ticket_requests_error_when_failed`). |
 | `last_http_status` | `integer` | Status HTTP da última tentativa respondida, de 100 a 599 (`ck_ticket_requests_last_http_status_range`). |
 | `last_error` | `varchar(500)` | `<código>: <mensagem>` da última tentativa com falha; nunca o corpo nem a resposta. |
 | `delivered_at` | `timestamptz` | Presente se e somente se `delivered` (`ck_ticket_requests_delivered_at_when_delivered`). |

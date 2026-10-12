@@ -4,7 +4,7 @@
 
 Como chamados de qualquer sistema entram no KnoBridge e viram fonte do chat, e como o chat abre um chamado quando não sabe responder. Cobre o formato do chamado (JSON Schema), o envio pela API com token, o upload no painel, a caixa de entrada e seu ciclo de vida, a anonimização, o Markdown e o chunking, a citação `kind: ticket` e o webhook de saída. A arquitetura está no [ADR 0006](../adr/0006-chamados-por-push.md); o workflow de ingestão, em [indexacao.md](indexacao.md); o formato da citação no fio, em [chat-sse.md](chat-sse.md#citations) (v0.6); as tabelas, em [modelo-de-dados.md](modelo-de-dados.md).
 
-Código: `backend/src/knobridge/tickets/` (token de envio em `tokens.py`, formato do chamado em `wire.py`, validação por item e caixa de entrada em `ingest.py`, disparo da sincronização em `ingest_sync.py`) e as rotas `backend/src/knobridge/api/ingest.py` e `ingest_tokens.py` (plano 0005, F2.1); anonimização em `anonymize.py` e Markdown em `markdown.py` (F2.2); conector interno em `connector.py` e citação no chat em `retrieval/context.py` (F2.3); upload e prévia em `upload.py` e `upload_files.py`, com as rotas em `api/ticket_uploads.py` (F2.4); webhook do assistente (URL, segredo e evento de teste) em `webhook.py` e `signature.py`, proteção contra SSRF e cliente de saída em `core/outbound.py`, e as rotas em `api/ticket_webhook.py` e `api/assistants.py` (F3.1). A criar no plano 0005: pedidos de chamado e workflow do webhook, e as telas do painel em `frontend/`.
+Código: `backend/src/knobridge/tickets/` (token de envio em `tokens.py`, formato do chamado em `wire.py`, validação por item e caixa de entrada em `ingest.py`, disparo da sincronização em `ingest_sync.py`) e as rotas `backend/src/knobridge/api/ingest.py` e `ingest_tokens.py` (plano 0005, F2.1); anonimização em `anonymize.py` e Markdown em `markdown.py` (F2.2); conector interno em `connector.py` e citação no chat em `retrieval/context.py` (F2.3); upload e prévia em `upload.py` e `upload_files.py`, com as rotas em `api/ticket_uploads.py` (F2.4); webhook do assistente (URL, segredo e evento de teste) em `webhook.py` e `signature.py`, proteção contra SSRF e cliente de saída em `core/outbound.py`, e as rotas em `api/ticket_webhook.py` e `api/assistants.py` (F3.1); pedidos de chamado em `requests.py` e `summary.py`, a entrega em `delivery.py`, o workflow em `workers/ticket_webhook.py` e `workers/ticket_webhook_activities.py`, e as rotas em `api/ticket_requests.py` (F3.2). A criar no plano 0005: as telas do painel em `frontend/`.
 
 ## Visão geral
 
@@ -738,13 +738,17 @@ Só o dono da conversa pede (como enviar mensagens); os demais recebem 403 `forb
 - `requester`: nome e e-mail da conta do usuário logado.
 - `messages`: as mensagens da conversa até `message_id`, inclusive, só `completed` e `no_source`, as 20 mais recentes, cada `content` cortado em 4000 caracteres.
 
-**`POST .../ticket-requests`** (`TicketRequestIn`: `{"message_id", "summary"}`, `summary` de 1 a 2000 caracteres, editável pelo usuário na tela) → 202 `TicketRequestOut`. Monta o payload com os mesmos dados do preview e o `summary` recebido, grava o pedido `pending` e inicia o workflow de entrega. Auditoria: `ticket_request.created` (ids, sem conteúdo).
+**`POST .../ticket-requests`** (`TicketRequestIn`: `{"message_id", "summary"}`, `summary` de 1 a 2000 caracteres, editável pelo usuário na tela) → 202 `TicketRequestOut`. Monta o payload com os mesmos dados do preview e o `summary` recebido, grava o pedido `pending` e inicia o workflow de entrega. Auditoria: `ticket_request.created` (`conversation_id`, `message_id` e `assistant_id`, sem conteúdo).
 
-**`GET .../ticket-requests/{rid}`** → 200 `TicketRequestOut`.
+- O workflow é iniciado depois do commit, em segundo plano. **Temporal fora do ar**: a resposta continua 202 com o pedido `pending` (log `ticket_request_deferred`); o worker, ao subir, inicia o workflow de todo pedido `pending` que ainda não tem um, com o prazo de 24 h contado da criação do pedido (log `ticket_deliveries_resumed`).
+- O resumo é gerado no preview e só lá; o `POST` não chama o modelo. A chamada do preview é limitada a 400 tokens de saída, temperatura 0, com a conversa como dado numa mensagem só (instruções que estejam nela não são seguidas).
+- O preview responde com os mesmos erros da criação (inclusive 409 `ticket_request_exists` e `ticket_webhook_not_configured`), sem gravar nada.
+
+**`GET .../ticket-requests/{rid}`** → 200 `TicketRequestOut`. Lê quem lê a conversa (o dono, ou owner/admin do workspace); pedido de outra conversa ou inexistente: 404 `not_found`.
 
 `TicketRequestOut`: `id`, `conversation_id`, `message_id`, `assistant_id`, `status` (`pending`, `delivered` ou `failed`), `attempts`, `external_ticket_id` (texto ou `null`), `external_url` (texto ou `null`), `error_code` (ou `null`), `created_at`, `delivered_at` (ou `null`).
 
-`GET .../conversations/{cid}` ganha `ticket_requests_enabled` (o assistente tem `ticket_webhook_configured`) e, em cada mensagem do assistente, `ticket_request` (`TicketRequestOut` ou `null`).
+`GET .../conversations/{cid}` ganha `ticket_requests_enabled` (o assistente tem `ticket_webhook_configured`) e, em cada mensagem do assistente, `ticket_request` (`TicketRequestOut` ou `null`). O evento `done` do chat traz o mesmo `ticket_requests_enabled` ([chat-sse.md](chat-sse.md#done), v0.7).
 
 Erros:
 
@@ -811,9 +815,11 @@ Erros:
 - **Redirecionamentos** não são seguidos: 3xx é falha definitiva (`webhook_rejected`).
 - **Timeout** por tentativa: 10 s (conexão e resposta).
 
-Entrega pelo workflow `knobridge.ticket_webhook.v1` (id `ticket-webhook-<pedido>`), com uma activity `knobridge.ticket_webhook.deliver.v1` (timeout 30 s). Política de retentativa: primeira espera de 10 s, multiplicador 2, intervalo máximo de 1 h, **prazo total de 24 h** desde a criação. Esgotado o prazo: `failed` com `webhook_expired`. Cada tentativa incrementa `attempts`. A suíte de testes usa um destino fake e relógio injetado.
+Entrega pelo workflow `knobridge.ticket_webhook.v1` (id `ticket-webhook-<pedido>`), com uma activity `knobridge.ticket_webhook.deliver.v1` (timeout 30 s) que faz **uma** tentativa e grava o desfecho. Política de retentativa: primeira espera de 10 s, multiplicador 2, intervalo máximo de 1 h, **prazo total de 24 h** desde a criação. As esperas são timers do workflow (não a política de retentativa da activity, que só cobre falha da própria activity, como o banco fora): nenhuma tentativa começa depois do prazo. Esgotado o prazo: a activity `knobridge.ticket_webhook.expire.v1` grava `failed` com `webhook_expired` (mantendo `last_error` e `last_http_status` da última tentativa). Cada tentativa incrementa `attempts`. Pedido já `delivered` ou `failed` nunca é reenviado; pedido apagado (conversa, mensagem ou assistente excluídos) encerra o workflow sem enviar. A suíte de testes usa um destino fake e relógio injetado.
 
-`error_code` possíveis: `webhook_rejected`, `webhook_expired`, `webhook_destination_blocked` (o destino passou a resolver para endereço proibido; definitivo).
+Além das regras acima, na entrega: host que não resolve é tentado de novo (pode ser falha passageira de DNS); destino bloqueado ou URL que deixou de passar nas regras (ex.: `http` fora da lista de desenvolvimento) é falha definitiva; webhook desligado depois do pedido (sem URL ou sem segredo) é falha definitiva sem envio. A assinatura usa o segredo atual do assistente; a URL é a atual do assistente.
+
+`error_code` possíveis: `webhook_rejected`, `webhook_expired`, `webhook_destination_blocked` (o destino passou a resolver para endereço proibido; definitivo), `webhook_url_invalid` (a URL deixou de passar nas regras; definitivo) e `ticket_webhook_not_configured` (o webhook foi desligado depois do pedido).
 
 Quando o pedido chega a `delivered` ou `failed`, o corpo guardado é apagado. Restam status, tentativas, `external_ticket_id`, `external_url`, `error_code` e datas.
 

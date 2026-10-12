@@ -8,6 +8,7 @@ import functools
 import uuid
 from collections.abc import Callable, Coroutine
 from dataclasses import dataclass, field
+from datetime import timedelta
 from typing import cast
 
 import pytest
@@ -16,11 +17,16 @@ from temporalio.client import Client
 from temporalio.service import RPCError, RPCStatusCode
 
 from fakes.sync_starter import FakeSyncStarter
+from fakes.ticket_webhook_starter import FakeTicketWebhookStarter
 from knobridge.api.app import create_app
 from knobridge.core.settings import Settings
 from knobridge.ingestion.errors import SyncNotRunningError, SyncUnavailableError
 from knobridge.ingestion.sync import SyncStarter
-from knobridge.workers.sync_client import LazyTemporalSyncStarter
+from knobridge.tickets.delivery import TicketDeliveryUnavailableError
+from knobridge.workers.sync_client import (
+    LazyTemporalSyncStarter,
+    LazyTemporalTicketWebhookStarter,
+)
 
 IDS = {"workspace_id": uuid.uuid4(), "source_id": uuid.uuid4(), "run_id": uuid.uuid4()}
 
@@ -177,3 +183,68 @@ def test_app_lifespan_creates_lazy_starter_without_connecting() -> None:
 
     with TestClient(app):
         assert isinstance(app.state.sync_starter, LazyTemporalSyncStarter)
+        assert isinstance(app.state.ticket_webhook_starter, LazyTemporalTicketWebhookStarter)
+
+
+REQUEST_ID = uuid.uuid4()
+
+
+async def _start_ticket(lazy: LazyTemporalTicketWebhookStarter) -> None:
+    await lazy.start(workspace_id=uuid.uuid4(), request_id=REQUEST_ID, remaining=timedelta(hours=1))
+
+
+@dataclass
+class RaisingTicketStarter:
+    error: Exception
+
+    async def start(
+        self, *, workspace_id: uuid.UUID, request_id: uuid.UUID, remaining: timedelta
+    ) -> None:
+        raise self.error
+
+
+@run_async
+async def test_lazy_ticket_starter_connects_once_and_delegates() -> None:
+    connect, fake = Connector(), FakeTicketWebhookStarter()
+    lazy = LazyTemporalTicketWebhookStarter(
+        _settings(), connect_client=connect, starter_factory=lambda _client: fake
+    )
+
+    await _start_ticket(lazy)
+    await _start_ticket(lazy)
+
+    assert connect.calls == 1
+    assert [call.request_id for call in fake.started] == [REQUEST_ID] * 2
+
+
+@run_async
+async def test_lazy_ticket_starter_down_is_unavailable() -> None:
+    down = LazyTemporalTicketWebhookStarter(_settings(), connect_client=Connector(failures=1))
+    unreachable = LazyTemporalTicketWebhookStarter(
+        _settings(),
+        connect_client=Connector(),
+        starter_factory=lambda _client: RaisingTicketStarter(
+            RPCError("down", RPCStatusCode.UNAVAILABLE, b"")
+        ),
+    )
+
+    with pytest.raises(TicketDeliveryUnavailableError) as raised:
+        await _start_ticket(down)
+    with pytest.raises(TicketDeliveryUnavailableError):
+        await _start_ticket(unreachable)
+
+    assert (raised.value.code, raised.value.status_code) == ("ticket_delivery_unavailable", 503)
+
+
+@run_async
+async def test_lazy_ticket_starter_default_factory_uses_settings_task_queue() -> None:
+    client = RecordingClient()
+
+    async def connect(_settings: Settings) -> Client:
+        return cast(Client, client)
+
+    lazy = LazyTemporalTicketWebhookStarter(_settings(), connect_client=connect)
+
+    await _start_ticket(lazy)
+
+    assert client.task_queues == ["test-queue"]

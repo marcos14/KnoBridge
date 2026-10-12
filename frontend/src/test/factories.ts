@@ -480,6 +480,7 @@ export function makeConversationDetail(
 ): ConversationDetail {
   return {
     ...conversation,
+    ticket_requests_enabled: false,
     messages: { items: messages, total: messages.length, limit: 500, offset: 0 },
   };
 }

@@ -986,6 +986,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/workspaces/{workspace_id}/conversations/{conversation_id}/ticket-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Ticket Request
+         * @description Ask for a ticket about the answer; the webhook delivery follows in the background.
+         */
+        post: operations["create_ticket_request_v1_workspaces__workspace_id__conversations__conversation_id__ticket_requests_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/conversations/{conversation_id}/ticket-requests/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview Ticket Request
+         * @description What a ticket request about the answer would send; nothing is written.
+         */
+        post: operations["preview_ticket_request_v1_workspaces__workspace_id__conversations__conversation_id__ticket_requests_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/conversations/{conversation_id}/ticket-requests/{request_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Ticket Request
+         * @description The state of a ticket request (whoever reads the conversation).
+         */
+        get: operations["get_ticket_request_v1_workspaces__workspace_id__conversations__conversation_id__ticket_requests__request_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/workspaces/{workspace_id}/harness-jobs/{job_id}": {
         parameters: {
             query?: never;
@@ -1995,7 +2055,7 @@ export interface components {
          * AuditAction
          * @enum {string}
          */
-        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted" | "provider.tested" | "assistant.created" | "assistant.updated" | "assistant.deleted" | "assistant.ticket_webhook_secret_rotated" | "assistant.ticket_webhook_tested" | "conversation.deleted" | "collection.created" | "collection.updated" | "collection.deleted" | "source.created" | "source.updated" | "source.deleted" | "source.tested" | "source.sync.started" | "source.sync.cancelled" | "source.ingest_token_rotated" | "source.tickets_uploaded" | "runner.created" | "runner.updated" | "runner.revoked" | "runner.deleted" | "harness_job.cancelled" | "harness_job.enqueued" | "harness_module.created" | "harness_module.updated" | "knowledge_item.updated";
+        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted" | "provider.tested" | "assistant.created" | "assistant.updated" | "assistant.deleted" | "assistant.ticket_webhook_secret_rotated" | "assistant.ticket_webhook_tested" | "conversation.deleted" | "ticket_request.created" | "collection.created" | "collection.updated" | "collection.deleted" | "source.created" | "source.updated" | "source.deleted" | "source.tested" | "source.sync.started" | "source.sync.cancelled" | "source.ingest_token_rotated" | "source.tickets_uploaded" | "runner.created" | "runner.updated" | "runner.revoked" | "runner.deleted" | "harness_job.cancelled" | "harness_job.enqueued" | "harness_module.created" | "harness_module.updated" | "knowledge_item.updated";
         /** AuditEventOut */
         AuditEventOut: {
             /** Action */
@@ -2216,6 +2276,11 @@ export interface components {
              */
             id: string;
             messages: components["schemas"]["MessagePage"];
+            /**
+             * Ticket Requests Enabled
+             * @default false
+             */
+            ticket_requests_enabled: boolean;
             /** Title */
             title: string | null;
             /**
@@ -3019,6 +3084,7 @@ export interface components {
             output_tokens: number | null;
             role: components["schemas"]["MessageRole"];
             status: components["schemas"]["MessageStatus"];
+            ticket_request?: components["schemas"]["TicketRequestOut"] | null;
         };
         /** MessagePage */
         MessagePage: {
@@ -4446,6 +4512,103 @@ export interface components {
             /** Title */
             title: string;
         };
+        /** TicketRequestIn */
+        TicketRequestIn: {
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+            /** Summary */
+            summary: string;
+        };
+        /** TicketRequestMessage */
+        TicketRequestMessage: {
+            /** Content */
+            content: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            role: components["schemas"]["MessageRole"];
+        };
+        /** TicketRequestOut */
+        TicketRequestOut: {
+            /**
+             * Assistant Id
+             * Format: uuid
+             */
+            assistant_id: string;
+            /** Attempts */
+            attempts: number;
+            /**
+             * Conversation Id
+             * Format: uuid
+             */
+            conversation_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Delivered At */
+            delivered_at: string | null;
+            /** Error Code */
+            error_code: string | null;
+            /** External Ticket Id */
+            external_ticket_id: string | null;
+            /** External Url */
+            external_url: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+            status: components["schemas"]["TicketRequestStatus"];
+        };
+        /** TicketRequestPreviewIn */
+        TicketRequestPreviewIn: {
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+        };
+        /** TicketRequestPreviewOut */
+        TicketRequestPreviewOut: {
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+            /** Messages */
+            messages: components["schemas"]["TicketRequestMessage"][];
+            /** Question */
+            question: string;
+            requester: components["schemas"]["TicketRequestRequester"];
+            /** Summary */
+            summary: string;
+            /** Summary Generated */
+            summary_generated: boolean;
+        };
+        /** TicketRequestRequester */
+        TicketRequestRequester: {
+            /** Email */
+            email: string;
+            /** Name */
+            name: string;
+        };
+        /**
+         * TicketRequestStatus
+         * @enum {string}
+         */
+        TicketRequestStatus: "pending" | "delivered" | "failed";
         /** TicketRequesterIn */
         TicketRequesterIn: {
             /** Email */
@@ -7608,6 +7771,184 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    create_ticket_request_v1_workspaces__workspace_id__conversations__conversation_id__ticket_requests_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TicketRequestIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketRequestOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not the owner of the conversation (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conversation or message not found, or not visible to the caller. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Assistant inactive (`assistant_inactive`), webhook without URL or secret (`ticket_webhook_not_configured`) or a request already exists for the answer (`ticket_request_exists`, with `details.ticket_request_id`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid body, or the message is not a `completed` or `no_source` answer (`validation_error`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    preview_ticket_request_v1_workspaces__workspace_id__conversations__conversation_id__ticket_requests_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TicketRequestPreviewIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketRequestPreviewOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not the owner of the conversation (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conversation or message not found, or not visible to the caller. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Assistant inactive (`assistant_inactive`), webhook without URL or secret (`ticket_webhook_not_configured`) or a request already exists for the answer (`ticket_request_exists`, with `details.ticket_request_id`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid body, or the message is not a `completed` or `no_source` answer (`validation_error`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_ticket_request_v1_workspaces__workspace_id__conversations__conversation_id__ticket_requests__request_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+                request_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketRequestOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace suspended. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conversation or request not found, or not visible to the caller. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };
