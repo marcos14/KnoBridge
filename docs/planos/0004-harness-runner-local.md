@@ -5,10 +5,10 @@ slug: harness-runner-local
 solicitado_por: usuario
 criado_em: 2026-10-11
 atualizado_em: 2026-10-11
-status: em_execucao
+status: concluido
 aprovado_em: 2026-10-11
 aprovado_por: usuario
-concluido_em: null
+concluido_em: 2026-10-11
 branch: plano/0004-harness-runner-local
 fases:
   - id: F1
@@ -135,7 +135,7 @@ fases:
         agente: orquestrador
         iniciada_em: 2026-10-11
         concluida_em: 2026-10-11
-        commit: null
+        commit: 5884c5f
 decisoes:
   - id: D1
     data: 2026-10-11
@@ -662,6 +662,7 @@ Nenhuma aberta. Observação para a F5.2: a chave do OpenRouter cadastrada na st
 - 2026-10-11 — F5.1 concluída: E2E da stack com runner no host (duas rodadas verdes no compose), guia mapear-codigo-com-runner.md revisado pelo orquestrador, README, CHANGELOG, AGENTS.md raiz (1, 4, 12.4 e 12.5) e job e2e-stack da CI com uv; frontend 1139 testes (com 4 workers: na máquina carregada, com todos os workers, testes diferentes estouravam o tempo a cada rodada)
 - 2026-10-11 — F5.2 iniciada pelo orquestrador na sessão principal (stack knobridge-minski recriada com o código do plano, runner local com config própria do ensaio).
 - 2026-10-11 — F5.2 concluída: ensaio real no Minski (3 módulos x Claude Code e Codex, 16 de 16 afirmações conferidas corretas, perguntas do ensaio 0001 de 9 para 10 de 10) com relatório docs/pesquisa/0002; correções com teste: hnsw.ef_search 1000, símbolo nas assinaturas que envolvem o intervalo, modelo do Claude sem sufixo de variante e falso aviso do doctor no Windows pt-BR; backend 1471 passed com 99% de cobertura, runner 436
+- 2026-10-11 — Plano concluído: todas as subfases concluídas; encerramento na seção 8.
 
 ## 8. Encerramento
 
