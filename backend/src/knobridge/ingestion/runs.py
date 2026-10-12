@@ -38,6 +38,7 @@ from knobridge.ingestion.models import (
     RunTrigger,
     Source,
 )
+from knobridge.ingestion.source_config import SourceKind
 from knobridge.llm.pricing import EmbeddingPriceTable
 
 # Rows per INSERT when storing a change set; keeps each statement well under the driver's
@@ -200,9 +201,9 @@ class RunLifecycle:
         Also sets the estimated cost from the tokens spent (whatever the outcome, they were
         paid for) and drops the run's items. A run already closed is left as it is.
 
-        A successful run of an active source with ``sync_pending`` (a harness sync asked for
-        while it ran) consumes the flag and queues the next run, whose id is returned for the
-        workflow to continue with; otherwise ``None``. A failed or cancelled run leaves the
+        A successful run of an active source with ``sync_pending`` (a harness or ingest sync
+        asked for while it ran) consumes the flag and queues the next run, whose id is returned
+        for the workflow to continue with; otherwise ``None``. A failed or cancelled run leaves the
         flag for the next successful one.
         """
         async with self._session(scope) as db:
@@ -221,7 +222,7 @@ class RunLifecycle:
                     next_run = Run(
                         workspace_id=scope.workspace_id,
                         source_id=scope.source_id,
-                        trigger=RunTrigger.HARNESS,
+                        trigger=_pending_trigger(source.kind),
                         status=RunStatus.QUEUED,
                     )
                     db.add(next_run)
@@ -238,3 +239,9 @@ class RunLifecycle:
             await db.flush()
         _log.info("ingestion_run_finished", status=status.value, continued=next_run is not None)
         return None if next_run is None else next_run.id
+
+
+def _pending_trigger(kind: SourceKind) -> RunTrigger:
+    """The trigger of a run queued by ``sync_pending``: only ticket sources (``ingest``) and
+    runner sources (``harness``) ask for pending syncs, through ``request_sync``."""
+    return RunTrigger.INGEST if kind is SourceKind.TICKETS else RunTrigger.HARNESS

@@ -203,16 +203,14 @@ def _meta_text(doc: ParsedDocument, name: str) -> str | None:
 
 def chunk_ticket(doc: ParsedDocument) -> list[Piece]:
     """A ticket cut at its sections, without lines (the Markdown is generated). The title and
-    the metadata list travel with the first section; each chunk carries the ticket's citation
-    metadata and its ``section``. A ticket with no section at all is one ``problem`` chunk."""
+    the metadata list travel with the first section, and so does the resolution when it fits;
+    each chunk carries the ticket's citation metadata and its ``section``. A ticket with no
+    section at all is one ``problem`` chunk."""
     base: dict[str, JSONValue] = {name: doc.metadata.get(name) for name in TICKET_META_KEYS}
     base["title"] = doc.title
     ticket = f"{_meta_text(doc, 'ticket_number')} · {doc.title}"
     status = _meta_text(doc, "ticket_status")
-    sections = _sections(doc.markdown)
-    if len(sections) > 1:
-        head, first = sections[0], sections[1]
-        sections = [_Section(first.headings, head.lines + first.lines), *sections[2:]]
+    sections = _with_resolution_first(_sections(doc.markdown))
     pieces: list[Piece] = []
     for section in sections:
         heading = section.headings[-1] if section.headings else TICKET_PROBLEM
@@ -225,6 +223,25 @@ def chunk_ticket(doc: ParsedDocument) -> list[Piece]:
         context = [("ticket", ticket), ("status", status), ("section", label)]
         pieces.extend(_without_lines(part) for part in _section_pieces(section, meta, context))
     return pieces
+
+
+def _with_resolution_first(sections: list[_Section]) -> list[_Section]:
+    """The head (title and metadata list) joins the first section, and the resolution joins
+    them when the three fit one chunk: a question describes the symptom, and the chunk it finds
+    must carry the answer too (ensaio 0003)."""
+    if len(sections) < 2:
+        return sections
+    head, first, *rest = sections
+    merged = _Section(first.headings, head.lines + first.lines)
+    resolution = next(
+        (section for section in rest if section.headings[-1:] == [TICKET_RESOLUTION]), None
+    )
+    if resolution is not None and first.headings[-1:] == [TICKET_PROBLEM]:
+        lines = merged.lines + resolution.lines
+        if estimate_tokens("\n".join(line.text for line in lines)) <= MAX_TOKENS:
+            merged = _Section(first.headings, lines)
+            rest = [section for section in rest if section is not resolution]
+    return [merged, *rest]
 
 
 def _path(doc: ParsedDocument) -> str:

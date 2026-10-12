@@ -657,7 +657,7 @@ Regras:
 
 ### Chunking
 
-Por títulos, como Markdown ([indexacao.md](indexacao.md#chunking)), sem linhas (o Markdown é gerado): `## Problema`, `## Solução`, `## Conversa` (dividida por linhas com sobreposição se passar de `MAX_TOKENS`), `## Campos adicionais` e `## Anexos`. A lista de metadados sob o título vai junto com o primeiro trecho.
+Por títulos, como Markdown ([indexacao.md](indexacao.md#chunking)), sem linhas (o Markdown é gerado): `## Problema`, `## Solução`, `## Conversa` (dividida por linhas com sobreposição se passar de `MAX_TOKENS`), `## Campos adicionais` e `## Anexos`. A lista de metadados sob o título vai junto com o primeiro trecho, e a `## Solução` também, quando título, metadados, problema e solução cabem juntos em `MAX_TOKENS` (o trecho fica com `section: problem`); senão a solução é um trecho próprio (`resolution`). Motivo, do ensaio [0003](../pesquisa/0003-ensaio-chamados-sinteticos.md): a pergunta descreve o sintoma e acha o trecho do problema, que precisa trazer a resposta.
 
 - **Texto embedado**: cabeçalho `ticket: <number ou external_id> · <title>`, `status: <status>` e `section: <seção>`, depois o corpo.
 - **`meta` de cada trecho**: `kind` (`ticket`), `external_id`, `ticket_number` (`number` ou `external_id`), `title`, `ticket_status`, `original_status`, `date` (`resolved_at` se houver, senão `updated_at`, em UTC com `Z`), `date_kind` (`resolved` ou `updated`), `url` (ou `null`), `headings` e `section` (`problem`, `resolution`, `conversation`, `fields` ou `attachments`).

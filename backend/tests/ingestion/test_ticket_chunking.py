@@ -57,18 +57,37 @@ def test_ticket_document_parses_as_markdown_with_the_ticket_title() -> None:
     assert parsed.content_hash == "e" * 64
 
 
-def test_ticket_chunks_follow_the_sections_with_the_head_in_the_first() -> None:
+def test_ticket_chunks_follow_the_sections_with_head_and_resolution_in_the_first() -> None:
+    # Ensaio 0003: a question describes the symptom, so its chunk must carry the answer too.
     chunks = _chunks(TICKET)
 
     assert [chunk.meta["section"] for chunk in chunks] == [
         "problem",
-        "resolution",
         "conversation",
         "fields",
         "attachments",
     ]
-    assert chunks[0].display == f"{HEAD}\n## Problema\n\nO caixa não fecha."
-    assert chunks[1].display == "## Solução\n\nFinalize a sangria."
+    assert chunks[0].display == (
+        f"{HEAD}\n## Problema\n\nO caixa não fecha.\n\n## Solução\n\nFinalize a sangria."
+    )
+
+
+def test_ticket_resolution_too_long_for_the_first_chunk_stays_its_own() -> None:
+    long_resolution = "Passo de verificação do caixa. " * (MAX_TOKENS // 4)
+    chunks = _chunks(TICKET.replace("Finalize a sangria.", long_resolution))
+
+    sections = [chunk.meta["section"] for chunk in chunks]
+    assert sections[0] == "problem"
+    assert "resolution" in sections
+    assert "Solução" not in chunks[0].display
+
+
+def test_ticket_without_problem_section_keeps_the_resolution_apart() -> None:
+    markdown = f"{HEAD}\n## Conversa\n\nOi.\n\n## Solução\n\nFinalize a sangria.\n"
+
+    sections = [chunk.meta["section"] for chunk in _chunks(markdown)]
+
+    assert sections == ["conversation", "resolution"]
 
 
 def test_ticket_chunk_meta_carries_the_citation_data_without_lines() -> None:
@@ -83,12 +102,12 @@ def test_ticket_chunk_meta_carries_the_citation_data_without_lines() -> None:
 
 
 def test_ticket_chunk_embeds_ticket_status_and_section_header() -> None:
-    conversation = _chunks(TICKET)[2]
+    conversation = _chunks(TICKET)[1]
 
     assert conversation.content.startswith(
         "ticket: 48213 · Erro 4021\nstatus: resolved\nsection: Conversa\n\n## Conversa\n"
     )
-    assert conversation.position == 2
+    assert conversation.position == 1
 
 
 def test_ticket_long_conversation_is_split_with_overlap_and_no_lines() -> None:

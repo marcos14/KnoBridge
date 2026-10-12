@@ -15,6 +15,7 @@ from sqlalchemy import delete, select, update
 from knobridge.core.errors import NotFoundError
 from knobridge.ingestion.errors import SyncAlreadyRunningError
 from knobridge.ingestion.models import Run, RunStatus, RunTrigger, Source
+from knobridge.ingestion.source_config import SourceKind
 from knobridge.ingestion.sync import request_sync
 
 pytestmark = pytest.mark.integration
@@ -183,6 +184,23 @@ def test_open_clears_pending_and_success_queues_the_next_run(app_database_url: s
         assert (await h.source()).sync_pending is False
         queued = await h.run(next_id)
         assert (queued.trigger, queued.status) == (RunTrigger.HARNESS, RunStatus.QUEUED)
+
+    _with_database(app_database_url, body)
+
+
+def test_pending_run_of_a_tickets_source_keeps_the_ingest_trigger(app_database_url: str) -> None:
+    # Ensaio 0003: an upload pending behind an ingest run continued as a "harness" run.
+    async def body(h: Harness) -> None:
+        await _set_source(h, kind=SourceKind.TICKETS, sync_pending=True)
+        run = await h.start()
+        scope = h.scope(run.id)
+        await h.lifecycle.open(scope)
+        await _set_source(h, sync_pending=True)
+
+        next_id = await h.lifecycle.finish(scope, RunStatus.SUCCEEDED)
+
+        assert next_id is not None
+        assert (await h.run(next_id)).trigger is RunTrigger.INGEST
 
     _with_database(app_database_url, body)
 

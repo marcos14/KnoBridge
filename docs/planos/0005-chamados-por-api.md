@@ -118,13 +118,13 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
         concluida_em: 2026-10-12
-        commit: null
+        commit: d2a4afd
       - id: F6.2
         titulo: Ensaio sintético de chamados (anonimização, indexação, perguntas, abrir chamado)
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: orquestrador
+        iniciada_em: 2026-10-12
+        concluida_em: 2026-10-12
         commit: null
       - id: F6.3
         titulo: Comparação de embeddings OpenAI x Gemini em pt-BR
@@ -337,14 +337,21 @@ decisoes:
     motivo: "dados sintéticos medem anonimização e recuperação sem dado real; o E2E prova o fluxo inteiro"
     alternativas: "receptor dentro do frontend/e2e; dados gerados no repositório"
     adr: null
+  - id: D30
+    data: 2026-10-12
+    por: agente
+    decisao: "F6.2: a seção Solução do chamado vai no primeiro trecho junto do título, metadados e problema quando cabem em MAX_TOKENS (senão fica separada); a execução criada por sincronização pendente recebe o gatilho pelo tipo da fonte (ingest em tickets, harness em runner)"
+    motivo: "no ensaio, 4 de 15 respostas diziam não sei com o trecho do problema recuperado sem a solução (11 para 14 acertos depois); o upload pendente atrás de um envio virava execução harness"
+    alternativas: "expandir o contexto com a solução no momento da busca (consulta extra); coluna com o gatilho pendente"
+    adr: null
 pendencias_usuario:
   - id: P1
     data: 2026-10-12
     pergunta: "A chave do OpenRouter usada nos ensaios expira em 2026-10-12. Os ensaios F6.2 e F6.3 precisam de uma chave válida (embeddings OpenAI e Gemini e o chat). Quando chegar a F6.2, você cadastra uma chave nova no scratchpad da sessão?"
     bloqueia: F6.2
-    status: aberta
-    resposta: null
-    respondida_em: null
+    status: respondida
+    resposta: "Chave do OpenRouter válida até 2027-01-08 (limite de US$ 7), conferida pelo orquestrador em 2026-10-12 antes da F6.2"
+    respondida_em: 2026-10-12
 ---
 
 # Plano 0005 — Chamados por API
@@ -665,6 +672,7 @@ D1 a D12 vêm das respostas do usuário (seção 2). D13 a D16 são do agente, n
 - 2026-10-12 — F4.2 concluída: webhook no assistente (URL, segredo mostrado uma vez, testar entrega), Abrir chamado no chat com prévia, resumo editável e estado do pedido, e a rota tickets/summary com a situação da integração na fonte; gates do agente: backend 2083 passed com 99,87%, frontend 1240; orquestrador: lint, pyright, testes da rota e gate do frontend (1240) verdes
 - 2026-10-12 — F6.1 iniciada (agente em worktree).
 - 2026-10-12 — F6.1 concluída: gerador sintético com gabarito e perguntas, receptor fake de webhook, E2E da stack de chamados (duas rodadas verdes, 3/3 specs cada), guia receber-chamados-por-api.md revisado pelo orquestrador, README, CHANGELOG e AGENTS raiz 12.5; correção do worker que não entregava o webhook; gates do agente: backend 2084 passed, frontend 1240, scripts 98; orquestrador: lint, pyright, scripts e frontend verdes
+- 2026-10-12 — F6.2 concluída: ensaio sintético com 300 chamados (API e upload): 1612 dados pessoais semeados todos anonimizados, 130 versões preservadas, 38 nomes de terceiros não declarados no texto (limite conhecido), bruto apagado, 14 de 15 perguntas citando o chamado certo e Abrir chamado entregue com assinatura; correções com teste: solução no primeiro trecho e gatilho da sincronização pendente; relatório docs/pesquisa/0003; backend 2087 passed com 99% de cobertura; gasto US$ 0,03
 
 ## 8. Encerramento
 

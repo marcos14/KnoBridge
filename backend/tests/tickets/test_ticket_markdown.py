@@ -29,7 +29,6 @@ def test_rendered_ticket_chunks_carry_its_citation_metadata() -> None:
 
     assert [c.meta["section"] for c in chunks] == [
         "problem",
-        "resolution",
         "conversation",
         "fields",
         "attachments",
