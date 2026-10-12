@@ -12,14 +12,16 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Literal
 
-from sqlalchemy import func, select
+from sqlalchemy import ColumnElement, case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from knobridge.audit.actions import AuditAction
 from knobridge.audit.service import AuditService, AuditTarget
 from knobridge.core.clock import Clock
 from knobridge.core.errors import ConflictError, NotFoundError
+from knobridge.core.listing import SortColumns, sort_order, text_match
 from knobridge.tenancy.models import Membership, Role, User, Workspace
 from knobridge.tenancy.rbac import ensure_role_within
 
@@ -37,24 +39,57 @@ class Member:
     joined_at: datetime
 
 
+# A plain alias, not ``type``: FastAPI reads it as a query parameter.
+MemberSort = Literal["name", "-name", "email", "-email", "role", "-role", "joined_at", "-joined_at"]
+# Hierarchy order (``Role`` lists owner first), so ``role`` sorts owners first.
+_ROLE_RANK = case(
+    *((Membership.role == role, rank) for rank, role in enumerate(Role)), else_=len(Role)
+)
+
+
+@dataclass(frozen=True)
+class MemberFilter:
+    query: str | None = None
+    role: Role | None = None
+    sort: MemberSort = "name"
+
+
 class MemberService:
     def __init__(self, clock: Clock) -> None:
         self._audit = AuditService(clock)
 
     async def list_members(
-        self, db: AsyncSession, *, workspace_id: uuid.UUID, limit: int, offset: int
+        self,
+        db: AsyncSession,
+        *,
+        workspace_id: uuid.UUID,
+        filters: MemberFilter,
+        limit: int,
+        offset: int,
     ) -> tuple[list[Member], int]:
-        """Members with name, e-mail and role, ordered by name."""
+        """A page of members with name, e-mail and role; ``query`` matches name or e-mail."""
+        conditions: list[ColumnElement[bool]] = [Membership.workspace_id == workspace_id]
+        if filters.query:
+            conditions.append(text_match(filters.query, User.name, User.email))
+        if filters.role is not None:
+            conditions.append(Membership.role == filters.role)
         total = await db.scalar(
             select(func.count())
             .select_from(Membership)
-            .where(Membership.workspace_id == workspace_id)
+            .join(User, User.id == Membership.user_id)
+            .where(*conditions)
         )
+        columns: SortColumns = {
+            "name": User.name,
+            "email": User.email,
+            "role": _ROLE_RANK,
+            "joined_at": Membership.created_at,
+        }
         rows = await db.execute(
             select(User.id, User.name, User.email, Membership.role, Membership.created_at)
             .join(Membership, Membership.user_id == User.id)
-            .where(Membership.workspace_id == workspace_id)
-            .order_by(User.name, User.id)
+            .where(*conditions)
+            .order_by(*sort_order(filters.sort, columns, User.id))
             .limit(limit)
             .offset(offset)
         )

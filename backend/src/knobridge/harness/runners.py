@@ -12,6 +12,8 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from enum import StrEnum
+from typing import Literal
 
 from sqlalchemy import ColumnElement, exists, func, select
 from sqlalchemy.exc import IntegrityError
@@ -22,6 +24,7 @@ from knobridge.audit.models import JSONValue
 from knobridge.audit.service import AuditService, AuditTarget
 from knobridge.core.clock import Clock
 from knobridge.core.errors import ConflictError, NotFoundError, ValidationError
+from knobridge.core.listing import sort_order, text_match
 from knobridge.harness.models import Runner
 from knobridge.harness.tokens import generate_runner_token
 from knobridge.ingestion.models import Source
@@ -45,6 +48,23 @@ class RunnerRevokedError(ValidationError):
 
 class RunnerInUseError(ConflictError):
     code = "runner_in_use"
+
+
+class RunnerStatus(StrEnum):
+    ONLINE = "online"
+    OFFLINE = "offline"
+    REVOKED = "revoked"
+
+
+# A plain alias, not ``type``: FastAPI reads it as a query parameter.
+RunnerSort = Literal["name", "-name", "created_at", "-created_at", "last_seen_at", "-last_seen_at"]
+
+
+@dataclass(frozen=True)
+class RunnerFilter:
+    query: str | None = None
+    status: RunnerStatus | None = None
+    sort: RunnerSort = "name"
 
 
 @dataclass(frozen=True)
@@ -77,15 +97,43 @@ class RunnerService:
         self._audit = AuditService(clock)
 
     async def list_runners(
-        self, db: AsyncSession, *, workspace_id: uuid.UUID, limit: int, offset: int
+        self,
+        db: AsyncSession,
+        *,
+        workspace_id: uuid.UUID,
+        filters: RunnerFilter,
+        limit: int,
+        offset: int,
     ) -> tuple[list[Runner], int]:
-        """Runners of the workspace ordered by name (revoked ones included)."""
-        scope = Runner.workspace_id == workspace_id
-        total = await db.scalar(select(func.count()).select_from(Runner).where(scope))
+        """A page of runners (revoked ones included); ``query`` matches name or token prefix,
+        ``status`` uses the same online window as ``is_online``."""
+        conditions = [Runner.workspace_id == workspace_id]
+        if filters.query:
+            conditions.append(text_match(filters.query, Runner.name, Runner.token_prefix))
+        if filters.status is not None:
+            conditions.append(self._status_condition(filters.status))
+        total = await db.scalar(select(func.count()).select_from(Runner).where(*conditions))
+        columns = {
+            "name": Runner.name,
+            "created_at": Runner.created_at,
+            "last_seen_at": Runner.last_seen_at,
+        }
         rows = await db.scalars(
-            select(Runner).where(scope).order_by(Runner.name, Runner.id).limit(limit).offset(offset)
+            select(Runner)
+            .where(*conditions)
+            .order_by(*sort_order(filters.sort, columns, Runner.id))
+            .limit(limit)
+            .offset(offset)
         )
         return list(rows), total or 0
+
+    def _status_condition(self, status: RunnerStatus) -> ColumnElement[bool]:
+        if status is RunnerStatus.REVOKED:
+            return Runner.revoked_at.is_not(None)
+        seen = Runner.last_seen_at >= self._clock.now() - ONLINE_WINDOW
+        if status is RunnerStatus.ONLINE:
+            return Runner.revoked_at.is_(None) & seen
+        return Runner.revoked_at.is_(None) & (Runner.last_seen_at.is_(None) | ~seen)
 
     async def get(
         self, db: AsyncSession, *, workspace_id: uuid.UUID, runner_id: uuid.UUID

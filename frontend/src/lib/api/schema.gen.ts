@@ -731,7 +731,8 @@ export interface paths {
         };
         /**
          * List Assistants
-         * @description Assistants ordered by name (only the active ones for viewers).
+         * @description Assistants (only the active ones for viewers); ``query`` matches name, description or
+         *     model.
          */
         get: operations["list_assistants_v1_workspaces__workspace_id__assistants_get"];
         put?: never;
@@ -773,6 +774,26 @@ export interface paths {
          *     ``ticket_webhook_url`` null turns the webhook off.
          */
         patch: operations["update_assistant_v1_workspaces__workspace_id__assistants__assistant_id__patch"];
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/assistants/{assistant_id}/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Duplicate
+         * @description Copy the configuration and collections; the webhook keeps its URL, not its secret.
+         */
+        post: operations["duplicate_v1_workspaces__workspace_id__assistants__assistant_id__duplicate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/workspaces/{workspace_id}/assistants/{assistant_id}/ticket-webhook/secret": {
@@ -844,7 +865,7 @@ export interface paths {
         };
         /**
          * List Collections
-         * @description Collections ordered by name, with their counts.
+         * @description Collections with their counts; ``query`` matches name or description.
          */
         get: operations["list_collections_v1_workspaces__workspace_id__collections_get"];
         put?: never;
@@ -889,6 +910,26 @@ export interface paths {
          * @description The chunks of the collection that best answer ``query``, best first; may be empty.
          */
         post: operations["search_collection_v1_workspaces__workspace_id__collections__collection_id__search_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/collections/{collection_id}/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sync Collection
+         * @description Start every active source of the collection, by name; the others are ``skipped``.
+         */
+        post: operations["sync_collection_v1_workspaces__workspace_id__collections__collection_id__sync_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1159,7 +1200,8 @@ export interface paths {
         };
         /**
          * List Members
-         * @description Members with their role, ordered by name.
+         * @description Members with their role; ``query`` matches name or e-mail, ``role`` sorts by the
+         *     hierarchy (owners first).
          */
         get: operations["list_members_v1_workspaces__workspace_id__members_get"];
         put?: never;
@@ -1203,7 +1245,7 @@ export interface paths {
         };
         /**
          * List Providers
-         * @description Credentials ordered by name; keys only masked.
+         * @description Credentials (keys only masked); ``query`` matches the name.
          */
         get: operations["list_providers_v1_workspaces__workspace_id__providers_get"];
         put?: never;
@@ -1274,7 +1316,8 @@ export interface paths {
         };
         /**
          * List Runners
-         * @description Runners ordered by name, revoked ones included; never the token or its hash.
+         * @description Runners, revoked ones included; never the token or its hash. ``query`` matches name or
+         *     token prefix; ``last_seen_at`` sorts runners never seen last.
          */
         get: operations["list_runners_v1_workspaces__workspace_id__runners_get"];
         put?: never;
@@ -1343,7 +1386,8 @@ export interface paths {
         };
         /**
          * List Sources
-         * @description Sources ordered by name (optionally of one collection), with the last run.
+         * @description Sources with the last run; ``query`` matches the name, ``last_run_status=never`` the
+         *     sources without runs, and ``last_run_at`` sorts by the newest run (none last).
          */
         get: operations["list_sources_v1_workspaces__workspace_id__sources_get"];
         put?: never;
@@ -1557,6 +1601,26 @@ export interface paths {
         head?: never;
         /** Update Module */
         patch: operations["update_module_v1_workspaces__workspace_id__sources__source_id__modules__module_id__patch"];
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/sources/{source_id}/reindex": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reindex Source
+         * @description Reprocess every document of the source, changed or not; returns the queued run.
+         */
+        post: operations["reindex_source_v1_workspaces__workspace_id__sources__source_id__reindex_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/workspaces/{workspace_id}/sources/{source_id}/runs": {
@@ -1974,6 +2038,15 @@ export interface components {
             /** @default neutral */
             tone: components["schemas"]["AssistantTone"];
         };
+        /**
+         * AssistantDuplicate
+         * @description Omitted or null ``name``: the original name with the first free copy suffix
+         *     (``docs/specs/chat.md``).
+         */
+        AssistantDuplicate: {
+            /** Name */
+            name?: string | null;
+        };
         /** AssistantOut */
         AssistantOut: {
             /** Active */
@@ -2076,7 +2149,7 @@ export interface components {
          * AuditAction
          * @enum {string}
          */
-        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted" | "provider.tested" | "assistant.created" | "assistant.updated" | "assistant.deleted" | "assistant.ticket_webhook_secret_rotated" | "assistant.ticket_webhook_tested" | "conversation.deleted" | "ticket_request.created" | "collection.created" | "collection.updated" | "collection.deleted" | "source.created" | "source.updated" | "source.deleted" | "source.tested" | "source.sync.started" | "source.sync.cancelled" | "source.ingest_token_rotated" | "source.tickets_uploaded" | "runner.created" | "runner.updated" | "runner.revoked" | "runner.deleted" | "harness_job.cancelled" | "harness_job.enqueued" | "harness_module.created" | "harness_module.updated" | "knowledge_item.updated";
+        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted" | "provider.tested" | "assistant.created" | "assistant.updated" | "assistant.deleted" | "assistant.ticket_webhook_secret_rotated" | "assistant.ticket_webhook_tested" | "conversation.deleted" | "ticket_request.created" | "collection.created" | "collection.updated" | "collection.deleted" | "source.created" | "source.updated" | "source.deleted" | "source.tested" | "source.sync.started" | "source.sync.cancelled" | "source.reindex.started" | "source.ingest_token_rotated" | "source.tickets_uploaded" | "runner.created" | "runner.updated" | "runner.revoked" | "runner.deleted" | "harness_job.cancelled" | "harness_job.enqueued" | "harness_module.created" | "harness_module.updated" | "knowledge_item.updated";
         /** AuditEventOut */
         AuditEventOut: {
             /** Action */
@@ -2249,6 +2322,13 @@ export interface components {
             offset: number;
             /** Total */
             total: number;
+        };
+        /** CollectionSyncOut */
+        CollectionSyncOut: {
+            /** Skipped */
+            skipped: components["schemas"]["SkippedSync"][];
+            /** Started */
+            started: components["schemas"]["StartedSync"][];
         };
         /**
          * CollectionUpdate
@@ -3017,6 +3097,12 @@ export interface components {
          * @enum {string}
          */
         KnowledgeReviewStatus: "pending" | "approved" | "discarded";
+        /**
+         * LastRunFilter
+         * @description Status of the newest run; ``never`` for a source without runs.
+         * @enum {string}
+         */
+        LastRunFilter: "queued" | "running" | "succeeded" | "failed" | "cancelled" | "never";
         /** LiveResponse */
         LiveResponse: {
             /**
@@ -4067,6 +4153,11 @@ export interface components {
             source_id: string;
         };
         /**
+         * RunnerStatus
+         * @enum {string}
+         */
+        RunnerStatus: "online" | "offline" | "revoked";
+        /**
          * RunnerUpdate
          * @description Fields to change; omitted fields stay. ``revoked: true`` is irreversible.
          */
@@ -4205,6 +4296,20 @@ export interface components {
             /** Needs Setup */
             needs_setup: boolean;
         };
+        /**
+         * SkipReason
+         * @enum {string}
+         */
+        SkipReason: "sync_already_running" | "source_inactive" | "sync_unavailable";
+        /** SkippedSync */
+        SkippedSync: {
+            reason: components["schemas"]["SkipReason"];
+            /**
+             * Source Id
+             * Format: uuid
+             */
+            source_id: string;
+        };
         /** SourceCreate */
         SourceCreate: {
             /**
@@ -4338,6 +4443,19 @@ export interface components {
             schedule_cron?: string | null;
             /** Schedule Enabled */
             schedule_enabled?: boolean | null;
+        };
+        /** StartedSync */
+        StartedSync: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Source Id
+             * Format: uuid
+             */
+            source_id: string;
         };
         /**
          * Theme
@@ -6662,6 +6780,12 @@ export interface operations {
     list_assistants_v1_workspaces__workspace_id__assistants_get: {
         parameters: {
             query?: {
+                /** @description Case-insensitive substring. */
+                query?: string | null;
+                active?: boolean | null;
+                provider_id?: string | null;
+                collection_id?: string | null;
+                sort?: "name" | "-name" | "created_at" | "-created_at" | "updated_at" | "-updated_at";
                 limit?: number;
                 offset?: number;
             };
@@ -6941,6 +7065,70 @@ export interface operations {
             };
         };
     };
+    duplicate_v1_workspaces__workspace_id__assistants__assistant_id__duplicate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                assistant_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["AssistantDuplicate"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or assistant not found, or caller is not a member. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The given name is already used (`assistant_name_taken`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     rotate_ticket_webhook_secret_v1_workspaces__workspace_id__assistants__assistant_id__ticket_webhook_secret_post: {
         parameters: {
             query?: never;
@@ -7116,6 +7304,10 @@ export interface operations {
     list_collections_v1_workspaces__workspace_id__collections_get: {
         parameters: {
             query?: {
+                /** @description Case-insensitive substring. */
+                query?: string | null;
+                provider_id?: string | null;
+                sort?: "name" | "-name" | "created_at" | "-created_at" | "updated_at" | "-updated_at" | "document_count" | "-document_count";
                 limit?: number;
                 offset?: number;
             };
@@ -7470,6 +7662,66 @@ export interface operations {
                 content?: never;
             };
             /** @description Provider unreachable (`provider_unavailable`). */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    sync_collection_v1_workspaces__workspace_id__collections__collection_id__sync_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionSyncOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or collection not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Temporal unreachable (`sync_unavailable`). */
             503: {
                 headers: {
                     [name: string]: unknown;
@@ -8342,6 +8594,10 @@ export interface operations {
     list_members_v1_workspaces__workspace_id__members_get: {
         parameters: {
             query?: {
+                /** @description Case-insensitive substring. */
+                query?: string | null;
+                role?: components["schemas"]["Role"] | null;
+                sort?: "name" | "-name" | "email" | "-email" | "role" | "-role" | "joined_at" | "-joined_at";
                 limit?: number;
                 offset?: number;
             };
@@ -8519,6 +8775,10 @@ export interface operations {
     list_providers_v1_workspaces__workspace_id__providers_get: {
         parameters: {
             query?: {
+                /** @description Case-insensitive substring. */
+                query?: string | null;
+                kind?: components["schemas"]["ProviderKind"] | null;
+                sort?: "name" | "-name" | "created_at" | "-created_at" | "updated_at" | "-updated_at";
                 limit?: number;
                 offset?: number;
             };
@@ -8808,6 +9068,10 @@ export interface operations {
     list_runners_v1_workspaces__workspace_id__runners_get: {
         parameters: {
             query?: {
+                /** @description Case-insensitive substring. */
+                query?: string | null;
+                status?: components["schemas"]["RunnerStatus"] | null;
+                sort?: "name" | "-name" | "created_at" | "-created_at" | "last_seen_at" | "-last_seen_at";
                 limit?: number;
                 offset?: number;
             };
@@ -9153,7 +9417,13 @@ export interface operations {
     list_sources_v1_workspaces__workspace_id__sources_get: {
         parameters: {
             query?: {
+                /** @description Case-insensitive substring. */
+                query?: string | null;
                 collection_id?: string | null;
+                kind?: components["schemas"]["SourceKind"] | null;
+                active?: boolean | null;
+                last_run_status?: components["schemas"]["LastRunFilter"] | null;
+                sort?: "name" | "-name" | "created_at" | "-created_at" | "updated_at" | "-updated_at" | "last_run_at" | "-last_run_at";
                 limit?: number;
                 offset?: number;
             };
@@ -10076,6 +10346,73 @@ export interface operations {
             };
             /** @description Invalid body (`validation_error`). */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    reindex_source_v1_workspaces__workspace_id__sources__source_id__reindex_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or source (`source_not_found`) not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Source inactive (`source_inactive`), of kind `tickets` (`source_reindex_unsupported`) or already syncing (`sync_already_running`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Temporal unreachable (`sync_unavailable`). */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

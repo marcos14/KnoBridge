@@ -28,10 +28,15 @@ class FakeSyncStarter:
     cancelled: list[uuid.UUID] = field(default_factory=lambda: [])
     running: set[uuid.UUID] = field(default_factory=lambda: set[uuid.UUID]())
     unavailable: bool = False
+    # Set: Temporal goes down after this many more successful starts.
+    starts_left: int | None = None
 
     async def start(
         self, *, workspace_id: uuid.UUID, source_id: uuid.UUID, run_id: uuid.UUID
     ) -> None:
+        if self.starts_left is not None:
+            self.unavailable = self.starts_left <= 0
+            self.starts_left -= 1
         self._check_available()
         if source_id in self.running:
             raise SyncAlreadyRunningError("a sync of this source is already running")

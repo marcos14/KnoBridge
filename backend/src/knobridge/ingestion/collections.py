@@ -12,8 +12,9 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
+from typing import Literal
 
-from sqlalchemy import ScalarSelect, and_, exists, func, select
+from sqlalchemy import ColumnElement, ScalarSelect, and_, exists, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,6 +22,7 @@ from knobridge.audit.actions import AuditAction
 from knobridge.audit.service import AuditService, AuditTarget
 from knobridge.core.clock import Clock
 from knobridge.core.errors import ConflictError, NotFoundError, ValidationError
+from knobridge.core.listing import sort_order, text_match
 from knobridge.ingestion.models import Chunk, Collection, Document, Source
 from knobridge.llm.errors import EmbeddingsNotSupportedError
 from knobridge.llm.models import ProviderCredential, ProviderKind
@@ -48,6 +50,28 @@ class CollectionView:
     source_count: int
     document_count: int
     chunk_count: int
+
+
+# A plain alias, not ``type``: FastAPI reads it as a query parameter.
+CollectionSort = Literal[
+    "name",
+    "-name",
+    "created_at",
+    "-created_at",
+    "updated_at",
+    "-updated_at",
+    "document_count",
+    "-document_count",
+]
+
+
+@dataclass(frozen=True)
+class CollectionFilter:
+    """What the list shows: ``query`` matches name or description (case-insensitive)."""
+
+    query: str | None = None
+    provider_id: uuid.UUID | None = None
+    sort: CollectionSort = "name"
 
 
 @dataclass(frozen=True)
@@ -111,18 +135,33 @@ class CollectionService:
         self._audit = AuditService(clock)
 
     async def list_collections(
-        self, db: AsyncSession, *, workspace_id: uuid.UUID, limit: int, offset: int
+        self,
+        db: AsyncSession,
+        *,
+        workspace_id: uuid.UUID,
+        filters: CollectionFilter,
+        limit: int,
+        offset: int,
     ) -> tuple[list[CollectionView], int]:
-        """Collections ordered by name, each with its source, document and chunk counts."""
-        total = await db.scalar(
-            select(func.count())
-            .select_from(Collection)
-            .where(Collection.workspace_id == workspace_id)
-        )
+        """A page of collections in ``filters.sort`` order, each with its source, document
+        and chunk counts (two statements whatever the page size)."""
+        conditions: list[ColumnElement[bool]] = [Collection.workspace_id == workspace_id]
+        if filters.query:
+            conditions.append(text_match(filters.query, Collection.name, Collection.description))
+        if filters.provider_id is not None:
+            conditions.append(Collection.credential_id == filters.provider_id)
+        total = await db.scalar(select(func.count()).select_from(Collection).where(*conditions))
+        sources, documents, chunks = _counts()
+        columns = {
+            "name": Collection.name,
+            "created_at": Collection.created_at,
+            "updated_at": Collection.updated_at,
+            "document_count": documents,
+        }
         rows = await db.execute(
-            select(Collection, *_counts())
-            .where(Collection.workspace_id == workspace_id)
-            .order_by(Collection.name, Collection.id)
+            select(Collection, sources, documents, chunks)
+            .where(*conditions)
+            .order_by(*sort_order(filters.sort, columns, Collection.id))
             .limit(limit)
             .offset(offset)
         )

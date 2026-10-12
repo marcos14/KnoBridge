@@ -40,6 +40,7 @@ from knobridge.api import (
     search,
     setup,
     sources,
+    sync_actions,
     ticket_requests,
     ticket_uploads,
     ticket_webhook,
@@ -139,6 +140,8 @@ def create_app(
         collections,
         sources,
         runs,
+        # Reindex a source, sync a collection (plan 0008 F2.5).
+        sync_actions,
         # Code harness (plan 0004 F2.1 to F2.4).
         runners,
         runner_heartbeat,

@@ -6,7 +6,9 @@ credential of the same workspace (422 ``collection_provider_invalid``) that offe
 (422 ``provider_embeddings_unsupported`` for Anthropic); it and ``embedding_model`` cannot
 change once the collection has documents (409 ``collection_embedding_locked``). Names are
 unique per workspace (409 ``collection_name_taken``); a collection with sources cannot be
-deleted (409 ``collection_in_use``). Logic in ``ingestion/collections.py``.
+deleted (409 ``collection_in_use``). The list takes ``query`` (name or description),
+``provider_id`` and ``sort``. Logic in ``ingestion/collections.py``; syncing every source of
+a collection is in ``api/sync_actions.py``.
 """
 
 from __future__ import annotations
@@ -26,7 +28,14 @@ from knobridge.api.deps import (
     WorkspaceContextDep,
     require_role,
 )
-from knobridge.ingestion.collections import CollectionChanges, CollectionSettings, CollectionView
+from knobridge.api.listing import SearchQuery
+from knobridge.ingestion.collections import (
+    CollectionChanges,
+    CollectionFilter,
+    CollectionSettings,
+    CollectionSort,
+    CollectionView,
+)
 from knobridge.security.csrf import require_csrf
 from knobridge.tenancy.models import Role
 
@@ -129,12 +138,19 @@ router = APIRouter(prefix="/workspaces/{workspace_id}/collections", tags=["colle
 async def list_collections(
     context: WorkspaceContextDep,
     collections: CollectionServiceDep,
+    query: SearchQuery = None,
+    provider_id: uuid.UUID | None = None,
+    sort: CollectionSort = "name",
     limit: Annotated[int, Query(ge=1, le=MAX_LIMIT)] = DEFAULT_LIMIT,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> CollectionPage:
-    """Collections ordered by name, with their counts."""
+    """Collections with their counts; ``query`` matches name or description."""
     items, total = await collections.list_collections(
-        context.db, workspace_id=context.workspace_id, limit=limit, offset=offset
+        context.db,
+        workspace_id=context.workspace_id,
+        filters=CollectionFilter(query=query, provider_id=provider_id, sort=sort),
+        limit=limit,
+        offset=offset,
     )
     return CollectionPage(
         items=[_out(item) for item in items], total=total, limit=limit, offset=offset

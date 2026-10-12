@@ -1,8 +1,9 @@
 """Members of a workspace (``/v1/workspaces/{workspace_id}/members``) and its settings.
 
-Any member lists the members; owners and admins change roles and remove members. Nobody
-grants or manages a role above their own (403 ``role_not_allowed``) and the last owner can
-be neither demoted nor removed (409 ``last_owner``). ``PATCH /v1/workspaces/{workspace_id}``
+Any member lists the members (``query``, ``role`` and ``sort``); owners and admins change
+roles and remove members. Nobody grants or manages a role above their own (403
+``role_not_allowed``) and the last owner can be neither demoted nor removed (409
+``last_owner``). ``PATCH /v1/workspaces/{workspace_id}``
 renames the workspace (owner or admin).
 """
 
@@ -23,8 +24,9 @@ from knobridge.api.deps import (
     WorkspaceContextDep,
     require_role,
 )
+from knobridge.api.listing import SearchQuery
 from knobridge.security.csrf import require_csrf
-from knobridge.tenancy.members import Member
+from knobridge.tenancy.members import Member, MemberFilter, MemberSort
 from knobridge.tenancy.models import Role, WorkspaceStatus
 
 DEFAULT_LIMIT = 50
@@ -118,12 +120,20 @@ async def update_workspace(
 async def list_members(
     context: WorkspaceContextDep,
     members: MemberServiceDep,
+    query: SearchQuery = None,
+    role: Role | None = None,
+    sort: MemberSort = "name",
     limit: Annotated[int, Query(ge=1, le=MAX_LIMIT)] = DEFAULT_LIMIT,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> MemberPage:
-    """Members with their role, ordered by name."""
+    """Members with their role; ``query`` matches name or e-mail, ``role`` sorts by the
+    hierarchy (owners first)."""
     items, total = await members.list_members(
-        context.db, workspace_id=context.workspace_id, limit=limit, offset=offset
+        context.db,
+        workspace_id=context.workspace_id,
+        filters=MemberFilter(query=query, role=role, sort=sort),
+        limit=limit,
+        offset=offset,
     )
     return MemberPage(items=[_out(item) for item in items], total=total, limit=limit, offset=offset)
 

@@ -5,7 +5,8 @@ key is write-only: it is accepted on create and update and never returned, only 
 form (``key_hint``, e.g. ``****1234``). The ``fake`` kind is refused in production (422
 ``provider_kind_not_allowed``); names are unique per workspace (409 ``provider_name_taken``).
 ``POST .../{provider_id}/test`` checks the stored key against the provider. A credential used
-by an assistant cannot be deleted (409 ``provider_in_use``).
+by an assistant cannot be deleted (409 ``provider_in_use``). The list takes ``query`` (name),
+``kind`` and ``sort``.
 """
 
 from __future__ import annotations
@@ -25,7 +26,8 @@ from knobridge.api.deps import (
     WorkspaceContext,
     require_role,
 )
-from knobridge.llm.credentials import masked_key
+from knobridge.api.listing import SearchQuery
+from knobridge.llm.credentials import ProviderFilter, ProviderSort, masked_key
 from knobridge.llm.models import ProviderCredential, ProviderKind
 from knobridge.security.csrf import require_csrf
 from knobridge.tenancy.models import Role
@@ -129,12 +131,19 @@ router = APIRouter(prefix="/workspaces/{workspace_id}/providers", tags=["provide
 async def list_providers(
     context: EditorContext,
     providers: ProviderCredentialServiceDep,
+    query: SearchQuery = None,
+    kind: ProviderKind | None = None,
+    sort: ProviderSort = "name",
     limit: Annotated[int, Query(ge=1, le=MAX_LIMIT)] = DEFAULT_LIMIT,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> ProviderPage:
-    """Credentials ordered by name; keys only masked."""
+    """Credentials (keys only masked); ``query`` matches the name."""
     items, total = await providers.list_credentials(
-        context.db, workspace_id=context.workspace_id, limit=limit, offset=offset
+        context.db,
+        workspace_id=context.workspace_id,
+        filters=ProviderFilter(query=query, kind=kind, sort=sort),
+        limit=limit,
+        offset=offset,
     )
     return ProviderPage(
         items=[_out(item) for item in items], total=total, limit=limit, offset=offset

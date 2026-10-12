@@ -9,7 +9,7 @@ status: em_execucao
 aprovado_em: 2026-10-12
 aprovado_por: usuario
 concluido_em: null
-branch: plano/0005-chamados-por-api
+branch: plano/0008-telas-de-uso-e-administracao
 fases:
   - id: F1
     titulo: Contrato e modelo de dados
@@ -63,10 +63,10 @@ fases:
         commit: null
       - id: F2.5
         titulo: Ações e listagens que faltam no backend (reindexar fonte, sincronizar a coleção, duplicar assistente, busca e ordenação)
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
-        concluida_em: null
+        concluida_em: 2026-10-12
         commit: null
   - id: F3
     titulo: Painel
@@ -174,6 +174,13 @@ decisoes:
     decisao: "F1.2: chave com conversas não pode ser apagada (FK sem ação; chaves só são revogadas); conversations com CHECK de dono único (user_id ou api_key_id) e api_key_id só no canal api; assistant_ids uuid[] de 1 a 100 sem FK (ids do workspace pela aplicação, assistente excluído sai do escopo); messages.cost_usd numeric(12,6) só em respostas; messages.channel com padrão panel; sessions.superadmin_workspace_id ON DELETE SET NULL; downgrade da 0017 recusa com conversas da API; conversas da API ficam fora das leituras do painel (404 no detalhe, fora da lista administrativa) até a F2.3"
     motivo: "integridade do dono da conversa e do histórico"
     alternativas: "SET NULL ou CASCADE na chave"
+    adr: null
+  - id: D10
+    data: 2026-10-12
+    por: agente
+    decisao: "F2.5: reindexar roda na transação da requisição (zera cursor e content_hash e inicia a sync; falha ao iniciar desfaz tudo; a linha da fonte fica travada até o commit e o workflow espera); recusa tickets, fonte inativa e sync em andamento; sincronizar coleção pula o resto com sync_unavailable se o Temporal cair no meio e responde 503 se nada iniciou; duplicar gera (cópia), (cópia 2)...; listas com query, filtros e sort em core/listing.py (nulos por último, 422 para sort inválido); lógica nova em módulos pequenos (reindex.py, source_listing.py, assistants/listing.py e duplicate.py); os commits do plano até a F1.2 foram parar na main local por engano (a árvore principal tinha sido trocada para a main fora da sessão) e foram movidos para a branch plano/0008-telas-de-uso-e-administracao, com a main local de volta em origin/main"
+    motivo: "contrato da F1.1; arquivos abaixo de 400 linhas"
+    alternativas: "FOR UPDATE na fonte (deadlock com o insert da execução)"
     adr: null
 pendencias_usuario: []
 ---
@@ -407,6 +414,7 @@ Nenhuma.
 - 2026-10-12 — F2.5 iniciada (agente em worktree).
 - 2026-10-12 — F1.2 concluída: migração 0017 com api_keys, dono do tipo chave em conversations, custo e canal por resposta e acesso de superadmin em sessions, RLS e testes; gates do agente: backend 2130 passed com 99,87%, frontend 1240; orquestrador: ruff, pyright e AGENTS na integração
 - 2026-10-12 — F2.1 iniciada (agente em worktree).
+- 2026-10-12 — F2.5 concluída: reindexar fonte, sincronizar coleção, duplicar assistente e busca, filtros e ordenação em seis listas; backend 2166 passed com 99% de cobertura, frontend 1240
 
 ## 8. Encerramento
 

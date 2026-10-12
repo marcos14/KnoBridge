@@ -4,7 +4,9 @@ Editors list and read them (to pick the runner of a source); owners and admins c
 revoke and delete. Creating returns the token ``kbr_<prefix>_<secret>`` once; no route shows
 it again, nor its hash. ``PATCH {"revoked": true}`` is irreversible (``revoked: false`` on a
 revoked runner: 422 ``runner_revoked``). A runner used by a source cannot be deleted (409
-``runner_in_use``). ``online`` is derived from ``last_seen_at`` (90 s window).
+``runner_in_use``). ``online`` is derived from ``last_seen_at`` (90 s window). The list takes
+``query`` (name or token prefix), ``status`` (``online``, ``offline``, ``revoked``) and
+``sort``.
 """
 
 from __future__ import annotations
@@ -18,9 +20,10 @@ from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, StringConstraints, ValidationError
 
 from knobridge.api.deps import ClientIpDep, ClockDep, WorkspaceContext, require_role
+from knobridge.api.listing import SearchQuery
 from knobridge.api.runner_deps import RunnerServiceDep
 from knobridge.harness.models import Runner
-from knobridge.harness.runners import is_online
+from knobridge.harness.runners import RunnerFilter, RunnerSort, RunnerStatus, is_online
 from knobridge.security.csrf import require_csrf
 from knobridge.tenancy.models import Role
 
@@ -136,12 +139,20 @@ async def list_runners(
     context: EditorContext,
     runners: RunnerServiceDep,
     clock: ClockDep,
+    query: SearchQuery = None,
+    status: RunnerStatus | None = None,
+    sort: RunnerSort = "name",
     limit: Annotated[int, Query(ge=1, le=MAX_LIMIT)] = DEFAULT_LIMIT,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> RunnerPage:
-    """Runners ordered by name, revoked ones included; never the token or its hash."""
+    """Runners, revoked ones included; never the token or its hash. ``query`` matches name or
+    token prefix; ``last_seen_at`` sorts runners never seen last."""
     items, total = await runners.list_runners(
-        context.db, workspace_id=context.workspace_id, limit=limit, offset=offset
+        context.db,
+        workspace_id=context.workspace_id,
+        filters=RunnerFilter(query=query, status=status, sort=sort),
+        limit=limit,
+        offset=offset,
     )
     now = clock.now()
     return RunnerPage(

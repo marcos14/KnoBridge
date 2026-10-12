@@ -61,6 +61,7 @@ from knobridge.ingestion.source_check import (
     check_connection,
 )
 from knobridge.ingestion.source_config import SourceKind, parse_source_config
+from knobridge.ingestion.source_listing import SourceFilter, page_sources
 from knobridge.ingestion.sync import SyncStarter
 
 
@@ -169,26 +170,17 @@ class SourceService:
         db: AsyncSession,
         *,
         workspace_id: uuid.UUID,
-        collection_id: uuid.UUID | None,
+        filters: SourceFilter,
         limit: int,
         offset: int,
     ) -> tuple[list[SourceView], int]:
-        """Sources ordered by name (optionally of one collection), with counts and last run."""
-        conditions = [Source.workspace_id == workspace_id]
-        if collection_id is not None:
-            conditions.append(Source.collection_id == collection_id)
-        total = await db.scalar(select(func.count()).select_from(Source).where(*conditions))
-        rows = await db.execute(
-            select(Source, document_count())
-            .where(*conditions)
-            .order_by(Source.name, Source.id)
-            .limit(limit)
-            .offset(offset)
+        """A page of sources (``source_listing.py``), with counts and last run."""
+        pairs, total = await page_sources(
+            db, workspace_id=workspace_id, filters=filters, limit=limit, offset=offset
         )
-        pairs = list(rows)
         runs = await last_runs(db, workspace_id, [source.id for source, _ in pairs])
         views = [self._view(source, count, runs.get(source.id)) for source, count in pairs]
-        return views, total or 0
+        return views, total
 
     async def get(
         self, db: AsyncSession, *, workspace_id: uuid.UUID, source_id: uuid.UUID

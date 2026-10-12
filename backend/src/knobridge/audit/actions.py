@@ -68,6 +68,8 @@ class AuditAction(StrEnum):
     SOURCE_TESTED = "source.tested"
     SOURCE_SYNC_STARTED = "source.sync.started"
     SOURCE_SYNC_CANCELLED = "source.sync.cancelled"
+    # Cursor and content hashes reset before a manual sync (name and run id).
+    SOURCE_REINDEX_STARTED = "source.reindex.started"
     # Ingest token of a ``tickets`` source issued or rotated (the prefix only, never the token).
     SOURCE_INGEST_TOKEN_ROTATED = "source.ingest_token_rotated"  # noqa: S105 - action name
     # File of tickets uploaded in the panel (file name and counts, never the content).

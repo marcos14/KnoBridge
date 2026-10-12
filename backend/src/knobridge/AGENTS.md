@@ -14,6 +14,7 @@
 - `ingestion/` não importa `harness/` nem `tickets/`: a API e o worker passam as fábricas dos conectores internos (`KnowledgeConnectorFactory` e `TicketsConnectorFactory`, em `knowledge=` e `tickets=`) ao `SettingsConnectorFactory`; o teste de conexão da fonte `tickets` entra no `SourceService` como `ConnectionCheck` (`tickets.tokens.ingest_token_failure`), passado pela API.
 - `api/conversations.py` importa `tickets/requests.py` (pedidos por mensagem e `ticket_requests_enabled`); `conversations/` não importa `tickets/`.
 - `conversations/` não importa `apikeys/`: `conversations.api_key_id` aponta para `api_keys` pelo nome da tabela, e `api/conversations.py` carrega `ApiKey` (`REFERENCED_MODELS`) para o metadata estar completo onde se gravam conversas.
+- Listas paginadas usam `core/listing.py` (busca `ILIKE` com curingas literais e `sort` com nulos por último); a lógica de reindexar fonte e sincronizar coleção fica em `ingestion/reindex.py`, a listagem e a duplicação de assistentes em `assistants/listing.py` e `assistants/duplicate.py`.
 - Vocabulário do domínio da seção 6.1 do [AGENTS.md da raiz](../../../AGENTS.md) nos nomes.
 
 **Como testar**: de `backend/`, `uv run pytest` (gate de 95% de linhas e branches) e `uv run pyright`.

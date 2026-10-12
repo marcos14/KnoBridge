@@ -714,6 +714,26 @@
         "title": "AssistantCreate",
         "type": "object"
       },
+      "AssistantDuplicate": {
+        "description": "Omitted or null ``name``: the original name with the first free copy suffix\n(``docs/specs/chat.md``).",
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "title": "AssistantDuplicate",
+        "type": "object"
+      },
       "AssistantOut": {
         "properties": {
           "active": {
@@ -1093,6 +1113,7 @@
           "source.tested",
           "source.sync.started",
           "source.sync.cancelled",
+          "source.reindex.started",
           "source.ingest_token_rotated",
           "source.tickets_uploaded",
           "runner.created",
@@ -1659,6 +1680,30 @@
           "offset"
         ],
         "title": "CollectionPage",
+        "type": "object"
+      },
+      "CollectionSyncOut": {
+        "properties": {
+          "skipped": {
+            "items": {
+              "$ref": "#/components/schemas/SkippedSync"
+            },
+            "title": "Skipped",
+            "type": "array"
+          },
+          "started": {
+            "items": {
+              "$ref": "#/components/schemas/StartedSync"
+            },
+            "title": "Started",
+            "type": "array"
+          }
+        },
+        "required": [
+          "started",
+          "skipped"
+        ],
+        "title": "CollectionSyncOut",
         "type": "object"
       },
       "CollectionUpdate": {
@@ -3652,6 +3697,19 @@
           "discarded"
         ],
         "title": "KnowledgeReviewStatus",
+        "type": "string"
+      },
+      "LastRunFilter": {
+        "description": "Status of the newest run; ``never`` for a source without runs.",
+        "enum": [
+          "queued",
+          "running",
+          "succeeded",
+          "failed",
+          "cancelled",
+          "never"
+        ],
+        "title": "LastRunFilter",
         "type": "string"
       },
       "LiveResponse": {
@@ -6664,6 +6722,15 @@
         "title": "RunnerSourceOut",
         "type": "object"
       },
+      "RunnerStatus": {
+        "enum": [
+          "online",
+          "offline",
+          "revoked"
+        ],
+        "title": "RunnerStatus",
+        "type": "string"
+      },
       "RunnerUpdate": {
         "description": "Fields to change; omitted fields stay. ``revoked: true`` is irreversible.",
         "properties": {
@@ -7033,6 +7100,33 @@
           "needs_setup"
         ],
         "title": "SetupStatusResponse",
+        "type": "object"
+      },
+      "SkipReason": {
+        "enum": [
+          "sync_already_running",
+          "source_inactive",
+          "sync_unavailable"
+        ],
+        "title": "SkipReason",
+        "type": "string"
+      },
+      "SkippedSync": {
+        "properties": {
+          "reason": {
+            "$ref": "#/components/schemas/SkipReason"
+          },
+          "source_id": {
+            "format": "uuid",
+            "title": "Source Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_id",
+          "reason"
+        ],
+        "title": "SkippedSync",
         "type": "object"
       },
       "SourceCreate": {
@@ -7414,6 +7508,26 @@
           }
         },
         "title": "SourceUpdate",
+        "type": "object"
+      },
+      "StartedSync": {
+        "properties": {
+          "run_id": {
+            "format": "uuid",
+            "title": "Run Id",
+            "type": "string"
+          },
+          "source_id": {
+            "format": "uuid",
+            "title": "Source Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_id",
+          "run_id"
+        ],
+        "title": "StartedSync",
         "type": "object"
       },
       "Theme": {
@@ -10888,7 +11002,7 @@
     },
     "/v1/workspaces/{workspace_id}/assistants": {
       "get": {
-        "description": "Assistants ordered by name (only the active ones for viewers).",
+        "description": "Assistants (only the active ones for viewers); ``query`` matches name, description or\nmodel.",
         "operationId": "list_assistants_v1_workspaces__workspace_id__assistants_get",
         "parameters": [
           {
@@ -10898,6 +11012,93 @@
             "schema": {
               "format": "uuid",
               "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Case-insensitive substring.",
+            "in": "query",
+            "name": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Case-insensitive substring.",
+              "title": "Query"
+            }
+          },
+          {
+            "in": "query",
+            "name": "active",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Active"
+            }
+          },
+          {
+            "in": "query",
+            "name": "provider_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Provider Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "collection_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Collection Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "name",
+              "enum": [
+                "name",
+                "-name",
+                "created_at",
+                "-created_at",
+                "updated_at",
+                "-updated_at"
+              ],
+              "title": "Sort",
               "type": "string"
             }
           },
@@ -11203,6 +11404,89 @@
         ]
       }
     },
+    "/v1/workspaces/{workspace_id}/assistants/{assistant_id}/duplicate": {
+      "post": {
+        "description": "Copy the configuration and collections; the webhook keeps its URL, not its secret.",
+        "operationId": "duplicate_v1_workspaces__workspace_id__assistants__assistant_id__duplicate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "assistant_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Assistant Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/AssistantDuplicate"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
+          },
+          "404": {
+            "description": "Workspace or assistant not found, or caller is not a member."
+          },
+          "409": {
+            "description": "The given name is already used (`assistant_name_taken`)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Duplicate",
+        "tags": [
+          "assistants"
+        ]
+      }
+    },
     "/v1/workspaces/{workspace_id}/assistants/{assistant_id}/ticket-webhook/secret": {
       "post": {
         "description": "Generate the signing secret of the webhook, replacing the current one at once.",
@@ -11477,7 +11761,7 @@
     },
     "/v1/workspaces/{workspace_id}/collections": {
       "get": {
-        "description": "Collections ordered by name, with their counts.",
+        "description": "Collections with their counts; ``query`` matches name or description.",
         "operationId": "list_collections_v1_workspaces__workspace_id__collections_get",
         "parameters": [
           {
@@ -11487,6 +11771,62 @@
             "schema": {
               "format": "uuid",
               "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Case-insensitive substring.",
+            "in": "query",
+            "name": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Case-insensitive substring.",
+              "title": "Query"
+            }
+          },
+          {
+            "in": "query",
+            "name": "provider_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Provider Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "name",
+              "enum": [
+                "name",
+                "-name",
+                "created_at",
+                "-created_at",
+                "updated_at",
+                "-updated_at",
+                "document_count",
+                "-document_count"
+              ],
+              "title": "Sort",
               "type": "string"
             }
           },
@@ -11863,6 +12203,72 @@
         "summary": "Search Collection",
         "tags": [
           "search"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/collections/{collection_id}/sync": {
+      "post": {
+        "description": "Start every active source of the collection, by name; the others are ``skipped``.",
+        "operationId": "sync_collection_v1_workspaces__workspace_id__collections__collection_id__sync_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "collection_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Collection Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionSyncOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
+          },
+          "404": {
+            "description": "Workspace or collection not found."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "description": "Temporal unreachable (`sync_unavailable`)."
+          }
+        },
+        "summary": "Sync Collection",
+        "tags": [
+          "sources"
         ]
       }
     },
@@ -12922,7 +13328,7 @@
     },
     "/v1/workspaces/{workspace_id}/members": {
       "get": {
-        "description": "Members with their role, ordered by name.",
+        "description": "Members with their role; ``query`` matches name or e-mail, ``role`` sorts by the\nhierarchy (owners first).",
         "operationId": "list_members_v1_workspaces__workspace_id__members_get",
         "parameters": [
           {
@@ -12932,6 +13338,61 @@
             "schema": {
               "format": "uuid",
               "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Case-insensitive substring.",
+            "in": "query",
+            "name": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Case-insensitive substring.",
+              "title": "Query"
+            }
+          },
+          {
+            "in": "query",
+            "name": "role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Role"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Role"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "name",
+              "enum": [
+                "name",
+                "-name",
+                "email",
+                "-email",
+                "role",
+                "-role",
+                "joined_at",
+                "-joined_at"
+              ],
+              "title": "Sort",
               "type": "string"
             }
           },
@@ -13131,7 +13592,7 @@
     },
     "/v1/workspaces/{workspace_id}/providers": {
       "get": {
-        "description": "Credentials ordered by name; keys only masked.",
+        "description": "Credentials (keys only masked); ``query`` matches the name.",
         "operationId": "list_providers_v1_workspaces__workspace_id__providers_get",
         "parameters": [
           {
@@ -13141,6 +13602,59 @@
             "schema": {
               "format": "uuid",
               "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Case-insensitive substring.",
+            "in": "query",
+            "name": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Case-insensitive substring.",
+              "title": "Query"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ProviderKind"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "name",
+              "enum": [
+                "name",
+                "-name",
+                "created_at",
+                "-created_at",
+                "updated_at",
+                "-updated_at"
+              ],
+              "title": "Sort",
               "type": "string"
             }
           },
@@ -13453,7 +13967,7 @@
     },
     "/v1/workspaces/{workspace_id}/runners": {
       "get": {
-        "description": "Runners ordered by name, revoked ones included; never the token or its hash.",
+        "description": "Runners, revoked ones included; never the token or its hash. ``query`` matches name or\ntoken prefix; ``last_seen_at`` sorts runners never seen last.",
         "operationId": "list_runners_v1_workspaces__workspace_id__runners_get",
         "parameters": [
           {
@@ -13463,6 +13977,59 @@
             "schema": {
               "format": "uuid",
               "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Case-insensitive substring.",
+            "in": "query",
+            "name": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Case-insensitive substring.",
+              "title": "Query"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/RunnerStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "name",
+              "enum": [
+                "name",
+                "-name",
+                "created_at",
+                "-created_at",
+                "last_seen_at",
+                "-last_seen_at"
+              ],
+              "title": "Sort",
               "type": "string"
             }
           },
@@ -13858,7 +14425,7 @@
     },
     "/v1/workspaces/{workspace_id}/sources": {
       "get": {
-        "description": "Sources ordered by name (optionally of one collection), with the last run.",
+        "description": "Sources with the last run; ``query`` matches the name, ``last_run_status=never`` the\nsources without runs, and ``last_run_at`` sorts by the newest run (none last).",
         "operationId": "list_sources_v1_workspaces__workspace_id__sources_get",
         "parameters": [
           {
@@ -13869,6 +14436,25 @@
               "format": "uuid",
               "title": "Workspace Id",
               "type": "string"
+            }
+          },
+          {
+            "description": "Case-insensitive substring.",
+            "in": "query",
+            "name": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Case-insensitive substring.",
+              "title": "Query"
             }
           },
           {
@@ -13886,6 +14472,74 @@
                 }
               ],
               "title": "Collection Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/SourceKind"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Kind"
+            }
+          },
+          {
+            "in": "query",
+            "name": "active",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Active"
+            }
+          },
+          {
+            "in": "query",
+            "name": "last_run_status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/LastRunFilter"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Last Run Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "name",
+              "enum": [
+                "name",
+                "-name",
+                "created_at",
+                "-created_at",
+                "updated_at",
+                "-updated_at",
+                "last_run_at",
+                "-last_run_at"
+              ],
+              "title": "Sort",
+              "type": "string"
             }
           },
           {
@@ -15148,6 +15802,75 @@
         "summary": "Update Module",
         "tags": [
           "harness"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/sources/{source_id}/reindex": {
+      "post": {
+        "description": "Reprocess every document of the source, changed or not; returns the queued run.",
+        "operationId": "reindex_source_v1_workspaces__workspace_id__sources__source_id__reindex_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
+          },
+          "404": {
+            "description": "Workspace or source (`source_not_found`) not found."
+          },
+          "409": {
+            "description": "Source inactive (`source_inactive`), of kind `tickets` (`source_reindex_unsupported`) or already syncing (`sync_already_running`)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "503": {
+            "description": "Temporal unreachable (`sync_unavailable`)."
+          }
+        },
+        "summary": "Reindex Source",
+        "tags": [
+          "sources"
         ]
       }
     },

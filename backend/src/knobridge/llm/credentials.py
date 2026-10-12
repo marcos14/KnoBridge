@@ -11,8 +11,10 @@ metadata carries names and kinds only.
 from __future__ import annotations
 
 import uuid
+from dataclasses import dataclass
+from typing import Literal
 
-from sqlalchemy import func, select
+from sqlalchemy import ColumnElement, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,6 +23,7 @@ from knobridge.audit.service import AuditService, AuditTarget
 from knobridge.core.clock import Clock
 from knobridge.core.crypto import SecretBox
 from knobridge.core.errors import ConflictError, NotFoundError, ValidationError
+from knobridge.core.listing import sort_order, text_match
 from knobridge.core.logging import get_logger
 from knobridge.llm.errors import LLMProviderError
 from knobridge.llm.factory import ProviderFactory
@@ -45,6 +48,17 @@ class ProviderInUseError(ConflictError):
     code = "provider_in_use"
 
 
+# A plain alias, not ``type``: FastAPI reads it as a query parameter.
+ProviderSort = Literal["name", "-name", "created_at", "-created_at", "updated_at", "-updated_at"]
+
+
+@dataclass(frozen=True)
+class ProviderFilter:
+    query: str | None = None
+    kind: ProviderKind | None = None
+    sort: ProviderSort = "name"
+
+
 def masked_key(credential: ProviderCredential) -> str:
     """What the API shows instead of the key: ``****`` plus its last four characters."""
     return MASK + credential.key_last4
@@ -65,15 +79,32 @@ class ProviderCredentialService:
         self._allow_fake = allow_fake
 
     async def list_credentials(
-        self, db: AsyncSession, *, workspace_id: uuid.UUID, limit: int, offset: int
+        self,
+        db: AsyncSession,
+        *,
+        workspace_id: uuid.UUID,
+        filters: ProviderFilter,
+        limit: int,
+        offset: int,
     ) -> tuple[list[ProviderCredential], int]:
-        """Credentials of the workspace ordered by name."""
-        scope = ProviderCredential.workspace_id == workspace_id
-        total = await db.scalar(select(func.count()).select_from(ProviderCredential).where(scope))
+        """A page of the workspace's credentials; ``query`` matches the name."""
+        conditions: list[ColumnElement[bool]] = [ProviderCredential.workspace_id == workspace_id]
+        if filters.query:
+            conditions.append(text_match(filters.query, ProviderCredential.name))
+        if filters.kind is not None:
+            conditions.append(ProviderCredential.kind == filters.kind)
+        total = await db.scalar(
+            select(func.count()).select_from(ProviderCredential).where(*conditions)
+        )
+        columns = {
+            "name": ProviderCredential.name,
+            "created_at": ProviderCredential.created_at,
+            "updated_at": ProviderCredential.updated_at,
+        }
         rows = await db.scalars(
             select(ProviderCredential)
-            .where(scope)
-            .order_by(ProviderCredential.name, ProviderCredential.id)
+            .where(*conditions)
+            .order_by(*sort_order(filters.sort, columns, ProviderCredential.id))
             .limit(limit)
             .offset(offset)
         )

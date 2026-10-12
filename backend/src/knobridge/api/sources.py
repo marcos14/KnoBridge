@@ -6,7 +6,9 @@ field errors in ``details``); the collection must be of the same workspace (422
 ``source_collection_invalid``); names are unique per workspace (409 ``source_name_taken``);
 ``schedule_cron`` is a five-field UTC cron (422 ``source_schedule_invalid``) mirrored on a
 Temporal Schedule (paused while ``schedule_enabled`` is false, removed with the source or when
-it is deactivated; saved even with Temporal down, the worker reconciles it), and
+it is deactivated; saved even with Temporal down, the worker reconciles it), and the list
+takes ``query`` (name), ``collection_id``, ``kind``, ``active``, ``last_run_status`` and
+``sort``;
 ``next_run_at`` is its next tick computed from the clock. ``POST .../{id}/test`` answers 200
 ``{ok, error}``;
 ``POST .../{id}/sync`` queues a run and starts the ingestion workflow (202 with the run; 409
@@ -37,10 +39,12 @@ from knobridge.api.deps import (
     WorkspaceContextDep,
     require_role,
 )
+from knobridge.api.listing import SearchQuery
 from knobridge.api.runs import RunOut, run_out
 from knobridge.ingestion.models import RunTrigger
 from knobridge.ingestion.schedule import CRON_MAX_LENGTH
 from knobridge.ingestion.source_config import SourceKind
+from knobridge.ingestion.source_listing import LastRunFilter, SourceFilter, SourceSort
 from knobridge.ingestion.sources import SourceChanges, SourceSettings, SourceView
 from knobridge.ingestion.sync import start_sync
 from knobridge.security.csrf import require_csrf
@@ -182,15 +186,28 @@ router = APIRouter(prefix="/workspaces/{workspace_id}/sources", tags=["sources"]
 async def list_sources(
     context: WorkspaceContextDep,
     sources: SourceServiceDep,
+    query: SearchQuery = None,
     collection_id: uuid.UUID | None = None,
+    kind: SourceKind | None = None,
+    active: bool | None = None,
+    last_run_status: LastRunFilter | None = None,
+    sort: SourceSort = "name",
     limit: Annotated[int, Query(ge=1, le=MAX_LIMIT)] = DEFAULT_LIMIT,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> SourcePage:
-    """Sources ordered by name (optionally of one collection), with the last run."""
+    """Sources with the last run; ``query`` matches the name, ``last_run_status=never`` the
+    sources without runs, and ``last_run_at`` sorts by the newest run (none last)."""
     items, total = await sources.list_sources(
         context.db,
         workspace_id=context.workspace_id,
-        collection_id=collection_id,
+        filters=SourceFilter(
+            query=query,
+            collection_id=collection_id,
+            kind=kind,
+            active=active,
+            last_run_status=last_run_status,
+            sort=sort,
+        ),
         limit=limit,
         offset=offset,
     )

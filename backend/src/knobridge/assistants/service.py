@@ -25,6 +25,7 @@ from sqlalchemy import delete, func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from knobridge.assistants.listing import AssistantFilter, page_assistants
 from knobridge.assistants.models import (
     DEFAULT_MIN_SIMILARITY,
     DEFAULT_NO_SOURCE_MESSAGE,
@@ -33,6 +34,7 @@ from knobridge.assistants.models import (
     AssistantTone,
 )
 from knobridge.audit.actions import AuditAction
+from knobridge.audit.models import JSONValue
 from knobridge.audit.service import AuditService, AuditTarget
 from knobridge.core.clock import Clock
 from knobridge.core.errors import ConflictError, NotFoundError, ValidationError
@@ -114,23 +116,14 @@ class AssistantService:
         db: AsyncSession,
         *,
         workspace_id: uuid.UUID,
-        active_only: bool,
+        filters: AssistantFilter,
         limit: int,
         offset: int,
     ) -> tuple[list[Assistant], int]:
-        """Assistants of the workspace ordered by name; only active ones if ``active_only``."""
-        conditions = [Assistant.workspace_id == workspace_id]
-        if active_only:
-            conditions.append(Assistant.active.is_(True))
-        total = await db.scalar(select(func.count()).select_from(Assistant).where(*conditions))
-        rows = await db.scalars(
-            select(Assistant)
-            .where(*conditions)
-            .order_by(Assistant.name, Assistant.id)
-            .limit(limit)
-            .offset(offset)
+        """A page of the workspace's assistants (``listing.py``)."""
+        return await page_assistants(
+            db, workspace_id=workspace_id, filters=filters, limit=limit, offset=offset
         )
-        return list(rows), total or 0
 
     async def get(
         self,
@@ -154,7 +147,9 @@ class AssistantService:
         actor_id: uuid.UUID,
         settings: AssistantSettings,
         ip: str | None,
+        duplicated_from: uuid.UUID | None = None,
     ) -> Assistant:
+        """Create an assistant; ``duplicated_from`` (the original's id) goes to the audit."""
         await self._lock_credential(db, workspace_id, settings.credential_id)
         await self._lock_collections(db, workspace_id, settings.collection_ids)
         assistant = Assistant(
@@ -176,18 +171,21 @@ class AssistantService:
         await self._flush(db)
         await self._link(db, assistant, settings.collection_ids)
         await db.refresh(assistant)
+        metadata: dict[str, JSONValue] = {
+            "name": assistant.name,
+            "model": assistant.model,
+            "provider_id": str(assistant.credential_id),
+            "collection_ids": [str(cid) for cid in dict.fromkeys(settings.collection_ids)],
+        }
+        if duplicated_from is not None:
+            metadata["duplicated_from"] = str(duplicated_from)
         await self._audit.record(
             db,
             action=AuditAction.ASSISTANT_CREATED,
             workspace_id=workspace_id,
             actor_user_id=actor_id,
             target=_target(assistant),
-            metadata={
-                "name": assistant.name,
-                "model": assistant.model,
-                "provider_id": str(assistant.credential_id),
-                "collection_ids": [str(cid) for cid in dict.fromkeys(settings.collection_ids)],
-            },
+            metadata=metadata,
             ip=ip,
         )
         return assistant

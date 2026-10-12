@@ -10,7 +10,9 @@ optional on write (empty by default: every answer is "no source"), always return
 ``min_similarity`` is the retrieval threshold (0 to 1; omitted or null on create: the default).
 ``ticket_webhook_url`` is where ticket requests go (``null``: off), checked against the SSRF
 rules when saved (422 ``webhook_url_invalid`` or ``webhook_destination_blocked``); its signing
-secret and the test event live in ``api/ticket_webhook.py``.
+secret and the test event live in ``api/ticket_webhook.py``. The list takes ``query``,
+``active``, ``provider_id``, ``collection_id`` and ``sort``; ``POST .../{id}/duplicate``
+copies an assistant (``assistants/duplicate.py``).
 """
 
 from __future__ import annotations
@@ -30,7 +32,10 @@ from knobridge.api.deps import (
     WorkspaceContextDep,
     require_role,
 )
+from knobridge.api.listing import SearchQuery
 from knobridge.api.ticket_webhook import DestinationValidatorDep
+from knobridge.assistants.duplicate import duplicate_assistant
+from knobridge.assistants.listing import AssistantFilter, AssistantSort
 from knobridge.assistants.models import (
     DEFAULT_LANGUAGE,
     DEFAULT_MIN_SIMILARITY,
@@ -216,14 +221,27 @@ router = APIRouter(prefix="/workspaces/{workspace_id}/assistants", tags=["assist
 async def list_assistants(
     context: WorkspaceContextDep,
     assistants: AssistantServiceDep,
+    query: SearchQuery = None,
+    active: bool | None = None,
+    provider_id: uuid.UUID | None = None,
+    collection_id: uuid.UUID | None = None,
+    sort: AssistantSort = "name",
     limit: Annotated[int, Query(ge=1, le=MAX_LIMIT)] = DEFAULT_LIMIT,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> AssistantPage:
-    """Assistants ordered by name (only the active ones for viewers)."""
+    """Assistants (only the active ones for viewers); ``query`` matches name, description or
+    model."""
     items, total = await assistants.list_assistants(
         context.db,
         workspace_id=context.workspace_id,
-        active_only=_only_active(context),
+        filters=AssistantFilter(
+            active_only=_only_active(context),
+            query=query,
+            active=active,
+            provider_id=provider_id,
+            collection_id=collection_id,
+            sort=sort,
+        ),
         limit=limit,
         offset=offset,
     )
@@ -356,3 +374,39 @@ async def delete_assistant(
         assistant_id=assistant_id,
         ip=ip,
     )
+
+
+class AssistantDuplicate(BaseModel):
+    """Omitted or null ``name``: the original name with the first free copy suffix
+    (``docs/specs/chat.md``)."""
+
+    name: Name | None = None
+
+
+@router.post(
+    "/{assistant_id}/duplicate",
+    status_code=HTTPStatus.CREATED,
+    dependencies=[Depends(require_csrf)],
+    responses={
+        **_WRITE_ERRORS,
+        409: {"description": "The given name is already used (`assistant_name_taken`)."},
+    },
+)
+async def duplicate(
+    assistant_id: uuid.UUID,
+    context: EditorContext,
+    assistants: AssistantServiceDep,
+    ip: ClientIpDep,
+    body: AssistantDuplicate | None = None,
+) -> AssistantOut:
+    """Copy the configuration and collections; the webhook keeps its URL, not its secret."""
+    assistant = await duplicate_assistant(
+        assistants,
+        context.db,
+        workspace_id=context.workspace_id,
+        actor_id=context.current.user.id,
+        assistant_id=assistant_id,
+        name=None if body is None else body.name,
+        ip=ip,
+    )
+    return await _one(context, assistants, assistant)
