@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { type ReactElement, useMemo, useState } from "react";
+import { type ReactElement, useId, useMemo, useState } from "react";
 import { useForm, type UseFormReturn } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
@@ -44,6 +44,7 @@ import {
   type CollectionFormValues,
   collectionInput,
   defaultEmbeddingModel,
+  embeddingModelOptions,
   isEmbeddingLocked,
   isSuggestedModel,
 } from "./collectionForm";
@@ -168,6 +169,9 @@ interface EmbeddingFieldsProps {
  */
 function EmbeddingFields({ form, providers, locked }: EmbeddingFieldsProps) {
   const { t } = useTranslation();
+  const optionsId = useId();
+  const providerId = form.watch("providerId");
+  const kind = providers.find((item) => item.id === providerId)?.kind;
 
   function onProviderChange(providerId: string, onChange: (value: string) => void) {
     onChange(providerId);
@@ -218,8 +222,13 @@ function EmbeddingFields({ form, providers, locked }: EmbeddingFieldsProps) {
           <FormItem>
             <FormLabel>{t("collections.form.model")}</FormLabel>
             <FormControl>
-              <Input {...field} disabled={locked} />
+              <Input {...field} disabled={locked} list={optionsId} />
             </FormControl>
+            <datalist id={optionsId}>
+              {embeddingModelOptions(kind).map((model) => (
+                <option key={model} value={model} />
+              ))}
+            </datalist>
             <FormDescription>{t("collections.form.modelHint")}</FormDescription>
             <FormMessage />
           </FormItem>

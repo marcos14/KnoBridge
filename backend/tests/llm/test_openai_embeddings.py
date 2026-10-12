@@ -25,7 +25,11 @@ from knobridge.llm.errors import (
     ProviderUnavailableError,
 )
 from knobridge.llm.openai_adapter import OPENROUTER_BASE_URL
-from knobridge.llm.openai_embeddings import OpenAIEmbeddingProvider, OpenRouterEmbeddingProvider
+from knobridge.llm.openai_embeddings import (
+    OpenAIEmbeddingProvider,
+    OpenRouterEmbeddingProvider,
+    sends_dimensions,
+)
 
 MODEL = "text-embedding-3-small"
 
@@ -177,6 +181,50 @@ def test_openrouter_embeddings_custom_base_url() -> None:
     run(lambda: provider.embed(["question 1"], MODEL))
 
     assert str(http.requests[0].url) == "https://gateway.example/v1/embeddings"
+
+
+@pytest.mark.parametrize(
+    "model",
+    ["google/gemini-embedding-001", "google/gemini-embedding-2", "gemini-embedding-001"],
+)
+def test_gemini_embeddings_send_index_dimension(model: str) -> None:
+    http = FakeHttp(_echo)
+    provider = _openrouter(http)
+
+    result = run(lambda: provider.embed(["question 1"], model))
+
+    assert json.loads(http.requests[0].content) == {
+        "model": model,
+        "input": ["question 1"],
+        "encoding_format": "float",
+        "dimensions": EMBEDDING_DIMENSION,
+    }
+    assert len(result.vectors[0]) == EMBEDDING_DIMENSION
+
+
+@pytest.mark.parametrize(
+    ("model", "expected"),
+    [
+        ("google/gemini-embedding-001", True),
+        ("gemini-embedding-2", True),
+        ("openai/text-embedding-3-small", False),
+        ("qwen/qwen3-embedding-8b", False),
+    ],
+)
+def test_sends_dimensions_only_for_gemini(model: str, expected: bool) -> None:
+    assert sends_dimensions(model) is expected
+
+
+def test_gemini_embeddings_wrong_dimension_refused() -> None:
+    http = FakeHttp(lambda _: _embeddings([1], dimension=3072))
+    provider = _openrouter(http)
+
+    with pytest.raises(EmbeddingDimensionError) as caught:
+        run(lambda: provider.embed(["text"], "google/gemini-embedding-001"))
+
+    assert caught.value.code == "embedding_dimension_mismatch"
+    assert caught.value.details == {"provider": "openrouter", "expected": 1536, "received": 3072}
+    assert "dimension 3072" in str(caught.value)
 
 
 def test_embedding_dimension_mismatch_raises() -> None:

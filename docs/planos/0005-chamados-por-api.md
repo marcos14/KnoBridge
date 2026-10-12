@@ -71,7 +71,7 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
         concluida_em: 2026-10-12
-        commit: null
+        commit: fd993f5
       - id: F3.2
         titulo: Solicitação de chamado na conversa, resumo, entrega assinada com retentativas no Temporal
         status: pendente
@@ -103,10 +103,10 @@ fases:
     subfases:
       - id: F5.1
         titulo: Embedding do Gemini pelo OpenRouter com 1536 dimensões
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
-        concluida_em: null
+        concluida_em: 2026-10-12
         commit: null
   - id: F6
     titulo: Entrega e ensaios
@@ -301,6 +301,13 @@ decisoes:
     decisao: "F3.1: validador SSRF em core/outbound.py (recusa loopback, privado, link-local, CGNAT, não especificado, multicast e o resto não global; IPv4 mapeado visto como IPv4), conexão no IP verificado com Host e SNI originais, sem proxy nem redirecionamento, 10 s e até 64 KiB de resposta; teste de entrega devolve 200 {ok, delivery_id, status, error} e é sempre auditado (assistant.ticket_webhook_tested); evento ticket.test; enviar o teste é editor+, gerar o segredo é owner/admin; resposta do assistente ganha ticket_webhook_secret_created_at; httpx2 vira dependência de runtime (era só de dev, chegava pelos SDKs)"
     motivo: "segurança da saída sem depender da rede nos testes; diagnóstico do destino como dado, não erro HTTP"
     alternativas: "erro HTTP na falha do destino; seguir redirecionamentos"
+    adr: null
+  - id: D25
+    data: 2026-10-12
+    por: agente
+    decisao: "F5.1: google/gemini-embedding-001 (US$ 0,15/M) e google/gemini-embedding-2 (US$ 0,20/M) pelo OpenRouter, conferidos no catálogo e numa chamada real em 2026-10-12 (3072 dimensões por padrão, 1536 com dimensions=1536); dimensions=1536 enviado a todo id gemini-embedding*; dimensão diferente de 1536 recusada para qualquer modelo; campo de modelo segue texto livre com sugestões por credencial"
+    motivo: "comparar os dois Gemini com o OpenAI na F6.3 sem migração do índice"
+    alternativas: "lista fixa de ids; só o gemini-embedding-001"
     adr: null
 pendencias_usuario:
   - id: P1
@@ -620,6 +627,7 @@ D1 a D12 vêm das respostas do usuário (seção 2). D13 a D16 são do agente, n
 - 2026-10-12 — F3.1 iniciada (agente em worktree).
 - 2026-10-12 — F5.1 iniciada (agente em worktree).
 - 2026-10-12 — F3.1 concluída: webhook do assistente: URL validada contra SSRF, segredo kbw_ cifrado, assinatura HMAC e evento de teste, com httpx2 como dependência de runtime; backend 1983 passed com 99% de cobertura, frontend 1140
+- 2026-10-12 — F5.1 concluída: embeddings do Gemini pelo OpenRouter com 1536 dimensões (001 e 2), preços do catálogo e sugestões no formulário de coleção; backend llm e coleções 109 passed, lint e pyright limpos; frontend 1144
 
 ## 8. Encerramento
 

@@ -19,6 +19,15 @@ def test_embedding_cost_from_price_table() -> None:
     assert table.cost("text-embedding-3-small", 0) == Decimal("0.000000")
 
 
+def test_embedding_cost_of_gemini_models() -> None:
+    table = EmbeddingPriceTable()
+
+    assert table.price("google/gemini-embedding-001") == Decimal("0.15")
+    assert table.price("google/gemini-embedding-2") == Decimal("0.20")
+    assert table.cost("google/gemini-embedding-001", 1_000_000) == Decimal("0.150000")
+    assert table.cost("google/gemini-embedding-2", 12_345) == Decimal("0.002469")
+
+
 def test_embedding_cost_unknown_model_is_none() -> None:
     table = EmbeddingPriceTable()
 

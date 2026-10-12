@@ -135,6 +135,7 @@ Fontes `tickets` (plano 0005) passam pelo mesmo workflow, com o conector interno
 
 - **A coleção define o embedding** (ADR 0004): credencial de provedor e modelo. A credencial tem de ser do mesmo workspace e de um tipo com embeddings (OpenAI, OpenRouter ou, fora de produção, `fake`). A Anthropic não oferece embeddings: `provider_embeddings_unsupported` (422).
 - **Dimensão fixa de 1536** (`chunks.embedding vector(1536)`, índice HNSW `vector_cosine_ops`). O modelo padrão é `openai/text-embedding-3-small` no OpenRouter (`text-embedding-3-small` na OpenAI direta). Vetor de outra dimensão é `embedding_dimension_mismatch`; resposta com quantidade diferente de vetores, `embedding_invalid_response`.
+- **Gemini pelo OpenRouter** (plano 0005): `google/gemini-embedding-001` e `google/gemini-embedding-2` devolvem 3072 dimensões por padrão. Para os modelos `gemini-embedding*` (com ou sem o prefixo do fornecedor), o adaptador envia `dimensions: 1536` e o provedor trunca o vetor (Matryoshka); a dimensão da resposta continua conferida, e qualquer outra vira `embedding_dimension_mismatch`. Os demais modelos não recebem `dimensions`.
 - **Troca de modelo travada.** Com documentos na coleção, credencial e modelo não mudam mais (`collection_embedding_locked`, 409): para outro modelo, crie outra coleção e cadastre as fontes nela. Cada trecho registra o modelo que o gerou (`chunks.embedding_model`).
 - **Lotes.** O motor faz uma chamada `embed` por lote de documentos. O adaptador divide o pedido em requisições de até 128 textos e 100 mil tokens estimados (`plan_batches`; um texto maior vai sozinho) e devolve os vetores na ordem da entrada.
 - **Cache por hash.** Antes de chamar o provedor, o motor procura na mesma coleção trechos com o mesmo `content_hash` e o mesmo modelo e reaproveita o vetor. Só o que falta vai ao provedor. Documento sem mudança nem chega ao chunking: é pulado pelo hash do conteúdo (`documents.content_hash`).
@@ -218,6 +219,8 @@ Cada execução guarda `embedding_tokens` (soma dos tokens das chamadas de embed
 | `text-embedding-3-small` e `openai/text-embedding-3-small` | 0,02 |
 | `text-embedding-3-large` e `openai/text-embedding-3-large` | 0,13 |
 | `text-embedding-ada-002` e `openai/text-embedding-ada-002` | 0,10 |
+| `google/gemini-embedding-001` (catálogo do OpenRouter, 2026-10-12) | 0,15 |
+| `google/gemini-embedding-2` (catálogo do OpenRouter, 2026-10-12) | 0,20 |
 
 `KNOBRIDGE_EMBEDDING_PRICES` (JSON, ex.: `{"openai/text-embedding-3-small": 0.02}`) sobrescreve ou acrescenta preços. Modelo sem preço tem custo desconhecido (`null`), nunca zero. Documentos pulados pelo hash e trechos achados no cache não custam nada. O painel mostra tokens, custo, duração e as contagens de cada execução na tela da fonte.
 

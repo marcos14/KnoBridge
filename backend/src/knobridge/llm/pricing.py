@@ -1,7 +1,8 @@
 """Embedding prices per model, for the estimated cost of a run.
 
 Prices are in USD per million input tokens. The defaults cover the obvious OpenAI models,
-under their own id and under the ``openai/`` prefix OpenRouter uses; the
+under their own id and under the ``openai/`` prefix OpenRouter uses, and the Gemini models
+OpenRouter serves; the
 ``KNOBRIDGE_EMBEDDING_PRICES`` setting overrides or extends them per model. A model without
 a price has unknown cost (``None``), never zero.
 """
@@ -25,6 +26,9 @@ _OPENAI_PRICES = {
 DEFAULT_EMBEDDING_PRICES: Mapping[str, Decimal] = {
     **_OPENAI_PRICES,
     **{f"openai/{model}": price for model, price in _OPENAI_PRICES.items()},
+    # OpenRouter catalog (``/api/v1/embeddings/models``), checked on 2026-10-12.
+    "google/gemini-embedding-001": Decimal("0.15"),
+    "google/gemini-embedding-2": Decimal("0.20"),
 }
 
 

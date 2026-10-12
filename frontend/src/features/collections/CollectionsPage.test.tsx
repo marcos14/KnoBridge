@@ -240,6 +240,45 @@ describe("CollectionsPage create", () => {
     expect(within(dialog).getByLabelText("Modelo de embedding")).toHaveValue("meu-modelo");
   });
 
+  it("test_create_collection_with_gemini_model_through_openrouter", async () => {
+    const user = userEvent.setup();
+    const openrouterId = "00000000-0000-4000-8000-0000000000e3";
+    const openrouter = makeProvider({ id: openrouterId, name: "OpenRouter", kind: "openrouter" });
+    const store = collectionStore([]);
+    server.use(providersAs([...makeProviders(), openrouter]), ...store.handlers);
+    await renderCollections();
+
+    const dialog = await openCreate(user);
+    const field = within(dialog).getByLabelText("Modelo de embedding");
+    const options = () =>
+      Array.from(document.getElementById(field.getAttribute("list") ?? "")?.children ?? []).map(
+        (option) => option.getAttribute("value"),
+      );
+    expect(options()).toEqual(["text-embedding-3-small"]);
+
+    await user.click(within(dialog).getByRole("combobox", { name: "Credencial de embedding" }));
+    await user.click(await screen.findByRole("option", { name: "OpenRouter" }));
+    expect(options()).toEqual([
+      "openai/text-embedding-3-small",
+      "google/gemini-embedding-001",
+      "google/gemini-embedding-2",
+    ]);
+    await user.type(within(dialog).getByLabelText("Nome"), "Gemini");
+    await user.clear(field);
+    await user.type(field, "google/gemini-embedding-001");
+    await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
+
+    expect(await screen.findByText("Coleção Gemini criada.")).toHaveRole("status");
+    expect(store.created).toEqual([
+      {
+        name: "Gemini",
+        description: "",
+        provider_id: openrouterId,
+        embedding_model: "google/gemini-embedding-001",
+      },
+    ]);
+  });
+
   it("test_create_collection_shows_sending_state_and_cancels", async () => {
     const user = userEvent.setup();
     server.use(pendingPost("*/v1/workspaces/:workspaceId/collections"));

@@ -21,6 +21,21 @@ export function defaultEmbeddingModel(kind: ProviderKind | undefined): string {
   return kind === "openai" ? OPENAI_EMBEDDING_MODEL : DEFAULT_EMBEDDING_MODEL;
 }
 
+/**
+ * Models known to give 1536-dimension vectors through OpenRouter. The Gemini ones default to 3072;
+ * the backend asks for 1536 explicitly.
+ */
+export const OPENROUTER_EMBEDDING_MODELS: readonly string[] = [
+  DEFAULT_EMBEDDING_MODEL,
+  "google/gemini-embedding-001",
+  "google/gemini-embedding-2",
+];
+
+/** Models offered in the field for a credential of `kind`; any other id may still be typed. */
+export function embeddingModelOptions(kind: ProviderKind | undefined): readonly string[] {
+  return kind === "openai" ? [OPENAI_EMBEDDING_MODEL] : OPENROUTER_EMBEDDING_MODELS;
+}
+
 /** Whether `model` is one of the suggestions, so switching provider may replace it. */
 export function isSuggestedModel(model: string): boolean {
   return model === "" || model === DEFAULT_EMBEDDING_MODEL || model === OPENAI_EMBEDDING_MODEL;

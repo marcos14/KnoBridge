@@ -2,8 +2,9 @@
 
 Compatible servers use ``OpenAIEmbeddingProvider`` with a ``base_url``. Inputs are sent in
 batches (``plan_batches``) and the vectors come back in input order, each checked against
-the dimension the index stores. Usage comes from the response; when a provider omits it,
-the local estimate fills in and the result says so.
+the dimension the index stores. Models whose native dimension is larger (Gemini, 3072) are
+asked for the index dimension explicitly. Usage comes from the response; when a provider
+omits it, the local estimate fills in and the result says so.
 """
 
 from __future__ import annotations
@@ -24,6 +25,16 @@ from knobridge.llm.embeddings import (
 )
 from knobridge.llm.errors import EmbeddingDimensionError, EmbeddingResponseError
 from knobridge.llm.openai_adapter import OPENROUTER_BASE_URL, sdk_errors
+
+# Gemini embeddings default to 3072 dimensions and truncate to ``dimensions`` when asked.
+# Matched on the id without the vendor prefix: ``google/gemini-embedding-001`` on OpenRouter,
+# ``gemini-embedding-001`` on Google's OpenAI-compatible endpoint, and later versions.
+_DIMENSIONS_MODEL_PREFIXES = ("gemini-embedding",)
+
+
+def sends_dimensions(model: str) -> bool:
+    """Whether requests for ``model`` carry ``dimensions`` to get the index dimension."""
+    return model.rsplit("/", 1)[-1].startswith(_DIMENSIONS_MODEL_PREFIXES)
 
 
 class OpenAIEmbeddingProvider:
@@ -53,6 +64,7 @@ class OpenAIEmbeddingProvider:
         self._max_tokens = max_batch_tokens
 
     async def embed(self, texts: Sequence[str], model: str) -> EmbeddingResult:
+        dimensions = self._dimension if sends_dimensions(model) else openai.omit
         vectors: list[list[float]] = []
         tokens = 0
         estimated = False
@@ -61,7 +73,7 @@ class OpenAIEmbeddingProvider:
             with sdk_errors(self.name):
                 # ``float`` explicitly: the SDK otherwise asks for base64 and decodes it itself.
                 response = await self._client.embeddings.create(
-                    model=model, input=inputs, encoding_format="float"
+                    model=model, input=inputs, encoding_format="float", dimensions=dimensions
                 )
             vectors.extend(self._vectors(response, len(inputs)))
             # Some compatible servers omit ``usage``; the SDK does not validate the response.

@@ -503,7 +503,7 @@
       "providerPlaceholder": "Escolha uma credencial",
       "providerHint": "Só aparecem credenciais com embeddings (OpenAI, OpenRouter e, em testes, Fake). A Anthropic não oferece embeddings.",
       "model": "Modelo de embedding",
-      "modelHint": "Padrão: openai/text-embedding-3-small. No OpenRouter o nome leva o prefixo do fornecedor (openai/text-embedding-3-small); na OpenAI direta, não (text-embedding-3-small); o Fake aceita qualquer nome. O índice guarda vetores de 1536 dimensões.",
+      "modelHint": "Padrão: openai/text-embedding-3-small. No OpenRouter o nome leva o prefixo do fornecedor (openai/text-embedding-3-small); na OpenAI direta, não (text-embedding-3-small); o Fake aceita qualquer nome. No OpenRouter também há o Gemini (google/gemini-embedding-001 e google/gemini-embedding-2), pedido com 1536 dimensões. O índice guarda vetores de 1536 dimensões.",
       "lockedHint": "A coleção já tem documentos: a credencial e o modelo não mudam mais. Para usar outro modelo, crie outra coleção.",
       "submit": "Salvar",
       "cancel": "Cancelar",

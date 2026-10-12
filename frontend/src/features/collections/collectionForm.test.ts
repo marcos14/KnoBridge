@@ -16,9 +16,11 @@ import {
   collectionInput,
   DEFAULT_EMBEDDING_MODEL,
   defaultEmbeddingModel,
+  embeddingModelOptions,
   embeddingProviders,
   isEmbeddingLocked,
   isSuggestedModel,
+  OPENROUTER_EMBEDDING_MODELS,
 } from "./collectionForm";
 
 const t = i18n.t.bind(i18n);
@@ -31,6 +33,17 @@ describe("collectionForm", () => {
     [undefined, DEFAULT_EMBEDDING_MODEL],
   ] as const)("test_default_embedding_model_for_%s", (kind, model) => {
     expect(defaultEmbeddingModel(kind)).toBe(model);
+  });
+
+  it.each([
+    ["openai", ["text-embedding-3-small"]],
+    [
+      "openrouter",
+      [DEFAULT_EMBEDDING_MODEL, "google/gemini-embedding-001", "google/gemini-embedding-2"],
+    ],
+    [undefined, OPENROUTER_EMBEDDING_MODELS],
+  ] as const)("test_embedding_model_options_for_%s", (kind, models) => {
+    expect(embeddingModelOptions(kind)).toEqual(models);
   });
 
   it("test_is_suggested_model_only_for_blank_and_defaults", () => {
