@@ -13,7 +13,7 @@ branch: plano/0005-chamados-por-api
 fases:
   - id: F1
     titulo: Contrato e modelo de dados
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F1.1
         titulo: ADR 0007 e specs da API pública, de uso e custos, do primeiro acesso e do acesso de superadmin
@@ -28,16 +28,16 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
         concluida_em: 2026-10-12
-        commit: null
+        commit: 81496da
   - id: F2
     titulo: Servidor
     status: em_execucao
     subfases:
       - id: F2.1
         titulo: Setup que cria o primeiro workspace e superadmin entrando num workspace como admin auditado
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-12
         concluida_em: null
         commit: null
       - id: F2.2
@@ -406,6 +406,7 @@ Nenhuma.
 - 2026-10-12 — F1.2 iniciada (agente em worktree).
 - 2026-10-12 — F2.5 iniciada (agente em worktree).
 - 2026-10-12 — F1.2 concluída: migração 0017 com api_keys, dono do tipo chave em conversations, custo e canal por resposta e acesso de superadmin em sessions, RLS e testes; gates do agente: backend 2130 passed com 99,87%, frontend 1240; orquestrador: ruff, pyright e AGENTS na integração
+- 2026-10-12 — F2.1 iniciada (agente em worktree).
 
 ## 8. Encerramento
 
