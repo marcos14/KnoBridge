@@ -39,19 +39,19 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
         concluida_em: 2026-10-12
-        commit: null
+        commit: e4280c3
       - id: F2.2
         titulo: Preços de modelos de chat, custo por resposta e as consultas de uso e custos e dos painéis
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-12
         concluida_em: null
         commit: null
       - id: F2.3
         titulo: Chaves de API e a API REST de conversa autenticada por chave
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-12
         concluida_em: null
         commit: null
       - id: F2.4
@@ -423,6 +423,8 @@ Nenhuma.
 - 2026-10-12 — F2.1 iniciada (agente em worktree).
 - 2026-10-12 — F2.5 concluída: reindexar fonte, sincronizar coleção, duplicar assistente e busca, filtros e ordenação em seis listas; backend 2166 passed com 99% de cobertura, frontend 1240
 - 2026-10-12 — F2.1 concluída: setup que cria o primeiro workspace e acesso de superadmin a qualquer workspace como admin auditado, integrados sobre a F2.5; backend 2203 passed com 99% de cobertura, frontend 1240
+- 2026-10-12 — F2.2 iniciada (agente em worktree).
+- 2026-10-12 — F2.3 iniciada (agente em worktree).
 
 ## 8. Encerramento
 
