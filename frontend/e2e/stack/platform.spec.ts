@@ -134,8 +134,9 @@ test("test_platform_flows_from_setup_to_conversation_review", async ({ browser, 
     await ask(viewer, workspaceId, QUESTION);
 
     await expect(viewer.getByText(NO_SOURCE_ANSWER)).toBeVisible();
-    // Rule 8: without a source the assistant says so and offers a ticket.
-    await expect(viewer.getByRole("button", { name: "Abrir chamado" })).toBeDisabled();
+    // Rule 8: without a source the assistant says so. The "Abrir chamado" button only appears
+    // when the assistant has a ticket webhook (covered by tickets.spec.ts); this one has none.
+    await expect(viewer.getByRole("button", { name: "Abrir chamado", exact: true })).toHaveCount(0);
     await viewer.getByRole("button", { name: "Resposta não ajudou" }).click();
     await expect(viewer.getByText("Obrigado pela avaliação.")).toBeVisible();
     await expect(viewer.getByRole("button", { name: "Resposta não ajudou" })).toHaveAttribute(
@@ -251,6 +252,6 @@ test("test_platform_flows_from_setup_to_conversation_review", async ({ browser, 
     await ask(owner, workspaceId, UNRELATED_QUESTION);
 
     await expect(owner.getByText(NO_SOURCE_ANSWER)).toBeVisible();
-    await expect(owner.getByRole("button", { name: "Abrir chamado" })).toBeDisabled();
+    await expect(owner.getByRole("button", { name: "Abrir chamado", exact: true })).toHaveCount(0);
   });
 });

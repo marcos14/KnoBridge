@@ -15,6 +15,9 @@ x-e2e-env: &e2e-env
   # The tests create a `fake` LLM provider, which the API refuses only in production: pin a
   # non-production environment here even if the shell or deploy/.env says otherwise.
   KNOBRIDGE_ENV: local
+  # The fake ticket system below: "Abrir chamado" and the test delivery reach it by its compose
+  # name, over http (development and E2E only; empty in production).
+  KNOBRIDGE_WEBHOOK_ALLOWED_HOSTS: webhook-sink
 
 # Synthetic knowledge (two Markdown files and one TypeScript file) in place of deploy/sources/:
 # the tests index /sources/knowledge. Volumes merge by container path, so this replaces the mount.
@@ -31,3 +34,24 @@ services:
     environment: *e2e-env
     volumes:
       - *e2e-sources
+
+  # Fake ticket system (scripts/webhook_sink.py, standard library only): checks the
+  # KnoBridge-Signature with the secret the test hands it (PUT /secret) and answers
+  # {ticket_id, url}. The test reads what arrived at GET /deliveries on WEBHOOK_SINK_PORT.
+  webhook-sink:
+    image: python:3.12.13-alpine3.22
+    command: [python, /app/webhook_sink.py, --port, "8090"]
+    restart: unless-stopped
+    volumes:
+      - ../scripts/webhook_sink.py:/app/webhook_sink.py:ro
+    ports:
+      - ${BIND_ADDRESS:-127.0.0.1}:${WEBHOOK_SINK_PORT:-8090}:8090
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://127.0.0.1:8090/health', timeout=3)
+      interval: 5s
+      timeout: 5s
+      retries: 20

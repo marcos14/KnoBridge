@@ -41,6 +41,9 @@ x-backend: &backend
     KNOBRIDGE_LOCAL_SOURCES_ROOT: /sources
     # Where the worker clones repositories given by https URL (the named volume source-clones).
     KNOBRIDGE_GIT_WORKDIR: /var/lib/knobridge/git
+    # Hosts the ticket webhooks of assistants may reach over http and without the SSRF address
+    # checks (docs/specs/chamados.md). Empty here; docker-compose.e2e.yml sets its fake destination.
+    KNOBRIDGE_WEBHOOK_ALLOWED_HOSTS: ${KNOBRIDGE_WEBHOOK_ALLOWED_HOSTS:-}
 
 services:
   postgres:

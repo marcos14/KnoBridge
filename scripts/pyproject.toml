@@ -45,6 +45,8 @@ select = [
 [tool.ruff.lint.per-file-ignores]
 # These modules are CLIs: writing to stdout is their job, and they shell out to git on purpose.
 "check_*.py" = ["T201", "S603", "S607"]
+# CLI of the synthetic data generator: it prints a one-line summary.
+"synthetic_tickets/cli.py" = ["T201"]
 "tests/**" = ["S101", "S603", "S607"]
 
 [tool.ruff.format]

@@ -33,8 +33,17 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
+from knobridge.assistants.models import Assistant
 from knobridge.audit.models import JSONValue
+from knobridge.conversations.models import Conversation, Message
 from knobridge.core.models import Base, TimestampMixin, UUIDPrimaryKeyMixin, str_enum
+from knobridge.ingestion.models import Source
+from knobridge.tenancy.models import User, Workspace
+
+# The tables these models reference by name. Importing them here puts them in the metadata
+# wherever the ticket models are used alone, as in the worker's ticket delivery; without them,
+# the first flush fails with ``NoReferencedTableError``.
+REFERENCED_MODELS = (Workspace, User, Source, Assistant, Conversation, Message)
 
 TOKEN_PREFIX_LENGTH = 8
 SHA256_HEX_LENGTH = 64

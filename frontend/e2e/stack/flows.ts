@@ -116,6 +116,23 @@ export async function createFakeProvider(
   await expect(page.getByText(`Provedor ${name} cadastrado.`)).toBeVisible();
 }
 
+/** An assistant on `provider` with the fake chat model. */
+export async function createAssistant(
+  page: Page,
+  workspaceId: string,
+  name: string,
+  provider: string,
+): Promise<void> {
+  await page.goto(`/w/${workspaceId}/assistants`);
+  await page.getByRole("button", { name: "Novo assistente" }).click();
+  const dialog = page.getByRole("dialog", { name: "Novo assistente" });
+  await dialog.getByLabel("Nome").fill(name);
+  await pickOption(page, "Provedor", provider);
+  await dialog.getByLabel("Modelo").fill("fake-chat");
+  await dialog.getByRole("button", { name: "Salvar" }).click();
+  await expect(page.getByText(`Assistente ${name} criado.`)).toBeVisible();
+}
+
 /** A collection embedded by the only credential (preselected), with the suggested model. */
 export async function createCollection(
   page: Page,

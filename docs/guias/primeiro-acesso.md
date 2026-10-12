@@ -81,7 +81,7 @@ Precisa de papel editor ou acima.
 ### 7. Conversar
 
 1. Vá em **Chat**, escolha o assistente, escreva a pergunta e clique em **Enviar** (Enter envia; Shift+Enter quebra a linha).
-2. A resposta chega em streaming. **Enquanto o assistente não tiver coleção indexada, ela é sempre a mensagem de "sem fonte"**, marcada como "Respondida sem fonte: o assistente ofereceu abrir chamado.": a regra do produto é não responder sem fonte ([chat.md](../specs/chat.md#regra-de-citações-regra-8-do-agentsmd)). Nesse caso o LLM nem é chamado. Para o assistente responder com citações, indexe uma fonte e ligue a coleção a ele, conforme [indexar-uma-fonte.md](indexar-uma-fonte.md).
+2. A resposta chega em streaming. **Enquanto o assistente não tiver coleção indexada, ela é sempre a mensagem de "sem fonte"**, marcada como "Respondida sem fonte: o assistente ofereceu abrir chamado.": a regra do produto é não responder sem fonte ([chat.md](../specs/chat.md#regra-de-citações-regra-8-do-agentsmd)). Nesse caso o LLM nem é chamado. Para o assistente responder com citações, indexe uma fonte e ligue a coleção a ele, conforme [indexar-uma-fonte.md](indexar-uma-fonte.md). Para o botão **Abrir chamado** dessas respostas enviar o pedido ao seu sistema de chamados, configure o webhook do assistente ([receber-chamados-por-api.md](receber-chamados-por-api.md#9-receber-abrir-chamado-do-chat)).
 3. Avalie a resposta com **Resposta útil** ou **Resposta não ajudou** e, se quiser, um comentário.
 4. As suas conversas ficam na lista à esquerda do chat. Owner e administrador veem as conversas de todos os membros, com filtros e totais, em **Conversas**.
 

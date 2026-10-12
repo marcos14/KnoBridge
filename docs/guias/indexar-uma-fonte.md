@@ -4,7 +4,7 @@
 
 Passo a passo pelo painel para pôr conhecimento no KnoBridge: montar a pasta de fontes, cadastrar um provedor com embeddings (OpenRouter), criar uma coleção, cadastrar uma fonte Git ou de pasta, sincronizar, acompanhar as execuções, testar a busca e ligar a coleção a um assistente, até ver as citações no chat.
 
-Para gerar conhecimento a partir do código com o Claude Code ou o Codex, rodando na máquina que tem o checkout (fonte do tipo **Runner local**), siga [mapear-codigo-com-runner.md](mapear-codigo-com-runner.md); a coleção e o assistente são os mesmos deste guia.
+Para gerar conhecimento a partir do código com o Claude Code ou o Codex, rodando na máquina que tem o checkout (fonte do tipo **Runner local**), siga [mapear-codigo-com-runner.md](mapear-codigo-com-runner.md). Para trazer chamados de um sistema de chamados (fonte do tipo **Chamados**, por API ou upload), siga [receber-chamados-por-api.md](receber-chamados-por-api.md). A coleção e o assistente são os mesmos deste guia.
 
 Como funciona por dentro: leitura das fontes em [conectores.md](../specs/conectores.md), indexação e busca em [indexacao.md](../specs/indexacao.md), chat em [chat.md](../specs/chat.md).
 

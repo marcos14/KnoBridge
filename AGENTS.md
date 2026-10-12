@@ -9,7 +9,7 @@ Se este arquivo e um `AGENTS.md` de pasta conflitarem, vale o mais específico (
 KnoBridge é uma plataforma open source (Apache 2.0) que conecta repositórios de código, sistemas de chamados e documentações, transforma tudo em índices para RAG por meio de pipelines visuais e incrementais, e entrega suporte em linguagem natural por API REST, API compatível com OpenAI, webhooks, MCP, Slack, Google Chat e widget embutível.
 
 - **Fonte da verdade sobre o produto**: [docs/01-visao-do-projeto.md](docs/01-visao-do-projeto.md). Escopo, arquitetura (seção 6), módulos (7), stack (8), decisões (9), roadmap (11) e perguntas em aberto (13).
-- **Status em 2026-10-11**: bootstrap ([0001](docs/planos/0001-bootstrap.md)), plataforma navegável ([0002](docs/planos/0002-plataforma-navegavel.md)) e primeiro conhecimento ([0003](docs/planos/0003-primeiro-conhecimento.md)) concluídos; harness com runner local ([0004](docs/planos/0004-harness-runner-local.md)) entregue: o `knobridge-runner`, na máquina com o checkout, roda o Claude Code ou o Codex somente leitura por módulo, verifica as evidências `arquivo:linhas` e envia o conhecimento, revisado no painel, indexado e citado no chat. Resumo e próximos passos na seção 12 deste arquivo.
+- **Status em 2026-10-12**: bootstrap ([0001](docs/planos/0001-bootstrap.md)), plataforma navegável ([0002](docs/planos/0002-plataforma-navegavel.md)), primeiro conhecimento ([0003](docs/planos/0003-primeiro-conhecimento.md)) e harness com runner local ([0004](docs/planos/0004-harness-runner-local.md)) concluídos; chamados por API ([0005](docs/planos/0005-chamados-por-api.md)) entregues: chamados de qualquer sistema entram pela API com token ou por upload, são anonimizados, indexados e citados no chat, e "Abrir chamado" vai ao sistema do cliente por um webhook assinado. A comparação de embeddings do plano 0005 segue em andamento. Resumo e próximos passos na seção 12 deste arquivo.
 
 ## 2. Regras inegociáveis
 
@@ -84,7 +84,7 @@ Antes de começar, leia este arquivo, o `AGENTS.md` de cada pasta que for tocar 
 | `runner/` | Python: `knobridge-runner`, runner local do harness de código na máquina do usuário (CLI `configure`/`run`/`doctor`, cliente do protocolo `/v1/runner/*`, camada 0, executores Claude Code e Codex somente leitura, verificação de evidências e excertos); projeto uv separado que nunca importa o backend ([ADR 0005](docs/adr/0005-runner-local-do-harness.md); uso em [mapear-codigo-com-runner.md](docs/guias/mapear-codigo-com-runner.md)) | Existe |
 | `widget/` | Web Component do chat embutível (1 arquivo JS) | A criar |
 | `deploy/` | Docker Compose, Helm chart, scripts de infra | Existe |
-| `scripts/` | Automação do repositório (checagens de CI, geração de código) | Existe |
+| `scripts/` | Automação do repositório (checagens de CI, geração de código e de dados sintéticos, receptor de webhook falso do E2E) | Existe |
 | `.github/` | Workflows de CI | Existe |
 
 Regras:
@@ -241,9 +241,19 @@ O plano [0004](docs/planos/0004-harness-runner-local.md) levou o harness de cód
 4. Painel: tela de Runners, fonte do tipo runner com as abas Módulos, Tarefas, Conhecimento e Indexação; E2E da stack que sobe o runner no host com o `claude` falso. Passo a passo em [docs/guias/mapear-codigo-com-runner.md](docs/guias/mapear-codigo-com-runner.md).
 5. Ensaio real no Minski, Claude Code x Codex em três módulos ([docs/pesquisa/0002-ensaio-harness-minski.md](docs/pesquisa/0002-ensaio-harness-minski.md)): Claude Code fica como executor padrão. O ensaio corrigiu a recall da busca vetorial (`hnsw.ef_search` 1000) e a verificação de símbolos em funções longas.
 
-### 12.5 Próximos passos
+### 12.5 Chamados por API (plano 0005)
 
-Siga o roadmap da visão. Da Fase 0 ainda faltam: conector de chamados e a comparação OpenAI x Gemini embedding em pt-BR.
+O plano [0005](docs/planos/0005-chamados-por-api.md) trouxe os chamados por push, sem conector por provedor ([ADR 0006](docs/adr/0006-chamados-por-push.md); contrato em [docs/specs/chamados.md](docs/specs/chamados.md)):
+
+1. Fonte do tipo `tickets` com token de envio `kbi_...` (hash SHA-256); `POST /v1/ingest/tickets` com validação estrita por item, caixa de entrada no Postgres pela regra do `updated_at` (reenvio idempotente, remoção com lápide) e sincronização `ingest`; upload JSON/JSONL em fluxo e prévia sem gravar; tabelas `ingest_tokens`, `ticket_inbox` e `ticket_requests` com RLS.
+2. Conector interno `tickets` no workflow de ingestão: anonimização determinística (e-mail, IP, CNPJ, CPF, cartão, telefone e nomes declarados), Markdown por seções, notas internas e status configuráveis por fonte, bruto apagado junto com a gravação do documento; citação `kind: ticket` no chat com número, status, data e link.
+3. "Abrir chamado": webhook por assistente com segredo `kbw_...` cifrado, proteção contra SSRF em toda tentativa, assinatura HMAC-SHA256, entrega pelo workflow `knobridge.ticket_webhook.v1` com retentativas por 24 h e o número devolvido pelo destino mostrado no chat.
+4. Embeddings do Gemini pelo OpenRouter, reduzidos a 1536 dimensões; painel com a fonte de chamados (Integração, Upload, Prévia, Indexação), o webhook no assistente e "Abrir chamado" no chat.
+5. Gerador de chamados sintéticos com gabarito da anonimização (`scripts/synthetic_tickets/`), receptor de webhook falso no compose de E2E e E2E da stack do envio à citação e ao chamado aberto. Passo a passo em [docs/guias/receber-chamados-por-api.md](docs/guias/receber-chamados-por-api.md).
+
+### 12.6 Próximos passos
+
+Siga o roadmap da visão. Da Fase 0 ainda falta a comparação OpenAI x Gemini embedding em pt-BR, em andamento no plano 0005.
 
 ## 13. Template de `AGENTS.md` de pasta
 

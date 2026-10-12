@@ -114,10 +114,10 @@ fases:
     subfases:
       - id: F6.1
         titulo: Gerador sintético de chamados, E2E da stack, guia, README, CHANGELOG e AGENTS raiz
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
-        concluida_em: null
+        concluida_em: 2026-10-12
         commit: null
       - id: F6.2
         titulo: Ensaio sintético de chamados (anonimização, indexação, perguntas, abrir chamado)
@@ -329,6 +329,13 @@ decisoes:
     decisao: "F4.2: rota tickets/summary aberta a qualquer membro (prefixo e data do token, contagens por estado, failed = pending com last_error, last_received_at) em tickets/inbox_summary.py; botão Abrir chamado decidido por ticket_requests_enabled do detalhe da conversa (recarregado ao fim de cada resposta), na resposta no_source e no cabeçalho; sem webhook não aparece botão; polling do pedido a cada 3 s enquanto pending; PATCH do assistente só envia a URL quando ela muda; https exigido só pelo servidor (hosts liberados em dev)"
     motivo: "evitar estado duplicado entre SSE e detalhe e não repetir a checagem SSRF a cada salvamento"
     alternativas: "decidir pelo done do SSE; botão desabilitado sem webhook"
+    adr: null
+  - id: D29
+    data: 2026-10-12
+    por: agente
+    decisao: "F6.1: gerador sintético em scripts/synthetic_tickets (ERP fictício Vértice, 24 problemas em 6 módulos, gabarito com anonimizar, preservar e nao_detectavel, 48 perguntas com artigo e chamados esperados, 30 artigos com 6 distratores), recusa saída dentro do repositório; receptor fake de webhook em scripts/webhook_sink.py (só biblioteca padrão) no compose de E2E; E2E de chamados cobre envio, upload, prévia, citação, teste de entrega e Abrir chamado; o E2E revelou que o worker não entregava o webhook (NoReferencedTableError: tickets/models.py sem os modelos referenciados), corrigido com teste"
+    motivo: "dados sintéticos medem anonimização e recuperação sem dado real; o E2E prova o fluxo inteiro"
+    alternativas: "receptor dentro do frontend/e2e; dados gerados no repositório"
     adr: null
 pendencias_usuario:
   - id: P1
@@ -657,6 +664,7 @@ D1 a D12 vêm das respostas do usuário (seção 2). D13 a D16 são do agente, n
 - 2026-10-12 — F4.2 iniciada (agente em worktree), com a rota tickets/summary incluída (D27).
 - 2026-10-12 — F4.2 concluída: webhook no assistente (URL, segredo mostrado uma vez, testar entrega), Abrir chamado no chat com prévia, resumo editável e estado do pedido, e a rota tickets/summary com a situação da integração na fonte; gates do agente: backend 2083 passed com 99,87%, frontend 1240; orquestrador: lint, pyright, testes da rota e gate do frontend (1240) verdes
 - 2026-10-12 — F6.1 iniciada (agente em worktree).
+- 2026-10-12 — F6.1 concluída: gerador sintético com gabarito e perguntas, receptor fake de webhook, E2E da stack de chamados (duas rodadas verdes, 3/3 specs cada), guia receber-chamados-por-api.md revisado pelo orquestrador, README, CHANGELOG e AGENTS raiz 12.5; correção do worker que não entregava o webhook; gates do agente: backend 2084 passed, frontend 1240, scripts 98; orquestrador: lint, pyright, scripts e frontend verdes
 
 ## 8. Encerramento
 

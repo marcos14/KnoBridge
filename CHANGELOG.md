@@ -8,6 +8,19 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ### Added
 
+Chamados por API (plano [0005](docs/planos/0005-chamados-por-api.md)): chamados de qualquer sistema entram por push num formato único, são anonimizados, indexados e citados no chat; sem fonte, o chat abre um chamado no sistema do cliente por um webhook assinado.
+
+- Arquitetura ([ADR 0006](docs/adr/0006-chamados-por-push.md)): push num formato do KnoBridge em vez de um conector por provedor, caixa de entrada no Postgres com a regra do `updated_at`, conector interno `tickets` no workflow de ingestão, bruto apagado depois de indexado e webhook de saída por assistente; contrato em [chamados.md](docs/specs/chamados.md) (JSON Schema do chamado).
+- Dados: tabelas `ingest_tokens`, `ticket_inbox` e `ticket_requests` com RLS, webhook em `assistants`, `tickets`/`ingest`/`ticket` nos tipos de fonte, gatilho de execução e documento; migração `0016` ([modelo de dados](docs/specs/modelo-de-dados.md)).
+- Envio: fonte do tipo `tickets` com token `kbi_...` mostrado uma vez (hash SHA-256); `POST /v1/ingest/tickets` com até 100 itens e 5 MiB, validação estrita por item (`queued`, `unchanged`, `stale`, `rejected`), remoção com lápide, reenvio idempotente e sincronização `ingest` disparada depois do commit; upload JSON/JSONL de até 50 MiB lido em fluxo, com relatório por linha; prévia do Markdown anonimizado sem gravar nada; resumo da caixa de entrada por estado.
+- Indexação: anonimização determinística sem LLM (e-mail, IP, CNPJ, CPF, cartão, telefone e nomes declarados viram marcadores), Markdown do chamado por seções (problema, solução, conversa, campos, anexos), notas internas e status indexados configuráveis por fonte, citação `kind: ticket` com número, status, data e link ([SSE v0.6](docs/specs/chat-sse.md)) e regra do prompt que prefere a solução de chamados resolvidos.
+- "Abrir chamado": URL e segredo `kbw_...` (cifrado) por assistente, proteção contra SSRF ao salvar e em toda tentativa, entrega de teste, prévia com resumo pelo modelo do assistente, pedido confirmado pelo usuário e entregue pelo workflow `knobridge.ticket_webhook.v1` com assinatura HMAC-SHA256, retentativas por 24 h e o número e o link devolvidos pelo destino ([SSE v0.7](docs/specs/chat-sse.md)).
+- Embeddings do Gemini pelo OpenRouter (`google/gemini-embedding-001` e `-2`) reduzidos a 1536 dimensões.
+- Painel: fonte de chamados com as abas Integração (token, exemplos `curl` e Python, situação da integração), Upload, Prévia e Indexação; webhook no formulário do assistente (segredo, entrega de teste); "Abrir chamado" no chat com acompanhamento da entrega; citações de chamado.
+- Dados sintéticos: gerador determinístico `scripts/synthetic_tickets` (chamados pt-BR de um ERP fictício com dados pessoais semeados e gabarito da anonimização, artigos de ajuda e perguntas para comparar embeddings).
+- E2E e deploy: fluxo da stack que cria a fonte e o token, confere a prévia, envia um lote pela API, faz o upload de um JSONL, vê o chamado citado no chat e abre um chamado por um receptor de webhook falso do compose (`webhook-sink`, `scripts/webhook_sink.py`), liberado por `KNOBRIDGE_WEBHOOK_ALLOWED_HOSTS`.
+- Docs: guia [receber chamados por API](docs/guias/receber-chamados-por-api.md) (fonte e token, formato, `curl`, Python e n8n, carga histórica, anonimização, verificação da assinatura do webhook em Python e Node).
+
 Harness de código com runner local (plano [0004](docs/planos/0004-harness-runner-local.md)): o Claude Code ou o Codex rodam somente leitura na máquina que tem o checkout e o conhecimento gerado, com evidências `arquivo:linhas` verificadas, é revisado no painel e citado no chat.
 
 - Arquitetura ([ADR 0005](docs/adr/0005-runner-local-do-harness.md)): runner na máquina do usuário, credenciais dos CLIs só nela, HTTPS de saída com long-poll, fila de tarefas no Postgres com reserva, fonte do tipo `runner`; specs do [protocolo do runner](docs/specs/runner.md) e do [harness](docs/specs/harness.md).
@@ -55,6 +68,8 @@ Bootstrap do monorepo (plano [0001](docs/planos/0001-bootstrap.md)), sem funcion
 
 ### Fixed
 
+- Chamados: a entrega do webhook "Abrir chamado" falhava no worker com `NoReferencedTableError`, porque o worker carregava os modelos de chamados sem os de conversas, workspaces e fontes que eles referenciam; `tickets/models.py` passou a importá-los.
+- E2E da stack: o fluxo da plataforma esperava o botão "Abrir chamado" desabilitado; desde o plano 0005 ele só aparece quando o assistente tem webhook.
 - Busca vetorial: `hnsw.ef_search` passou de 100 para 1000 (o máximo do pgvector). Com 100, o índice HNSW perdia o trecho mais próximo de perguntas reais numa coleção de 20 mil trechos (recall@10 de 0,90 contra 0,98).
 - Runner: a verificação de evidências aceita o símbolo na assinatura das declarações que envolvem o intervalo, achadas pela indentação, e não só nas 50 linhas acima; antes, citações corretas em funções longas eram recusadas.
 - Runner: o modelo padrão do Claude Code (`claude-opus-5-5[1m]`) é registrado na tarefa sem o sufixo de variante, e o `doctor` não avisa mais por engano sobre a permissão do sandbox do Codex no Windows em português.
