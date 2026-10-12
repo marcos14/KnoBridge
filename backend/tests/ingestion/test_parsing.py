@@ -17,6 +17,7 @@ from knobridge.ingestion.parsing import (
     decode_text,
     fence_code,
     first_heading,
+    html_to_markdown,
     is_full_html,
     parse_document,
 )
@@ -255,3 +256,9 @@ def test_fence_code_keeps_empty_code_empty() -> None:
 def test_is_full_html_detects_pages_only() -> None:
     assert is_full_html("\n  <HTML lang='pt'>")
     assert not is_full_html("<template><div/></template>")
+
+
+def test_html_to_markdown_converts_a_fragment_without_scripts_or_styles() -> None:
+    html = "<p>Use <b>F5</b></p><script>alert(1)</script><style>p{}</style>"
+
+    assert html_to_markdown(html) == "Use **F5**"

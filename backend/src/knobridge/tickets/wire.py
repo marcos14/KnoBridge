@@ -219,6 +219,18 @@ class TicketIn(WireIn):
             raise PydanticCustomError(_UPDATED_BEFORE_CREATED, "updated_at is before created_at.")
         return self
 
+    @property
+    def display_number(self) -> str:
+        """What the citation shows: ``number``, or the ``external_id`` without one."""
+        return self.number or self.external_id
+
+    @property
+    def reference_date(self) -> tuple[datetime, str]:
+        """The date a citation shows and which one it is (``resolved`` or ``updated``)."""
+        if self.resolved_at is not None:
+            return self.resolved_at, "resolved"
+        return self.updated_at, "updated"
+
 
 class TicketUpsertItemIn(WireIn):
     op: Literal["upsert"]

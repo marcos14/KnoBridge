@@ -11,6 +11,8 @@
 - A commit becomes Markdown with its subject as the title (see ``commits``).
 - A knowledge item of a runner source is already Markdown (rendered by ``harness``) and keeps
   the item title.
+- A ticket of a tickets source is already Markdown (rendered and anonymized by ``tickets``,
+  whose HTML message bodies go through ``html_to_markdown``) and keeps the ticket title.
 
 A document that cannot be read raises ``UnsupportedFormatError`` or ``ParseFailedError``,
 which the ingestion engine records as a ``RunError`` without aborting the run.
@@ -49,6 +51,8 @@ class ParsedKind(StrEnum):
     DOCUMENT = "document"
     # A knowledge item of a runner source: Markdown rendered by the harness, cited by item.
     KNOWLEDGE = "knowledge"
+    # A ticket of a tickets source: Markdown rendered (and anonymized) by ``tickets``.
+    TICKET = "ticket"
 
 
 @dataclass(frozen=True, slots=True)
@@ -175,6 +179,15 @@ def fence_code(code: str, language: str) -> str:
     return f"{fence}{language}\n{body}{fence}\n"
 
 
+def html_to_markdown(html: str) -> str:
+    """An HTML fragment (a ticket message body) as Markdown, by the converter used for pages,
+    with ``script`` and ``style`` dropped. Synchronous: a body is small and already in memory."""
+    result = HtmlConverter().convert(
+        io.BytesIO(html.encode("utf-8")), StreamInfo(extension=".html", charset="utf-8")
+    )
+    return result.markdown
+
+
 def is_full_html(text: str) -> bool:
     head = text.lstrip()[:64].lower()
     return head.startswith(("<!doctype html", "<html"))
@@ -221,6 +234,8 @@ async def parse_document(raw: RawDocument) -> ParsedDocument:
         return ParsedDocument.of(raw, ParsedKind.COMMIT, title, markdown)
     if raw.ref.kind is DocumentKind.KNOWLEDGE:
         return ParsedDocument.of(raw, ParsedKind.KNOWLEDGE, raw.title, decode_text(raw.content))
+    if raw.ref.kind is DocumentKind.TICKET:
+        return ParsedDocument.of(raw, ParsedKind.TICKET, raw.title, decode_text(raw.content))
     details = {"key": raw.ref.key, "extension": raw.extension}
     if raw.metadata.get("format") == "document" and raw.extension not in _DOCUMENT_CONVERTERS:
         raise UnsupportedFormatError("document format is not supported", details=details)

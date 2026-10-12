@@ -10,6 +10,8 @@
   repeating the subject.
 - A knowledge item is cut at its headings like Markdown; each chunk carries the item (key,
   module, confidence, title) and the evidence it relies on, for the citation.
+- A ticket is cut at its sections (problem, resolution, conversation, fields, attachments), with
+  the title and metadata list in the first chunk; each chunk carries the ticket's citation data.
 
 Line numbers (``start_line``/``end_line``, 1-based) refer to the original file for Markdown,
 text and code. Converted documents (PDF, DOCX...) and commits have none: their Markdown is
@@ -49,6 +51,31 @@ _EVIDENCE_REF = re.compile(r"\[(\d{1,4})\]")
 # nothing. A module item may have hundreds, each with up to 8 KiB of excerpt; a chunk keeps few.
 KNOWLEDGE_CITED_EVIDENCE = 10
 KNOWLEDGE_CHUNK_EVIDENCE = 5
+# Sections of a ticket's Markdown (docs/specs/chamados.md, "Layout"), shared with the renderer
+# in ``tickets`` so the headings it writes are the ones cut here, and their ``section`` value.
+TICKET_PROBLEM = "Problema"
+TICKET_RESOLUTION = "Solução"
+TICKET_CONVERSATION = "Conversa"
+TICKET_FIELDS = "Campos adicionais"
+TICKET_ATTACHMENTS = "Anexos"
+TICKET_SECTIONS = {
+    TICKET_PROBLEM: "problem",
+    TICKET_RESOLUTION: "resolution",
+    TICKET_CONVERSATION: "conversation",
+    TICKET_FIELDS: "fields",
+    TICKET_ATTACHMENTS: "attachments",
+}
+# Citation metadata the tickets connector puts on the document, copied to every chunk.
+TICKET_META_KEYS = (
+    "kind",
+    "external_id",
+    "ticket_number",
+    "ticket_status",
+    "original_status",
+    "date",
+    "date_kind",
+    "url",
+)
 
 
 @dataclass(slots=True)
@@ -169,6 +196,37 @@ def chunk_knowledge(doc: ParsedDocument) -> list[Piece]:
     return pieces
 
 
+def _meta_text(doc: ParsedDocument, name: str) -> str | None:
+    value = doc.metadata.get(name)
+    return value if isinstance(value, str) else None
+
+
+def chunk_ticket(doc: ParsedDocument) -> list[Piece]:
+    """A ticket cut at its sections, without lines (the Markdown is generated). The title and
+    the metadata list travel with the first section; each chunk carries the ticket's citation
+    metadata and its ``section``. A ticket with no section at all is one ``problem`` chunk."""
+    base: dict[str, JSONValue] = {name: doc.metadata.get(name) for name in TICKET_META_KEYS}
+    base["title"] = doc.title
+    ticket = f"{_meta_text(doc, 'ticket_number')} · {doc.title}"
+    status = _meta_text(doc, "ticket_status")
+    sections = _sections(doc.markdown)
+    if len(sections) > 1:
+        head, first = sections[0], sections[1]
+        sections = [_Section(first.headings, head.lines + first.lines), *sections[2:]]
+    pieces: list[Piece] = []
+    for section in sections:
+        heading = section.headings[-1] if section.headings else TICKET_PROBLEM
+        label = heading if heading in TICKET_SECTIONS else TICKET_PROBLEM
+        meta: dict[str, JSONValue] = {
+            **base,
+            "headings": list(section.headings),
+            "section": TICKET_SECTIONS[label],
+        }
+        context = [("ticket", ticket), ("status", status), ("section", label)]
+        pieces.extend(_without_lines(part) for part in _section_pieces(section, meta, context))
+    return pieces
+
+
 def _path(doc: ParsedDocument) -> str:
     path = doc.metadata.get("path")
     return path if isinstance(path, str) and path else doc.ref.key
@@ -189,6 +247,8 @@ def chunk_document(doc: ParsedDocument) -> list[ChunkDraft]:
             pieces = chunk_markdown(doc.markdown, path)
         case ParsedKind.KNOWLEDGE:
             pieces = chunk_knowledge(doc)
+        case ParsedKind.TICKET:
+            pieces = chunk_ticket(doc)
         case _:  # ParsedKind.DOCUMENT, the only kind left
             pieces = chunk_markdown(doc.markdown, path, with_lines=False)
     return number_pieces(pieces)
