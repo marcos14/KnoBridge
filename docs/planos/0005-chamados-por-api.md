@@ -5,10 +5,10 @@ slug: chamados-por-api
 solicitado_por: usuario
 criado_em: 2026-10-12
 atualizado_em: 2026-10-12
-status: em_execucao
+status: concluido
 aprovado_em: 2026-10-12
 aprovado_por: usuario
-concluido_em: null
+concluido_em: 2026-10-12
 branch: plano/0005-chamados-por-api
 fases:
   - id: F1
@@ -110,7 +110,7 @@ fases:
         commit: 9c3e2a7
   - id: F6
     titulo: Entrega e ensaios
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F6.1
         titulo: Gerador sintético de chamados, E2E da stack, guia, README, CHANGELOG e AGENTS raiz
@@ -132,7 +132,7 @@ fases:
         agente: orquestrador
         iniciada_em: 2026-10-12
         concluida_em: 2026-10-12
-        commit: null
+        commit: 4e7f099
 decisoes:
   - id: D1
     data: 2026-10-12
@@ -681,6 +681,7 @@ D1 a D12 vêm das respostas do usuário (seção 2). D13 a D16 são do agente, n
 - 2026-10-12 — F6.1 concluída: gerador sintético com gabarito e perguntas, receptor fake de webhook, E2E da stack de chamados (duas rodadas verdes, 3/3 specs cada), guia receber-chamados-por-api.md revisado pelo orquestrador, README, CHANGELOG e AGENTS raiz 12.5; correção do worker que não entregava o webhook; gates do agente: backend 2084 passed, frontend 1240, scripts 98; orquestrador: lint, pyright, scripts e frontend verdes
 - 2026-10-12 — F6.2 concluída: ensaio sintético com 300 chamados (API e upload): 1612 dados pessoais semeados todos anonimizados, 130 versões preservadas, 38 nomes de terceiros não declarados no texto (limite conhecido), bruto apagado, 14 de 15 perguntas citando o chamado certo e Abrir chamado entregue com assinatura; correções com teste: solução no primeiro trecho e gatilho da sincronização pendente; relatório docs/pesquisa/0003; backend 2087 passed com 99% de cobertura; gasto US$ 0,03
 - 2026-10-12 — F6.3 concluída: comparação de três embeddings sobre 330 documentos sintéticos e 53 perguntas (relatório docs/pesquisa/0004), padrão mantido no OpenAI, aviso do limiar do Gemini na spec, correção do lote de até 100 textos do Gemini com teste; backend 2089 passed com 99% de cobertura; gasto US$ 0,08
+- 2026-10-12 — Plano concluído: todas as subfases concluídas; encerramento na seção 8.
 
 ## 8. Encerramento
 
