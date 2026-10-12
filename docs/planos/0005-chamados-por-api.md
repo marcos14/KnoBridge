@@ -21,12 +21,12 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
         concluida_em: 2026-10-11
-        commit: null
+        commit: 619891f
       - id: F1.2
         titulo: Migração 0016 (fonte tickets, token de envio, caixa de entrada, webhook do assistente, solicitações de chamado) com RLS
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-12
         concluida_em: null
         commit: null
   - id: F2
@@ -245,6 +245,20 @@ decisoes:
     decisao: "Entrega do webhook de saída por workflow Temporal com retentativas exponenciais por até 24 h; destino só https, resolvido e recusado se for IP privado, loopback ou link-local (lista de permissão por variável de ambiente para desenvolvimento)"
     motivo: "entrega confiável fora da requisição e proteção contra SSRF"
     alternativas: "envio síncrono na requisição; fila no Postgres com worker próprio"
+    adr: null
+  - id: D17
+    data: 2026-10-12
+    por: agente
+    decisao: "F1.1: lote {items:[{op:upsert,ticket}|{op:delete,external_id,deleted_at?}]}; remoção grava lápide datada que barra upsert atrasado; resultado por item queued, unchanged, stale ou rejected (duplicate_in_batch para external_id repetido) e sync started, pending, deferred ou none; Temporal fora não falha o envio; 5 MiB por lote, 1 MiB por chamado, 50 MiB por upload"
+    motivo: "idempotência e ordem robustas com retentativas do lado do cliente; recebimento desacoplado do processamento"
+    alternativas: "remoção sem lápide; falhar o envio sem Temporal"
+    adr: null
+  - id: D18
+    data: 2026-10-12
+    por: agente
+    decisao: "F1.1: anonimização com marcadores [SOLICITANTE], [ORGANIZACAO], [ATENDENTE_n], [CLIENTE_n], [EMAIL], [CPF]...; primeiro nome (3+ letras) também trocado; IPv4 depois de v, versão ou build preservado; conversa numa seção única; mudar a configuração da fonte só vale para chamados recebidos depois (o bruto é apagado); resumo do webhook gerado pelo LLM do assistente na prévia, editável, com fallback para a pergunta; token de envio e segredo do webhook (kbw_) exigem owner ou admin (ajuste do orquestrador: são credenciais)"
+    motivo: "detalhes de contrato que o plano não fixava"
+    alternativas: "papel editor para credenciais; resumo sem LLM"
     adr: null
 pendencias_usuario:
   - id: P1
@@ -552,6 +566,7 @@ D1 a D12 vêm das respostas do usuário (seção 2). D13 a D16 são do agente, n
 - 2026-10-12 — plano criado na branch `plano/0005-chamados-por-api`, a partir de `plano/0004-harness-runner-local` (ainda não integrada à `main`); aguardando aprovação.
 - 2026-10-12 — plano aprovado pelo usuário ("Aprovado"); F1.1 iniciada (agente em worktree).
 - 2026-10-11 — F1.1 concluída: ADR 0006, spec chamados.md (JSON Schema, envio, fila, anonimização, Markdown, citação, webhook), chat-sse v0.6 e visão v0.4 (D17 e roadmap); token e segredo passaram a owner ou admin na revisão do orquestrador
+- 2026-10-12 — F1.2 iniciada (agente em worktree).
 
 ## 8. Encerramento
 
