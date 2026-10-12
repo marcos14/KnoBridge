@@ -31,7 +31,7 @@ fases:
         commit: 69da51b
   - id: F2
     titulo: Servidor — recebimento e indexação
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F2.1
         titulo: Fonte tickets, token de envio e endpoint de lote para a caixa de entrada
@@ -60,16 +60,16 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
         concluida_em: 2026-10-12
-        commit: null
+        commit: 5c68746
   - id: F3
     titulo: Servidor — abrir chamado por webhook
-    status: pendente
+    status: em_execucao
     subfases:
       - id: F3.1
         titulo: Webhook do assistente (URL, segredo cifrado, teste) e proteção contra SSRF
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-12
         concluida_em: null
         commit: null
       - id: F3.2
@@ -99,13 +99,13 @@ fases:
         commit: null
   - id: F5
     titulo: Embedding do Gemini
-    status: pendente
+    status: em_execucao
     subfases:
       - id: F5.1
         titulo: Embedding do Gemini pelo OpenRouter com 1536 dimensões
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-12
         concluida_em: null
         commit: null
   - id: F6
@@ -610,6 +610,8 @@ D1 a D12 vêm das respostas do usuário (seção 2). D13 a D16 são do agente, n
 - 2026-10-12 — F2.4 iniciada (agente em worktree).
 - 2026-10-12 — F2.3 concluída: conector interno tickets no workflow de ingestão com fechamento da caixa na transação do documento, citação kind ticket no contexto e no SSE v0.6, regra de chamados no prompt e suíte de contrato estendida; gates do agente: backend 1776 passed com 99,86%, frontend 1140; orquestrador: ruff, pyright e AGENTS na integração
 - 2026-10-12 — F2.4 concluída: upload JSON/JSONL em fluxo com relatório por linha e prévia de anonimização, integrados sobre a F2.3; backend 1866 passed com 99% de cobertura, frontend 1140
+- 2026-10-12 — F3.1 iniciada (agente em worktree).
+- 2026-10-12 — F5.1 iniciada (agente em worktree).
 
 ## 8. Encerramento
 
