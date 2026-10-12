@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -24,7 +25,8 @@ from knobridge_runner.protocol import RunnerExecutorInfo, RunnerHeartbeatIn
 
 LOGIN_HINT = {"claude_code": "claude auth login", "codex": "codex login"}
 # How icacls shows BUILTIN\Users (English and pt-BR Windows), or its SID when it cannot resolve.
-USERS_GROUP_MARKERS = ("builtin\\users", "builtin\\usuários", "s-1-5-32-545")
+# icacls writes in the console's OEM code page, so the pt-BR accent may arrive replaced.
+USERS_GROUP = re.compile(r"builtin\\(users|usu.{1,2}rios)|s-1-5-32-545")
 USERS_GRANT = "/grant *S-1-5-32-545:(OI)(CI)RX /T"
 
 
@@ -57,10 +59,10 @@ def check_codex_sandbox(name: str, path: Path, runner: CommandRunner) -> CheckRe
     BUILTIN\\Users may read, as in a normal clone; an owner-only checkout reads as empty."""
     result = runner.run(["icacls", str(path)])
     text = result.stdout.lower()
-    if result.returncode != 0 or any(marker in text for marker in USERS_GROUP_MARKERS):
+    if result.returncode != 0 or USERS_GROUP.search(text) is not None:
         return None
     detail = (
-        "sem leitura para BUILTIN\\Users o sandbox do Codex não lê o checkout; "
+        "sem leitura para BUILTIN\\Users: o sandbox do Codex não lê o checkout; "
         f'rode: icacls "{path}" {USERS_GRANT}'
     )
     return CheckResult(f"repositório {name} (Codex)", True, detail, warning=True)

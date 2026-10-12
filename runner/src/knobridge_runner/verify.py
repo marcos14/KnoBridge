@@ -2,7 +2,8 @@
 
 Done in the checkout, which the server never sees. Each file is read once per job. A source is
 valid when its file is a text file inside the checkout, its line range exists and has at most
-80 lines and its symbol, when given, appears in the range or in the signature above it.
+80 lines and its symbol, when given, appears in the range, just above it or in the signature
+of a declaration that encloses it.
 """
 
 from __future__ import annotations
@@ -18,6 +19,10 @@ from knobridge_runner.protocol_result import MAX_RANGE_LINES, RejectionCode
 
 BINARY_PROBE_BYTES = 8 * 1024
 SYMBOL_LOOKBACK_LINES = 50
+# Enclosing declarations are searched this far above the range; a signature spans up to
+# SIGNATURE_LINES lines ending at the less indented line that opens the scope.
+ENCLOSING_LOOKBACK_LINES = 400
+SIGNATURE_LINES = 10
 MAX_SYMBOL_CHARS = 200
 MAX_PATH_CHARS = 500
 
@@ -33,6 +38,7 @@ REASONS: dict[RejectionCode, str] = {
 _DRIVE = re.compile(r"^[A-Za-z]:")
 _SYMBOL_SPLIT = re.compile(r"\.|::|#|->|/")
 _TRAILING_CALL = re.compile(r"\([^()]*\)\s*$")
+_CLOSING_ONLY = re.compile(r"^\s*[)\]}]+[;,]?\s*$")
 
 
 @dataclass(frozen=True)
@@ -82,13 +88,62 @@ def symbol_name(symbol: str) -> str:
     return _TRAILING_CALL.sub("", last).strip()
 
 
+def _indent(line: str) -> int:
+    expanded = line.expandtabs(4)
+    return len(expanded) - len(expanded.lstrip())
+
+
+def enclosing_headers(lines: Sequence[str], start: int, end: int) -> list[int]:
+    """Line numbers of the declarations that enclose the range, innermost first, found by
+    indentation up to ``ENCLOSING_LOOKBACK_LINES`` above it. A less indented line made only of
+    closing brackets means the range is outside the scope above, so the climb stops there."""
+    body = [line for line in lines[start - 1 : end] if line.strip()]
+    if not body:
+        return []
+    level = min(_indent(line) for line in body)
+    headers: list[int] = []
+    for number in range(start - 1, max(0, start - 1 - ENCLOSING_LOOKBACK_LINES), -1):
+        line = lines[number - 1]
+        if not line.strip() or _indent(line) >= level:
+            continue
+        if _CLOSING_ONLY.match(line):
+            break
+        headers.append(number)
+        level = _indent(line)
+        if level == 0:
+            break
+    return headers
+
+
 def symbol_matches(symbol: str, lines: Sequence[str], start: int, end: int) -> bool:
+    """The symbol appears in the range, in the 50 lines above it or in the signature (up to
+    ``SIGNATURE_LINES`` lines) of a declaration that encloses it, however long its body."""
     name = symbol_name(symbol)
     if not name:
         return False
     word = re.compile(rf"(?<![A-Za-z0-9_$]){re.escape(name)}(?![A-Za-z0-9_$])", re.IGNORECASE)
     window = lines[max(1, start - SYMBOL_LOOKBACK_LINES) - 1 : end]
-    return any(word.search(line) for line in window)
+    if any(word.search(line) for line in window):
+        return True
+    return any(
+        word.search(line)
+        for header in enclosing_headers(lines, start, end)
+        for line in _signature(lines, header)
+    )
+
+
+def _signature(lines: Sequence[str], header: int) -> list[str]:
+    """The header line and the lines above it (a multi-line signature) up to a blank line or a
+    closing line no more indented than the header, which ends the previous declaration; at most
+    ``SIGNATURE_LINES`` in all."""
+    signature = [lines[header - 1]]
+    level = _indent(lines[header - 1])
+    for number in range(header - 1, max(0, header - SIGNATURE_LINES), -1):
+        line = lines[number - 1]
+        if not line.strip() or (_CLOSING_ONLY.match(line) and _indent(line) <= level):
+            break
+        signature.append(line)
+    return signature
 
 
 def _text_lines(target: Path) -> tuple[str, ...] | None:

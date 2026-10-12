@@ -120,7 +120,7 @@ fases:
         commit: 3d05406
   - id: F5
     titulo: Entrega e ensaio real
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F5.1
         titulo: E2E da stack com runner e executor falso, guia e documentação
@@ -128,13 +128,13 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-11
         concluida_em: 2026-10-11
-        commit: null
+        commit: 3778fe7
       - id: F5.2
         titulo: Ensaio real com o Minski (3 módulos, Claude Code x Codex) e relatório
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: orquestrador
+        iniciada_em: 2026-10-11
+        concluida_em: 2026-10-11
         commit: null
 decisoes:
   - id: D1
@@ -367,6 +367,27 @@ decisoes:
     decisao: "F5.1: o E2E da stack sobe o knobridge-runner no host com uv run --frozen sobre um repositório Git sintético; no Linux (CI) o claude falso dos fakes do runner vai no PATH, no Windows a config aponta o comando para o falso com o Python do runner/.venv; o falso roda o cenário success padrão porque as variáveis FAKE_HARNESS_* não passam pelo filtro de ambiente; só o executor Claude Code entra no E2E"
     motivo: "prova o fluxo inteiro sem rede externa nem LLM e sem afrouxar o filtro de ambiente do runner"
     alternativas: "runner dentro do compose; liberar FAKE_HARNESS_* no filtro; E2E com os dois executores"
+    adr: null
+  - id: D34
+    data: 2026-10-11
+    por: agente
+    decisao: "F5.2: a verificação de evidências do runner também procura o símbolo nas assinaturas das declarações que envolvem o intervalo, pela indentação, até 400 linhas acima, parando em linha só de fechamento (escopo encerrado); a assinatura vai até 9 linhas acima da linha que abre o escopo, parando em linha vazia ou de fechamento não mais indentada"
+    motivo: "no Minski, 9 de 58 itens corretos do Claude (16%) eram recusados porque as funções têm corpo maior que a janela de 50 linhas"
+    alternativas: "aumentar só a janela fixa (aceitaria função vizinha); parser por linguagem (tree-sitter no runner)"
+    adr: null
+  - id: D35
+    data: 2026-10-11
+    por: agente
+    decisao: "F5.2: a busca híbrida usa hnsw.ef_search = 1000 (máximo do pgvector) em vez de max(100, candidatos)"
+    motivo: "com 100 o HNSW perdeu o vizinho mais próximo de uma pergunta real numa coleção de 20 mil trechos; recall@10 medida contra varredura exata: 0,90 (100), 0,95 (200), 0,97 (400), 0,98 (1000), com custo de milissegundos"
+    alternativas: "hnsw.iterative_scan (não resolve recall, só o filtro); varredura exata abaixo de um tamanho de coleção; ef_search proporcional ao tamanho"
+    adr: null
+  - id: D36
+    data: 2026-10-11
+    por: agente
+    decisao: "F5.2: Claude Code continua como executor padrão da fonte runner; Codex fica como alternativa"
+    motivo: "no ensaio foi ~3x mais rápido, com ~1/3 dos tokens de entrada e regras na linguagem do usuário; qualidade das amostras igual (16 de 16 corretas); Codex mais granular e técnico"
+    alternativas: "Codex como padrão; sem padrão (escolha obrigatória)"
     adr: null
 pendencias_usuario: []
 ---
@@ -639,7 +660,31 @@ Nenhuma aberta. Observação para a F5.2: a chave do OpenRouter cadastrada na st
 - 2026-10-11 — F4.3 concluída: aba Conhecimento (filtros, editar, aprovar, descartar, reabrir, rejeitados, exportar) e citações knowledge no chat; o teste de abortar do chatStream passou a observar o AbortController do hook em vez do sinal da requisição interceptada, que propaga de forma assíncrona e falhava sob carga; frontend 1139 testes, 98,62% de branches
 - 2026-10-11 — F5.1 iniciada (agente em worktree).
 - 2026-10-11 — F5.1 concluída: E2E da stack com runner no host (duas rodadas verdes no compose), guia mapear-codigo-com-runner.md revisado pelo orquestrador, README, CHANGELOG, AGENTS.md raiz (1, 4, 12.4 e 12.5) e job e2e-stack da CI com uv; frontend 1139 testes (com 4 workers: na máquina carregada, com todos os workers, testes diferentes estouravam o tempo a cada rodada)
+- 2026-10-11 — F5.2 iniciada pelo orquestrador na sessão principal (stack knobridge-minski recriada com o código do plano, runner local com config própria do ensaio).
+- 2026-10-11 — F5.2 concluída: ensaio real no Minski (3 módulos x Claude Code e Codex, 16 de 16 afirmações conferidas corretas, perguntas do ensaio 0001 de 9 para 10 de 10) com relatório docs/pesquisa/0002; correções com teste: hnsw.ef_search 1000, símbolo nas assinaturas que envolvem o intervalo, modelo do Claude sem sufixo de variante e falso aviso do doctor no Windows pt-BR; backend 1471 passed com 99% de cobertura, runner 436
 
 ## 8. Encerramento
 
-A preencher ao concluir.
+**Entregue**: o harness de código roda na máquina de quem tem o checkout, nunca no servidor ([ADR 0005](../adr/0005-runner-local-do-harness.md)).
+
+- O servidor cadastra runners com token revogável, mantém uma fila de tarefas no Postgres com reserva e claim por long-poll, recebe o relatório de inventário com módulos sugeridos e editáveis e dispara tarefas manualmente ou por commit. Também guarda resultados, rejeições e adiamentos por franquia ou login.
+- O runner (`knobridge-runner`: `configure`, `doctor`, `run`) roda a camada 0, o Claude Code ou o Codex somente leitura, com trava de ferramenta e ambiente filtrado, verifica as evidências e redige os excertos.
+- O conhecimento é revisado e exportado no painel (abas Módulos, Tarefas, Conhecimento e Indexação), indexado pelo conector interno `knowledge` e citado no chat com selo e evidências.
+- Testes: E2E da stack com o runner no host e executável falso; suíte opt-in com os CLIs reais.
+- Guia: [mapear código com o runner](../guias/mapear-codigo-com-runner.md).
+
+**Ensaio real** ([pesquisa 0002](../pesquisa/0002-ensaio-harness-minski.md)): três módulos do Minski com Claude Code e Codex.
+
+- As 16 afirmações conferidas contra o código estavam corretas.
+- Claude Code fica como executor padrão (D36).
+- As perguntas do ensaio 0001 passaram de 9 para 10 de 10 respondidas com fonte.
+- Correções reveladas pelo ensaio: recall da busca vetorial (D35), símbolo em funções longas (D34), modelo do Claude sem o sufixo de variante e falso aviso do `doctor` no Windows em português.
+
+**Fora do escopo, com o motivo**:
+
+- Renomear runner na tela: a API aceita, mas o plano não pedia.
+- Exportar todos os módulos de uma vez: a API aceita; a tela exporta o módulo aberto.
+- Codex no E2E: coberto pela suíte do runner e pelo ensaio real.
+- Leitura de arquivos pelo Codex no Windows com acentos trocados: registrada no ensaio; não afetou os excertos nem os itens.
+
+**Como demonstrar**: suba a stack ([subir-ambiente.md](../guias/subir-ambiente.md)) e siga o guia do runner. Pelo painel: **Runners > Novo runner** → `knobridge-runner configure`/`doctor`/`run` → **Fontes > Nova fonte (Runner local)** → **Módulos > Rodar** → **Conhecimento > Aprovar** → pergunta no chat com a citação do item. Sem CLIs reais, o E2E `frontend/e2e/stack/runner.spec.ts` faz o mesmo caminho com o executável falso.

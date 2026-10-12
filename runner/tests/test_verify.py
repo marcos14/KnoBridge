@@ -169,6 +169,74 @@ def test_symbol_is_searched_up_to_50_lines_above(tmp_path: Path) -> None:
     assert verifier.check(source("a.py", 52, 53, "far")).code == "symbol_mismatch"
 
 
+LONG_TS = "\n".join(
+    [
+        "export function sibling(): number {",
+        "  return 1;",
+        "}",
+        "",
+        "export async function readSpend(",
+        "  a: {",
+        "    tenant: string;",
+        "  },",
+        "): Promise<number> {",
+        *["  const step = 1;"] * 70,
+        "  if (tenant === '') {",
+        "    throw new Error('Informe o tenant.');",
+        "  }",
+        "  return 0;",
+        "}",
+        "",
+    ]
+)
+
+
+def verifier_for(tmp_path: Path, name: str, content: str) -> SourceVerifier:
+    root = tmp_path / "repo"
+    root.mkdir()
+    (root / name).write_text(content, encoding="utf-8")
+    return SourceVerifier(root)
+
+
+@pytest.mark.parametrize(
+    ("symbol", "valid"),
+    [("readSpend", True), ("sibling", False), ("missing", False)],
+)
+def test_symbol_is_found_in_the_enclosing_signature_beyond_50_lines(
+    tmp_path: Path, symbol: str, valid: bool
+) -> None:
+    # The range (lines 80 to 82) is more than 50 lines below the multi-line signature.
+    verifier = verifier_for(tmp_path, "spend.ts", LONG_TS)
+
+    result = verifier.check(source("spend.ts", 80, 82, symbol))
+
+    assert result.code == (None if valid else "symbol_mismatch")
+
+
+def test_enclosing_scopes_climb_to_the_outer_declaration(tmp_path: Path) -> None:
+    lines = ["type Service struct{}", "", "func (s *Service) Answer(id string) error {"]
+    lines += ['\tif id == "" {', *["\t\tcount++"] * 60, "\t\treturn errMissing", "\t}"]
+    lines += ["\treturn nil", "}"]
+    verifier = verifier_for(tmp_path, "answers.go", "\n".join(lines))
+
+    assert verifier.check(source("answers.go", 64, 65, "Service.Answer")).valid
+
+
+def test_closing_brackets_do_not_open_a_scope(tmp_path: Path) -> None:
+    # Indented code after a function: the "}" above is not a signature that encloses it.
+    content = "function used() {\n  return 1;\n}\n" + "  const x = 2;\n" * 60
+    verifier = verifier_for(tmp_path, "a.ts", content)
+
+    assert verifier.check(source("a.ts", 60, 61, "used")).code == "symbol_mismatch"
+
+
+def test_blank_range_has_no_enclosing_scope(tmp_path: Path) -> None:
+    content = "def far():\n" + "    x = 1\n" * 60 + "\n\n"
+    verifier = verifier_for(tmp_path, "a.py", content)
+
+    assert verifier.check(source("a.py", 62, 63, "far")).code == "symbol_mismatch"
+
+
 def test_symbol_name_takes_last_segment() -> None:
     assert symbol_name(" Pedido.validar() ") == "validar"
     assert symbol_name("ns::Tipo::metodo(int x)") == "metodo"

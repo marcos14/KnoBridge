@@ -239,6 +239,7 @@ O plano [0004](docs/planos/0004-harness-runner-local.md) levou o harness de cód
 2. `runner/` (`knobridge-runner`): `configure`, `doctor` e `run`; camada 0 determinística e briefing; Claude Code e Codex somente leitura, com trava de ferramenta, ambiente filtrado e resgate; verificação mecânica das evidências e excertos com segredos redigidos ([docs/specs/harness.md](docs/specs/harness.md)). Suíte padrão com executáveis falsos; suíte opt-in `real_harness` com os CLIs reais.
 3. Conhecimento revisável (aprovar, editar, descartar, reabrir) e exportável em `.md` com frontmatter; conector interno `knowledge` no workflow de ingestão, com sincronização pendente, e citação `knowledge` no chat com selo (inferido ou revisado) e evidências.
 4. Painel: tela de Runners, fonte do tipo runner com as abas Módulos, Tarefas, Conhecimento e Indexação; E2E da stack que sobe o runner no host com o `claude` falso. Passo a passo em [docs/guias/mapear-codigo-com-runner.md](docs/guias/mapear-codigo-com-runner.md).
+5. Ensaio real no Minski, Claude Code x Codex em três módulos ([docs/pesquisa/0002-ensaio-harness-minski.md](docs/pesquisa/0002-ensaio-harness-minski.md)): Claude Code fica como executor padrão. O ensaio corrigiu a recall da busca vetorial (`hnsw.ef_search` 1000) e a verificação de símbolos em funções longas.
 
 ### 12.5 Próximos passos
 

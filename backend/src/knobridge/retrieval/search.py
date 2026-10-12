@@ -60,9 +60,11 @@ DEFAULT_MIN_SIMILARITY = 0.35
 CANDIDATE_FACTOR = 4
 MIN_CANDIDATES = 40
 MAX_CANDIDATES = 200
-# HNSW explores ``ef_search`` entries and filters by workspace and collection afterwards; the
-# default (40) would leave few candidates in a shared index. pgvector caps it at 1000.
-EF_SEARCH_FLOOR = 100
+# HNSW explores ``ef_search`` entries and filters by workspace and collection afterwards. The
+# real-data trial of plan 0004 (docs/pesquisa/0002-ensaio-harness-minski.md) showed 100 missing
+# the nearest chunk of a real question on a 20k-chunk collection (recall@10 of 0.90 against an
+# exact scan); 1000, the pgvector maximum, reached 0.98 and still costs milliseconds.
+EF_SEARCH = 1000
 # Characters of the chunk shown as the snippet of a result.
 SNIPPET_LENGTH = 600
 
@@ -184,7 +186,7 @@ class SearchService:
         candidates = candidate_count(limit)
         await db.execute(
             text("SELECT set_config('hnsw.ef_search', :value, true)"),
-            {"value": str(max(EF_SEARCH_FLOOR, candidates))},
+            {"value": str(EF_SEARCH)},
         )
         rankings: list[list[uuid.UUID]] = []
         spans: dict[uuid.UUID, ChunkSpan] = {}

@@ -423,3 +423,13 @@ def test_processor_drops_model_names_the_protocol_refuses(tmp_path: Path) -> Non
     assert isinstance(outcome, JobSucceeded)
     assert outcome.result.executor.model is None
     assert outcome.result.executor.session_id == "s" * 100
+
+
+def test_processor_reports_the_model_without_its_context_variant(tmp_path: Path) -> None:
+    # Claude Code names the 1M-context variant of its default model "claude-opus-5-5[1m]".
+    processor = canned(tmp_path, output=AGENT_OUTPUT, model="claude-opus-5-5[1m]")
+
+    outcome = run_process(processor)
+
+    assert isinstance(outcome, JobSucceeded)
+    assert outcome.result.executor.model == "claude-opus-5-5"

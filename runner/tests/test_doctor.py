@@ -170,6 +170,9 @@ def windows_doctor(config: RunnerConfig, runner: FakeCommandRunner) -> list[Chec
 
 OWNER_ONLY = "C:\\repo NOTEBOOK\\marco:(OI)(CI)(F)\n\nSuccessfully processed 1 files"
 WITH_USERS = "C:\\repo BUILTIN\\Usuários:(OI)(CI)(RX)\n"
+# icacls writes in the console's OEM code page; decoded as UTF-8 the accent is replaced.
+WITH_USERS_OEM = "C:\\repo BUILTIN\\Usu\ufffdrios:(I)(OI)(CI)(RX)\n"
+WITH_USERS_EN = "C:\\repo BUILTIN\\Users:(I)(OI)(CI)(RX)\n"
 
 
 @pytest.mark.parametrize(
@@ -177,6 +180,8 @@ WITH_USERS = "C:\\repo BUILTIN\\Usuários:(OI)(CI)(RX)\n"
     [
         (CommandResult(0, OWNER_ONLY), True),
         (CommandResult(0, WITH_USERS), False),
+        (CommandResult(0, WITH_USERS_OEM), False),
+        (CommandResult(0, WITH_USERS_EN), False),
         (CommandResult(5, ""), False),
     ],
 )

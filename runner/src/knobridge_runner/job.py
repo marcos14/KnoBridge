@@ -99,7 +99,11 @@ def _fail(code: FailCode, job: RunnerJobOut, result: ExecutorResult | None = Non
 
 
 def _model(value: str | None) -> str | None:
-    return value if value is not None and re.fullmatch(MODEL_PATTERN, value) else None
+    if value is None:
+        return None
+    # Claude Code suffixes a context variant ("claude-opus-5-5[1m]"); the model is the name.
+    name = re.sub(r"\[[^\]]*\]$", "", value)
+    return name if re.fullmatch(MODEL_PATTERN, name) else None
 
 
 @dataclass(frozen=True)

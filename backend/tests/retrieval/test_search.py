@@ -7,6 +7,7 @@ import uuid
 
 import pytest
 from retrieval_support import MODEL, ChunkSpec, Db, run_db
+from sqlalchemy import event
 
 from fakes.embedding_provider import (
     RecordingEmbeddingFactory,
@@ -305,3 +306,28 @@ def test_search_statement_count_does_not_grow_with_results(app_database_url: str
 
     # Scope, collections, ef_search, vector arm, FTS arm and load: 6 statements.
     assert few == many == 6
+
+
+def test_search_raises_hnsw_ef_search_to_the_maximum(app_database_url: str) -> None:
+    # Ensaio 0002: with ef_search 100 the HNSW index missed the nearest chunk of a real
+    # question (similarity 0.60 vs 0.47 for the best one returned) on a 20k-chunk collection.
+    async def scenario(db: Db) -> list[object]:
+        space = await db.collection(await db.workspace())
+        await db.chunks(space, _specs(BOTH))
+        values: list[object] = []
+
+        def record(*args: object) -> None:
+            if "hnsw.ef_search" in str(args[2]):
+                values.append(args[3])
+
+        event.listen(db.engine.sync_engine, "before_cursor_execute", record)
+        try:
+            await db.search(space.workspace_id, [space.collection_id], QUERY)
+        finally:
+            event.remove(db.engine.sync_engine, "before_cursor_execute", record)
+        return values
+
+    values = run_db(app_database_url, scenario)
+
+    assert len(values) == 1
+    assert "1000" in str(values[0])

@@ -17,6 +17,7 @@ Harness de código com runner local (plano [0004](docs/planos/0004-harness-runne
 - Painel: tela de Runners (presença, executores, repositórios, criar com token e comandos, revogar, excluir), formulário da fonte runner e abas Módulos, Tarefas (com rejeitados por motivo), Conhecimento (revisão, edição e exportação) e Indexação; citações de conhecimento com selo e evidências no chat.
 - CI e E2E: job `runner`; E2E da stack que cria o runner no painel, sobe o `knobridge-runner` no host com o `claude` falso sobre um repositório sintético, roda um módulo, aprova a regra e vê a citação de conhecimento no chat.
 - Docs: guia [mapear código com o runner](docs/guias/mapear-codigo-com-runner.md) (instalar, `configure`, `doctor`, assinatura x chave de API, segurança, o que sai da máquina, custos e fluxo no painel).
+- Ensaio real com o Minski, Claude Code x Codex em três módulos ([pesquisa 0002](docs/pesquisa/0002-ensaio-harness-minski.md)): Claude Code fica como executor padrão; a pergunta que o ensaio 0001 não respondia passou a ser respondida com o conhecimento gerado.
 
 Primeiro conhecimento (plano [0003](docs/planos/0003-primeiro-conhecimento.md)): fontes Git e pastas locais indexadas de forma incremental e consultadas pelo chat com citações.
 
@@ -51,3 +52,9 @@ Bootstrap do monorepo (plano [0001](docs/planos/0001-bootstrap.md)), sem funcion
 - Frontend (`frontend/`): Vite + React + TypeScript strict, ESLint, Prettier, Vitest com thresholds de 95, roteador, TanStack Query, i18n pt-BR, Tailwind v4 + shadcn/ui, cliente tipado gerado do OpenAPI, indicador de status da API, MSW, smoke E2E com Playwright e imagem nginx.
 - Deploy (`deploy/`): Docker Compose de desenvolvimento com Postgres 17 + pgvector, Temporal (server + UI), MinIO, `migrate`, `api`, `worker` e `frontend`; guia [subir-ambiente](docs/guias/subir-ambiente.md).
 - CI (`.github/workflows/ci.yml`): gates de `scripts/`, `backend/` (incluindo contrato OpenAPI em dia) e `frontend/` (incluindo `check:api`, build e Playwright), varredura de segredos com gitleaks sobre todo o histórico e validação do compose.
+
+### Fixed
+
+- Busca vetorial: `hnsw.ef_search` passou de 100 para 1000 (o máximo do pgvector). Com 100, o índice HNSW perdia o trecho mais próximo de perguntas reais numa coleção de 20 mil trechos (recall@10 de 0,90 contra 0,98).
+- Runner: a verificação de evidências aceita o símbolo na assinatura das declarações que envolvem o intervalo, achadas pela indentação, e não só nas 50 linhas acima; antes, citações corretas em funções longas eram recusadas.
+- Runner: o modelo padrão do Claude Code (`claude-opus-5-5[1m]`) é registrado na tarefa sem o sufixo de variante, e o `doctor` não avisa mais por engano sobre a permissão do sandbox do Codex no Windows em português.
