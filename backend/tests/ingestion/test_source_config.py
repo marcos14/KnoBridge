@@ -15,6 +15,8 @@ from knobridge.ingestion.source_config import (
     GitSourceConfig,
     RunnerSourceConfig,
     SourceKind,
+    TicketsSourceConfig,
+    TicketStatus,
     parse_source_config,
 )
 
@@ -175,3 +177,47 @@ def test_runner_source_config_limits_accepted() -> None:
 
     assert isinstance(parsed, RunnerSourceConfig)
     assert parsed.head_commit == "a" * 64
+
+
+def test_tickets_source_config_defaults() -> None:
+    parsed = parse_source_config(SourceKind.TICKETS, {})
+
+    assert parsed == TicketsSourceConfig()
+    assert isinstance(parsed, TicketsSourceConfig)
+    assert parsed.include_internal_notes is False
+    assert parsed.anonymize is True
+    assert parsed.statuses == tuple(TicketStatus)
+    assert parsed.model_dump(mode="json") == {
+        "include_internal_notes": False,
+        "anonymize": True,
+        "statuses": ["open", "pending", "resolved", "closed"],
+    }
+
+
+def test_tickets_source_config_subset_of_statuses() -> None:
+    parsed = parse_source_config(
+        SourceKind.TICKETS,
+        {"include_internal_notes": True, "anonymize": False, "statuses": ["resolved", "closed"]},
+    )
+
+    assert parsed == TicketsSourceConfig(
+        include_internal_notes=True,
+        anonymize=False,
+        statuses=(TicketStatus.RESOLVED, TicketStatus.CLOSED),
+    )
+
+
+@pytest.mark.parametrize(
+    ("data", "problem"),
+    [
+        ({"statuses": []}, "too_short"),
+        ({"statuses": ["open", "open"]}, "statuses must not repeat"),
+        ({"statuses": ["em andamento"]}, "enum"),
+        ({"status_filter": ["open"]}, "extra_forbidden"),
+        ({"anonymize": "talvez"}, "bool_parsing"),
+    ],
+    ids=["empty", "repeated", "unknown-status", "unknown-field", "not-boolean"],
+)
+def test_tickets_source_config_refused(data: dict[str, object], problem: str) -> None:
+    with pytest.raises(ValidationError, match=problem):
+        parse_source_config(SourceKind.TICKETS, data)

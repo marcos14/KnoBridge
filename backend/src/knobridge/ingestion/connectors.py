@@ -3,7 +3,8 @@
 The ingestion engine depends on ``ConnectorFactory`` (not on the concrete connectors), so tests
 inject a factory that returns an in-memory connector and no filesystem or Git is touched.
 Runner sources are served by the internal ``knowledge`` connector (``harness/``), which the
-caller hands in: it reads the database, and this module does not import the harness.
+caller hands in: it reads the database, and this module does not import the harness. Tickets
+sources are refused (``source_unavailable``) until the internal ``tickets`` connector exists.
 """
 
 from __future__ import annotations
@@ -38,6 +39,9 @@ class SettingsConnectorFactory:
             if self._knowledge is None:
                 raise SourceUnavailableError("runner sources are not indexed here")
             return self._knowledge(source)
+        if source.kind == SourceKind.TICKETS:
+            # The internal ``tickets`` connector (plan 0005, F2.3) is not wired in yet.
+            raise SourceUnavailableError("tickets sources are not indexed yet")
         config = source.typed_config()
         globs = {
             "include_globs": tuple(source.include_globs),
@@ -45,5 +49,5 @@ class SettingsConnectorFactory:
         }
         if isinstance(config, FolderSourceConfig):
             return create_folder_connector(config, self._settings, **globs)
-        # Runner sources returned above, so only Git is left.
+        # Runner and tickets sources returned above, so only Git is left.
         return create_git_connector(cast(GitSourceConfig, config), self._settings, **globs)

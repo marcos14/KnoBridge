@@ -37,6 +37,7 @@ MIN_TEMPERATURE = 0.0
 MAX_TEMPERATURE = 2.0
 DEFAULT_TEMPERATURE = 0.2
 DEFAULT_LANGUAGE = "pt-BR"
+TICKET_WEBHOOK_URL_MAX_LENGTH = 2000
 # Similarity floor of the chat's retrieval (decision D12 of plan 0003): a chunk only becomes a
 # source when its cosine similarity reaches it or it matches the full-text query. Same value
 # as the search route (0.35), set by the real-data trial (docs/pesquisa/0001-ensaio-minski.md):
@@ -77,6 +78,16 @@ class Assistant(UUIDPrimaryKeyMixin, TimestampMixin, Base):
             f"min_similarity >= {MIN_SIMILARITY} AND min_similarity <= {MAX_SIMILARITY}",
             name="min_similarity_range",
         ),
+        # https in production; http only for the development allowlist (validated in the API).
+        CheckConstraint(
+            "ticket_webhook_url IS NULL OR ticket_webhook_url ~ '^https?://'",
+            name="ticket_webhook_url_scheme",
+        ),
+        CheckConstraint(
+            "(ticket_webhook_secret_ciphertext IS NULL) = "
+            "(ticket_webhook_secret_created_at IS NULL)",
+            name="ticket_webhook_secret_dated",
+        ),
     )
 
     workspace_id: Mapped[uuid.UUID] = mapped_column(
@@ -102,6 +113,23 @@ class Assistant(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         default=DEFAULT_MIN_SIMILARITY,
         server_default=text(str(DEFAULT_MIN_SIMILARITY)),
     )
+    # Where a ticket request is sent (docs/specs/chamados.md, "Abrir chamado"); ``None``: off.
+    ticket_webhook_url: Mapped[str | None] = mapped_column(
+        String(TICKET_WEBHOOK_URL_MAX_LENGTH), nullable=True
+    )
+    # ``SecretBox`` text of the ``kbw_`` signing secret, never the secret itself; associated
+    # data binds it to this assistant (``tickets/webhook_secret.py``).
+    ticket_webhook_secret_ciphertext: Mapped[str | None] = mapped_column(Text, nullable=True)
+    ticket_webhook_secret_created_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    @property
+    def ticket_webhook_configured(self) -> bool:
+        """Ticket requests are on: there is a URL and a signing secret."""
+        return self.ticket_webhook_url is not None and (
+            self.ticket_webhook_secret_ciphertext is not None
+        )
 
 
 class AssistantCollection(Base):

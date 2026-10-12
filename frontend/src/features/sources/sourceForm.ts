@@ -41,6 +41,8 @@ export interface SourceFormValues extends RunnerFormFields {
   scheduleEnabled: boolean;
   cron: string;
   active: boolean;
+  /** Config of a tickets source, sent back as stored: the panel has no fields for it yet. */
+  ticketsConfig: Record<string, unknown>;
 }
 
 /** The non-blank lines of a textarea, trimmed. */
@@ -103,7 +105,8 @@ export function sourceFormSchema(t: TFunction) {
         .min(1, { error: t("sources.form.validation.nameRequired") })
         .max(SOURCE_NAME_MAX_LENGTH, tooLong(SOURCE_NAME_MAX_LENGTH)),
       collectionId: z.string().min(1, { error: t("sources.form.validation.collectionRequired") }),
-      kind: z.enum(["git", "folder", "runner"]),
+      kind: z.enum(["git", "folder", "runner", "tickets"]),
+      ticketsConfig: z.record(z.string(), z.unknown()),
       location: z.enum(["path", "url"]),
       path: z.string().trim().max(PATH_MAX_LENGTH, tooLong(PATH_MAX_LENGTH)),
       url: z.string().trim(),
@@ -130,7 +133,7 @@ export function sourceFormSchema(t: TFunction) {
         for (const [path, message] of runnerFieldIssues(values, t)) {
           issue(ctx, path, message);
         }
-      } else if (!git || values.location === "path") {
+      } else if (values.kind !== "tickets" && (!git || values.location === "path")) {
         if (values.path === "") {
           issue(ctx, "path", t("sources.form.validation.pathRequired"));
         } else if (!isAbsolutePath(values.path)) {
@@ -185,6 +188,7 @@ export function sourceFormDefaults(
       scheduleEnabled: false,
       cron: "",
       active: true,
+      ticketsConfig: {},
       ...RUNNER_FORM_DEFAULTS,
     };
   }
@@ -204,6 +208,7 @@ export function sourceFormDefaults(
     scheduleEnabled: source.schedule_enabled,
     cron: source.schedule_cron ?? "",
     active: source.active,
+    ticketsConfig: source.kind === "tickets" ? config : {},
     ...runnerFieldsFromConfig(config),
   };
 }
@@ -219,11 +224,14 @@ export function sourceLocation(source: Source): string {
 
 /**
  * `config` for the kind: Git `{path | url, branch?, initial_commit_limit}`, folder `{path}`,
- * runner `runnerConfig`.
+ * runner `runnerConfig`, tickets the stored config unchanged.
  */
 export function sourceConfig(values: SourceFormValues): Record<string, unknown> {
   if (values.kind === "runner") {
     return runnerConfig(values);
+  }
+  if (values.kind === "tickets") {
+    return values.ticketsConfig;
   }
   if (values.kind === "folder") {
     return { path: values.path };

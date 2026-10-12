@@ -2179,7 +2179,7 @@ export interface components {
          * DocumentKind
          * @enum {string}
          */
-        DocumentKind: "file" | "commit" | "knowledge";
+        DocumentKind: "file" | "commit" | "knowledge" | "ticket";
         /** DocumentOut */
         DocumentOut: {
             /** Chunk Count */
@@ -3252,7 +3252,7 @@ export interface components {
          * RunTrigger
          * @enum {string}
          */
-        RunTrigger: "manual" | "schedule" | "harness";
+        RunTrigger: "manual" | "schedule" | "harness" | "ingest";
         /**
          * RunnerCapabilitiesOut
          * @description What the last heartbeat reported; empty before the first one.
@@ -3996,7 +3996,7 @@ export interface components {
          * SourceKind
          * @enum {string}
          */
-        SourceKind: "git" | "folder" | "runner";
+        SourceKind: "git" | "folder" | "runner" | "tickets";
         /** SourceOut */
         SourceOut: {
             /** Active */

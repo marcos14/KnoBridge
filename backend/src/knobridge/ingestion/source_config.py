@@ -34,6 +34,17 @@ class SourceKind(StrEnum):
     FOLDER = "folder"
     # A repository on a user's machine, mapped by a ``knobridge-runner`` (ADR 0005).
     RUNNER = "runner"
+    # Tickets pushed by an external system through ``/v1/ingest/*`` (ADR 0006).
+    TICKETS = "tickets"
+
+
+class TicketStatus(StrEnum):
+    """Normalized status of a ticket (docs/specs/chamados.md, "Status normalizado")."""
+
+    OPEN = "open"
+    PENDING = "pending"
+    RESOLVED = "resolved"
+    CLOSED = "closed"
 
 
 def _absolute_path(value: str) -> str:
@@ -142,14 +153,44 @@ class RunnerSourceConfig(BaseModel):
     head_commit: CommitSha | None = None
 
 
-type SourceConfig = GitSourceConfig | FolderSourceConfig | RunnerSourceConfig
+def _distinct_statuses(value: tuple[TicketStatus, ...]) -> tuple[TicketStatus, ...]:
+    if len(set(value)) != len(value):
+        raise ValueError("statuses must not repeat")
+    return value
+
+
+class TicketsSourceConfig(BaseModel):
+    """Tickets pushed by an external system (docs/specs/chamados.md, "Fonte do tipo tickets").
+
+    The settings apply to the tickets processed after a change: the raw payload of a processed
+    ticket is gone, so nothing is reprocessed.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    # Internal notes (``public: false`` messages) go into the index.
+    include_internal_notes: bool = False
+    # Deterministic anonymization before chunking (docs/specs/chamados.md, "Anonimização").
+    anonymize: bool = True
+    # Statuses indexed; a ticket in any other status is left out of the index (``filtered``).
+    statuses: Annotated[
+        tuple[TicketStatus, ...], Field(min_length=1), AfterValidator(_distinct_statuses)
+    ] = tuple(TicketStatus)
+
+
+type SourceConfig = GitSourceConfig | FolderSourceConfig | RunnerSourceConfig | TicketsSourceConfig
 
 _CONFIG_MODELS: dict[
-    SourceKind, type[GitSourceConfig] | type[FolderSourceConfig] | type[RunnerSourceConfig]
+    SourceKind,
+    type[GitSourceConfig]
+    | type[FolderSourceConfig]
+    | type[RunnerSourceConfig]
+    | type[TicketsSourceConfig],
 ] = {
     SourceKind.GIT: GitSourceConfig,
     SourceKind.FOLDER: FolderSourceConfig,
     SourceKind.RUNNER: RunnerSourceConfig,
+    SourceKind.TICKETS: TicketsSourceConfig,
 }
 
 

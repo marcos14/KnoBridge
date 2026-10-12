@@ -185,6 +185,22 @@ describe("source bodies", () => {
     expect(changes).toMatchObject({ schedule_cron: null, active: false, name: "erp-core" });
   });
 
+  it("test_source_form_keeps_the_stored_config_of_a_tickets_source", () => {
+    const config = { include_internal_notes: true, anonymize: true, statuses: ["closed"] };
+    const form = sourceFormDefaults(
+      makeSource({ kind: "tickets", config, include_globs: [] }),
+      COLLECTION_ID,
+    );
+
+    expect(form.ticketsConfig).toEqual(config);
+    expect(errorsOf({ ...form, path: "" })).toEqual({});
+    expect(sourceChanges({ ...form, name: "Chamados" })).toMatchObject({
+      name: "Chamados",
+      config,
+    });
+    expect(sourceFormDefaults(makeFolderSource(), COLLECTION_ID).ticketsConfig).toEqual({});
+  });
+
   it("test_source_location_is_url_or_path", () => {
     expect(sourceLocation(makeFolderSource())).toBe("/sources/manuais");
     expect(sourceLocation(makeSource({ config: { url: "https://x.test/r" } }))).toBe(

@@ -20,14 +20,14 @@ fases:
         status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
-        concluida_em: 2026-10-11
+        concluida_em: 2026-10-12
         commit: 619891f
       - id: F1.2
         titulo: Migração 0016 (fonte tickets, token de envio, caixa de entrada, webhook do assistente, solicitações de chamado) com RLS
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
-        concluida_em: null
+        concluida_em: 2026-10-12
         commit: null
   - id: F2
     titulo: Servidor — recebimento e indexação
@@ -260,6 +260,13 @@ decisoes:
     motivo: "detalhes de contrato que o plano não fixava"
     alternativas: "papel editor para credenciais; resumo sem LLM"
     adr: null
+  - id: D19
+    data: 2026-10-12
+    por: agente
+    decisao: "F1.2: onde plano e spec divergem vale a spec: config statuses (não status_filter) e webhook ligado = URL e segredo presentes (propriedade ticket_webhook_configured, sem coluna enabled); colunas ticket_updated_at, ticket_webhook_secret_ciphertext e ingest_tokens.issued_at (rotação na mesma linha); payload e corpo do webhook só em pending; body do pedido em text para reenviar os bytes assinados; downgrade da 0016 recusa se houver dados dos tipos novos; CHECKs novos sem nome duplicado"
+    motivo: "a spec é o contrato das próximas subfases; menos estado redundante"
+    alternativas: "colunas enabled separadas; jsonb para o corpo assinado"
+    adr: null
 pendencias_usuario:
   - id: P1
     data: 2026-10-12
@@ -349,10 +356,10 @@ Fixar o formato do chamado e o modelo antes do código.
 
 - **Objetivo**: tabelas e colunas do lote, com RLS e testes de isolamento.
 - **Entregáveis**:
-  - `SourceKind.TICKETS` e `TicketsSourceConfig` (`include_internal_notes`, `status_filter`, `anonymize` com padrão ligado);
+  - `SourceKind.TICKETS` e `TicketsSourceConfig` (`include_internal_notes`, `statuses`, `anonymize` com padrão ligado);
   - token de envio (`ingest_token_prefix` único na instância e `ingest_token_hash`, em tabela própria `ingest_tokens` ligada à fonte);
   - `ticket_inbox` (fonte, `external_id`, operação, `updated_at` do chamado, payload JSONB, recebido em, estado, erro);
-  - em `assistants`: `ticket_webhook_url`, `ticket_webhook_secret` cifrado (AES-GCM, finalidade própria) e `ticket_webhook_enabled`;
+  - em `assistants`: `ticket_webhook_url`, `ticket_webhook_secret` cifrado (AES-GCM, finalidade própria) e a data do segredo (ligado = URL e segredo presentes, D19);
   - `ticket_requests` (conversa, mensagem, usuário, estado, tentativas, `external_ticket_id`, `external_url`, último erro);
   - `RunTrigger.INGEST` e `DocumentKind.TICKET`;
   - modelos SQLAlchemy, migração `0016` e `modelo-de-dados.md` v0.8.
@@ -565,8 +572,9 @@ D1 a D12 vêm das respostas do usuário (seção 2). D13 a D16 são do agente, n
 
 - 2026-10-12 — plano criado na branch `plano/0005-chamados-por-api`, a partir de `plano/0004-harness-runner-local` (ainda não integrada à `main`); aguardando aprovação.
 - 2026-10-12 — plano aprovado pelo usuário ("Aprovado"); F1.1 iniciada (agente em worktree).
-- 2026-10-11 — F1.1 concluída: ADR 0006, spec chamados.md (JSON Schema, envio, fila, anonimização, Markdown, citação, webhook), chat-sse v0.6 e visão v0.4 (D17 e roadmap); token e segredo passaram a owner ou admin na revisão do orquestrador
+- 2026-10-12 — F1.1 concluída: ADR 0006, spec chamados.md (JSON Schema, envio, fila, anonimização, Markdown, citação, webhook), chat-sse v0.6 e visão v0.4 (D17 e roadmap); token e segredo passaram a owner ou admin na revisão do orquestrador
 - 2026-10-12 — F1.2 iniciada (agente em worktree).
+- 2026-10-12 — F1.2 concluída: migração 0016 com ingest_tokens, ticket_inbox, ticket_requests e webhook em assistants, RLS forçada e testes de isolamento, modelo-de-dados v0.8, subpacote tickets/; backend 1537 passed com 99% de cobertura, frontend 1140
 
 ## 8. Encerramento
 

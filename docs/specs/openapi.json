@@ -1893,7 +1893,8 @@
         "enum": [
           "file",
           "commit",
-          "knowledge"
+          "knowledge",
+          "ticket"
         ],
         "title": "DocumentKind",
         "type": "string"
@@ -4817,7 +4818,8 @@
         "enum": [
           "manual",
           "schedule",
-          "harness"
+          "harness",
+          "ingest"
         ],
         "title": "RunTrigger",
         "type": "string"
@@ -6954,7 +6956,8 @@
         "enum": [
           "git",
           "folder",
-          "runner"
+          "runner",
+          "tickets"
         ],
         "title": "SourceKind",
         "type": "string"

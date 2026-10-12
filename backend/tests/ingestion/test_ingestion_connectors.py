@@ -81,3 +81,15 @@ def test_connector_factory_without_knowledge_refuses_runner_sources(tmp_path: Pa
 
     with pytest.raises(SourceUnavailableError):
         factory(_source(SourceKind.RUNNER, {}))
+
+
+def test_connector_factory_refuses_tickets_sources_until_their_connector(tmp_path: Path) -> None:
+    def knowledge(source: Source) -> Connector:
+        return FakeConnector()
+
+    factory = SettingsConnectorFactory(
+        Settings(env="test", local_sources_root=tmp_path), knowledge=knowledge
+    )
+
+    with pytest.raises(SourceUnavailableError, match="tickets"):
+        factory(_source(SourceKind.TICKETS, {}))

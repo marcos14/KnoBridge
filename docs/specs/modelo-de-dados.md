@@ -1,6 +1,8 @@
 # Modelo de dados
 
-> Rascunho v0.7 · 2026-10-11 · Em uso (planos 0002, 0003 e 0004)
+> Rascunho v0.8 · 2026-10-12 · Em uso (planos 0002 a 0005)
+>
+> **Mudanças da v0.8**: migração `0016` (plano 0005, F1.2): tabelas de chamados `ingest_tokens`, `ticket_inbox` e `ticket_requests` ([ADR 0006](../adr/0006-chamados-por-push.md), contrato em [chamados.md](chamados.md)); `assistants` ganha o webhook de pedido de chamado (`ticket_webhook_url`, `ticket_webhook_secret_ciphertext`, `ticket_webhook_secret_created_at`); `sources.kind` aceita `tickets`, `runs.trigger` aceita `ingest` e `documents.kind`/`run_items.document_kind` aceitam `ticket`.
 >
 > **Mudanças da v0.7**: migração `0015` (plano 0004, F2.4): `runs.trigger` aceita `harness` (sincronização pedida por um resultado do harness ou por uma revisão de conhecimento) e `sources.sync_pending` guarda uma sincronização pedida enquanto outra da fonte estava em andamento ([indexacao.md](indexacao.md#sincronização-pendente)).
 >
@@ -12,7 +14,7 @@
 >
 > **Mudanças da v0.3**: índice de conhecimento da migração `0010` (plano 0003, F1.1): `collections`, `sources`, `runs`, `run_errors`, `documents` e `chunks`, com `vector(1536)`, HNSW e `tsvector` gerado ([ADR 0004](../adr/0004-indice-de-conhecimento.md)). Migração `0011` (plano 0003, F3.1): `run_items` (trabalho pendente de uma execução), `runs.pending_cursor` e o índice do cache de embedding em `chunks`.
 
-Tabelas do Postgres do KnoBridge, criadas pelas migrações em [`backend/migrations/`](../../backend/migrations/AGENTS.md). Modelos ORM em `backend/src/knobridge/<módulo>/models.py`. Regras de tenancy e RLS no [ADR 0001](../adr/0001-tenancy-e-rls.md); sessão, tokens e limitação de login no [ADR 0002](../adr/0002-sessao-server-side.md); segredos cifrados no [ADR 0003](../adr/0003-segredos-cifrados.md); índice de conhecimento no [ADR 0004](../adr/0004-indice-de-conhecimento.md); harness de código com runner local no [ADR 0005](../adr/0005-runner-local-do-harness.md). Autenticação e papéis em [autenticacao.md](autenticacao.md); chat em [chat.md](chat.md).
+Tabelas do Postgres do KnoBridge, criadas pelas migrações em [`backend/migrations/`](../../backend/migrations/AGENTS.md). Modelos ORM em `backend/src/knobridge/<módulo>/models.py`. Regras de tenancy e RLS no [ADR 0001](../adr/0001-tenancy-e-rls.md); sessão, tokens e limitação de login no [ADR 0002](../adr/0002-sessao-server-side.md); segredos cifrados no [ADR 0003](../adr/0003-segredos-cifrados.md); índice de conhecimento no [ADR 0004](../adr/0004-indice-de-conhecimento.md); harness de código com runner local no [ADR 0005](../adr/0005-runner-local-do-harness.md); chamados por push no [ADR 0006](../adr/0006-chamados-por-push.md). Autenticação e papéis em [autenticacao.md](autenticacao.md); chat em [chat.md](chat.md).
 
 ## Migrações
 
@@ -33,6 +35,7 @@ Tabelas do Postgres do KnoBridge, criadas pelas migrações em [`backend/migrati
 | `0013` | `20261011_0013_raise_min_similarity_default.py` | Padrão de `assistants.min_similarity` passa de 0,3 para 0,35; valores gravados ficam. |
 | `0014` | `20261011_0014_harness.py` | Harness de código: `runners`, `harness_modules`, `harness_jobs`, `knowledge_items`, `harness_rejections` (RLS forçada); `sources.kind` aceita `runner` e ganha `uq_sources_workspace_id_runner_repository`; `documents.kind` e `run_items.document_kind` aceitam `knowledge`. O `downgrade` falha se houver fonte `runner` ou documento `knowledge` (não apaga dados). |
 | `0015` | `20261011_0015_harness_sync.py` | `runs.trigger` aceita `harness`; `sources.sync_pending` (`boolean`, padrão `false`). O `downgrade` falha se houver execução `harness` (não reescreve o histórico). |
+| `0016` | `20261012_0016_tickets.py` | Chamados: `ingest_tokens`, `ticket_inbox`, `ticket_requests` (RLS forçada); `assistants.ticket_webhook_url`, `ticket_webhook_secret_ciphertext` e `ticket_webhook_secret_created_at`; `sources.kind` aceita `tickets`, `runs.trigger` aceita `ingest`, `documents.kind` e `run_items.document_kind` aceitam `ticket`. O `downgrade` falha se houver fonte `tickets`, execução `ingest` ou documento `ticket` (não apaga dados). |
 
 Toda migração tem `downgrade` que desfaz o `upgrade`; o teste `test_migrations_match_orm_models` compara as migrações com os modelos ORM.
 
@@ -91,6 +94,9 @@ Todas as tabelas abaixo têm `ENABLE` + `FORCE ROW LEVEL SECURITY`. `users` é a
 | `harness_jobs` | `harness_jobs_workspace` | `ALL` | workspace, ou sistema |
 | `knowledge_items` | `knowledge_items_workspace` | `ALL` | workspace, ou sistema |
 | `harness_rejections` | `harness_rejections_workspace` | `ALL` | workspace, ou sistema |
+| `ingest_tokens` | `ingest_tokens_workspace` | `ALL` | workspace, ou sistema (a verificação do token de envio busca por `token_prefix` em modo de sistema) |
+| `ticket_inbox` | `ticket_inbox_workspace` | `ALL` | workspace, ou sistema |
+| `ticket_requests` | `ticket_requests_workspace` | `ALL` | workspace, ou sistema |
 
 A RLS isola workspaces; regras dentro do workspace (papel mínimo, privacidade de conversa entre membros) são da aplicação ([autenticacao.md](autenticacao.md#matriz-de-permissões)). Cada consulta tem teste de isolamento contra Postgres real, junto dos testes do seu módulo (ex.: `backend/tests/tenancy/test_invitations_rls.py`).
 
@@ -133,6 +139,8 @@ erDiagram
         text no_source_message "nunca vazia"
         boolean active
         float min_similarity "0 a 1"
+        varchar ticket_webhook_url "nulo = desligado"
+        text ticket_webhook_secret_ciphertext "AES-GCM; v1.base64url"
     }
     assistants ||--o{ assistant_collections : "consulta"
     collections ||--o{ assistant_collections : "consultada por"
@@ -190,7 +198,7 @@ erDiagram
         uuid id PK
         uuid workspace_id FK
         uuid collection_id FK "mesmo workspace"
-        varchar kind "git | folder | runner"
+        varchar kind "git | folder | runner | tickets"
         varchar name "único por workspace"
         jsonb config "validado por tipo"
         text_array include_globs
@@ -206,7 +214,7 @@ erDiagram
         uuid id PK
         uuid workspace_id FK
         uuid source_id FK "mesmo workspace"
-        varchar trigger "manual | schedule | harness"
+        varchar trigger "manual | schedule | harness | ingest"
         varchar status "queued | running | succeeded | failed | cancelled"
         integer documents_new
         integer chunks_written
@@ -221,7 +229,7 @@ erDiagram
         integer ordinal PK
         uuid workspace_id FK
         text document_key
-        varchar document_kind "file | commit | knowledge"
+        varchar document_kind "file | commit | knowledge | ticket"
         varchar change "upsert | remove"
         boolean done
     }
@@ -280,13 +288,49 @@ erDiagram
         varchar confidence "inferido | revisado"
         varchar review_status "pending | approved | discarded"
     }
+    sources ||--o| ingest_tokens : "recebe por"
+    ingest_tokens {
+        uuid id PK
+        uuid workspace_id FK
+        uuid source_id FK "único; fonte tickets"
+        varchar token_prefix "único na instância"
+        varchar token_hash "SHA-256 do token"
+        timestamptz issued_at
+    }
+    sources ||--o{ ticket_inbox : "caixa de entrada"
+    ticket_inbox {
+        uuid id PK
+        uuid workspace_id FK
+        uuid source_id FK "mesmo workspace"
+        varchar external_id "único por fonte"
+        varchar state "pending | indexed | filtered | pending_delete | deleted"
+        jsonb payload "só em pending"
+        varchar content_hash "nulo em lápide"
+        timestamptz ticket_updated_at
+        varchar indexed_hash
+        varchar last_error
+    }
+    conversations ||--o{ ticket_requests : "pede chamado"
+    messages ||--o| ticket_requests : "sobre"
+    assistants ||--o{ ticket_requests : "envia"
+    ticket_requests {
+        uuid id PK
+        uuid workspace_id FK
+        uuid message_id FK "único"
+        uuid user_id FK
+        varchar status "pending | delivered | failed"
+        integer attempts
+        text body "só em pending"
+        varchar external_ticket_id
+        varchar error_code
+    }
     sources ||--o{ documents : "contém"
     documents {
         uuid id PK
         uuid workspace_id FK
         uuid source_id FK "mesmo workspace"
         text natural_key "único por fonte; caminho ou SHA"
-        varchar kind "file | commit | knowledge"
+        varchar kind "file | commit | knowledge | ticket"
         varchar title
         text uri
         varchar content_hash "SHA-256"
@@ -532,6 +576,11 @@ Configuração de um assistente do workspace (plano 0002, F4.3), em [`backend/sr
 | `no_source_message` | `text` | Resposta quando não há fonte (regra 8 do AGENTS.md). Nunca vazia (`ck_assistants_no_source_message_not_empty`): vazio ou nulo na API grava a mensagem padrão em pt-BR, que diz que não sabe e oferece abrir chamado. |
 | `active` | `boolean` | Padrão `true`. Inativo some para viewer e não aceita conversa nova nem mensagem (409 `assistant_inactive`). |
 | `min_similarity` | `double precision` | Similaridade mínima (cosseno) para um chunk virar fonte no chat (decisão D12 do plano 0003): entra o chunk que alcança o limiar ou casa a busca textual. De 0 a 1 (`ck_assistants_min_similarity_range`); padrão 0,35 (migração `0013`), o mesmo da rota "testar busca": no [ensaio com dados reais](../pesquisa/0001-ensaio-minski.md), com `text-embedding-3-small`, a maior similaridade das perguntas relacionadas ficou entre 0,364 e 0,664 e a das sem relação entre 0,196 e 0,300. |
+| `ticket_webhook_url` | `varchar(2000)` | Destino dos pedidos de chamado ([chamados.md](chamados.md#abrir-chamado-webhook-de-saída)); nulo = desligado. O banco só exige `http://` ou `https://` (`ck_assistants_ticket_webhook_url_scheme`); a API exige `https` (salvo os hosts de `KNOBRIDGE_WEBHOOK_ALLOWED_HOSTS`) e aplica as regras de SSRF. |
+| `ticket_webhook_secret_ciphertext` | `text` | Segredo `kbw_` de assinatura cifrado com AES-256-GCM ([ADR 0003](../adr/0003-segredos-cifrados.md)), `info` próprio `knobridge/ticket-webhook-secrets/v1` e dados associados `assistant_ticket_webhook:<workspace_id>:<id>`; nunca o segredo em claro. Nulo até ser gerado. |
+| `ticket_webhook_secret_created_at` | `timestamptz` | Quando o segredo atual foi gerado; presente se e somente se houver segredo (`ck_assistants_ticket_webhook_secret_dated`). |
+
+`ticket_webhook_configured` da API = URL e segredo presentes.
 
 Único extra `uq_assistants_workspace_id_id` (`workspace_id`, `id`), alvo das FKs compostas de `conversations` e `assistant_collections`. Excluir um assistente exclui as conversas dele (com mensagens e feedback); para preservar o histórico, desative-o.
 
@@ -619,9 +668,9 @@ Uma fonte de conteúdo de uma coleção: repositório Git ou pasta local.
 |---|---|---|
 | `workspace_id` | `uuid` | FK `workspaces.id`, `ON DELETE CASCADE`. |
 | `collection_id` | `uuid` | FK composta → `collections (workspace_id, id)` (`fk_sources_workspace_id_collections`), `NO ACTION`: coleção com fontes não se exclui. |
-| `kind` | `varchar(32)` | `git`, `folder` ou `runner` (`ck_sources_kind`). Fonte `runner`: repositório na máquina do usuário, mapeado por um runner ([Harness de código](#harness-de-código)); o par `(config->>'runner_id', config->>'repository')` é único no workspace (`uq_sources_workspace_id_runner_repository`, índice único parcial `WHERE kind = 'runner'`). |
+| `kind` | `varchar(32)` | `git`, `folder`, `runner` ou `tickets` (`ck_sources_kind`). Fonte `tickets`: chamados enviados por um sistema externo ([Chamados](#chamados)). Fonte `runner`: repositório na máquina do usuário, mapeado por um runner ([Harness de código](#harness-de-código)); o par `(config->>'runner_id', config->>'repository')` é único no workspace (`uq_sources_workspace_id_runner_repository`, índice único parcial `WHERE kind = 'runner'`). |
 | `name` | `varchar(200)` | Obrigatório; único por workspace (`uq_sources_workspace_id_name`). |
-| `config` | `jsonb` | Objeto (`ck_sources_config_is_object`) com o formato do tipo, validado pela aplicação (`parse_source_config`). `git`: exatamente um entre `path` (caminho local absoluto) e `url` (https pública, sem credenciais), `branch` opcional (nulo = branch padrão) e `initial_commit_limit` (0 a 5000, padrão 200: quantos commits recentes a primeira execução indexa). `folder`: `path` absoluto. `runner`: formato em [runner.md](runner.md#fonte-do-tipo-runner) (`runner_id`, `repository`, `default_executor`, `models`, `budget_usd`, `timeout_seconds`, `auto_on_commit`, `excerpt_max_lines`, `head_commit`); até o plano 0004 F2.3, `parse_source_config` recusa esse tipo (`source_kind_unsupported`). Campos desconhecidos são recusados. |
+| `config` | `jsonb` | Objeto (`ck_sources_config_is_object`) com o formato do tipo, validado pela aplicação (`parse_source_config`). `git`: exatamente um entre `path` (caminho local absoluto) e `url` (https pública, sem credenciais), `branch` opcional (nulo = branch padrão) e `initial_commit_limit` (0 a 5000, padrão 200: quantos commits recentes a primeira execução indexa). `folder`: `path` absoluto. `runner`: formato em [runner.md](runner.md#fonte-do-tipo-runner) (`runner_id`, `repository`, `default_executor`, `models`, `budget_usd`, `timeout_seconds`, `auto_on_commit`, `excerpt_max_lines`, `head_commit`); até o plano 0004 F2.3, `parse_source_config` recusa esse tipo (`source_kind_unsupported`). `tickets`: `include_internal_notes` (padrão `false`), `anonymize` (padrão `true`) e `statuses` (subconjunto não vazio, sem repetição, de `open`, `pending`, `resolved`, `closed`; padrão os quatro), [chamados.md](chamados.md#fonte-do-tipo-tickets); até o conector interno `tickets` (plano 0005, F2.3), testar e sincronizar essa fonte dão `source_unavailable`. Campos desconhecidos são recusados. |
 | `include_globs`, `exclude_globs` | `text[]` | Padrões glob sobre o caminho dos documentos, padrão `{}`. Colunas, e não parte de `config`, porque valem para todo tipo e são aplicados pelo motor de ingestão. |
 | `schedule_cron` | `varchar(100)` | Expressão cron das execuções agendadas; nula sem agendamento. |
 | `schedule_enabled` | `boolean` | Padrão `false`; ligado exige `schedule_cron` (`ck_sources_schedule_needs_cron`). |
@@ -637,7 +686,7 @@ Uma execução da ingestão de uma fonte. `created_at` é o momento em que entro
 |---|---|---|
 | `workspace_id` | `uuid` | FK `workspaces.id`, `ON DELETE CASCADE`. |
 | `source_id` | `uuid` | FK composta → `sources (workspace_id, id)` (`fk_runs_workspace_id_sources`), `ON DELETE CASCADE`. |
-| `trigger` | `varchar(32)` | `manual`, `schedule` ou `harness` (pedida por um resultado do harness ou por uma revisão de conhecimento, inclusive a execução que continua uma sincronização pendente) (`ck_runs_trigger`). |
+| `trigger` | `varchar(32)` | `manual`, `schedule`, `harness` (pedida por um resultado do harness ou por uma revisão de conhecimento, inclusive a execução que continua uma sincronização pendente) ou `ingest` (pedida pelo envio de chamados a uma fonte `tickets`) (`ck_runs_trigger`). |
 | `status` | `varchar(32)` | `queued`, `running`, `succeeded`, `failed` ou `cancelled` (`ck_runs_status`). |
 | `documents_new`, `documents_changed`, `documents_removed`, `documents_failed` | `integer` | Contagens de documentos, padrão 0. |
 | `chunks_written` | `integer` | Chunks gravados, padrão 0. |
@@ -657,7 +706,7 @@ Documentos que uma execução ainda tem que processar, na ordem da listagem (pla
 | `run_id` | `uuid` | FK composta → `runs (workspace_id, id)` (`fk_run_items_workspace_id_runs`), `ON DELETE CASCADE`. |
 | `ordinal` | `integer` | Posição na listagem, a partir de 0 (`ck_run_items_ordinal_not_negative`). |
 | `document_key` | `text` | Chave natural do documento. |
-| `document_kind` | `varchar(32)` | `file`, `commit` ou `knowledge` (`ck_run_items_document_kind`). |
+| `document_kind` | `varchar(32)` | `file`, `commit`, `knowledge` ou `ticket` (`ck_run_items_document_kind`). |
 | `change` | `varchar(32)` | `upsert` (novo ou alterado; commits do Git vêm sempre como novos) ou `remove` (`ck_run_items_change`). |
 | `done` | `boolean` | Padrão `false`; marcado na mesma transação que grava o documento, para um lote reexecutado pular o que já fez. |
 
@@ -682,8 +731,8 @@ Um arquivo ou commit de uma fonte, na versão indexada.
 |---|---|---|
 | `workspace_id` | `uuid` | FK `workspaces.id`, `ON DELETE CASCADE`. |
 | `source_id` | `uuid` | FK composta → `sources (workspace_id, id)` (`fk_documents_workspace_id_sources`), `ON DELETE CASCADE`. |
-| `natural_key` | `text` | Caminho (`file`), SHA (`commit`) ou chave do item (`knowledge`); único por fonte (`uq_documents_source_id_natural_key`), chave do incremental. |
-| `kind` | `varchar(32)` | `file`, `commit` ou `knowledge` (item de conhecimento de uma fonte `runner`, [harness.md](harness.md#no-índice-e-no-chat)) (`ck_documents_kind`). |
+| `natural_key` | `text` | Caminho (`file`), SHA (`commit`), chave do item (`knowledge`) ou `external_id` do chamado (`ticket`); único por fonte (`uq_documents_source_id_natural_key`), chave do incremental. |
+| `kind` | `varchar(32)` | `file`, `commit`, `knowledge` (item de conhecimento de uma fonte `runner`, [harness.md](harness.md#no-índice-e-no-chat)) ou `ticket` (chamado de uma fonte `tickets`, [chamados.md](chamados.md#conector-interno-tickets)) (`ck_documents_kind`). |
 | `title` | `varchar(500)` | Título exibido na citação. |
 | `uri` | `text` | Para onde a citação aponta (URL do arquivo ou do commit, ou caminho local). |
 | `content_hash` | `varchar(64)` | SHA-256 (hex) do conteúdo; igual ao anterior = nada a reindexar. |
@@ -808,3 +857,59 @@ Um item ou subitem que a verificação do runner recusou. Índice `ix_harness_re
 | `code` | `varchar(64)` | Código de rejeição ([harness.md](harness.md#verificação-mecânica)). |
 | `reason` | `varchar(500)` | Motivo fixo em pt-BR. |
 | `sources` | `jsonb` | Lista de até 5 `{path, start_line, end_line, symbol, code}`, padrão `[]`. |
+
+## Chamados
+
+Tabelas dos chamados por push (plano 0005, F1.2; [ADR 0006](../adr/0006-chamados-por-push.md)), em [`backend/src/knobridge/tickets/`](../../backend/src/knobridge/tickets/AGENTS.md). Formato, envio, caixa de entrada e webhook em [chamados.md](chamados.md). As três são dado de workspace com RLS forçada e uma política padrão por tabela (`<tabela>_workspace`). Referências compostas `(workspace_id, <pai>_id)`, todas `ON DELETE CASCADE`: excluir a fonte apaga o token e a caixa de entrada; excluir a conversa, a mensagem ou o assistente apaga os pedidos. Os `CHECK`s novos se chamam `ck_<tabela>_<regra>`.
+
+### `ingest_tokens`
+
+O token de envio (`kbi_<prefixo>_<segredo>`) de uma fonte `tickets`, mostrado uma vez e nunca gravado. Girar troca prefixo, hash e `issued_at` na mesma linha: o anterior deixa de valer na hora.
+
+| Coluna | Tipo | Regras |
+|---|---|---|
+| `workspace_id` | `uuid` | FK `workspaces.id`, `ON DELETE CASCADE`. |
+| `source_id` | `uuid` | FK composta → `sources (workspace_id, id)` (`fk_ingest_tokens_workspace_id_sources`), `ON DELETE CASCADE`; **um token por fonte** (`uq_ingest_tokens_source_id`). Que a fonte é `tickets` é regra da aplicação. |
+| `token_prefix` | `varchar(8)` | `[a-z0-9]{8}` (`ck_ingest_tokens_token_prefix_format`); **único na instância** (`uq_ingest_tokens_token_prefix`): a verificação busca por ele em modo de sistema (`system_session`), antes de conhecer o workspace, e depois abre o escopo do workspace da fonte. |
+| `token_hash` | `varchar(64)` | SHA-256 hex do token inteiro (`ck_ingest_tokens_token_hash_format`), comparado em tempo constante. |
+| `issued_at` | `timestamptz` | Quando o token atual foi gerado (relógio da aplicação); o `token_created_at` do resumo. |
+| `created_by` | `uuid` | FK `users.id`, `ON DELETE SET NULL`. |
+
+### `ticket_inbox`
+
+A caixa de entrada: a última palavra recebida sobre cada chamado da fonte, chamado ou lápide ([Caixa de entrada](chamados.md#caixa-de-entrada)). Índices: único `uq_ticket_inbox_source_id_external_id` e `ix_ticket_inbox_source_id_state` (entradas pendentes da fonte).
+
+| Coluna | Tipo | Regras |
+|---|---|---|
+| `workspace_id` | `uuid` | FK `workspaces.id`, `ON DELETE CASCADE`. |
+| `source_id` | `uuid` | FK composta → `sources` (`fk_ticket_inbox_workspace_id_sources`), `ON DELETE CASCADE`. |
+| `external_id` | `varchar(200)` | Id do chamado na origem, não vazio (`ck_ticket_inbox_external_id_not_empty`); único por fonte. |
+| `state` | `varchar(32)` | `pending`, `indexed`, `filtered`, `pending_delete` ou `deleted` (`ck_ticket_inbox_state`). |
+| `payload` | `jsonb` | O chamado validado, objeto (`ck_ticket_inbox_payload_is_object`), **só em `pending`** (`ck_ticket_inbox_payload_when_pending`); apagado ao processar. |
+| `content_hash` | `varchar(64)` | SHA-256 hex do JSON canônico do chamado (`ck_ticket_inbox_content_hash_format`); nulo se e somente se a entrada é lápide (`pending_delete`, `deleted`; `ck_ticket_inbox_content_hash_when_ticket`). |
+| `ticket_updated_at` | `timestamptz` | `updated_at` do chamado na origem, ou `deleted_at` da lápide: o instante da [regra do `updated_at`](chamados.md#idempotência-e-regra-do-updated_at). |
+| `indexed_hash` | `varchar(64)` | Hash do que está no índice (`ck_ticket_inbox_indexed_hash_format`); nulo em `filtered` e `deleted` (`ck_ticket_inbox_indexed_hash_when_in_index`) e igual a `content_hash` em `indexed` (`ck_ticket_inbox_indexed_hash_current`). |
+| `received_at` | `timestamptz` | Última gravação de item `queued` para a entrada. |
+| `processed_at` | `timestamptz` | Último processamento; nulo antes do primeiro. |
+| `last_error` | `varchar(500)` | `<código>: <mensagem>` do último processamento com erro, sem conteúdo do chamado. |
+
+### `ticket_requests`
+
+Um pedido de chamado feito a partir de uma resposta do assistente, entregue pelo webhook ([Abrir chamado](chamados.md#abrir-chamado-webhook-de-saída)). Índices: único `uq_ticket_requests_message_id` (409 `ticket_request_exists`) e `ix_ticket_requests_conversation_id`.
+
+| Coluna | Tipo | Regras |
+|---|---|---|
+| `workspace_id` | `uuid` | FK `workspaces.id`, `ON DELETE CASCADE`. |
+| `conversation_id` | `uuid` | FK composta → `conversations` (`fk_ticket_requests_workspace_id_conversations`), `ON DELETE CASCADE`. |
+| `message_id` | `uuid` | Resposta do assistente; FK composta → `messages` (`fk_ticket_requests_workspace_id_messages`), `ON DELETE CASCADE`; única. |
+| `assistant_id` | `uuid` | FK composta → `assistants` (`fk_ticket_requests_workspace_id_assistants`), `ON DELETE CASCADE`. |
+| `user_id` | `uuid` | Quem pediu (dono da conversa); FK `users.id`, `ON DELETE CASCADE`. |
+| `status` | `varchar(32)` | `pending`, `delivered` ou `failed` (`ck_ticket_requests_status`). |
+| `attempts` | `integer` | Tentativas de entrega, ≥ 0 (`ck_ticket_requests_attempts_not_negative`), padrão 0. |
+| `body` | `text` | O JSON exato enviado ao webhook (texto, não `jsonb`, para reenviar byte a byte o que foi assinado); **só em `pending`** (`ck_ticket_requests_body_when_pending`), apagado ao entregar ou falhar. |
+| `external_ticket_id` | `varchar(200)` | `ticket_id` devolvido pelo destino, como texto. |
+| `external_url` | `varchar(2000)` | `url` devolvida pelo destino (`http`/`https`, validada na aplicação). |
+| `error_code` | `varchar(64)` | `webhook_rejected`, `webhook_expired` ou `webhook_destination_blocked`; presente se e somente se `failed` (`ck_ticket_requests_error_when_failed`). |
+| `last_http_status` | `integer` | Status HTTP da última tentativa respondida, de 100 a 599 (`ck_ticket_requests_last_http_status_range`). |
+| `last_error` | `varchar(500)` | `<código>: <mensagem>` da última tentativa com falha; nunca o corpo nem a resposta. |
+| `delivered_at` | `timestamptz` | Presente se e somente se `delivered` (`ck_ticket_requests_delivered_at_when_delivered`). |

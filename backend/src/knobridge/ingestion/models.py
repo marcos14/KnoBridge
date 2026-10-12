@@ -63,6 +63,8 @@ class RunTrigger(StrEnum):
     SCHEDULE = "schedule"
     # Asked for by a harness result or a knowledge review (plan 0004, ``harness/``).
     HARNESS = "harness"
+    # Asked for by tickets pushed to a ``tickets`` source (plan 0005, ``tickets/``).
+    INGEST = "ingest"
 
 
 class RunStatus(StrEnum):
@@ -88,6 +90,8 @@ class DocumentKind(StrEnum):
     COMMIT = "commit"
     # A knowledge item of a runner source, rendered as Markdown (``harness/``, ADR 0005).
     KNOWLEDGE = "knowledge"
+    # A ticket of a ``tickets`` source, rendered as Markdown (``tickets/``, ADR 0006).
+    TICKET = "ticket"
 
 
 class RunItemChange(StrEnum):

@@ -24,6 +24,7 @@ from knobridge.ingestion import models as ingestion_models
 from knobridge.llm import models as llm_models
 from knobridge.security import models as security_models
 from knobridge.tenancy import models as tenancy_models
+from knobridge.tickets import models as tickets_models
 
 # Imported so their tables are in Base.metadata.
 _MODEL_MODULES = (
@@ -35,6 +36,7 @@ _MODEL_MODULES = (
     conversations_models,
     ingestion_models,
     harness_models,
+    tickets_models,
 )
 _HARNESS_TABLES = (
     "runners",
@@ -43,6 +45,7 @@ _HARNESS_TABLES = (
     "knowledge_items",
     "harness_rejections",
 )
+_TICKETS_TABLES = ("ingest_tokens", "ticket_inbox", "ticket_requests")
 _TENANCY_TABLES = (
     "conversations",
     "messages",
@@ -66,6 +69,7 @@ _TENANCY_TABLES = (
     "run_items",
     "assistant_collections",
     *_HARNESS_TABLES,
+    *_TICKETS_TABLES,
 )
 _INDEX_TABLES = ("collections", "sources", "runs", "run_errors", "documents", "chunks")
 
@@ -158,6 +162,7 @@ def test_migration_upgrade_downgrade_tenancy(postgres_url: str) -> None:
         "run_items": (True, True, 1),
         "assistant_collections": (True, True, 1),
         **dict.fromkeys(_HARNESS_TABLES, (True, True, 1)),
+        **dict.fromkeys(_TICKETS_TABLES, (True, True, 1)),
     }
     assert after_downgrade == {}
 
@@ -589,6 +594,83 @@ def test_migration_0015_upgrade_downgrade(postgres_url: str) -> None:
     assert "'harness'" not in after_downgrade[0]
     assert "'schedule'" in after_downgrade[0]
     assert after_downgrade[1] is False
+
+
+_TICKETS_CHECKS = (
+    "ck_sources_kind",
+    "ck_runs_trigger",
+    "ck_documents_kind",
+    "ck_run_items_document_kind",
+)
+_WEBHOOK_COLUMNS = (
+    "ticket_webhook_url",
+    "ticket_webhook_secret_ciphertext",
+    "ticket_webhook_secret_created_at",
+)
+
+
+def _tickets_shape(database_url: str) -> tuple[dict[str, str], set[str]]:
+    """(definition of each widened check, ticket webhook columns of ``assistants``)."""
+
+    async def query() -> tuple[dict[str, str], set[str]]:
+        engine = create_async_engine(database_url, poolclass=NullPool)
+        try:
+            async with engine.connect() as connection:
+                checks: dict[str, str] = {}
+                for name in _TICKETS_CHECKS:
+                    checks[name] = str(
+                        await connection.scalar(
+                            text(
+                                "SELECT pg_get_constraintdef(oid) FROM pg_constraint"
+                                " WHERE conname LIKE '%' || :name"
+                            ),
+                            {"name": name},
+                        )
+                    )
+                columns = await connection.scalars(
+                    text(
+                        "SELECT column_name FROM information_schema.columns"
+                        " WHERE table_name = 'assistants' AND column_name = ANY(:names)"
+                    ),
+                    {"names": list(_WEBHOOK_COLUMNS)},
+                )
+                return checks, set(columns)
+        finally:
+            await engine.dispose()
+
+    return asyncio.run(query())
+
+
+@pytest.mark.integration
+def test_migration_0016_upgrade_downgrade(postgres_url: str) -> None:
+    config, _ = _alembic_config(postgres_url)
+
+    command.upgrade(config, "head")
+    tables_after_upgrade = _tenancy_catalog(postgres_url)
+    checks_up, columns_up = _tickets_shape(postgres_url)
+    command.downgrade(config, "0015")
+    tables_after_downgrade = _tenancy_catalog(postgres_url)
+    checks_down, columns_down = _tickets_shape(postgres_url)
+    command.downgrade(config, "base")
+
+    assert {table: tables_after_upgrade[table] for table in _TICKETS_TABLES} == dict.fromkeys(
+        _TICKETS_TABLES, (True, True, 1)
+    )
+    assert "'tickets'" in checks_up["ck_sources_kind"]
+    assert "'ingest'" in checks_up["ck_runs_trigger"]
+    assert "'ticket'" in checks_up["ck_documents_kind"]
+    assert "'ticket'" in checks_up["ck_run_items_document_kind"]
+    assert columns_up == set(_WEBHOOK_COLUMNS)
+    assert not set(_TICKETS_TABLES) & set(tables_after_downgrade)
+    assert "'tickets'" not in checks_down["ck_sources_kind"]
+    assert "'runner'" in checks_down["ck_sources_kind"]
+    assert "'ingest'" not in checks_down["ck_runs_trigger"]
+    assert "'harness'" in checks_down["ck_runs_trigger"]
+    assert "'ticket'" not in checks_down["ck_documents_kind"]
+    assert "'knowledge'" in checks_down["ck_documents_kind"]
+    assert "'ticket'" not in checks_down["ck_run_items_document_kind"]
+    assert columns_down == set()
+    assert tables_after_downgrade["assistants"] == (True, True, 4)
 
 
 def _schema_diff(connection: Connection) -> list[object]:

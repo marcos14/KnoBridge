@@ -24,6 +24,7 @@ from knobridge.ingestion import models as ingestion_models
 from knobridge.llm import models as llm_models
 from knobridge.security import models as security_models
 from knobridge.tenancy import models as tenancy_models
+from knobridge.tickets import models as tickets_models
 
 config = context.config
 
@@ -41,6 +42,7 @@ _MODEL_MODULES = (
     conversations_models,
     ingestion_models,
     harness_models,
+    tickets_models,
 )
 target_metadata = Base.metadata
 

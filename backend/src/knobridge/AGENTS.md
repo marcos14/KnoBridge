@@ -1,6 +1,6 @@
 # backend/src/knobridge/
 
-**Função**: pacote Python do KnoBridge. Cada subpasta é um módulo do produto (layout previsto em [backend/AGENTS.md](../../AGENTS.md)); hoje existem `core/`, `api/`, `tenancy/`, `security/`, `audit/`, `email/`, `llm/`, `assistants/`, `conversations/`, `ingestion/`, `harness/`, `connectors/`, `retrieval/` e `workers/`.
+**Função**: pacote Python do KnoBridge. Cada subpasta é um módulo do produto (layout previsto em [backend/AGENTS.md](../../AGENTS.md)); hoje existem `core/`, `api/`, `tenancy/`, `security/`, `audit/`, `email/`, `llm/`, `assistants/`, `conversations/`, `ingestion/`, `harness/`, `tickets/`, `connectors/`, `retrieval/` e `workers/`.
 
 **Entra aqui**:
 - `__init__.py` com `__version__`, a única fonte da versão (o `pyproject.toml` lê daqui via hatch).
@@ -11,9 +11,9 @@
 **Convenções locais**:
 - Crie um subpacote só quando ele for necessário, sempre com `AGENTS.md` e testes em `tests/<subpacote>/`.
 - Dependências entre módulos apontam para baixo: `api/` e `workers/` usam `core/` e os módulos de domínio; `core/` não importa nenhum outro módulo do pacote. Exceção deliberada: `api/` importa `workers/sync_client.py` (o `SyncStarter` sobre o Temporal), porque disparar sincronização é a única coisa que a API pede ao Temporal.
-- `ingestion/` não importa `harness/`: a API e o worker passam o `KnowledgeConnectorFactory` ao `SettingsConnectorFactory`.
+- `ingestion/` não importa `harness/` nem `tickets/`: a API e o worker passam as fábricas dos conectores internos (`KnowledgeConnectorFactory`, e a de chamados a partir do plano 0005) ao `SettingsConnectorFactory`.
 - Vocabulário do domínio da seção 6.1 do [AGENTS.md da raiz](../../../AGENTS.md) nos nomes.
 
 **Como testar**: de `backend/`, `uv run pytest` (gate de 95% de linhas e branches) e `uv run pyright`.
 
-**Leia também**: [core/AGENTS.md](core/AGENTS.md), [tenancy/AGENTS.md](tenancy/AGENTS.md), [security/AGENTS.md](security/AGENTS.md), [audit/AGENTS.md](audit/AGENTS.md), [email/AGENTS.md](email/AGENTS.md), [llm/AGENTS.md](llm/AGENTS.md), [assistants/AGENTS.md](assistants/AGENTS.md), [conversations/AGENTS.md](conversations/AGENTS.md), [ingestion/AGENTS.md](ingestion/AGENTS.md), [harness/AGENTS.md](harness/AGENTS.md), [connectors/AGENTS.md](connectors/AGENTS.md) (com [connectors/folder/](connectors/folder/AGENTS.md) e [connectors/git/](connectors/git/AGENTS.md)), [retrieval/AGENTS.md](retrieval/AGENTS.md), [api/AGENTS.md](api/AGENTS.md), [workers/AGENTS.md](workers/AGENTS.md).
+**Leia também**: [core/AGENTS.md](core/AGENTS.md), [tenancy/AGENTS.md](tenancy/AGENTS.md), [security/AGENTS.md](security/AGENTS.md), [audit/AGENTS.md](audit/AGENTS.md), [email/AGENTS.md](email/AGENTS.md), [llm/AGENTS.md](llm/AGENTS.md), [assistants/AGENTS.md](assistants/AGENTS.md), [conversations/AGENTS.md](conversations/AGENTS.md), [ingestion/AGENTS.md](ingestion/AGENTS.md), [harness/AGENTS.md](harness/AGENTS.md), [tickets/AGENTS.md](tickets/AGENTS.md), [connectors/AGENTS.md](connectors/AGENTS.md) (com [connectors/folder/](connectors/folder/AGENTS.md) e [connectors/git/](connectors/git/AGENTS.md)), [retrieval/AGENTS.md](retrieval/AGENTS.md), [api/AGENTS.md](api/AGENTS.md), [workers/AGENTS.md](workers/AGENTS.md).
