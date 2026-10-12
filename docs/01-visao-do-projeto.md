@@ -1,6 +1,8 @@
 # KnoBridge — Visão do Projeto
 
-> Rascunho v0.4 · 2026-10-12 · Status: ideia em definição (ver seção 13, "Perguntas em aberto")
+> Rascunho v0.5 · 2026-10-12 · Status: ideia em definição (ver seção 13, "Perguntas em aberto")
+>
+> **Mudanças da v0.5**: a API pública usa **chaves de API por workspace** (`kbk_…`, mostradas uma vez, só o hash guardado, escopo opcional por assistente, criadas e revogadas por owner ou admin) e entrega uma **REST própria de conversa** (`/v1/conversations`) e a **API compatível com OpenAI** (`/v1/models`, `/v1/chat/completions`, um modelo por assistente, citações no texto e no campo extra `knobridge`) ([ADR 0007](adr/0007-chaves-e-api-publica.md); D14 e seção 7.6).
 >
 > **Mudanças da v0.4**: chamados entram por **push**, num formato padrão do KnoBridge, pela API (`POST /v1/ingest/tickets`) ou por upload JSON/JSONL, em vez de um conector por sistema de chamados; "abrir chamado" é um webhook de saída por assistente, assinado com HMAC ([ADR 0006](adr/0006-chamados-por-push.md); D17 e seção 11).
 >
@@ -226,7 +228,7 @@ Ordem de grandeza observada no projeto de referência (Delphi, modelo Sonnet, ef
 
 | Canal | Como | Observações |
 |---|---|---|
-| **REST API** | `POST /v1/assistants/{id}/chat`, `POST /v1/search`, CRUD de fontes/pipelines | OpenAPI; API keys por workspace; streaming via SSE |
+| **REST API** | Conversa: `POST /v1/conversations`, `POST /v1/conversations/{id}/messages` (JSON ou SSE), `GET /v1/conversations/{id}` ([api-publica.md](specs/api-publica.md)); depois, `POST /v1/search` e CRUD de fontes/pipelines | OpenAPI; API keys por workspace com escopo por assistente ([ADR 0007](adr/0007-chaves-e-api-publica.md)); streaming via SSE |
 | **API compatível com OpenAI** | `POST /v1/chat/completions` (+ `GET /v1/models`), um "modelo" por assistente, streaming SSE no formato da OpenAI | É o **padrão de fato** dos clientes de chat: Open WebUI, LibreChat, LobeChat, Chatbox, extensões de IDE (Continue, Cline) e qualquer SDK da OpenAI apontam para o KnoBridge trocando só `base_url` e a chave. Citações vão no texto e num campo extra da resposta, ignorado por clientes que não o conhecem |
 | **Webhooks** | Eventos de saída (resposta gerada, escalonamento, pipeline concluído) | Assinatura HMAC |
 | **MCP** | Servidor MCP (Streamable HTTP) expondo `search_knowledge`, `get_document`, `open_ticket` | Claude Code, Cursor, VS Code e qualquer cliente MCP; com HTTPS público entra como conector no claude.ai, Claude Desktop e ChatGPT |
@@ -300,7 +302,7 @@ Quando entrar (fase 3): OpenTelemetry + Langfuse para traces; conjunto de avalia
 | D11 | Provedores de LLM | — | APIs **OpenAI, Anthropic, OpenRouter**; **assinatura OpenAI** (Codex CLI) para harness e desenvolvimento | Fácil |
 | D12 | Autenticação inicial | E-mail/senha / OIDC desde o início | **E-mail/senha** por ora; OIDC depois; sessão server-side com cookie httpOnly e CSRF double-submit ([ADR 0002](adr/0002-sessao-server-side.md)) | Médio (prever `provider` no modelo) |
 | D13 | Observabilidade e avaliação | Agora / depois | **Depois** (fase 3); agora só log estruturado e feedback | Fácil |
-| D14 | Canal no "padrão OpenAI" | Só REST própria / também Chat Completions | **Também Chat Completions** (`/v1/chat/completions`) | Fácil |
+| D14 | Canal no "padrão OpenAI" e acesso programático | Só REST própria / também Chat Completions; OAuth / chave por usuário / chave por workspace | **REST própria de conversa e também Chat Completions** (`/v1/models`, `/v1/chat/completions`, um modelo por assistente), autenticadas por **chave de API por workspace** (`kbk_…`, só o hash guardado, escopo opcional por assistente, owner ou admin cria e revoga) ([ADR 0007](adr/0007-chaves-e-api-publica.md)) | Fácil |
 | D15 | Segredos em repouso (chaves de provedores, depois tokens de conectores e canais) | Fernet / pgcrypto / AES-GCM na aplicação / KMS externo | **AES-256-GCM na aplicação**, chave por finalidade derivada de `KNOBRIDGE_SECRET_KEY` (HKDF), versão no texto cifrado e AAD com workspace e linha ([ADR 0003](adr/0003-segredos-cifrados.md)) | Médio (recifrar) |
 | D16 | Índice de conhecimento (coleção, fonte, modelo de embedding) | Fonte em N coleções / fonte em uma coleção; dimensão variável / fixa | **Coleção define credencial e modelo de embedding; fonte em uma única coleção; `vector(1536)` fixo com HNSW cosseno e `tsvector` gerado; modelo registrado por chunk (trocar = reindexar); pipeline fixo sobre Temporal antes do canvas** ([ADR 0004](adr/0004-indice-de-conhecimento.md)) | Médio (reindexar) |
 | D17 | Entrada de chamados e abertura de chamado | Conector por provedor / mapeamento do webhook nativo / push num formato padrão | **Push num formato KnoBridge** (JSON Schema), pela API com token por fonte ou por upload JSON/JSONL, numa caixa de entrada no Postgres processada pelo conector interno `tickets` no workflow de ingestão; bruto apagado após indexar; abrir chamado por **webhook de saída por assistente** (HMAC-SHA256, retentativas no Temporal, proteção contra SSRF) ([ADR 0006](adr/0006-chamados-por-push.md)) | Médio (o formato é contrato público) |

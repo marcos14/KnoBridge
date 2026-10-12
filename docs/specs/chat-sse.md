@@ -1,6 +1,8 @@
 # Chat em streaming (SSE)
 
-> Rascunho v0.6 · 2026-10-12 · Plano 0002, F4.4 (v0.2, F4.5: resposta `streaming` órfã lida como `interrupted`; v0.3, plano 0003 F4.2: campos de localização nas citações e erros do provedor de embedding antes do stream; v0.4, plano 0003 F6.1: autor e data nas citações de commit; v0.5, plano 0004 F2.4: citação de item de conhecimento com confiança e evidências; v0.6, plano 0005 F1.1: citação de chamado, implementada na F2.3; v0.7, plano 0005 F3.2: `ticket_requests_enabled` no `done`)
+> Rascunho v0.8 · 2026-10-12 · Plano 0002, F4.4 (v0.1; v0.2, F4.5: resposta `streaming` órfã lida como `interrupted`; v0.3, plano 0003 F4.2: campos de localização nas citações e erros do provedor de embedding antes do stream; v0.4, plano 0003 F6.1: autor e data nas citações de commit; v0.5, plano 0004 F2.4: citação de item de conhecimento com confiança e evidências; v0.6, plano 0005 F1.1: citação de chamado, implementada na F2.3; v0.7, plano 0005 F3.2: `ticket_requests_enabled` no `done`; v0.8, plano 0008 F1.1: `cost_usd` no `done`)
+>
+> **Mudanças da v0.8** (plano 0008, F1.1; implementada na F2.2): o evento `done` traz `cost_usd`, o custo estimado da resposta ([chat.md](chat.md#custo-e-canal-por-resposta)). Campo aditivo. Os mesmos eventos servem à REST própria da API pública com `stream: true` ([api-publica.md](api-publica.md#post-v1conversationsconversation_idmessages)).
 >
 > **Mudanças da v0.7** (plano 0005, F3.2): o evento `done` traz `ticket_requests_enabled`, que diz se o assistente oferece abrir chamado ([chamados.md](chamados.md#pedido-no-chat)). Campo aditivo.
 >
@@ -37,7 +39,7 @@ event: delta
 data: {"text":"Para fechar o caixa, "}
 
 event: done
-data: {"message_id":"…","status":"completed","model":"gpt-4.1-mini","input_tokens":812,"output_tokens":64,"latency_ms":2310,"ticket_requests_enabled":false}
+data: {"message_id":"…","status":"completed","model":"gpt-4.1-mini","input_tokens":812,"output_tokens":64,"cost_usd":0.000427,"latency_ms":2310,"ticket_requests_enabled":false}
 ```
 
 Como a rota é `POST`, o cliente lê o corpo com `fetch` e um leitor de stream (o `EventSource` do navegador só faz `GET`). O servidor não manda `id:` nem `retry:`; não há retomada: se a conexão cair, o cliente recarrega a conversa por `GET .../conversations/{id}`.
@@ -100,6 +102,7 @@ Os campos marcados com v0.3, v0.4, v0.5 e v0.6 são aditivos e compatíveis: res
 | `status` | `completed` ou `no_source` | `completed`: o LLM respondeu com base nas fontes. `no_source`: veja abaixo. |
 | `model` | texto ou `null` | Modelo que respondeu; `null` em `no_source`. |
 | `input_tokens`, `output_tokens` | inteiro ou `null` | Uso informado pelo provedor; `null` quando ele não informa e em `no_source`. |
+| `cost_usd` | número ou `null` | Custo estimado em US$ (6 casas) pela tabela de preços de chat; `null` em `no_source`, sem tokens ou com modelo sem preço (v0.8; [chat.md](chat.md#custo-e-canal-por-resposta)). |
 | `latency_ms` | inteiro | Do recebimento da pergunta ao fim da resposta (relógio do servidor). |
 | `ticket_requests_enabled` | booleano | O assistente oferece abrir chamado: o webhook de chamados dele tem URL e segredo (v0.7; o mesmo valor de `ticket_requests_enabled` em `GET .../conversations/{id}`). O painel oferece o pedido nas respostas `no_source` ([chamados.md](chamados.md#pedido-no-chat)). |
 
@@ -135,7 +138,7 @@ event: delta
 data: {"text":"Não encontrei essa informação nas fontes que tenho disponíveis, …"}
 
 event: done
-data: {"message_id":"…","status":"no_source","model":null,"input_tokens":null,"output_tokens":null,"latency_ms":3,"ticket_requests_enabled":true}
+data: {"message_id":"…","status":"no_source","model":null,"input_tokens":null,"output_tokens":null,"cost_usd":null,"latency_ms":3,"ticket_requests_enabled":true}
 ```
 
 A mensagem fica gravada com `status: no_source` e `citations: []`. O painel usa esse status para mostrar a oferta de abrir chamado, que usa o webhook de saída do assistente quando ele está configurado ([chamados.md](chamados.md#abrir-chamado-webhook-de-saída)).

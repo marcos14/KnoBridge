@@ -17,10 +17,10 @@ fases:
     subfases:
       - id: F1.1
         titulo: ADR 0007 e specs da API pública, de uso e custos, do primeiro acesso e do acesso de superadmin
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
-        concluida_em: null
+        concluida_em: 2026-10-12
         commit: null
       - id: F1.2
         titulo: Migração 0017 (chaves de API, custo e canal por resposta) com RLS
@@ -161,6 +161,13 @@ decisoes:
     motivo: "os dados já existem; agregação no Postgres basta para o volume atual"
     alternativas: "tabela de métricas diárias materializada"
     adr: null
+  - id: D8
+    data: 2026-10-12
+    por: agente
+    decisao: "F1.1: contrato do lote em api-publica.md, uso-e-custos.md e nas specs de autenticação, chat, chat-sse, indexação e runner, com ADR 0007; a migração 0017 também traz conversations.user_id opcional, conversations.api_key_id e o canal api, e sessions.superadmin_workspace_id/superadmin_entered_at; acesso de superadmin por sessão, um workspace por vez, papel efetivo = maior entre o do membership e admin; conversas da API pertencem à chave; /v1/chat/completions aceita nome ou id do assistente, cria uma conversa por chamada, ignora system/developer, usa as 10 últimas mensagens como histórico e acrescenta Fontes ao texto por padrão (knobridge.append_sources desliga); reindexar zera cursor e content_hash e recusa fontes tickets (bruto apagado, 409 source_reindex_unsupported); duplicar assistente copia a URL do webhook mas não o segredo; listas ganham query, filtros e sort; preços de chat em USD por milhão (input/output), os da OpenAI conferidos na F2.2 pelo catálogo público do OpenRouter"
+    motivo: "detalhes de contrato que o plano não fixava, revisados pelo orquestrador"
+    alternativas: "chave com escopo obrigatório; conversa da API ligada a um usuário; reindexar tickets reenviando a caixa"
+    adr: null
 pendencias_usuario: []
 ---
 
@@ -238,6 +245,8 @@ Convenções para todas as subfases: código em inglês, docs em pt-BR; regras 1
 - **Entregáveis**:
   - tabela `api_keys` (workspace, nome, prefixo único na instância, hash, `assistant_ids` opcional, criada por, `last_used_at`, `revoked_at`);
   - em `messages`: `cost_usd` e `channel` (`panel`, `api`);
+  - em `conversations`: `user_id` opcional, `api_key_id` e o canal `api` (conversa feita pela API pertence à chave);
+  - em `sessions`: `superadmin_workspace_id` e `superadmin_entered_at` (acesso de superadmin marcado na sessão; D8);
   - modelos, migração `0017` e `modelo-de-dados.md` v0.9.
 - **Contexto necessário**: `backend/AGENTS.md`; AGENTS de `migrations/`, `conversations/`, `tickets/` (padrão de token) e `tests/`; migrações `0016`; `docs/specs/api-publica.md` (F1.1).
 - **Critérios de aceite**: RLS como dono e não dono, prefixo único, `CHECK`s, `upgrade`/`downgrade` testados.
@@ -386,6 +395,7 @@ Nenhuma.
 
 - 2026-10-12 — plano criado; aguardando aprovação.
 - 2026-10-12 — plano aprovado pelo usuário ("Aprovado"); F1.1 iniciada (agente em worktree).
+- 2026-10-12 — F1.1 concluída: ADR 0007, specs api-publica.md e uso-e-custos.md e atualizações em autenticação, chat, chat-sse, indexação, runner e visão v0.5; links e checagens verdes
 
 ## 8. Encerramento
 

@@ -1,6 +1,8 @@
 # Chat com assistentes
 
-> Rascunho v0.2 · 2026-10-10 · Em uso (planos 0002 e 0003)
+> Rascunho v0.3 · 2026-10-12 · Em uso (planos 0002, 0003 e 0008)
+>
+> **Mudanças da v0.3** (plano 0008, F1.1; implementação nas F2.2, F2.3 e F2.5): cada resposta grava o canal e o custo estimado ([Custo e canal por resposta](#custo-e-canal-por-resposta)); conversas da API pública, de uma chave e não de uma pessoa ([api-publica.md](api-publica.md#conversas-da-api)); a visão administrativa mostra e filtra o canal; busca, filtros e ordenação na lista de assistentes e a ação de duplicar ([Listagem e duplicação de assistentes](#listagem-e-duplicação-de-assistentes)).
 >
 > **Mudanças da v0.2** (plano 0003, F4.2): o chat busca as fontes de verdade (`HybridRetriever` sobre as coleções do assistente, com a similaridade mínima dele), as citações ganham caminho, linhas, símbolo, linguagem e SHA (e, na F6.1, autor e data dos commits), e as regras fixas do prompt passam a ser em pt-BR e mais estritas.
 
@@ -84,7 +86,7 @@ sequenceDiagram
    - lê o histórico, define o título da conversa na primeira pergunta (a pergunta numa linha, até 80 caracteres, sem LLM) e grava a pergunta;
    - sem fonte: grava a resposta final `no_source`; com fonte: grava um marcador `streaming` com as citações e o modelo, e prepara a chamada ao LLM (a chave é decifrada só em memória).
    Por isso, erros de acesso e de estado saem como JSON comum, antes do stream ([chat-sse.md](chat-sse.md#requisição)).
-2. **`stream` (fase 2)**: emite `citations`, repassa cada pedaço do provedor como `delta` e, no fim, grava o desfecho num `scoped_session` novo e curto: `completed` com tokens e latência, `failed` com o `error_code`, ou `interrupted` com o conteúdo parcial se o cliente desconectou. A gravação final roda protegida contra cancelamento e só altera mensagem ainda `streaming`, então acontece uma vez só (uma conversa excluída no meio não casa com nada).
+2. **`stream` (fase 2)**: emite `citations`, repassa cada pedaço do provedor como `delta` e, no fim, grava o desfecho num `scoped_session` novo e curto: `completed` com tokens, custo estimado e latência, `failed` com o `error_code`, ou `interrupted` com o conteúdo parcial se o cliente desconectou. A gravação final roda protegida contra cancelamento e só altera mensagem ainda `streaming`, então acontece uma vez só (uma conversa excluída no meio não casa com nada).
 3. **`settle`**: chamado sempre que o stream HTTP fecha; marca `interrupted` a resposta cujo stream nem começou.
 
 Erros do provedor viram evento `error` com o código de domínio (`provider_auth_failed`, `provider_rate_limited`, `provider_unavailable`, `provider_request_failed`); qualquer outra exceção vira `chat_failed`, registrada no log só pelo tipo, porque o texto pode conter a chave. Logs (`chat_turn_finished`, `chat_turn_crashed`) levam `workspace_id` e `conversation_id`, nunca a pergunta nem a resposta.
@@ -115,9 +117,20 @@ stateDiagram-v2
 
 **Resposta órfã.** Se o processo da API morre no meio do stream, ninguém grava o desfecho. Nenhum stream dura mais que 5 minutos (`STALE_STREAMING_AFTER`, `conversations/stale.py`), então uma resposta `streaming` com `updated_at` mais antigo que isso, pelo relógio injetado, é mostrada como `interrupted` em toda leitura (conversa do dono, detalhe e estatísticas da visão administrativa), sem gravar nada, e é regravada como `interrupted` pela fase 1 da próxima pergunta da conversa.
 
+## Custo e canal por resposta
+
+Desde a v0.3 (D4 e D7 do [plano 0008](../planos/0008-telas-de-uso-e-administracao.md)), cada mensagem grava:
+
+- **`channel`**: `panel` (painel) ou `api` (API pública, REST própria ou compatível com OpenAI; [api-publica.md](api-publica.md)). Pergunta e resposta levam o canal da requisição. É o mesmo `channel` da conversa, repetido na mensagem para as agregações de [uso-e-custos.md](uso-e-custos.md) não precisarem do join e para canais futuros. Mensagens gravadas antes da migração ficam `panel`.
+- **`cost_usd`**: custo estimado da resposta, pela tabela de preços de chat (`ChatPriceTable`, [uso-e-custos.md](uso-e-custos.md#preços-do-chat)) aplicada a `model`, `input_tokens` e `output_tokens`, com 6 casas. É gravado junto com o desfecho (`completed`, `failed`, `interrupted`), quando o provedor informou os tokens. É `null` em perguntas, em `no_source` (sem LLM), quando o modelo não tem preço ou quando faltam tokens. Nunca zero por desconhecimento.
+
+O evento `done` traz `cost_usd` ([chat-sse.md](chat-sse.md#done)); a leitura da conversa traz `cost_usd` e `channel` em cada mensagem. Mudar a tabela de preços não recalcula respostas antigas.
+
 ## Histórico enviado ao LLM
 
 Com fonte, o LLM recebe, nesta ordem: as instruções (prompt do assistente + regras fixas), as fontes numeradas, o histórico e a pergunta nova. O histórico são as **10 mensagens mais recentes** da conversa (`DEFAULT_HISTORY_WINDOW`), das mais antigas para as mais novas, contando os dois papéis: todas as perguntas e só as respostas `completed` ou `no_source` (respostas `failed`, `interrupted` e `streaming` ficam de fora). A pergunta atual não conta na janela. A temperatura é a do assistente.
+
+Na rota compatível com OpenAI (`/v1/chat/completions`), o histórico não vem do banco: são as mensagens `user` e `assistant` enviadas pelo cliente antes da pergunta, com a mesma janela de 10, e só a pergunta e a resposta são gravadas ([api-publica.md](api-publica.md#post-v1chatcompletions)).
 
 ## Acesso e privacidade
 
@@ -125,7 +138,7 @@ A RLS isola o workspace; dentro dele, as regras são da aplicação (`Reader` em
 
 | Ação | Quem pode |
 |---|---|
-| Criar conversa | Qualquer membro (inclusive leitor), com assistente ativo do workspace. |
+| Criar conversa | Qualquer membro (inclusive leitor), com assistente ativo do workspace. Pela API pública, uma chave com o assistente no escopo; a conversa é da chave (`api_key_id`, `user_id` nulo) e só ela a lê e continua ([api-publica.md](api-publica.md#conversas-da-api)). |
 | Listar "minhas conversas" | Cada um vê só as próprias, da mais recente para a mais antiga. |
 | Ler uma conversa | O dono, e owner/admin do workspace. Os demais recebem 404. |
 | Enviar mensagem, excluir conversa | Só o dono. Owner/admin que leem a conversa de outro recebem 403 `forbidden`. A exclusão é auditada (`conversation.deleted`, sem conteúdo). |
@@ -141,11 +154,33 @@ Matriz completa em [autenticacao.md](autenticacao.md#matriz-de-permissões).
 
 Owner e admin do workspace têm rotas próprias em `/v1/workspaces/{workspace_id}/admin/conversations` (tela **Conversas** do painel):
 
-- `GET ""`: conversas de todos os membros, da mais recente para a mais antiga, com nome do usuário e do assistente, contagem de mensagens, de 👍 e de 👎 e data da última mensagem. Filtros: `assistant_id`, `user_id`, período de criação semiaberto `[created_from, created_to)` (UTC; início maior ou igual ao fim dá 422) e `negative_feedback=true` (só conversas com ao menos um 👎). Paginada (`limit`/`offset`, `total`).
+- `GET ""`: conversas de todos os membros e das chaves de API, da mais recente para a mais antiga, com nome do usuário (ou, desde a v0.3, `channel`, `api_key_id` e `api_key_name` nas conversas da API, com usuário nulo) e do assistente, contagem de mensagens, de 👍 e de 👎 e data da última mensagem. Filtros: `assistant_id`, `user_id`, `channel` (v0.3), `api_key_id` (v0.3), período de criação semiaberto `[created_from, created_to)` (UTC; início maior ou igual ao fim dá 422) e `negative_feedback=true` (só conversas com ao menos um 👎). Paginada (`limit`/`offset`, `total`).
 - `GET /stats`: totais do período (padrão: os 30 dias anteriores ao relógio do servidor): conversas (pela data de criação), mensagens, 👍, 👎 e respostas `no_source`, `failed` e `interrupted` (pela data da mensagem).
 - `GET /{conversation_id}`: a conversa com as mensagens paginadas e o feedback de todos, com quem deu.
 
 As consultas usam número constante de statements, independente do tamanho da página (há teste que conta). A visão é só leitura: o admin não envia mensagens nem exclui conversas de outros.
+
+## Listagem e duplicação de assistentes
+
+Rotas em `/v1/workspaces/{workspace_id}/assistants` (`api/assistants.py`, serviço em `assistants/service.py`); papéis na [matriz](autenticacao.md#matriz-de-permissões). Desde a v0.3 (plano 0008, F2.5):
+
+**`GET ""`** continua paginada (`limit` padrão 50, máximo 200; `offset`; `total`) e ganha:
+
+| Parâmetro | Efeito |
+|---|---|
+| `query` | Até 200 caracteres; casa nome, descrição ou modelo, sem diferenciar maiúsculas (`ILIKE` com `%`, `_` e `\` escapados). |
+| `active` | `true` ou `false`. Leitor só vê ativos de qualquer forma. |
+| `provider_id` | Assistentes dessa credencial. |
+| `collection_id` | Assistentes ligados a essa coleção. |
+| `sort` | `name` (padrão), `-name`, `created_at`, `-created_at`, `updated_at`, `-updated_at`. Empate pelo `id`. Valor fora da lista: 422 `validation_error`. |
+
+Número constante de statements, como hoje (página e coleções de cada item).
+
+**`POST /{assistant_id}/duplicate`** (editor ou acima, CSRF): cria um assistente novo com a configuração do original (descrição, prompt, credencial, modelo, temperatura, idioma, tom, mensagem de "sem fonte", similaridade mínima, ativo e as mesmas coleções). Corpo opcional `{"name": "..."}`; sem ele, o nome é `<nome> (cópia)` e, se já existir, `<nome> (cópia 2)`, `(cópia 3)`..., cortando o nome original para caber em 200 caracteres. O webhook de chamados copia só a URL: o segredo não é copiado, então o novo assistente fica com `ticket_webhook_configured = false` até gerar o seu. Conversas e feedback não são copiados. Resposta 201 `AssistantOut`. Erros: 404 `not_found` (original inexistente ou, para leitor, inativo), 409 `assistant_name_taken` (só com `name` explícito já usado). Auditoria: `assistant.created` com `name`, `model`, `provider_id` e `duplicated_from` (id do original).
+
+### Listagem de provedores
+
+`GET /v1/workspaces/{workspace_id}/providers` (editor ou acima; `api/providers.py`) continua paginada e, desde a v0.3, aceita `query` (nome, até 200 caracteres, sem diferenciar maiúsculas, com `%`, `_` e `\` escapados), `kind` (`openai`, `anthropic`, `openrouter`, `fake`) e `sort` (`name` (padrão), `-name`, `created_at`, `-created_at`, `updated_at`, `-updated_at`). Empate pelo `id`; valor fora da lista: 422 `validation_error`. A chave continua só mascarada (`key_hint`).
 
 ## Referências
 

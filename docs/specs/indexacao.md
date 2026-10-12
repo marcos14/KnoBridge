@@ -1,6 +1,8 @@
 # Indexação e busca
 
-> Rascunho v0.2 · 2026-10-11 · Em uso (planos 0003 e 0004)
+> Rascunho v0.3 · 2026-10-12 · Em uso (planos 0003, 0004 e 0008)
+>
+> **Mudanças da v0.3** (plano 0008, F1.1; implementação na F2.5): [reindexar uma fonte](#reindexar-uma-fonte), [sincronizar todas as fontes de uma coleção](#sincronizar-todas-as-fontes-de-uma-coleção) e [busca, filtros e ordenação](#listagens-de-coleções-e-fontes) nas listas de coleções e fontes.
 >
 > **Mudanças da v0.2** (plano 0004, F2.4): conhecimento do harness indexado pelo conector interno `knowledge` ([Conhecimento do harness](#conhecimento-do-harness)), gatilho `harness` e [sincronização pendente](#sincronização-pendente), citação `knowledge` no chat.
 
@@ -197,6 +199,41 @@ A lista de mudanças não passa pelo histórico do Temporal, que limita payloads
 - **Falha**: activity que esgota as tentativas marca a execução `failed` com `runs.error` = `<código>: <mensagem>` (até 500 caracteres), e o workflow falha com `ingestion_failed`.
 - **Cancelamento**: `POST .../sources/{id}/cancel` pede o cancelamento ao Temporal (sem execução rodando: `sync_not_running`, 409). O pedido chega à activity no próximo heartbeat, a execução é marcada `cancelled`, e o cancelamento se propaga. Excluir a fonte cancela a execução ativa.
 - **Cursor só no sucesso**: `finish_run` copia `runs.pending_cursor` para `sources.cursor` apenas quando o status é `succeeded`. Uma execução que falhou ou foi cancelada é listada de novo, a partir do cursor anterior, na próxima vez; os documentos já gravados são pulados pelo hash. Em qualquer desfecho, `finish_run` grava `finished_at` e o custo e apaga os `run_items`.
+
+### Reindexar uma fonte
+
+`POST .../sources/{source_id}/reindex` (editor ou acima, CSRF) reprocessa **todos** os documentos da fonte, mesmo os que não mudaram (útil depois de mudar o parsing, o chunking ou os padrões da fonte). Numa só transação, na sessão da requisição:
+
+1. confere a fonte (404 `source_not_found`; desativada, 409 `source_inactive`; do tipo `tickets`, 409 `source_reindex_unsupported`, porque o bruto dos chamados é apagado depois de indexado e não há o que reler: [chamados.md](chamados.md#fim-do-processamento-e-apagamento-do-bruto));
+2. com execução `queued` ou `running` da fonte, 409 `sync_already_running` e nada muda;
+3. zera `sources.cursor` (a próxima listagem é a inicial, como na primeira execução; em Git, com o mesmo `initial_commit_limit`) e grava `content_hash = ''` em todos os documentos da fonte (vazio nunca casa com um SHA-256, então nenhum é pulado pelo hash);
+4. chama `start_sync` com o gatilho `manual`. Se o disparo falha (`sync_already_running` por corrida, ou Temporal fora do ar: 503 `sync_unavailable`), a transação inteira é desfeita e cursor e hashes ficam como estavam.
+
+Resposta 202 com o run, como `POST .../sync`. Os documentos continuam no índice e na busca durante a reindexação; cada um é trocado na sua transação, como numa sincronização comum. Sem cursor, o conector lista tudo como adicionado e nada como removido ([conectores.md](conectores.md)): documentos indexados que a listagem inicial não traz (por exemplo, commits mais antigos que o `initial_commit_limit`) ficam no índice como estão, com o hash vazio, e são reprocessados se voltarem a aparecer. O embedding continua com cache por hash do trecho: trechos iguais aos já indexados reaproveitam o vetor, então reindexar sem mudança de conteúdo quase não custa embeddings. Auditoria: `source.reindex.started` (`name`, `run_id`), além do `source.sync.started` que o disparo já grava.
+
+### Sincronizar todas as fontes de uma coleção
+
+`POST .../collections/{collection_id}/sync` (editor ou acima, CSRF) dispara `start_sync` (gatilho `manual`) para cada fonte **ativa** da coleção, em ordem de nome, cada uma independente. Resposta 202:
+
+```json
+{"started": [{"source_id": "…", "run_id": "…"}], "skipped": [{"source_id": "…", "reason": "sync_already_running"}]}
+```
+
+- `reason`: `sync_already_running` ou `source_inactive` (fontes inativas entram em `skipped` para a tela explicar).
+- Temporal fora do ar: se nenhuma começou, 503 `sync_unavailable`; se algumas já começaram, as restantes entram em `skipped` com `sync_unavailable`.
+- Coleção inexistente ou de outro workspace: 404 `not_found`. Coleção sem fontes: 202 com as duas listas vazias.
+- Auditoria: um `source.sync.started` por fonte iniciada (o mesmo do disparo manual) e nenhum evento extra.
+
+## Listagens de coleções e fontes
+
+`GET .../collections` e `GET .../sources` continuam paginadas (`limit` de 1 a 200, padrão 50; `offset`; `total`), por nome por padrão, e ganham (plano 0008, F2.5):
+
+| Lista | `query` (até 200 caracteres, sem diferenciar maiúsculas, com `%`, `_` e `\` escapados) | Filtros | `sort` |
+|---|---|---|---|
+| Coleções | nome ou descrição | `provider_id` | `name` (padrão), `-name`, `created_at`, `-created_at`, `updated_at`, `-updated_at`, `document_count`, `-document_count` |
+| Fontes | nome | `collection_id` (já existe), `kind` (`git`, `folder`, `runner`, `tickets`), `active`, `last_run_status` (`queued`, `running`, `succeeded`, `failed`, `cancelled` ou `never` para fonte sem execução) | `name` (padrão), `-name`, `created_at`, `-created_at`, `updated_at`, `-updated_at`, `last_run_at`, `-last_run_at` (pelo `created_at` da última execução; sem execução, por último) |
+
+Empate pelo `id`; valor fora da lista: 422 `validation_error`. As contagens e a última execução continuam vindo em número constante de statements.
 
 ## Agendamento
 

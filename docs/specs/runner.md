@@ -1,6 +1,8 @@
 # Protocolo do runner
 
-> Rascunho v0.1 · 2026-10-11 · Em definição (plano 0004)
+> Rascunho v0.2 · 2026-10-12 · Em uso (planos 0004 e 0008)
+>
+> **Mudanças da v0.2** (plano 0008, F1.1; implementação na F2.5): busca, filtro de estado e ordenação em `GET /runners` ([API de sessão](#api-de-sessão-painel)).
 
 Como o `knobridge-runner`, que roda na máquina do usuário, conversa com o servidor do KnoBridge: autenticação por token, endpoints `/v1/runner/*`, fila de tarefas com reserva, estados e transições, códigos de erro, limites, versionamento do protocolo e o que pode e o que não pode sair da máquina. O que o runner faz com uma tarefa (camada 0, briefing, prompt, schema da saída, verificação, excertos, itens de conhecimento e flags dos executores) está em [harness.md](harness.md). A arquitetura está no [ADR 0005](../adr/0005-runner-local-do-harness.md); as tabelas, em [modelo-de-dados.md](modelo-de-dados.md).
 
@@ -471,6 +473,8 @@ Rotas com sessão e CSRF, sob `/v1/workspaces/{workspace_id}`, paginadas com `li
 | `GET /harness-jobs/{jid}` | viewer | Detalhe com as rejeições (`rejections`: `{items, total, limit, offset}`; `rejections_limit` de 1 a 300, padrão 300, e `rejections_offset`). |
 | `POST /harness-jobs/{jid}/cancel` | editor | 200 com a tarefa; 409 `job_finished` se já terminou. |
 | `GET /sources/{sid}/knowledge`, `PATCH /sources/{sid}/knowledge/{iid}`, `GET /sources/{sid}/knowledge/export` | viewer / editor / viewer | Revisão e exportação ([harness.md](harness.md#revisão-e-exportação)). |
+
+`GET /runners` aceita (plano 0008): `query` (nome ou `token_prefix`, até 200 caracteres, sem diferenciar maiúsculas, com `%`, `_` e `\` escapados), `status` (`online`, `offline` ou `revoked`; online e offline só entre os não revogados, pela mesma janela de 90 s) e `sort` (`name` (padrão), `-name`, `created_at`, `-created_at`, `last_seen_at`, `-last_seen_at`, nulos por último). Empate pelo `id`; valor fora da lista: 422 `validation_error`.
 
 `RunnerOut`: `id`, `name`, `token_prefix`, `online` (derivado de `last_seen_at`, janela de 90 s; sempre `false` para runner revogado), `last_seen_at`, `version`, `capabilities` (`RunnerCapabilitiesOut`: `platform`, `executors`, `repositories` do último heartbeat; `null` e listas vazias antes do primeiro), `revoked_at`, `created_at`, `created_by`. `PATCH` sem mudança (mesmo nome, `revoked: true` em runner já revogado, `revoked: false` em runner ativo) não grava nem audita.
 
