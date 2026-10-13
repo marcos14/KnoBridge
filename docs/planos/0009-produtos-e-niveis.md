@@ -63,7 +63,7 @@ fases:
         commit: f67f049
   - id: F3
     titulo: Painel
-    status: pendente
+    status: concluida
     subfases:
       - id: F3.1
         titulo: Produtos no lugar de Assistentes e a configuração dos níveis nas Configurações
@@ -85,16 +85,16 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-13
         concluida_em: 2026-10-13
-        commit: null
+        commit: 6a5d819
   - id: F4
     titulo: Entrega e ensaio
-    status: pendente
+    status: em_execucao
     subfases:
       - id: F4.1
         titulo: E2E da stack, guias, README, CHANGELOG e AGENTS raiz
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-13
         concluida_em: null
         commit: null
       - id: F4.2
@@ -523,6 +523,7 @@ Nenhuma.
 - 2026-10-13 — F2.4 concluída: API pública e webhook por produto e nível, integrada sobre a F3.2; backend 2705 passed com 99% de cobertura, frontend 1527
 - 2026-10-13 — F3.3 iniciada (agente em worktree).
 - 2026-10-13 — F3.3 concluída: chat com seletor de produto e nível, citação de card, filtros por produto e nível em Conversas e Uso e custos, chaves com produtos e nível máximo; frontend 1579 passed, 98,72% branches
+- 2026-10-13 — F4.1 iniciada (agente em worktree).
 
 ## 8. Encerramento
 
