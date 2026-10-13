@@ -7,6 +7,9 @@ caller's transaction, scoped to the source's workspace: each item is one atomic
 ``INSERT … ON CONFLICT … DO UPDATE … WHERE`` on ``(source_id, external_id)``, so two batches
 with the same ticket converge to the larger ``updated_at``; when the guarded update does not
 happen, the stored entry tells ``unchanged`` from ``stale``.
+
+Cards (docs/specs/cards.md) go through the same functions with ``kind=CARDS``: only the key of
+the record in an upsert item, its model and the size error change.
 """
 
 from __future__ import annotations
@@ -26,19 +29,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from knobridge.audit.models import JSONValue
 from knobridge.tickets.models import TicketInboxItem, TicketInboxState
+from knobridge.tickets.push import TICKETS, PushKind
 from knobridge.tickets.wire import (
     MAX_TICKET_BYTES,
     ExternalId,
     Problem,
     TicketDeleteItemIn,
-    TicketIn,
-    canonical_ticket,
+    canonical_payload,
     problems,
     serialized,
 )
 
 type Op = Literal["upsert", "delete"]
-_UPSERT_KEYS = frozenset({"op", "ticket"})
 _EXTERNAL_ID: TypeAdapter[str] = TypeAdapter(ExternalId)
 
 
@@ -88,8 +90,8 @@ def _rejected(index: int, op: Op, external_id: str | None, error: ItemError) -> 
     return ItemResult(index, op, external_id, ItemStatus.REJECTED, error)
 
 
-def _invalid(details: list[Problem]) -> ItemError:
-    return ItemError("validation_error", "The item does not match the ticket format.", details)
+def invalid_item(details: list[Problem], noun: str = TICKETS.item_key) -> ItemError:
+    return ItemError("validation_error", f"The item does not match the {noun} format.", details)
 
 
 def readable_id(value: object) -> str | None:
@@ -100,62 +102,72 @@ def readable_id(value: object) -> str | None:
         return None
 
 
-def _check_upsert(index: int, raw: Mapping[str, object]) -> UpsertItem | ItemResult:
-    ticket = raw.get("ticket")
+def _check_upsert(index: int, raw: Mapping[str, object], kind: PushKind) -> UpsertItem | ItemResult:
+    key = kind.item_key
+    record = raw.get(key)
     item_problems: list[Problem] = [
-        {"loc": [key], "problem": "extra_forbidden"} for key in raw if key not in _UPSERT_KEYS
+        {"loc": [name], "problem": "extra_forbidden"} for name in raw if name not in ("op", key)
     ]
-    if not isinstance(ticket, dict):
+    if not isinstance(record, dict):
         item_problems.append(
-            {"loc": ["ticket"], "problem": "missing" if ticket is None else "model_type"}
+            {"loc": [key], "problem": "missing" if record is None else "model_type"}
         )
-        return _rejected(index, "upsert", None, _invalid(item_problems))
-    fields = cast("Mapping[str, object]", ticket)
+        return _rejected(index, "upsert", None, invalid_item(item_problems, key))
+    fields = cast("Mapping[str, object]", record)
     external_id = readable_id(fields.get("external_id"))
     encoded = serialized(fields)
     if len(encoded) > MAX_TICKET_BYTES:
         error = ItemError(
-            "ticket_too_large", "The ticket is above 1 MiB.", {"max_bytes": MAX_TICKET_BYTES}
+            kind.too_large_code, f"The {key} is above 1 MiB.", {"max_bytes": MAX_TICKET_BYTES}
         )
         return _rejected(index, "upsert", external_id, error)
     try:
-        validated = TicketIn.model_validate_json(encoded, strict=True)
+        validated = kind.model.model_validate_json(encoded, strict=True)
     except PydanticValidationError as exc:
-        # Ticket problems are located inside the ticket, as the spec shows them.
-        return _rejected(index, "upsert", external_id, _invalid(item_problems + problems(exc)))
+        # Record problems are located inside the record, as the spec shows them.
+        error = invalid_item(item_problems + problems(exc), key)
+        return _rejected(index, "upsert", external_id, error)
     if item_problems:
-        return _rejected(index, "upsert", validated.external_id, _invalid(item_problems))
-    payload, content_hash = canonical_ticket(validated)
+        return _rejected(index, "upsert", validated.external_id, invalid_item(item_problems, key))
+    payload, content_hash = canonical_payload(validated)
     return UpsertItem(index, validated.external_id, payload, content_hash, validated.updated_at)
 
 
-def _check_delete(index: int, raw: Mapping[str, object]) -> DeleteItem | ItemResult:
+def _check_delete(index: int, raw: Mapping[str, object], kind: PushKind) -> DeleteItem | ItemResult:
     try:
         validated = TicketDeleteItemIn.model_validate_json(serialized(raw), strict=True)
     except PydanticValidationError as exc:
         external_id = readable_id(raw.get("external_id"))
-        return _rejected(index, "delete", external_id, _invalid(problems(exc)))
+        return _rejected(index, "delete", external_id, invalid_item(problems(exc), kind.item_key))
     return DeleteItem(index, validated.external_id, validated.deleted_at)
 
 
-def check_items(items: Sequence[Mapping[str, object]]) -> list[CheckedItem]:
+def check_items(
+    items: Sequence[Mapping[str, object]], kind: PushKind = TICKETS
+) -> list[CheckedItem]:
     """Validate each item (``op`` already known to be ``upsert`` or ``delete``), in order.
 
     A repeated ``external_id`` is rejected as ``duplicate_in_batch`` when an earlier item with
     it was accepted; a rejected item never blocks a later valid one.
     """
-    return check_indexed_items(enumerate(items), {})
+    return check_indexed_items(enumerate(items), {}, kind)
 
 
 def check_indexed_items(
-    items: Iterable[tuple[int, Mapping[str, object]]], first_index: dict[str, int]
+    items: Iterable[tuple[int, Mapping[str, object]]],
+    first_index: dict[str, int],
+    kind: PushKind = TICKETS,
 ) -> list[CheckedItem]:
     """``check_items`` over items numbered by the caller (the upload numbers them by line or
     position), with ``first_index`` (``external_id`` → index of the first accepted item) kept
     across calls, so ``duplicate_in_batch`` covers a whole file read in blocks."""
     checked: list[CheckedItem] = []
     for index, raw in items:
-        item = _check_upsert(index, raw) if raw["op"] == "upsert" else _check_delete(index, raw)
+        item = (
+            _check_upsert(index, raw, kind)
+            if raw["op"] == "upsert"
+            else _check_delete(index, raw, kind)
+        )
         if not isinstance(item, ItemResult):
             if item.external_id in first_index:
                 error = ItemError(

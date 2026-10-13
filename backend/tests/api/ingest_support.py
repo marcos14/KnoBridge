@@ -21,6 +21,7 @@ from knobridge.tenancy.models import Role
 from knobridge.tickets.models import IngestToken, TicketInboxItem
 
 INGEST = "/v1/ingest/tickets"
+INGEST_CARDS = "/v1/ingest/cards"
 
 
 @dataclass(frozen=True)
@@ -40,14 +41,36 @@ def issue_token(api: ApiEnv, world: IndexWorld, source_id: str) -> httpx.Respons
     )
 
 
-def tickets_world(api: ApiEnv, *roles: Role) -> TicketsWorld:
-    """A workspace whose first user (owner or admin, left logged in) creates a ``tickets``
-    source and issues its token."""
+def tickets_world(api: ApiEnv, *roles: Role, kind: str = "tickets") -> TicketsWorld:
+    """A workspace whose first user (owner or admin, left logged in) creates a ``tickets`` (or
+    ``cards``) source and issues its token."""
     world = build_world(api, *(roles or (Role.ADMIN,)))
-    source_id = create_source(api, world, kind="tickets", config={})
+    source_id = create_source(api, world, kind=kind, config={})
     response = issue_token(api, world, source_id)
     assert response.status_code == 201, response.text
     return TicketsWorld(world, source_id, response.json()["token"])
+
+
+def card(external_id: str = "C-1", **fields: Any) -> dict[str, Any]:  # noqa: ANN401
+    body: dict[str, Any] = {
+        "external_id": external_id,
+        "title": "Exportar nota fiscal",
+        "type": "feature",
+        "status": "done",
+        "created_at": "2026-10-01T10:00:00Z",
+        "updated_at": "2026-10-01T12:00:00Z",
+    }
+    body.update(fields)
+    return body
+
+
+def card_upsert(external_id: str = "C-1", **fields: Any) -> dict[str, Any]:  # noqa: ANN401
+    return {"op": "upsert", "card": card(external_id, **fields)}
+
+
+def ingest_cards(api: ApiEnv, token: str | None, *items: dict[str, Any]) -> httpx.Response:
+    headers = {} if token is None else {"Authorization": f"Bearer {token}"}
+    return api.client.post(INGEST_CARDS, json={"items": list(items)}, headers=headers)
 
 
 def ticket(external_id: str = "A-1", **fields: Any) -> dict[str, Any]:  # noqa: ANN401

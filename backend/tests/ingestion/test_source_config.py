@@ -11,6 +11,8 @@ from knobridge.harness.models import HarnessExecutor
 from knobridge.ingestion.models import Source
 from knobridge.ingestion.source_config import (
     DEFAULT_INITIAL_COMMIT_LIMIT,
+    CardsSourceConfig,
+    CardStatus,
     FolderSourceConfig,
     GitSourceConfig,
     RunnerSourceConfig,
@@ -221,3 +223,39 @@ def test_tickets_source_config_subset_of_statuses() -> None:
 def test_tickets_source_config_refused(data: dict[str, object], problem: str) -> None:
     with pytest.raises(ValidationError, match=problem):
         parse_source_config(SourceKind.TICKETS, data)
+
+
+def test_cards_source_config_defaults() -> None:
+    parsed = parse_source_config(SourceKind.CARDS, {})
+
+    assert parsed == CardsSourceConfig()
+    assert parsed.model_dump(mode="json") == {
+        "anonymize": True,
+        "include_comments": True,
+        "statuses": ["backlog", "in_progress", "done", "cancelled"],
+    }
+
+
+def test_cards_source_config_subset_of_statuses() -> None:
+    parsed = parse_source_config(
+        SourceKind.CARDS, {"anonymize": False, "include_comments": False, "statuses": ["done"]}
+    )
+
+    assert parsed == CardsSourceConfig(
+        anonymize=False, include_comments=False, statuses=(CardStatus.DONE,)
+    )
+
+
+@pytest.mark.parametrize(
+    ("data", "problem"),
+    [
+        ({"statuses": []}, "too_short"),
+        ({"statuses": ["done", "done"]}, "statuses must not repeat"),
+        ({"statuses": ["open"]}, "enum"),
+        ({"include_internal_notes": True}, "extra_forbidden"),
+    ],
+    ids=["empty", "repeated", "ticket-status", "ticket-field"],
+)
+def test_cards_source_config_refused(data: dict[str, object], problem: str) -> None:
+    with pytest.raises(ValidationError, match=problem):
+        parse_source_config(SourceKind.CARDS, data)

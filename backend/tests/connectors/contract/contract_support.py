@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Protocol
 
 from pydantic import AnyUrl
-from tickets_contract_support import TicketsContractSource
+from tickets_contract_support import CardsContractSource, TicketsContractSource
 
 from fakes.connector import FakeConnector
 from knobridge.connectors.base import ChangeSet, Connector
@@ -208,4 +208,5 @@ CONTRACT_SOURCES: dict[str, Callable[[Path], ContractSource]] = {
 # Sources that need the migrated database (``app_database_url``); their tests are integration.
 DATABASE_CONTRACT_SOURCES: dict[str, Callable[[str, Path], ContractSource]] = {
     "tickets": TicketsContractSource,
+    "cards": CardsContractSource,
 }

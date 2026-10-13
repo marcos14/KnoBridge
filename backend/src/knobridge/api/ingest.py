@@ -1,17 +1,19 @@
-"""``POST /v1/ingest/tickets``: an external system pushes up to 100 tickets or removals into the
-inbox of its ``tickets`` source (docs/specs/chamados.md, "Envio pela API").
+"""``POST /v1/ingest/tickets`` and ``POST /v1/ingest/cards``: an external system pushes up to 100
+tickets (or cards) or removals into the inbox of its source (docs/specs/chamados.md, "Envio pela
+API"; docs/specs/cards.md).
 
 Only the ingest token (``Authorization: Bearer kbi_…``) opens these routes: no session cookie,
 no CSRF, and the token opens nothing else. It is checked in a short system-mode transaction
 (``current_ingest_source``); the batch is then written in a transaction scoped to the source's
-workspace and, after the commit, the sync of the source is requested (trigger ``ingest``).
+workspace and, after the commit, the sync of the source is requested (trigger ``ingest``). A
+token of a source of the other kind is 409 ``source_kind_mismatch``, with nothing written.
 
 Only errors of the whole body are 422 (``items`` missing, empty, above 100, or an item that is
 not an object with ``op`` ``upsert``/``delete``); each item is then validated on its own and an
 invalid one comes back ``rejected`` without sinking the batch. To keep that per-item answer,
 ``items`` is received as raw objects, while the OpenAPI publishes the full item schemas
-(``TicketUpsertItemIn``/``TicketDeleteItemIn``). The 5 MiB limit is enforced by the body limit
-middleware (``body_limit.py``). Logic in ``tickets/``.
+(``TicketUpsertItemIn``/``TicketDeleteItemIn``, ``CardUpsertItemIn``/``CardDeleteItemIn``). The
+5 MiB limit is enforced by the body limit middleware (``body_limit.py``). Logic in ``tickets/``.
 """
 
 from __future__ import annotations
@@ -26,13 +28,18 @@ from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, ConfigDict, Field, PlainValidator
 from pydantic_core import PydanticCustomError
 from sqlalchemy.exc import InterfaceError, OperationalError
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from knobridge.api.deps import ClockDep, SessionFactoryDep, SyncStarterDep
+from knobridge.core.clock import Clock
 from knobridge.core.db import scoped_session, system_session
 from knobridge.core.errors import ServiceUnavailableError
 from knobridge.core.logging import get_logger
+from knobridge.ingestion.sync import SyncStarter
+from knobridge.tickets.card_wire import CardDeleteItemIn, CardUpsertItemIn
 from knobridge.tickets.ingest import ItemResult, ItemStatus, apply_items, check_items, count
 from knobridge.tickets.ingest_sync import SyncOutcome, open_ingest_source, request_ingest_sync
+from knobridge.tickets.push import CARDS, TICKETS, PushKind
 from knobridge.tickets.tokens import IngestIdentity, authenticate_ingest_token, invalid_ingest_token
 from knobridge.tickets.wire import TicketDeleteItemIn, TicketUpsertItemIn
 
@@ -83,12 +90,22 @@ RawItem = Annotated[
     dict[str, object],
     PlainValidator(_raw_item, json_schema_input_type=TicketUpsertItemIn | TicketDeleteItemIn),
 ]
+RawCardItem = Annotated[
+    dict[str, object],
+    PlainValidator(_raw_item, json_schema_input_type=CardUpsertItemIn | CardDeleteItemIn),
+]
 
 
 class TicketIngestIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     items: Annotated[list[RawItem], Field(min_length=1, max_length=MAX_ITEMS)]
+
+
+class CardIngestIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    items: Annotated[list[RawCardItem], Field(min_length=1, max_length=MAX_ITEMS)]
 
 
 class TicketIngestItemError(BaseModel):
@@ -122,7 +139,10 @@ class TicketIngestOut(BaseModel):
 INGEST_ERRORS: dict[int | str, dict[str, object]] = {
     401: {"description": "Missing, malformed, unknown or rotated token (`invalid_ingest_token`)."},
     403: {"description": "Workspace of the source suspended (`workspace_suspended`)."},
-    409: {"description": "Source deactivated (`source_inactive`): nothing written."},
+    409: {
+        "description": "Source deactivated (`source_inactive`) or of the other kind "
+        "(`source_kind_mismatch`, `details.expected`/`details.actual`): nothing written."
+    },
     413: {"description": "Body above 5 MiB (`payload_too_large`, `details.max_bytes`)."},
     422: {"description": "Malformed body (`validation_error`)."},
     503: {"description": "Database unavailable (`service_unavailable`): nothing written."},
@@ -142,24 +162,22 @@ def _result_out(result: ItemResult) -> TicketIngestItemResult:
     )
 
 
-router = APIRouter(tags=["ingest"])
-
-
-@router.post("/ingest/tickets", status_code=HTTPStatus.ACCEPTED, responses=INGEST_ERRORS)
-async def ingest_tickets(
-    body: TicketIngestIn,
-    identity: IngestSourceDep,
-    factory: SessionFactoryDep,
-    starter: SyncStarterDep,
-    clock: ClockDep,
+async def _ingest(
+    items: list[dict[str, object]],
+    identity: IngestIdentity,
+    factory: async_sessionmaker[AsyncSession],
+    starter: SyncStarter,
+    clock: Clock,
+    kind: PushKind,
 ) -> TicketIngestOut:
-    """Validate each item, write the accepted ones to the inbox (the ``updated_at`` rule) and
-    request the sync of the source; 202 with the result of every item, in order."""
-    checked = check_items(body.items)
+    checked = check_items(items, kind)
     with database_available():
         async with scoped_session(factory, workspace_id=identity.workspace_id, user_id=None) as db:
             await open_ingest_source(
-                db, workspace_id=identity.workspace_id, source_id=identity.source_id
+                db,
+                workspace_id=identity.workspace_id,
+                source_id=identity.source_id,
+                kind=kind.source_kind,
             )
             results = await apply_items(
                 db,
@@ -180,7 +198,7 @@ async def ingest_tickets(
             source_id=identity.source_id,
         )
     _log.info(
-        "tickets_ingested",
+        f"{kind.source_kind.value}_ingested",
         workspace_id=str(identity.workspace_id),
         source_id=str(identity.source_id),
         run_id=None if run_id is None else str(run_id),
@@ -193,3 +211,32 @@ async def ingest_tickets(
         sync=sync,
         run_id=run_id,
     )
+
+
+router = APIRouter(tags=["ingest"])
+
+
+@router.post("/ingest/tickets", status_code=HTTPStatus.ACCEPTED, responses=INGEST_ERRORS)
+async def ingest_tickets(
+    body: TicketIngestIn,
+    identity: IngestSourceDep,
+    factory: SessionFactoryDep,
+    starter: SyncStarterDep,
+    clock: ClockDep,
+) -> TicketIngestOut:
+    """Validate each item, write the accepted ones to the inbox (the ``updated_at`` rule) and
+    request the sync of the source; 202 with the result of every item, in order."""
+    return await _ingest(body.items, identity, factory, starter, clock, TICKETS)
+
+
+@router.post("/ingest/cards", status_code=HTTPStatus.ACCEPTED, responses=INGEST_ERRORS)
+async def ingest_cards(
+    body: CardIngestIn,
+    identity: IngestSourceDep,
+    factory: SessionFactoryDep,
+    starter: SyncStarterDep,
+    clock: ClockDep,
+) -> TicketIngestOut:
+    """The same as ``/ingest/tickets`` for the cards of a ``cards`` source (``card`` in the
+    upsert item); 202 with the result of every item, in order."""
+    return await _ingest(body.items, identity, factory, starter, clock, CARDS)

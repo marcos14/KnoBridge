@@ -2,8 +2,8 @@
 
 The ingestion engine depends on ``ConnectorFactory`` (not on the concrete connectors), so tests
 inject a factory that returns an in-memory connector and no filesystem or Git is touched.
-Runner sources are served by the internal ``knowledge`` connector (``harness/``) and tickets
-sources by the internal ``tickets`` connector (``tickets/``), which the caller hands in: they
+Runner sources are served by the internal ``knowledge`` connector (``harness/``) and tickets and
+cards sources by the internal inbox connectors (``tickets/``), which the caller hands in: they
 read the database, and this module imports neither package.
 """
 
@@ -17,7 +17,12 @@ from knobridge.connectors.folder.connector import create_folder_connector
 from knobridge.connectors.git.connector import create_git_connector
 from knobridge.core.settings import Settings
 from knobridge.ingestion.models import Source
-from knobridge.ingestion.source_config import FolderSourceConfig, GitSourceConfig, SourceKind
+from knobridge.ingestion.source_config import (
+    PUSH_SOURCE_KINDS,
+    FolderSourceConfig,
+    GitSourceConfig,
+    SourceKind,
+)
 
 
 class ConnectorFactory(Protocol):
@@ -26,7 +31,7 @@ class ConnectorFactory(Protocol):
 
 class SettingsConnectorFactory:
     """The production factory: roots and size limits come from settings; ``knowledge`` builds
-    the connector of runner sources and ``tickets`` the one of tickets sources."""
+    the connector of runner sources and ``tickets`` the one of tickets and cards sources."""
 
     def __init__(
         self,
@@ -46,9 +51,9 @@ class SettingsConnectorFactory:
             if self._knowledge is None:
                 raise SourceUnavailableError("runner sources are not indexed here")
             return self._knowledge(source)
-        if source.kind == SourceKind.TICKETS:
+        if source.kind in PUSH_SOURCE_KINDS:
             if self._tickets is None:
-                raise SourceUnavailableError("tickets sources are not indexed here")
+                raise SourceUnavailableError(f"{source.kind.value} sources are not indexed here")
             return self._tickets(source)
         config = source.typed_config()
         globs = {
@@ -57,5 +62,5 @@ class SettingsConnectorFactory:
         }
         if isinstance(config, FolderSourceConfig):
             return create_folder_connector(config, self._settings, **globs)
-        # Runner and tickets sources returned above, so only Git is left.
+        # Runner, tickets and cards sources returned above, so only Git is left.
         return create_git_connector(cast(GitSourceConfig, config), self._settings, **globs)

@@ -97,6 +97,7 @@ def test_source_min_level_defaults_by_kind(app_database_url: str) -> None:
         SourceKind.RUNNER: ResponseLevel.END_USER,
         SourceKind.TICKETS: ResponseLevel.SUPPORT,
         SourceKind.GIT: ResponseLevel.PRODUCT_DEV,
+        SourceKind.CARDS: ResponseLevel.PRODUCT_DEV,
     }
 
 

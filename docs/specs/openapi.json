@@ -977,6 +977,7 @@
           "source.reindex.started",
           "source.ingest_token_rotated",
           "source.tickets_uploaded",
+          "source.cards_uploaded",
           "runner.created",
           "runner.updated",
           "runner.revoked",
@@ -1104,6 +1105,647 @@
         "title": "AuditEventPage",
         "type": "object"
       },
+      "CardAttachmentIn": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "CardAttachmentIn",
+        "type": "object"
+      },
+      "CardCommentIn": {
+        "additionalProperties": false,
+        "properties": {
+          "author_name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 0,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Name"
+          },
+          "body": {
+            "maxLength": 100000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          },
+          "body_format": {
+            "$ref": "#/components/schemas/TicketBodyFormat",
+            "default": "text"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 0,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          }
+        },
+        "required": [
+          "body",
+          "created_at"
+        ],
+        "title": "CardCommentIn",
+        "type": "object"
+      },
+      "CardDeleteItemIn": {
+        "additionalProperties": false,
+        "description": "The removal of a card: the same fields as a ticket's, under the card's schema name.",
+        "properties": {
+          "deleted_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deleted At"
+          },
+          "external_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "External Id",
+            "type": "string"
+          },
+          "op": {
+            "const": "delete",
+            "title": "Op",
+            "type": "string"
+          }
+        },
+        "required": [
+          "op",
+          "external_id"
+        ],
+        "title": "CardDeleteItemIn",
+        "type": "object"
+      },
+      "CardDescriptionIn": {
+        "additionalProperties": false,
+        "properties": {
+          "body": {
+            "maxLength": 100000,
+            "minLength": 1,
+            "title": "Body",
+            "type": "string"
+          },
+          "body_format": {
+            "$ref": "#/components/schemas/TicketBodyFormat",
+            "default": "text"
+          }
+        },
+        "required": [
+          "body"
+        ],
+        "title": "CardDescriptionIn",
+        "type": "object"
+      },
+      "CardIn": {
+        "additionalProperties": false,
+        "description": "A card of the development tool of origin (docs/specs/cards.md, \"Formato do card\").",
+        "properties": {
+          "acceptance_criteria": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CardDescriptionIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "assignees": {
+            "items": {
+              "$ref": "#/components/schemas/CardPersonIn"
+            },
+            "maxItems": 20,
+            "title": "Assignees",
+            "type": "array"
+          },
+          "attachments": {
+            "items": {
+              "$ref": "#/components/schemas/CardAttachmentIn"
+            },
+            "maxItems": 100,
+            "title": "Attachments",
+            "type": "array"
+          },
+          "comments": {
+            "items": {
+              "$ref": "#/components/schemas/CardCommentIn"
+            },
+            "maxItems": 500,
+            "title": "Comments",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "custom_fields": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "maxProperties": 50,
+            "title": "Custom Fields",
+            "type": "object"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CardDescriptionIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "done_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Done At"
+          },
+          "external_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "title": "External Id",
+            "type": "string"
+          },
+          "links": {
+            "items": {
+              "$ref": "#/components/schemas/CardLinkIn"
+            },
+            "maxItems": 100,
+            "title": "Links",
+            "type": "array"
+          },
+          "number": {
+            "anyOf": [
+              {
+                "maxLength": 50,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Number"
+          },
+          "original_status": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "minLength": 0,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Status"
+          },
+          "original_type": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "minLength": 0,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Type"
+          },
+          "parent_external_id": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent External Id"
+          },
+          "priority": {
+            "anyOf": [
+              {
+                "maxLength": 50,
+                "minLength": 0,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority"
+          },
+          "product": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 0,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product"
+          },
+          "release": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "minLength": 0,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Release"
+          },
+          "reporter": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CardPersonIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sprint": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CardSprintIn"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "$ref": "#/components/schemas/CardStatus"
+          },
+          "tags": {
+            "items": {
+              "maxLength": 100,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 50,
+            "title": "Tags",
+            "type": "array"
+          },
+          "title": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/CardType"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "minLength": 0,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "external_id",
+          "title",
+          "type",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "CardIn",
+        "type": "object"
+      },
+      "CardIngestIn": {
+        "additionalProperties": false,
+        "properties": {
+          "items": {
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/CardUpsertItemIn"
+                },
+                {
+                  "$ref": "#/components/schemas/CardDeleteItemIn"
+                }
+              ]
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "CardIngestIn",
+        "type": "object"
+      },
+      "CardLinkIn": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/CardLinkKind"
+          },
+          "relation": {
+            "anyOf": [
+              {
+                "maxLength": 100,
+                "minLength": 0,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Relation"
+          },
+          "target": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Target",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "minLength": 0,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "kind",
+          "target"
+        ],
+        "title": "CardLinkIn",
+        "type": "object"
+      },
+      "CardLinkKind": {
+        "enum": [
+          "card",
+          "ticket",
+          "commit",
+          "pull_request",
+          "url"
+        ],
+        "title": "CardLinkKind",
+        "type": "string"
+      },
+      "CardPersonIn": {
+        "additionalProperties": false,
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "maxLength": 320,
+                "minLength": 0,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 0,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "title": "CardPersonIn",
+        "type": "object"
+      },
+      "CardPreviewIn": {
+        "additionalProperties": false,
+        "description": "The card is validated like an upsert item (strict), so it arrives raw.",
+        "properties": {
+          "card": {
+            "$ref": "#/components/schemas/CardIn",
+            "title": "Card"
+          }
+        },
+        "required": [
+          "card"
+        ],
+        "title": "CardPreviewIn",
+        "type": "object"
+      },
+      "CardPreviewOut": {
+        "properties": {
+          "anonymize": {
+            "title": "Anonymize",
+            "type": "boolean"
+          },
+          "include_comments": {
+            "title": "Include Comments",
+            "type": "boolean"
+          },
+          "markdown": {
+            "title": "Markdown",
+            "type": "string"
+          },
+          "markers": {
+            "items": {
+              "$ref": "#/components/schemas/TicketPreviewMarker"
+            },
+            "title": "Markers",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "markdown",
+          "markers",
+          "anonymize",
+          "include_comments"
+        ],
+        "title": "CardPreviewOut",
+        "type": "object"
+      },
+      "CardSprintIn": {
+        "additionalProperties": false,
+        "properties": {
+          "end_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End At"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "start_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start At"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "CardSprintIn",
+        "type": "object"
+      },
+      "CardStatus": {
+        "description": "Normalized status of a card (docs/specs/cards.md, \"Status e tipo normalizados\").",
+        "enum": [
+          "backlog",
+          "in_progress",
+          "done",
+          "cancelled"
+        ],
+        "title": "CardStatus",
+        "type": "string"
+      },
+      "CardType": {
+        "enum": [
+          "feature",
+          "bug",
+          "task",
+          "story",
+          "epic",
+          "other"
+        ],
+        "title": "CardType",
+        "type": "string"
+      },
+      "CardUpsertItemIn": {
+        "additionalProperties": false,
+        "properties": {
+          "card": {
+            "$ref": "#/components/schemas/CardIn"
+          },
+          "op": {
+            "const": "upsert",
+            "title": "Op",
+            "type": "string"
+          }
+        },
+        "required": [
+          "op",
+          "card"
+        ],
+        "title": "CardUpsertItemIn",
+        "type": "object"
+      },
       "ChangePasswordRequest": {
         "properties": {
           "current_password": {
@@ -1225,6 +1867,79 @@
               }
             ],
             "title": "Author"
+          },
+          "card_date_kind": {
+            "anyOf": [
+              {
+                "enum": [
+                  "done",
+                  "updated"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Card Date Kind"
+          },
+          "card_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Card Number"
+          },
+          "card_sprint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Card Sprint"
+          },
+          "card_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "backlog",
+                  "in_progress",
+                  "done",
+                  "cancelled"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Card Status"
+          },
+          "card_type": {
+            "anyOf": [
+              {
+                "enum": [
+                  "feature",
+                  "bug",
+                  "task",
+                  "story",
+                  "epic",
+                  "other"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Card Type"
           },
           "confidence": {
             "anyOf": [
@@ -1949,7 +2664,8 @@
           "file",
           "commit",
           "knowledge",
-          "ticket"
+          "ticket",
+          "card"
         ],
         "title": "DocumentKind",
         "type": "string"
@@ -8831,7 +9547,8 @@
           "git",
           "folder",
           "runner",
-          "tickets"
+          "tickets",
+          "cards"
         ],
         "title": "SourceKind",
         "type": "string"
@@ -12502,6 +13219,56 @@
         ]
       }
     },
+    "/v1/ingest/cards": {
+      "post": {
+        "description": "The same as ``/ingest/tickets`` for the cards of a ``cards`` source (``card`` in the\nupsert item); 202 with the result of every item, in order.",
+        "operationId": "ingest_cards_v1_ingest_cards_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CardIngestIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketIngestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or rotated token (`invalid_ingest_token`)."
+          },
+          "403": {
+            "description": "Workspace of the source suspended (`workspace_suspended`)."
+          },
+          "409": {
+            "description": "Source deactivated (`source_inactive`) or of the other kind (`source_kind_mismatch`, `details.expected`/`details.actual`): nothing written."
+          },
+          "413": {
+            "description": "Body above 5 MiB (`payload_too_large`, `details.max_bytes`)."
+          },
+          "422": {
+            "description": "Malformed body (`validation_error`)."
+          },
+          "503": {
+            "description": "Database unavailable (`service_unavailable`): nothing written."
+          }
+        },
+        "summary": "Ingest Cards",
+        "tags": [
+          "ingest"
+        ]
+      }
+    },
     "/v1/ingest/tickets": {
       "post": {
         "description": "Validate each item, write the accepted ones to the inbox (the ``updated_at`` rule) and\nrequest the sync of the source; 202 with the result of every item, in order.",
@@ -12534,7 +13301,7 @@
             "description": "Workspace of the source suspended (`workspace_suspended`)."
           },
           "409": {
-            "description": "Source deactivated (`source_inactive`): nothing written."
+            "description": "Source deactivated (`source_inactive`) or of the other kind (`source_kind_mismatch`, `details.expected`/`details.actual`): nothing written."
           },
           "413": {
             "description": "Body above 5 MiB (`payload_too_large`, `details.max_bytes`)."
@@ -18357,6 +19124,221 @@
         ]
       }
     },
+    "/v1/workspaces/{workspace_id}/sources/{source_id}/cards/preview": {
+      "post": {
+        "description": "The Markdown the index would get for this card, anonymized with the source's settings;\nnothing is written.",
+        "operationId": "preview_card_markdown_v1_workspaces__workspace_id__sources__source_id__cards_preview_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CardPreviewIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CardPreviewOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
+          },
+          "404": {
+            "description": "Workspace not found or caller not a member, or not a `cards` source of the workspace (`source_not_found`)."
+          },
+          "413": {
+            "description": "Body above 2 MiB (`payload_too_large`)."
+          },
+          "422": {
+            "description": "Card outside the format (`validation_error` with `{loc, problem}` relative to the card) or above 1 MiB (`card_too_large`)."
+          }
+        },
+        "summary": "Preview Card Markdown",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/sources/{source_id}/cards/summary": {
+      "get": {
+        "description": "The same summary for a ``cards`` source (docs/specs/cards.md).",
+        "operationId": "get_cards_summary_v1_workspaces__workspace_id__sources__source_id__cards_summary_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketsSummaryOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Workspace suspended (`workspace_suspended`)."
+          },
+          "404": {
+            "description": "Workspace not found or caller not a member, or not a `cards` source of the workspace (`source_not_found`)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Cards Summary",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/sources/{source_id}/cards/upload": {
+      "post": {
+        "description": "Validate and write every card or removal of the file (the rules of the API, in blocks\nof 100), then ask for the sync of the source; the counts and the rejected items.",
+        "operationId": "upload_card_file_v1_workspaces__workspace_id__sources__source_id__cards_upload_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Source Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "file": {
+                    "description": "A .json (list or {items}) or .jsonl file, up to 50 MiB.",
+                    "format": "binary",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "file"
+                ],
+                "title": "TicketUploadIn",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketUploadOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
+          },
+          "404": {
+            "description": "Workspace not found or caller not a member, or not a `cards` source of the workspace (`source_not_found`)."
+          },
+          "409": {
+            "description": "Source deactivated (`source_inactive`)."
+          },
+          "413": {
+            "description": "File above 50 MiB (`payload_too_large`, `details.max_bytes`)."
+          },
+          "422": {
+            "description": "Not a .json/.jsonl file (`upload_format_unsupported`), malformed JSON (`upload_invalid_json`), empty file (`upload_empty`) or no file field (`validation_error`)."
+          }
+        },
+        "summary": "Upload Card File",
+        "tags": [
+          "sources"
+        ]
+      }
+    },
     "/v1/workspaces/{workspace_id}/sources/{source_id}/documents": {
       "get": {
         "description": "Indexed documents of the source, ordered by key, with their chunk counts.",
@@ -18698,7 +19680,7 @@
             "description": "Role below admin (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
           },
           "404": {
-            "description": "Workspace not found or caller not a member, or not a `tickets` source of the workspace (`source_not_found`)."
+            "description": "Workspace not found or caller not a member, or not a `tickets` or `cards` source of the workspace (`source_not_found`)."
           },
           "422": {
             "content": {

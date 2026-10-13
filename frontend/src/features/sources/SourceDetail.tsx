@@ -165,6 +165,8 @@ function SourceHeader({ workspaceId, source, collections, canManage }: SourceHea
           </p>
           {source.kind === "tickets" ? (
             <TicketsSummary source={source} />
+          ) : source.kind === "cards" ? (
+            <p className="text-muted-foreground text-sm">{t("sources.detail.cardsByApi")}</p>
           ) : (
             <p className="text-sm break-all">
               {source.kind === "runner"
@@ -200,26 +202,29 @@ function SourceHeader({ workspaceId, source, collections, canManage }: SourceHea
             </Button>
             <SyncButton workspaceId={workspaceId} source={source} onFeedback={setFeedback} />
             <ReindexButton workspaceId={workspaceId} source={source} onFeedback={setFeedback} />
-            <SourceDialog
-              workspaceId={workspaceId}
-              source={source}
-              collections={collections}
-              trigger={
-                <Button
-                  type="button"
-                  variant="outline"
-                  aria-label={t("sources.editLabel", { name: source.name })}
-                >
-                  {t("sources.edit")}
-                </Button>
-              }
-              onSaved={(saved) => {
-                setFeedback({
-                  kind: "status",
-                  message: t("sources.updated", { name: saved.name }),
-                });
-              }}
-            />
+            {/* The panel does not edit a cards source yet: it is managed through the API. */}
+            {source.kind !== "cards" && (
+              <SourceDialog
+                workspaceId={workspaceId}
+                source={source}
+                collections={collections}
+                trigger={
+                  <Button
+                    type="button"
+                    variant="outline"
+                    aria-label={t("sources.editLabel", { name: source.name })}
+                  >
+                    {t("sources.edit")}
+                  </Button>
+                }
+                onSaved={(saved) => {
+                  setFeedback({
+                    kind: "status",
+                    message: t("sources.updated", { name: saved.name }),
+                  });
+                }}
+              />
+            )}
           </div>
         )}
       </div>

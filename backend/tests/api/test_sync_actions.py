@@ -141,6 +141,7 @@ def test_reindex_with_active_run_409(api: ApiEnv, index: IndexOverrides) -> None
     [
         ({"active": False}, "source_inactive"),
         ({"kind": "tickets", "config": {}}, "source_reindex_unsupported"),
+        ({"kind": "cards", "config": {}}, "source_reindex_unsupported"),
     ],
 )
 def test_reindex_refuses_inactive_and_tickets_sources(

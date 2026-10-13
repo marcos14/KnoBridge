@@ -1,8 +1,8 @@
 """Ingest tokens: ``kbi_<prefix>_<secret>`` (docs/specs/chamados.md, "Token de envio").
 
-One token per ``tickets`` source. The prefix (8 characters of ``[a-z0-9]``) is public: stored
-in clear, unique in the instance, it is how authentication finds the source before the
-workspace is known (system mode). The secret is 32 random bytes in URL-safe base64 (43
+One token per ``tickets`` or ``cards`` source. The prefix (8 characters of ``[a-z0-9]``) is
+public: stored in clear, unique in the instance, it is how authentication finds the source
+before the workspace is known (system mode). The secret is 32 random bytes in URL-safe base64 (43
 characters). Only the SHA-256 (hex) of the whole token is stored; the token itself exists once,
 in the value returned when it is issued. Rotating replaces prefix and hash in place, so the
 previous token stops working at once. Every failure of a token is the same 401, and nothing
@@ -30,7 +30,7 @@ from knobridge.core.errors import ForbiddenError, KnoBridgeError, NotFoundError
 from knobridge.core.logging import get_logger
 from knobridge.ingestion.models import Source
 from knobridge.ingestion.source_check import ConnectionFailure
-from knobridge.ingestion.source_config import SourceKind
+from knobridge.ingestion.source_config import PUSH_SOURCE_KINDS
 from knobridge.security.tokens import hash_token
 from knobridge.tenancy.models import Workspace, WorkspaceStatus
 from knobridge.tickets.models import TOKEN_PREFIX_LENGTH, IngestToken
@@ -75,7 +75,7 @@ class IssuedIngestToken:
 
 @dataclass(frozen=True)
 class IngestIdentity:
-    """The ``tickets`` source a valid token opens."""
+    """The ``tickets`` or ``cards`` source a valid token opens."""
 
     workspace_id: uuid.UUID
     source_id: uuid.UUID
@@ -126,7 +126,7 @@ async def authenticate_ingest_token(db: AsyncSession, *, token: str) -> IngestId
 
 
 async def ingest_token_failure(db: AsyncSession, source: Source) -> ConnectionFailure | None:
-    """Connection test of a ``tickets`` source: fine while it has a token."""
+    """Connection test of a ``tickets`` or ``cards`` source: fine while it has a token."""
     found = await db.scalar(
         select(IngestToken.id).where(
             IngestToken.workspace_id == source.workspace_id, IngestToken.source_id == source.id
@@ -142,8 +142,8 @@ async def ingest_token_failure(db: AsyncSession, source: Source) -> ConnectionFa
 
 
 class IngestTokenService:
-    """Issue or rotate the token of a ``tickets`` source (owner or admin, in the route's
-    workspace-scoped session; audited in the same transaction)."""
+    """Issue or rotate the token of a ``tickets`` or ``cards`` source (owner or admin, in the
+    route's workspace-scoped session; audited in the same transaction)."""
 
     def __init__(self, clock: Clock) -> None:
         self._clock = clock
@@ -164,7 +164,7 @@ class IngestTokenService:
                 .where(
                     Source.workspace_id == workspace_id,
                     Source.id == source_id,
-                    Source.kind == SourceKind.TICKETS,
+                    Source.kind.in_(PUSH_SOURCE_KINDS),
                 )
                 .with_for_update()
             )

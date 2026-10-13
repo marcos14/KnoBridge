@@ -12,6 +12,8 @@
   module, confidence, title) and the evidence it relies on, for the citation.
 - A ticket is cut at its sections (problem, resolution, conversation, fields, attachments), with
   the title and metadata list in the first chunk; each chunk carries the ticket's citation data.
+  A card is cut the same way, at its own sections (description, acceptance criteria, links,
+  comments, fields, attachments).
 
 Line numbers (``start_line``/``end_line``, 1-based) refer to the original file for Markdown,
 text and code. Converted documents (PDF, DOCX...) and commits have none: their Markdown is
@@ -72,6 +74,34 @@ TICKET_META_KEYS = (
     "ticket_number",
     "ticket_status",
     "original_status",
+    "date",
+    "date_kind",
+    "url",
+)
+# The same for a card's Markdown (docs/specs/cards.md, "Markdown do card").
+CARD_DESCRIPTION = "Descrição"
+CARD_ACCEPTANCE = "Critérios de aceite"
+CARD_LINKS = "Ligações"
+CARD_COMMENTS = "Comentários"
+CARD_FIELDS = "Campos adicionais"
+CARD_ATTACHMENTS = "Anexos"
+CARD_SECTIONS = {
+    CARD_DESCRIPTION: "description",
+    CARD_ACCEPTANCE: "acceptance",
+    CARD_LINKS: "links",
+    CARD_COMMENTS: "comments",
+    CARD_FIELDS: "fields",
+    CARD_ATTACHMENTS: "attachments",
+}
+CARD_META_KEYS = (
+    "kind",
+    "external_id",
+    "card_number",
+    "card_type",
+    "card_status",
+    "original_status",
+    "sprint",
+    "release",
     "date",
     "date_kind",
     "url",
@@ -201,46 +231,94 @@ def _meta_text(doc: ParsedDocument, name: str) -> str | None:
     return value if isinstance(value, str) else None
 
 
+@dataclass(frozen=True, slots=True)
+class _Layout:
+    """How a generated record (a ticket or a card) is cut: its sections and the one the head
+    falls back to, the section that joins the first one when both fit, and its citation data."""
+
+    noun: str
+    number_key: str
+    status_key: str
+    meta_keys: tuple[str, ...]
+    sections: dict[str, str]
+    default: str
+    first: str
+    follower: str
+
+
+_TICKET_LAYOUT = _Layout(
+    "ticket",
+    "ticket_number",
+    "ticket_status",
+    TICKET_META_KEYS,
+    TICKET_SECTIONS,
+    TICKET_PROBLEM,
+    TICKET_PROBLEM,
+    TICKET_RESOLUTION,
+)
+_CARD_LAYOUT = _Layout(
+    "card",
+    "card_number",
+    "card_status",
+    CARD_META_KEYS,
+    CARD_SECTIONS,
+    CARD_DESCRIPTION,
+    CARD_DESCRIPTION,
+    CARD_ACCEPTANCE,
+)
+
+
+def _chunk_record(doc: ParsedDocument, layout: _Layout) -> list[Piece]:
+    base: dict[str, JSONValue] = {name: doc.metadata.get(name) for name in layout.meta_keys}
+    base["title"] = doc.title
+    record = f"{_meta_text(doc, layout.number_key)} · {doc.title}"
+    status = _meta_text(doc, layout.status_key)
+    pieces: list[Piece] = []
+    for section in _with_follower(_sections(doc.markdown), layout):
+        heading = section.headings[-1] if section.headings else layout.default
+        label = heading if heading in layout.sections else layout.default
+        meta: dict[str, JSONValue] = {
+            **base,
+            "headings": list(section.headings),
+            "section": layout.sections[label],
+        }
+        context = [(layout.noun, record), ("status", status), ("section", label)]
+        pieces.extend(_without_lines(part) for part in _section_pieces(section, meta, context))
+    return pieces
+
+
 def chunk_ticket(doc: ParsedDocument) -> list[Piece]:
     """A ticket cut at its sections, without lines (the Markdown is generated). The title and
     the metadata list travel with the first section, and so does the resolution when it fits;
     each chunk carries the ticket's citation metadata and its ``section``. A ticket with no
     section at all is one ``problem`` chunk."""
-    base: dict[str, JSONValue] = {name: doc.metadata.get(name) for name in TICKET_META_KEYS}
-    base["title"] = doc.title
-    ticket = f"{_meta_text(doc, 'ticket_number')} · {doc.title}"
-    status = _meta_text(doc, "ticket_status")
-    sections = _with_resolution_first(_sections(doc.markdown))
-    pieces: list[Piece] = []
-    for section in sections:
-        heading = section.headings[-1] if section.headings else TICKET_PROBLEM
-        label = heading if heading in TICKET_SECTIONS else TICKET_PROBLEM
-        meta: dict[str, JSONValue] = {
-            **base,
-            "headings": list(section.headings),
-            "section": TICKET_SECTIONS[label],
-        }
-        context = [("ticket", ticket), ("status", status), ("section", label)]
-        pieces.extend(_without_lines(part) for part in _section_pieces(section, meta, context))
-    return pieces
+    return _chunk_record(doc, _TICKET_LAYOUT)
 
 
-def _with_resolution_first(sections: list[_Section]) -> list[_Section]:
-    """The head (title and metadata list) joins the first section, and the resolution joins
-    them when the three fit one chunk: a question describes the symptom, and the chunk it finds
-    must carry the answer too (ensaio 0003)."""
+def chunk_card(doc: ParsedDocument) -> list[Piece]:
+    """A card, cut like a ticket: the title and the metadata list travel with the first
+    section, and the acceptance criteria join the description when they fit; a card with no
+    section at all is one ``description`` chunk (docs/specs/cards.md, "Chunking")."""
+    return _chunk_record(doc, _CARD_LAYOUT)
+
+
+def _with_follower(sections: list[_Section], layout: _Layout) -> list[_Section]:
+    """The head (title and metadata list) joins the first section, and the follower (a
+    ticket's resolution, a card's acceptance criteria) joins them when the three fit one chunk:
+    a question describes the symptom, and the chunk it finds must carry the answer too
+    (ensaio 0003)."""
     if len(sections) < 2:
         return sections
     head, first, *rest = sections
     merged = _Section(first.headings, head.lines + first.lines)
-    resolution = next(
-        (section for section in rest if section.headings[-1:] == [TICKET_RESOLUTION]), None
+    follower = next(
+        (section for section in rest if section.headings[-1:] == [layout.follower]), None
     )
-    if resolution is not None and first.headings[-1:] == [TICKET_PROBLEM]:
-        lines = merged.lines + resolution.lines
+    if follower is not None and first.headings[-1:] == [layout.first]:
+        lines = merged.lines + follower.lines
         if estimate_tokens("\n".join(line.text for line in lines)) <= MAX_TOKENS:
             merged = _Section(first.headings, lines)
-            rest = [section for section in rest if section is not resolution]
+            rest = [section for section in rest if section is not follower]
     return [merged, *rest]
 
 
@@ -266,6 +344,8 @@ def chunk_document(doc: ParsedDocument) -> list[ChunkDraft]:
             pieces = chunk_knowledge(doc)
         case ParsedKind.TICKET:
             pieces = chunk_ticket(doc)
+        case ParsedKind.CARD:
+            pieces = chunk_card(doc)
         case _:  # ParsedKind.DOCUMENT, the only kind left
             pieces = chunk_markdown(doc.markdown, path, with_lines=False)
     return number_pieces(pieces)

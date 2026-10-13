@@ -1,15 +1,16 @@
 """``POST /v1/workspaces/{workspace_id}/sources/{source_id}/ingest-token``: issue or rotate the
-ingest token of a ``tickets`` source (docs/specs/chamados.md, "Token de envio").
+ingest token of a ``tickets`` or ``cards`` source (docs/specs/chamados.md, "Token de envio").
 
 A credential, so owner or admin only, with CSRF, like the runner tokens. The 201 answer carries
 the whole token once; only its prefix and SHA-256 are stored, and rotating invalidates the
-previous token at once. A source that is not a ``tickets`` source of the workspace is 404
-``source_not_found``. Audited as ``source.ingest_token_rotated`` (with the prefix, never the
-token). Logic in ``tickets/tokens.py``.
+previous token at once. A source that is not a ``tickets`` or ``cards`` source of the workspace
+is 404 ``source_not_found``. Audited as ``source.ingest_token_rotated`` (with the prefix, never
+the token). Logic in ``tickets/tokens.py``.
 
-``GET .../sources/{source_id}/tickets/summary`` (any member) is the panel's view of the same
-source (docs/specs/chamados.md, "Resumo no painel"): the inbox counts by state and the prefix and
-date of the current token, never a payload. Logic in ``tickets/inbox_summary.py``.
+``GET .../sources/{source_id}/tickets/summary`` (and ``.../cards/summary``; any member) is the
+panel's view of the same source (docs/specs/chamados.md, "Resumo no painel"): the inbox counts by
+state and the prefix and date of the current token, never a payload. Logic in
+``tickets/inbox_summary.py``.
 """
 
 from __future__ import annotations
@@ -29,6 +30,7 @@ from knobridge.api.deps import (
     WorkspaceContextDep,
     require_role,
 )
+from knobridge.ingestion.source_config import SourceKind
 from knobridge.security.csrf import require_csrf
 from knobridge.tenancy.models import Role
 from knobridge.tickets.inbox_summary import inbox_summary
@@ -68,7 +70,7 @@ router = APIRouter(prefix="/workspaces/{workspace_id}/sources", tags=["sources"]
         },
         404: {
             "description": "Workspace not found or caller not a member, or not a `tickets` "
-            "source of the workspace (`source_not_found`)."
+            "or `cards` source of the workspace (`source_not_found`)."
         },
     },
 )
@@ -125,8 +127,32 @@ async def get_tickets_summary(
 ) -> TicketsSummaryOut:
     """Inbox counts by state, pending entries that failed, the last item queued and the current
     token (prefix and date)."""
+    return await _summary_out(context, source_id, SourceKind.TICKETS)
+
+
+@router.get(
+    "/{source_id}/cards/summary",
+    responses={
+        401: {"description": "No live session (standard error shape)."},
+        403: {"description": "Workspace suspended (`workspace_suspended`)."},
+        404: {
+            "description": "Workspace not found or caller not a member, or not a `cards` "
+            "source of the workspace (`source_not_found`)."
+        },
+    },
+)
+async def get_cards_summary(
+    source_id: uuid.UUID, context: WorkspaceContextDep
+) -> TicketsSummaryOut:
+    """The same summary for a ``cards`` source (docs/specs/cards.md)."""
+    return await _summary_out(context, source_id, SourceKind.CARDS)
+
+
+async def _summary_out(
+    context: WorkspaceContext, source_id: uuid.UUID, kind: SourceKind
+) -> TicketsSummaryOut:
     summary = await inbox_summary(
-        context.db, workspace_id=context.workspace_id, source_id=source_id
+        context.db, workspace_id=context.workspace_id, source_id=source_id, kind=kind
     )
     counts = summary.counts
     return TicketsSummaryOut(

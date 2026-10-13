@@ -32,7 +32,7 @@ from knobridge.ingestion.errors import (
 )
 from knobridge.ingestion.index_queries import active_run
 from knobridge.ingestion.models import Collection, Document, Run, RunTrigger, Source
-from knobridge.ingestion.source_config import SourceKind
+from knobridge.ingestion.source_config import PUSH_SOURCE_KINDS
 from knobridge.ingestion.sync import SyncStarter, start_sync
 
 # Never equal to a SHA-256, so no document is skipped as unchanged.
@@ -40,7 +40,8 @@ FORGOTTEN_HASH = ""
 
 
 class SourceReindexUnsupportedError(ConflictError):
-    """A ``tickets`` source keeps no raw tickets once indexed, so there is nothing to reread."""
+    """A ``tickets`` or ``cards`` source keeps no raw records once indexed, so there is nothing
+    to reread."""
 
     code = "source_reindex_unsupported"
 
@@ -96,8 +97,10 @@ class SyncActions:
             raise NotFoundError("Source not found.", code="source_not_found")
         if not source.active:
             raise SourceInactiveError("The source is inactive.")
-        if source.kind is SourceKind.TICKETS:
-            raise SourceReindexUnsupportedError("A tickets source cannot be reindexed.")
+        if source.kind in PUSH_SOURCE_KINDS:
+            raise SourceReindexUnsupportedError(
+                f"A {source.kind.value} source cannot be reindexed."
+            )
         if await active_run(db, workspace_id, source_id) is not None:
             raise SyncAlreadyRunningError("A sync of this source is already running.")
         await db.execute(

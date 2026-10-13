@@ -247,8 +247,28 @@ describe("SourceDetail reindex", () => {
     const button = await screen.findByRole("button", { name: "Reindexar" });
     expect(button).toBeDisabled();
     expect(button).toHaveAccessibleDescription(
-      "Fontes de chamados não são reindexadas: os chamados brutos são apagados depois de indexados.",
+      "Fontes de chamados e de cards não são reindexadas: os itens brutos são apagados depois de indexados.",
     );
+  });
+
+  it("test_source_detail_cards_source_is_read_only_in_the_panel", async () => {
+    const cards = makeTicketsSource({
+      name: "cards-dev",
+      kind: "cards",
+      config: { anonymize: true, include_comments: true, statuses: ["done"] },
+    });
+    server.use(...sourceStore([cards]).handlers);
+    renderWithProviders({ path: `/w/${WORKSPACE_ID}/sources/${TICKETS_SOURCE_ID}` });
+
+    await screen.findByRole("heading", { level: 1, name: "cards-dev" });
+    expect(screen.getByText(/Cards de desenvolvimento na coleção/)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Cards chegam pela API de envio (/v1/ingest/cards); o painel ainda não edita esta fonte.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Reindexar" })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: "Editar cards-dev" })).not.toBeInTheDocument();
   });
 
   it("test_source_detail_viewer_has_no_reindex", async () => {

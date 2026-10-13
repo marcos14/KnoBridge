@@ -8,7 +8,8 @@ converted documents) or ``commit:<sha>``; a commit also carries its author's nam
 titled by the item, points to ``knowledge:<key>`` and carries its confidence and the evidence
 (file, lines, symbol, excerpt) of the chunk. A ticket is titled by the ticket, points to
 ``ticket:<external_id>``, carries its number, status, date and link, and gives the LLM a line
-with number, status, date and section before the content. The sources keep the
+with number, status, date and section before the content. A card is cited the same way, at
+``card:<external_id>``, with its type and sprint too (docs/specs/cards.md). The sources keep the
 search order and are cut when the estimated tokens of the numbered blocks would pass
 ``MAX_CONTEXT_TOKENS``; the numbering of the prompt and of the stored citations is the
 position in the kept list.
@@ -22,9 +23,14 @@ from dataclasses import replace
 from knobridge.audit.models import JSONValue
 from knobridge.conversations.prompt import source_block
 from knobridge.conversations.retrieval import EvidenceRef, Source
-from knobridge.ingestion.chunking import TICKET_SECTIONS
+from knobridge.ingestion.chunking import CARD_SECTIONS, TICKET_SECTIONS
 from knobridge.ingestion.models import DocumentKind
-from knobridge.ingestion.source_config import TICKET_STATUS_LABELS, TicketStatus
+from knobridge.ingestion.source_config import (
+    CARD_STATUS_LABELS,
+    CARD_TYPE_LABELS,
+    TICKET_STATUS_LABELS,
+    TicketStatus,
+)
 from knobridge.llm.embeddings import CHARS_PER_TOKEN, estimate_tokens
 from knobridge.retrieval.search import SearchHit, display_text
 
@@ -39,6 +45,11 @@ _SECTION_LABELS = {code: label for label, code in TICKET_SECTIONS.items()}
 _STATUS_LABELS = {status.value: label for status, label in TICKET_STATUS_LABELS.items()}
 _TICKET_STATUSES = frozenset(status.value for status in TicketStatus)
 _DATE_KINDS = frozenset({"resolved", "updated"})
+CARD_PREFIX = "card:"
+_CARD_SECTION_LABELS = {code: label for label, code in CARD_SECTIONS.items()}
+_CARD_STATUS_LABELS = {status.value: label for status, label in CARD_STATUS_LABELS.items()}
+_CARD_TYPE_LABELS = {kind.value: label for kind, label in CARD_TYPE_LABELS.items()}
+_CARD_DATE_KINDS = frozenset({"done", "updated"})
 
 
 def citation_uri(
@@ -132,6 +143,59 @@ def ticket_source(hit: SearchHit, display: str) -> Source:
     )
 
 
+def card_context_line(
+    number: str,
+    card_type: str | None,
+    status: str | None,
+    sprint: str | None,
+    date: str | None,
+    section: str | None,
+) -> str:
+    """``Card <número> · <tipo> · <status> · sprint <nome> · <data> · seção <Seção>``, in pt-BR
+    and without the unknown parts."""
+    parts = [f"Card {number}"]
+    if card_type is not None:
+        parts.append(_CARD_TYPE_LABELS[card_type])
+    if status is not None:
+        parts.append(_CARD_STATUS_LABELS[status])
+    if sprint is not None:
+        parts.append(f"sprint {sprint}")
+    if date is not None:
+        parts.append(date)
+    if section is not None:
+        parts.append(f"seção {_CARD_SECTION_LABELS[section]}")
+    return " · ".join(parts)
+
+
+def card_source(hit: SearchHit, display: str) -> Source:
+    """A card: titled by the card, pointing to ``card:<external_id>``, with its number, type,
+    status, sprint, date and link (chunk ``meta``; values out of the contract are dropped)."""
+    document = hit.document
+    meta = hit.meta
+    external_id = _text(meta.get("external_id")) or document.natural_key
+    number = _text(meta.get("card_number")) or external_id
+    card_type = _choice(meta.get("card_type"), frozenset(_CARD_TYPE_LABELS))
+    status = _choice(meta.get("card_status"), frozenset(_CARD_STATUS_LABELS))
+    sprint = _text(meta.get("sprint"))
+    date = _text(meta.get("date"))
+    section = _choice(meta.get("section"), frozenset(_CARD_SECTION_LABELS))
+    return Source(
+        title=_text(meta.get("title")) or document.title,
+        content=display,
+        uri=f"{CARD_PREFIX}{external_id}",
+        document_id=str(document.id),
+        kind=document.kind.value,
+        date=date,
+        url=_text(meta.get("url")),
+        card_number=number,
+        card_type=card_type,
+        card_status=status,
+        card_sprint=sprint,
+        card_date_kind=_choice(meta.get("date_kind"), _CARD_DATE_KINDS),
+        context_line=card_context_line(number, card_type, status, sprint, date, section),
+    )
+
+
 def source_from_hit(hit: SearchHit) -> Source:
     document = hit.document
     display = _text(hit.meta.get("display")) or display_text(hit.content)
@@ -140,6 +204,8 @@ def source_from_hit(hit: SearchHit) -> Source:
         return knowledge_source(hit, display)
     if document.kind is DocumentKind.TICKET:
         return ticket_source(hit, display)
+    if document.kind is DocumentKind.CARD:
+        return card_source(hit, display)
     if document.kind is DocumentKind.COMMIT:
         sha = _text(hit.meta.get("sha")) or document.natural_key.removeprefix(COMMIT_PREFIX)
         title = _text(hit.meta.get("title")) or document.title

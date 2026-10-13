@@ -20,9 +20,10 @@ from knobridge.ingestion.settle import ItemOutcome, Settlement
 from knobridge.ingestion.source_config import SourceKind
 from knobridge.llm.models import ProviderCredential, ProviderKind
 from knobridge.tenancy.models import Workspace
-from knobridge.tickets.connector import TicketsConnector, TicketsConnectorFactory
+from knobridge.tickets.connector import InboxConnector, TicketsConnectorFactory
 from knobridge.tickets.ingest import ItemResult, apply_items, check_items
 from knobridge.tickets.models import TicketInboxItem
+from knobridge.tickets.push import TICKETS, PushKind
 
 PROCESSED_AT = datetime(2026, 10, 12, 14, 0, tzinfo=UTC)
 
@@ -40,12 +41,16 @@ class World:
     def source_id(self) -> uuid.UUID:
         return self.source.id
 
-    def connector(self) -> TicketsConnector:
+    def connector(self) -> InboxConnector:
         return TicketsConnectorFactory(self.factory, FrozenClock(PROCESSED_AT))(self.source)
 
 
 async def world(
-    factory: SessionFactory, config: dict[str, JSONValue] | None = None, *, token: bool = True
+    factory: SessionFactory,
+    config: dict[str, JSONValue] | None = None,
+    *,
+    token: bool = True,
+    kind: SourceKind = SourceKind.TICKETS,
 ) -> World:
     async with system_session(factory) as db:
         workspace = Workspace(name="W", slug=f"w-{uuid.uuid4().hex[:12]}")
@@ -72,7 +77,7 @@ async def world(
         source = Source(
             workspace_id=workspace.id,
             collection_id=collection.id,
-            kind=SourceKind.TICKETS,
+            kind=kind,
             name="Chamados",
             config=config or {},
         )
@@ -111,14 +116,16 @@ def delete(external_id: str, deleted_at: str = "2026-10-02T10:00:00Z") -> dict[s
     return {"op": "delete", "external_id": external_id, "deleted_at": deleted_at}
 
 
-async def push(world: World, *items: dict[str, JSONValue]) -> list[ItemResult]:
+async def push(
+    world: World, *items: dict[str, JSONValue], kind: PushKind = TICKETS
+) -> list[ItemResult]:
     """Items through the same validation and inbox rules as ``POST /v1/ingest/tickets``."""
     async with scoped_session(world.factory, workspace_id=world.workspace_id, user_id=None) as db:
         return await apply_items(
             db,
             workspace_id=world.workspace_id,
             source_id=world.source_id,
-            items=check_items(list(items)),
+            items=check_items(list(items), kind),
             now=NOW,
         )
 
@@ -137,7 +144,7 @@ async def entry(world: World, external_id: str) -> TicketInboxItem:
 
 async def settle(
     world: World,
-    connector: TicketsConnector,
+    connector: InboxConnector,
     external_id: str,
     outcome: ItemOutcome,
     error: str | None = None,

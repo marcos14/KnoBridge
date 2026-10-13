@@ -704,7 +704,8 @@
         "git": "Repositório Git",
         "folder": "Pasta",
         "runner": "Runner local",
-        "tickets": "Chamados"
+        "tickets": "Chamados",
+        "cards": "Cards de desenvolvimento"
       },
       "runStatus": {
         "never": "Nunca sincronizada",
@@ -754,7 +755,8 @@
       "git": "Repositório Git",
       "folder": "Pasta",
       "runner": "Runner local",
-      "tickets": "Chamados"
+      "tickets": "Chamados",
+      "cards": "Cards de desenvolvimento"
     },
     "inactive": "Desativada",
     "noSchedule": "Sem agendamento",
@@ -791,7 +793,7 @@
     "reindexTitle": "Reindexar {{name}}?",
     "reindexDescription": "Todos os documentos da fonte são processados de novo, mesmo os que não mudaram. Use depois de mudar os padrões de arquivos, o parsing ou o chunking. Os documentos continuam na busca durante a reindexação, e trechos iguais reaproveitam os embeddings já calculados.",
     "reindexStarted": "Reindexação de {{name}} na fila.",
-    "reindexUnsupported": "Fontes de chamados não são reindexadas: os chamados brutos são apagados depois de indexados.",
+    "reindexUnsupported": "Fontes de chamados e de cards não são reindexadas: os itens brutos são apagados depois de indexados.",
     "cancelTitle": "Cancelar a sincronização de {{name}}?",
     "cancelDescription": "A execução para onde estiver. O que já foi indexado continua no índice e o resto fica para a próxima sincronização.",
     "cancelRequested": "Cancelamento da sincronização de {{name}} pedido.",
@@ -950,6 +952,7 @@
       "summary": "{{kind}} na coleção {{collection}}",
       "location": "Origem: {{location}}",
       "repository": "Repositório: {{repository}}",
+      "cardsByApi": "Cards chegam pela API de envio (/v1/ingest/cards); o painel ainda não edita esta fonte.",
       "branch": "Branch: {{branch}}",
       "include": "Incluir: {{globs}}",
       "exclude": "Excluir: {{globs}}",
@@ -1009,7 +1012,8 @@
         "file": "Arquivos",
         "commit": "Commits",
         "knowledge": "Conhecimento",
-        "ticket": "Chamados"
+        "ticket": "Chamados",
+        "card": "Cards"
       },
       "search": "Buscar",
       "empty": "Nenhum documento encontrado.",
@@ -2038,6 +2042,7 @@
     "source_reindex_started": "Reindexação da fonte iniciada",
     "source_ingest_token_rotated": "Token de envio da fonte gerado",
     "source_tickets_uploaded": "Arquivo de chamados enviado",
+    "source_cards_uploaded": "Arquivo de cards enviado",
     "runner_created": "Runner cadastrado",
     "runner_updated": "Runner atualizado",
     "runner_revoked": "Runner revogado",

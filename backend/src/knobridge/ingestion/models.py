@@ -94,6 +94,8 @@ class DocumentKind(StrEnum):
     KNOWLEDGE = "knowledge"
     # A ticket of a ``tickets`` source, rendered as Markdown (``tickets/``, ADR 0006).
     TICKET = "ticket"
+    # A card of a ``cards`` source, rendered as Markdown (``tickets/``, docs/specs/cards.md).
+    CARD = "card"
 
 
 class RunItemChange(StrEnum):
@@ -108,13 +110,14 @@ def _workspace_fk() -> Mapped[uuid.UUID]:
 
 
 # Minimum level of a new source by kind (docs/specs/produtos-e-niveis.md, "Padrões por tipo"):
-# documents and reviewed knowledge for everyone, tickets from support up, code from
+# documents and reviewed knowledge for everyone, tickets from support up, code and cards from
 # development up.
 DEFAULT_SOURCE_MIN_LEVELS: dict[SourceKind, ResponseLevel] = {
     SourceKind.FOLDER: ResponseLevel.END_USER,
     SourceKind.RUNNER: ResponseLevel.END_USER,
     SourceKind.TICKETS: ResponseLevel.SUPPORT,
     SourceKind.GIT: ResponseLevel.PRODUCT_DEV,
+    SourceKind.CARDS: ResponseLevel.PRODUCT_DEV,
 }
 
 

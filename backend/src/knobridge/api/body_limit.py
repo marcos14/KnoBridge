@@ -28,14 +28,14 @@ RUNNER_PATH_PREFIX = "/v1/runner/"
 OPENAI_PATH = "/v1/chat/completions"
 # Most specific first; ``^/v1/runner/`` is the fallback of any other runner route.
 _LIMITS: tuple[tuple[re.Pattern[str], int], ...] = (
-    (re.compile(r"^/v1/ingest/tickets$"), 5 * MIB),
+    (re.compile(r"^/v1/ingest/(?:tickets|cards)$"), 5 * MIB),
     # Public REST API of conversations (api-publica.md, "Limites").
     (re.compile(r"^/v1/conversations$"), 4 * KIB),
     (re.compile(r"^/v1/conversations/[^/]+/messages$"), 64 * KIB),
     (re.compile(r"^/v1/chat/completions$"), 1 * MIB),
-    # One ticket (at most 1 MiB) and its envelope. The upload of a file streams instead: its
+    # One ticket or card (at most 1 MiB) and its envelope. The upload of a file streams instead: its
     # route enforces its own limit while reading (``ticket_uploads.py``).
-    (re.compile(r"^/v1/workspaces/[^/]+/sources/[^/]+/tickets/preview$"), 2 * MIB),
+    (re.compile(r"^/v1/workspaces/[^/]+/sources/[^/]+/(?:tickets|cards)/preview$"), 2 * MIB),
     (re.compile(r"^/v1/runner/heartbeat$"), 64 * KIB),
     (re.compile(r"^/v1/runner/sources/[^/]+/report$"), 4 * MIB),
     (re.compile(r"^/v1/runner/jobs/claim$"), 4 * KIB),

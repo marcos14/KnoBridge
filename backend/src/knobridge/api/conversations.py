@@ -122,7 +122,7 @@ class CitationOut(BaseModel):
     uri: str | None
     snippet: str
     document_id: str | None
-    # ``file``, ``commit``, ``knowledge`` or ``ticket``.
+    # ``file``, ``commit``, ``knowledge``, ``ticket`` or ``card``.
     kind: str | None = None
     path: str | None = None
     symbol: str | None = None
@@ -143,6 +143,13 @@ class CitationOut(BaseModel):
     ticket_status: Literal["open", "pending", "resolved", "closed"] | None = None
     ticket_date_kind: Literal["resolved", "updated"] | None = None
     url: str | None = None
+    # Cards only (v0.9): number (or external id), type, status, sprint and which date ``date``
+    # is; ``url`` is the card's link. ``null`` in answers saved before.
+    card_number: str | None = None
+    card_type: Literal["feature", "bug", "task", "story", "epic", "other"] | None = None
+    card_status: Literal["backlog", "in_progress", "done", "cancelled"] | None = None
+    card_sprint: str | None = None
+    card_date_kind: Literal["done", "updated"] | None = None
 
 
 class FeedbackOut(BaseModel):

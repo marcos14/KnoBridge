@@ -12,7 +12,8 @@
 - A knowledge item of a runner source is already Markdown (rendered by ``harness``) and keeps
   the item title.
 - A ticket of a tickets source is already Markdown (rendered and anonymized by ``tickets``,
-  whose HTML message bodies go through ``html_to_markdown``) and keeps the ticket title.
+  whose HTML message bodies go through ``html_to_markdown``) and keeps the ticket title; so is
+  a card of a cards source, which keeps the card title.
 
 A document that cannot be read raises ``UnsupportedFormatError`` or ``ParseFailedError``,
 which the ingestion engine records as a ``RunError`` without aborting the run.
@@ -53,6 +54,8 @@ class ParsedKind(StrEnum):
     KNOWLEDGE = "knowledge"
     # A ticket of a tickets source: Markdown rendered (and anonymized) by ``tickets``.
     TICKET = "ticket"
+    # A card of a cards source: Markdown rendered (and anonymized) by ``tickets``.
+    CARD = "card"
 
 
 @dataclass(frozen=True, slots=True)
@@ -236,6 +239,8 @@ async def parse_document(raw: RawDocument) -> ParsedDocument:
         return ParsedDocument.of(raw, ParsedKind.KNOWLEDGE, raw.title, decode_text(raw.content))
     if raw.ref.kind is DocumentKind.TICKET:
         return ParsedDocument.of(raw, ParsedKind.TICKET, raw.title, decode_text(raw.content))
+    if raw.ref.kind is DocumentKind.CARD:
+        return ParsedDocument.of(raw, ParsedKind.CARD, raw.title, decode_text(raw.content))
     details = {"key": raw.ref.key, "extension": raw.extension}
     if raw.metadata.get("format") == "document" and raw.extension not in _DOCUMENT_CONVERTERS:
         raise UnsupportedFormatError("document format is not supported", details=details)

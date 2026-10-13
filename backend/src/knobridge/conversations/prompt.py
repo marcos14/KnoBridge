@@ -57,6 +57,9 @@ def instructions(profile: AssistantProfile) -> str:
             "- Em chamados, prefira a solução de chamados resolvidos ou fechados; trate "
             "chamados abertos ou pendentes como problema em andamento, sem solução "
             "confirmada, e diga o status deles quando os citar.",
+            "- Em cards de desenvolvimento, diga o status e a sprint quando os citar; só afirme "
+            "que algo foi entregue se o card estiver concluído ou se outra fonte mostrar a "
+            "entrega.",
             "- Se as fontes não bastarem para responder com segurança, não chute: responda "
             f"exatamente com esta mensagem e nada mais: {profile.no_source_message}",
             f"- Responda no idioma {profile.language}. {_TONES[profile.tone]}",
@@ -74,7 +77,7 @@ def source_header(index: int, source: Source) -> str:
 
 
 def source_block(index: int, source: Source) -> str:
-    """The header, the context line (tickets) and the content of one source."""
+    """The header, the context line (tickets and cards) and the content of one source."""
     lines = [source_header(index, source)]
     if source.context_line:
         lines.append(source.context_line)

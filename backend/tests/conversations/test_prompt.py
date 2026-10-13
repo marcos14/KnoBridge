@@ -68,6 +68,15 @@ def test_instructions_prefer_resolved_tickets() -> None:
     assert "diga o status deles quando os citar" in text
 
 
+def test_instructions_ask_for_card_status_and_sprint() -> None:
+    text = instructions(PROFILE)
+
+    assert (
+        "Em cards de desenvolvimento, diga o status e a sprint quando os citar; só afirme que "
+        "algo foi entregue se o card estiver concluído ou se outra fonte mostrar a entrega."
+    ) in text
+
+
 def test_numbered_sources_put_the_ticket_line_before_the_content() -> None:
     ticket = Source(
         title="Erro 4021",
@@ -147,6 +156,11 @@ def test_citation_keeps_a_snippet() -> None:
         "ticket_status": None,
         "ticket_date_kind": None,
         "url": None,
+        "card_number": None,
+        "card_type": None,
+        "card_status": None,
+        "card_sprint": None,
+        "card_date_kind": None,
     }
 
 

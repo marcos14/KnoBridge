@@ -3,8 +3,9 @@ and its parts, and the two items of a batch, ``TicketUpsertItemIn`` and ``Ticket
 
 Requests refuse unknown fields. Texts are stripped before their length is checked, never hold
 NUL, and lengths count code points. Instants need an offset and are normalized to UTC, so the
-canonical JSON of a ticket (``canonical_ticket``) and its ``content_hash`` do not depend on how
-the origin wrote them. Schema names are the contract published in the OpenAPI.
+canonical JSON of a ticket (``canonical_payload``) and its ``content_hash`` do not depend on how
+the origin wrote them. Schema names are the contract published in the OpenAPI. The card format
+(``card_wire.py``) reuses these texts, the checks and ``problems``.
 
 Items are validated from JSON in strict mode (``validate_json(..., strict=True)``): a boolean is
 ``true``/``false``, never ``"true"`` or ``1``. The problems of an invalid item are reported as
@@ -121,6 +122,7 @@ Instant = Annotated[AwareDatetime, AfterValidator(_utc)]
 Text50 = Annotated[str, _strip(0, 50), _NoNul]
 Text100 = Annotated[str, _strip(0, 100), _NoNul]
 Text200 = Annotated[str, _strip(0, 200), _NoNul]
+Name200 = Annotated[str, _strip(1, 200), _NoNul]
 Number = Annotated[str, _strip(1, 50), _NoNul]
 Title = Annotated[str, _strip(1, 500), _NoNul]
 Tag = Annotated[str, _strip(1, 100), _NoNul]
@@ -131,6 +133,10 @@ Url = Annotated[str, _strip(0, URL_MAX_LENGTH), _NoNul, AfterValidator(_url)]
 CustomValue = Annotated[
     str | int | float | bool | None,
     PlainValidator(_custom_value, json_schema_input_type=str | int | float | bool | None),
+]
+Tags = Annotated[list[Tag], Field(max_length=50), AfterValidator(_distinct)]
+CustomFields = Annotated[
+    dict[str, CustomValue], Field(max_length=CUSTOM_FIELDS_MAX), AfterValidator(_custom_keys)
 ]
 
 
@@ -189,9 +195,7 @@ class TicketIn(WireIn):
     priority: Text50 | None = None
     category: Text200 | None = None
     product: Text200 | None = None
-    tags: Annotated[list[Tag], Field(max_length=50), AfterValidator(_distinct)] = Field(
-        default_factory=list[Tag]
-    )
+    tags: Tags = Field(default_factory=list[Tag])
     url: Url | None = None
     created_at: Instant
     updated_at: Instant
@@ -207,11 +211,7 @@ class TicketIn(WireIn):
     attachments: Annotated[list[TicketAttachmentIn], Field(max_length=100)] = Field(
         default_factory=list[TicketAttachmentIn]
     )
-    custom_fields: Annotated[
-        dict[str, CustomValue],
-        Field(max_length=CUSTOM_FIELDS_MAX),
-        AfterValidator(_custom_keys),
-    ] = Field(default_factory=dict[str, CustomValue])
+    custom_fields: CustomFields = Field(default_factory=dict[str, CustomValue])
 
     @model_validator(mode="after")
     def _updated_after_created(self) -> Self:
@@ -247,14 +247,22 @@ class TicketDeleteItemIn(WireIn):
 type Problem = dict[str, JSONValue]
 
 
+# Cross-field rules are raised by their model, located at the model: the field they blame.
+CROSS_FIELD_RULES = {
+    _UPDATED_BEFORE_CREATED: "updated_at",
+    "sprint_end_before_start": "end_at",
+    "link_url_required": "url",
+    "invalid_sha": "target",
+}
+
+
 def problems(error: PydanticValidationError) -> list[Problem]:
     """The first ``MAX_PROBLEMS`` errors as ``{"loc", "problem"}``."""
     found: list[Problem] = []
     for item in error.errors(include_url=False)[:MAX_PROBLEMS]:
-        # The cross-field rule is raised by the model, without a field of its own.
-        loc: list[JSONValue] = (
-            ["updated_at"] if item["type"] == _UPDATED_BEFORE_CREATED else list(item["loc"])
-        )
+        loc: list[JSONValue] = list(item["loc"])
+        if (blamed := CROSS_FIELD_RULES.get(item["type"])) is not None:
+            loc.append(blamed)
         found.append({"loc": loc, "problem": item["type"]})
     return found
 
@@ -264,8 +272,9 @@ def serialized(value: object) -> bytes:
     return json.dumps(value, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
 
 
-def canonical_ticket(ticket: TicketIn) -> tuple[dict[str, JSONValue], str]:
-    """The stored payload (defaults filled in, instants in UTC with ``Z``) and its SHA-256."""
-    payload: dict[str, JSONValue] = ticket.model_dump(mode="json")
+def canonical_payload(item: WireIn) -> tuple[dict[str, JSONValue], str]:
+    """The stored payload of a ticket or a card (defaults filled in, instants in UTC with
+    ``Z``) and its SHA-256."""
+    payload: dict[str, JSONValue] = item.model_dump(mode="json")
     canonical = json.dumps(payload, ensure_ascii=False, separators=(",", ":"), sort_keys=True)
     return payload, hashlib.sha256(canonical.encode("utf-8")).hexdigest()

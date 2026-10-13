@@ -36,6 +36,12 @@ class SourceKind(StrEnum):
     RUNNER = "runner"
     # Tickets pushed by an external system through ``/v1/ingest/*`` (ADR 0006).
     TICKETS = "tickets"
+    # Development cards pushed the same way (docs/specs/cards.md, ADR 0008).
+    CARDS = "cards"
+
+
+# Kinds whose documents are pushed into the inbox (``ticket_inbox``) with an ingest token.
+PUSH_SOURCE_KINDS = frozenset({SourceKind.TICKETS, SourceKind.CARDS})
 
 
 class TicketStatus(StrEnum):
@@ -53,6 +59,41 @@ TICKET_STATUS_LABELS = {
     TicketStatus.PENDING: "Pendente",
     TicketStatus.RESOLVED: "Resolvido",
     TicketStatus.CLOSED: "Fechado",
+}
+
+
+class CardStatus(StrEnum):
+    """Normalized status of a card (docs/specs/cards.md, "Status e tipo normalizados")."""
+
+    BACKLOG = "backlog"
+    IN_PROGRESS = "in_progress"
+    DONE = "done"
+    CANCELLED = "cancelled"
+
+
+class CardType(StrEnum):
+    FEATURE = "feature"
+    BUG = "bug"
+    TASK = "task"
+    STORY = "story"
+    EPIC = "epic"
+    OTHER = "other"
+
+
+# How a card's status and type are shown (the card's Markdown and the chat context), in pt-BR.
+CARD_STATUS_LABELS = {
+    CardStatus.BACKLOG: "Backlog",
+    CardStatus.IN_PROGRESS: "Em andamento",
+    CardStatus.DONE: "Concluído",
+    CardStatus.CANCELLED: "Cancelado",
+}
+CARD_TYPE_LABELS = {
+    CardType.FEATURE: "Funcionalidade",
+    CardType.BUG: "Bug",
+    CardType.TASK: "Tarefa",
+    CardType.STORY: "História",
+    CardType.EPIC: "Épico",
+    CardType.OTHER: "Outro",
 }
 
 
@@ -162,7 +203,7 @@ class RunnerSourceConfig(BaseModel):
     head_commit: CommitSha | None = None
 
 
-def _distinct_statuses(value: tuple[TicketStatus, ...]) -> tuple[TicketStatus, ...]:
+def _distinct_statuses[S: StrEnum](value: tuple[S, ...]) -> tuple[S, ...]:
     if len(set(value)) != len(value):
         raise ValueError("statuses must not repeat")
     return value
@@ -187,19 +228,41 @@ class TicketsSourceConfig(BaseModel):
     ] = tuple(TicketStatus)
 
 
-type SourceConfig = GitSourceConfig | FolderSourceConfig | RunnerSourceConfig | TicketsSourceConfig
+class CardsSourceConfig(BaseModel):
+    """Cards pushed by an external system (docs/specs/cards.md, "Fonte do tipo cards"). Like
+    the tickets' settings, they apply to the cards processed after a change."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    # On by default: cards copy excerpts of tickets, with customers' data.
+    anonymize: bool = True
+    include_comments: bool = True
+    statuses: Annotated[
+        tuple[CardStatus, ...], Field(min_length=1), AfterValidator(_distinct_statuses)
+    ] = tuple(CardStatus)
+
+
+type SourceConfig = (
+    GitSourceConfig
+    | FolderSourceConfig
+    | RunnerSourceConfig
+    | TicketsSourceConfig
+    | CardsSourceConfig
+)
 
 _CONFIG_MODELS: dict[
     SourceKind,
     type[GitSourceConfig]
     | type[FolderSourceConfig]
     | type[RunnerSourceConfig]
-    | type[TicketsSourceConfig],
+    | type[TicketsSourceConfig]
+    | type[CardsSourceConfig],
 ] = {
     SourceKind.GIT: GitSourceConfig,
     SourceKind.FOLDER: FolderSourceConfig,
     SourceKind.RUNNER: RunnerSourceConfig,
     SourceKind.TICKETS: TicketsSourceConfig,
+    SourceKind.CARDS: CardsSourceConfig,
 }
 
 

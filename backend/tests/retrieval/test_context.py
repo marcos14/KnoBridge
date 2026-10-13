@@ -17,6 +17,10 @@ from knobridge.retrieval.context import (
 from knobridge.retrieval.search import DocumentRef, SearchHit
 
 DOCUMENT_ID = uuid.UUID("00000000-0000-0000-0000-0000000000d1")
+# The card fields of a citation that is not a card (chat-sse v0.9).
+NO_CARD: dict[str, JSONValue] = dict.fromkeys(
+    ("card_number", "card_type", "card_status", "card_sprint", "card_date_kind")
+)
 
 
 def _hit(
@@ -181,6 +185,7 @@ def test_citation_kind_knowledge_has_confidence_and_evidence() -> None:
         "ticket_status": None,
         "ticket_date_kind": None,
         "url": None,
+        **NO_CARD,
     }
 
 
@@ -248,6 +253,7 @@ def test_citation_kind_ticket_has_number_status_date_and_url() -> None:
         "ticket_status": "resolved",
         "ticket_date_kind": "resolved",
         "url": "https://suporte.example.test/chamados/48213",
+        **NO_CARD,
     }
 
 
@@ -270,6 +276,85 @@ def test_ticket_source_falls_back_and_drops_values_out_of_the_contract() -> None
         None,
     )
     assert source.context_line == "Chamado A-17"
+
+
+def _card_meta(**changes: JSONValue) -> dict[str, JSONValue]:
+    meta: dict[str, JSONValue] = {
+        "kind": "card",
+        "external_id": "10001",
+        "card_number": "PROJ-123",
+        "title": "Nota de exportação",
+        "card_type": "feature",
+        "card_status": "in_progress",
+        "original_status": "Doing",
+        "sprint": "Sprint 42",
+        "release": None,
+        "date": "2026-09-29T18:00:00Z",
+        "date_kind": "updated",
+        "url": "https://dev.example.test/browse/PROJ-123",
+        "headings": ["Card PROJ-123: Nota de exportação", "Comentários"],
+        "section": "comments",
+        "display": "**[RESPONSAVEL_1] · 2026-09-20T10:00:00Z**\n\nFalta o teste.",
+    }
+    meta.update(changes)
+    return meta
+
+
+def test_card_source_has_its_citation_and_context_line() -> None:
+    hit = _hit("card: PROJ-123 · ...", _card_meta(), kind=DocumentKind.CARD, key="10001")
+
+    source = source_from_hit(hit)
+
+    assert citation(1, source) == {
+        "index": 1,
+        "title": "Nota de exportação",
+        "uri": "card:10001",
+        "snippet": "**[RESPONSAVEL_1] · 2026-09-20T10:00:00Z**\n\nFalta o teste.",
+        "document_id": str(DOCUMENT_ID),
+        "kind": "card",
+        "path": None,
+        "symbol": None,
+        "start_line": None,
+        "end_line": None,
+        "language": None,
+        "sha": None,
+        "author": None,
+        "date": "2026-09-29T18:00:00Z",
+        "confidence": None,
+        "evidence": None,
+        "ticket_number": None,
+        "ticket_status": None,
+        "ticket_date_kind": None,
+        "url": "https://dev.example.test/browse/PROJ-123",
+        "card_number": "PROJ-123",
+        "card_type": "feature",
+        "card_status": "in_progress",
+        "card_sprint": "Sprint 42",
+        "card_date_kind": "updated",
+    }
+    assert source.context_line == (
+        "Card PROJ-123 · Funcionalidade · Em andamento · sprint Sprint 42 · "
+        "2026-09-29T18:00:00Z · seção Comentários"
+    )
+
+
+def test_card_source_falls_back_and_drops_values_out_of_the_contract() -> None:
+    meta: dict[str, JSONValue] = {
+        "card_type": "saga",
+        "card_status": "open",
+        "date_kind": "resolved",
+        "section": "problem",
+        "sprint": "",
+        "url": "",
+    }
+    hit = _hit("corpo", meta, kind=DocumentKind.CARD, key="C-7", title="Sem título")
+
+    source = source_from_hit(hit)
+
+    assert (source.title, source.uri, source.card_number) == ("Sem título", "card:C-7", "C-7")
+    assert (source.card_type, source.card_status, source.card_sprint) == (None, None, None)
+    assert (source.card_date_kind, source.url, source.date) == (None, None, None)
+    assert source.context_line == "Card C-7"
 
 
 def test_ticket_context_line_counts_in_the_budget() -> None:

@@ -1,10 +1,10 @@
 # Cards de desenvolvimento
 
-> Rascunho v0.1 · 2026-10-13 · Em definição (plano 0009, F1.1; implementação na F2.3)
+> Rascunho v0.2 · 2026-10-13 · Plano 0009, F1.1 (v0.1); v0.2, F2.3: implementado, com os detalhes do Markdown e dos marcadores fixados abaixo
 
 Como cards de desenvolvimento (itens de Jira, Azure DevOps, GitHub Issues, Trello ou qualquer ferramenta) entram no KnoBridge e viram fonte do chat no nível **desenvolvimento e produto**. Os cards seguem **o mesmo caminho dos chamados** (D5 do [plano 0009](../planos/0009-produtos-e-niveis.md)): formato padrão do KnoBridge, envio por push com token ou upload, caixa de entrada com a regra do `updated_at`, conector interno no workflow de ingestão e apagamento do bruto. Esta spec só descreve **o que difere**; todo o resto é o de [chamados.md](chamados.md), lendo "card" onde lá está "chamado". Os níveis estão em [produtos-e-niveis.md](produtos-e-niveis.md).
 
-Código previsto: o pacote `backend/src/knobridge/tickets/` ganha o tipo card (formato em `card_wire.py`, Markdown em `card_markdown.py`, conector `cards` ao lado do `tickets`), e as rotas de ingestão, upload e prévia ganham as variantes de cards.
+Código: o pacote `backend/src/knobridge/tickets/` tem o tipo card (formato em `card_wire.py`, Markdown em `card_markdown.py`, o que difere entre chamado e card em `push.py`, conector `cards` ao lado do `tickets` em `connector.py`); validação, caixa de entrada, upload e prévia são as dos chamados com o tipo card (`ingest.py`, `ingest_sync.py`, `upload.py`). Rotas em `api/ingest.py` (`/v1/ingest/cards`), `api/card_uploads.py` (upload e prévia) e `api/ingest_tokens.py` (resumo); citação em `retrieval/context.py`; regra do prompt em `conversations/prompt.py`. O painel mostra a fonte `cards` (tipo, documentos, execuções, sem reindexar), mas ainda não a cria nem a edita: crie pela API (`POST .../sources` com `kind: cards`) e gere o token em `POST .../sources/{sid}/ingest-token`.
 
 ## O que é igual aos chamados
 
@@ -31,7 +31,7 @@ Código previsto: o pacote `backend/src/knobridge/tickets/` ganha o tipo card (f
 
 - Token de uma fonte `tickets` em `/v1/ingest/cards` (ou de uma fonte `cards` em `/v1/ingest/tickets`): 409 `source_kind_mismatch` com `details = {"expected", "actual"}`; nada é gravado.
 - As rotas de upload, prévia e resumo com uma fonte de outro tipo: 404 `source_not_found`.
-- Nomes no OpenAPI: `CardIn`, `CardCommentIn`, `CardPersonIn`, `CardSprintIn`, `CardLinkIn`, `CardDescriptionIn`, `CardAttachmentIn`, `CardUpsertItemIn`, `CardDeleteItemIn`, `CardIngestIn`, `CardPreviewIn`, `CardPreviewOut` e `CardsSourceConfig`; as respostas por item, de upload e de resumo reaproveitam os schemas dos chamados (`TicketIngestOut`, `TicketUploadOut`, `TicketsSummaryOut`).
+- Nomes no OpenAPI: `CardIn`, `CardCommentIn`, `CardPersonIn`, `CardSprintIn`, `CardLinkIn`, `CardDescriptionIn`, `CardAttachmentIn`, `CardUpsertItemIn`, `CardDeleteItemIn`, `CardIngestIn`, `CardPreviewIn` e `CardPreviewOut` (com `markers` em `TicketPreviewMarker` e `include_comments` no lugar de `include_internal_notes`), além dos enums `CardType`, `CardStatus` e `CardLinkKind`; as respostas por item, de upload e de resumo reaproveitam os schemas dos chamados (`TicketIngestOut`, `TicketUploadOut`, `TicketsSummaryOut`). `CardsSourceConfig`, como `TicketsSourceConfig`, não vira schema: a API recebe e devolve `config` como objeto.
 - Auditoria do upload: `source.cards_uploaded`, com os mesmos `details` de `source.tickets_uploaded`.
 
 ### Formato do card (`CardIn`)
@@ -111,6 +111,8 @@ Globs não se aplicam (como nos chamados). Testar conexão, sincronizar e exclui
 
 Aplica-se a `title`, `original_status`, `original_type`, `priority`, `product`, `tags`, `description`, `acceptance_criteria`, `sprint.name`, `release`, `relation` e `target` das ligações `url`, corpo dos comentários, `author_name`, valores texto de `custom_fields` e nomes dos anexos. Não se aplica a `external_id`, `number`, `type`, `status`, datas, `parent_external_id`, `target` das ligações `card`, `ticket`, `commit` e `pull_request` (identificadores) e `url`. `reporter` e `assignees` nunca são renderizados: servem só para descobrir os nomes a trocar (marcadores `[RELATOR]` e `[RESPONSAVEL_n]`).
 
+Nomes declarados, com as regras de comparação dos chamados: `reporter.name` → `[RELATOR]`; `assignees[].name` e depois os `author_name` dos comentários ainda não declarados → `[RESPONSAVEL_1]`, `[RESPONSAVEL_2]`… na ordem da primeira aparição. Nome completo e primeiro nome (3 letras ou mais) são trocados. Comentário sem autor (ou com autor vazio) aparece como `**Comentário · <instante>**`.
+
 ### Conector interno `cards`
 
 Igual ao conector `tickets` ([Conector interno tickets](chamados.md#conector-interno-tickets)), com o cursor `{"kind": "cards", "version": 1}` e o documento:
@@ -166,7 +168,11 @@ Implementado no fluxo de emissão; falta o teste de rejeição.
 - layout-nfe-exportacao.png
 ```
 
-Regras: só as linhas e seções com valor; status e tipo em pt-BR com `(original: …)` quando diferente; instantes em UTC com `Z`; corpos convertidos e títulos ATX dos corpos viram negrito, como nos chamados; comentários em ordem de `created_at` (empate pela posição), só com `include_comments`.
+Regras: só as linhas e seções com valor; status e tipo em pt-BR com `(original: …)` quando diferente (sem diferenciar maiúsculas); instantes em UTC com `Z`; corpos convertidos e títulos ATX dos corpos viram negrito, como nos chamados; comentários em ordem de `created_at` (empate pela posição), só com `include_comments`.
+
+- **Sprint**: o nome e as datas como dias UTC (`AAAA-MM-DD`): `(início a fim)` com as duas, `(desde início)` só com o início, `(até fim)` só com o fim, e só o nome sem datas.
+- **Conclusão**: `Concluído em` com `done_at`; num card `cancelled`, a linha é `Cancelado em`.
+- **Ligações**: `- <Tipo> <alvo> (<relação>)`, com `Card`, `Chamado`, `Commit`, `PR` ou `Link`; a ligação `url` termina com `: <url>`. O `url` das outras ligações não é renderizado.
 
 **Chunking**: por títulos. A lista de metadados vai com o primeiro trecho, junto com a `## Descrição` e os `## Critérios de aceite` quando cabem em `MAX_TOKENS` (o trecho fica com `section: description`); senão, cada seção é um trecho. `## Comentários` se divide por linhas com sobreposição se passar do limite. Texto embedado com o cabeçalho `card: <number ou external_id> · <title>`, `status: <status>` e `section: <seção>`. `meta` de cada trecho: `kind` (`card`), `external_id`, `card_number`, `title`, `card_type`, `card_status`, `original_status`, `sprint` (nome ou `null`), `release`, `date` (`done_at` se houver, senão `updated_at`), `date_kind` (`done` ou `updated`), `url`, `headings` e `section` (`description`, `acceptance`, `links`, `comments`, `fields` ou `attachments`).
 

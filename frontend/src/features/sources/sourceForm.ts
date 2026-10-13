@@ -110,7 +110,7 @@ export function sourceFormSchema(t: TFunction) {
         .min(1, { error: t("sources.form.validation.nameRequired") })
         .max(SOURCE_NAME_MAX_LENGTH, tooLong(SOURCE_NAME_MAX_LENGTH)),
       collectionId: z.string().min(1, { error: t("sources.form.validation.collectionRequired") }),
-      kind: z.enum(["git", "folder", "runner", "tickets"]),
+      kind: z.enum(["git", "folder", "runner", "tickets", "cards"]),
       includeInternalNotes: z.boolean(),
       anonymize: z.boolean(),
       statuses: z.array(z.enum(TICKET_STATUSES)),

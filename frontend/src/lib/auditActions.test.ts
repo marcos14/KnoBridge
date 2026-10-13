@@ -4,7 +4,7 @@ import { AUDIT_ACTIONS, isAuditAction } from "./auditActions";
 
 describe("auditActions", () => {
   it("test_audit_actions_lists_every_contract_action_once", () => {
-    expect(AUDIT_ACTIONS).toHaveLength(70);
+    expect(AUDIT_ACTIONS).toHaveLength(71);
     expect(new Set(AUDIT_ACTIONS).size).toBe(AUDIT_ACTIONS.length);
     expect(AUDIT_ACTIONS).toContain("setup.completed");
     expect(AUDIT_ACTIONS).toContain("runner.revoked");

@@ -4,7 +4,9 @@ documents are tickets pushed through the inbox rules (``check_items`` + ``apply_
 Unlike a tree, the inbox is the state: what was listed stays pending until the engine processes
 it, so ``processed`` fetches and settles a listing the way the indexer does. Each document is a
 ticket whose first customer message is the contract content; what ``fetch`` returns is that
-ticket's Markdown and hash (``render_ticket``). Not a test module.
+ticket's Markdown and hash (``render_ticket``). The ``cards`` connector runs the same contract
+(``CardsContractSource``), each document a card whose description is the content. Not a test
+module.
 """
 
 from __future__ import annotations
@@ -29,10 +31,13 @@ from knobridge.ingestion.settle import ItemOutcome, Settlement
 from knobridge.ingestion.source_config import SourceKind
 from knobridge.llm.models import ProviderCredential, ProviderKind
 from knobridge.tenancy.models import Workspace
-from knobridge.tickets.connector import TicketsConnector, TicketsConnectorFactory
+from knobridge.tickets.card_markdown import render_card
+from knobridge.tickets.card_wire import CardIn
+from knobridge.tickets.connector import InboxConnector, TicketsConnectorFactory
 from knobridge.tickets.ingest import apply_items, check_items
-from knobridge.tickets.markdown import render_ticket
+from knobridge.tickets.markdown import RenderedDocument, render_ticket
 from knobridge.tickets.models import IngestToken
+from knobridge.tickets.push import CARDS, TICKETS
 from knobridge.tickets.wire import TicketIn
 
 START = datetime(2026, 10, 1, 10, 0, tzinfo=UTC)
@@ -44,6 +49,23 @@ def _instant(minutes: int) -> str:
 
 class TicketsContractSource:
     kind = DocumentKind.TICKET
+    source_kind = SourceKind.TICKETS
+    push_kind = TICKETS
+
+    def record(self, key: str, content: bytes) -> dict[str, JSONValue]:
+        """The pushed record whose indexed text is ``content``."""
+        return {
+            "external_id": key,
+            "title": f"Chamado {key}",
+            "status": "open",
+            "created_at": _instant(0),
+            "updated_at": _instant(self._version),
+            "messages": [{"role": "customer", "body": content.decode(), "created_at": _instant(0)}],
+        }
+
+    def rendered(self, record: dict[str, JSONValue]) -> RenderedDocument:
+        ticket = TicketIn.model_validate(record)
+        return render_ticket(ticket, anonymize=True, include_internal_notes=False)
 
     def __init__(self, database_url: str, tmp_path: Path) -> None:
         # NullPool: every call runs in its own event loop and keeps no connection.
@@ -52,7 +74,7 @@ class TicketsContractSource:
         )
         self._clock = FrozenClock(START)
         self._version = 0
-        self._tickets: dict[str, dict[str, JSONValue]] = {}
+        self._records: dict[str, dict[str, JSONValue]] = {}
         self._source = asyncio.run(self._seed())
 
     async def _seed(self) -> Source:
@@ -81,8 +103,8 @@ class TicketsContractSource:
             source = Source(
                 workspace_id=workspace.id,
                 collection_id=collection.id,
-                kind=SourceKind.TICKETS,
-                name="Chamados",
+                kind=self.source_kind,
+                name="Caixa de entrada",
                 config={},
             )
             db.add(source)
@@ -100,7 +122,7 @@ class TicketsContractSource:
             )
             return source
 
-    def connector(self) -> TicketsConnector:
+    def connector(self) -> InboxConnector:
         return TicketsConnectorFactory(self._factory, self._clock)(self._source)
 
     def _push(self, item: dict[str, JSONValue]) -> None:
@@ -112,7 +134,7 @@ class TicketsContractSource:
                     db,
                     workspace_id=self._source.workspace_id,
                     source_id=self._source.id,
-                    items=check_items([item]),
+                    items=check_items([item], self.push_kind),
                     now=START,
                 )
 
@@ -120,16 +142,9 @@ class TicketsContractSource:
 
     def add(self, key: str, content: bytes) -> None:
         self._version += 1
-        ticket: dict[str, JSONValue] = {
-            "external_id": key,
-            "title": f"Chamado {key}",
-            "status": "open",
-            "created_at": _instant(0),
-            "updated_at": _instant(self._version),
-            "messages": [{"role": "customer", "body": content.decode(), "created_at": _instant(0)}],
-        }
-        self._tickets[key] = ticket
-        self._push({"op": "upsert", "ticket": ticket})
+        record = self.record(key, content)
+        self._records[key] = record
+        self._push({"op": "upsert", self.push_kind.item_key: record})
 
     def change(self, key: str, content: bytes) -> None:
         self.add(key, content)
@@ -147,12 +162,11 @@ class TicketsContractSource:
         asyncio.run(drop_token())
 
     def expected(self, key: str, content: bytes) -> tuple[bytes, str]:
-        ticket = TicketIn.model_validate(self._tickets[key])
-        document = render_ticket(ticket, anonymize=True, include_internal_notes=False)
+        document = self.rendered(self._records[key])
         return document.markdown.encode("utf-8"), document.digest
 
     def processed(self, changes: ChangeSet) -> None:
-        async def process(connector: TicketsConnector) -> None:
+        async def process(connector: InboxConnector) -> None:
             settlements = [Settlement(ref, ItemOutcome.REMOVED) for ref in changes.removed]
             for ref in changes.added + changes.changed:
                 await connector.fetch(ref)
@@ -164,3 +178,26 @@ class TicketsContractSource:
                     await connector.settle(db, settlement)
 
         asyncio.run(process(self.connector()))
+
+
+class CardsContractSource(TicketsContractSource):
+    """The ``cards`` connector under the same contract: each document is a card whose
+    description is the contract content."""
+
+    kind = DocumentKind.CARD
+    source_kind = SourceKind.CARDS
+    push_kind = CARDS
+
+    def record(self, key: str, content: bytes) -> dict[str, JSONValue]:
+        return {
+            "external_id": key,
+            "title": f"Card {key}",
+            "type": "task",
+            "status": "backlog",
+            "description": {"body": content.decode()},
+            "created_at": _instant(0),
+            "updated_at": _instant(self._version),
+        }
+
+    def rendered(self, record: dict[str, JSONValue]) -> RenderedDocument:
+        return render_card(CardIn.model_validate(record), anonymize=True, include_comments=True)

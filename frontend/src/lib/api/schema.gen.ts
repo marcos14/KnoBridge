@@ -469,6 +469,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/ingest/cards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ingest Cards
+         * @description The same as ``/ingest/tickets`` for the cards of a ``cards`` source (``card`` in the
+         *     upsert item); 202 with the result of every item, in order.
+         */
+        post: operations["ingest_cards_v1_ingest_cards_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/ingest/tickets": {
         parameters: {
             query?: never;
@@ -1809,6 +1830,68 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/workspaces/{workspace_id}/sources/{source_id}/cards/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Preview Card Markdown
+         * @description The Markdown the index would get for this card, anonymized with the source's settings;
+         *     nothing is written.
+         */
+        post: operations["preview_card_markdown_v1_workspaces__workspace_id__sources__source_id__cards_preview_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/sources/{source_id}/cards/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Cards Summary
+         * @description The same summary for a ``cards`` source (docs/specs/cards.md).
+         */
+        get: operations["get_cards_summary_v1_workspaces__workspace_id__sources__source_id__cards_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/sources/{source_id}/cards/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Upload Card File
+         * @description Validate and write every card or removal of the file (the rules of the API, in blocks
+         *     of 100), then ask for the sync of the source; the counts and the rejected items.
+         */
+        post: operations["upload_card_file_v1_workspaces__workspace_id__sources__source_id__cards_upload_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/workspaces/{workspace_id}/sources/{source_id}/documents": {
         parameters: {
             query?: never;
@@ -2471,7 +2554,7 @@ export interface components {
          * AuditAction
          * @enum {string}
          */
-        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "superadmin.workspace_entered" | "superadmin.workspace_exited" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted" | "provider.tested" | "assistant.created" | "assistant.updated" | "assistant.deleted" | "assistant.ticket_webhook_secret_rotated" | "assistant.ticket_webhook_tested" | "product.created" | "product.updated" | "product.deleted" | "product.ticket_webhook_secret_rotated" | "product.ticket_webhook_tested" | "workspace_level.updated" | "member_level.updated" | "conversation.deleted" | "ticket_request.created" | "collection.created" | "collection.updated" | "collection.deleted" | "source.created" | "source.updated" | "source.deleted" | "source.tested" | "source.sync.started" | "source.sync.cancelled" | "source.reindex.started" | "source.ingest_token_rotated" | "source.tickets_uploaded" | "runner.created" | "runner.updated" | "runner.revoked" | "runner.deleted" | "harness_job.cancelled" | "harness_job.enqueued" | "harness_module.created" | "harness_module.updated" | "knowledge_item.updated" | "api_key.created" | "api_key.updated" | "api_key.revoked";
+        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "superadmin.workspace_entered" | "superadmin.workspace_exited" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted" | "provider.tested" | "assistant.created" | "assistant.updated" | "assistant.deleted" | "assistant.ticket_webhook_secret_rotated" | "assistant.ticket_webhook_tested" | "product.created" | "product.updated" | "product.deleted" | "product.ticket_webhook_secret_rotated" | "product.ticket_webhook_tested" | "workspace_level.updated" | "member_level.updated" | "conversation.deleted" | "ticket_request.created" | "collection.created" | "collection.updated" | "collection.deleted" | "source.created" | "source.updated" | "source.deleted" | "source.tested" | "source.sync.started" | "source.sync.cancelled" | "source.reindex.started" | "source.ingest_token_rotated" | "source.tickets_uploaded" | "source.cards_uploaded" | "runner.created" | "runner.updated" | "runner.revoked" | "runner.deleted" | "harness_job.cancelled" | "harness_job.enqueued" | "harness_module.created" | "harness_module.updated" | "knowledge_item.updated" | "api_key.created" | "api_key.updated" | "api_key.revoked";
         /** AuditEventOut */
         AuditEventOut: {
             /** Action */
@@ -2509,6 +2592,184 @@ export interface components {
             offset: number;
             /** Total */
             total: number;
+        };
+        /** CardAttachmentIn */
+        CardAttachmentIn: {
+            /** Name */
+            name: string;
+        };
+        /** CardCommentIn */
+        CardCommentIn: {
+            /** Author Name */
+            author_name?: string | null;
+            /** Body */
+            body: string;
+            /** @default text */
+            body_format: components["schemas"]["TicketBodyFormat"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Id */
+            id?: string | null;
+        };
+        /**
+         * CardDeleteItemIn
+         * @description The removal of a card: the same fields as a ticket's, under the card's schema name.
+         */
+        CardDeleteItemIn: {
+            /** Deleted At */
+            deleted_at?: string | null;
+            /** External Id */
+            external_id: string;
+            /**
+             * Op
+             * @constant
+             */
+            op: "delete";
+        };
+        /** CardDescriptionIn */
+        CardDescriptionIn: {
+            /** Body */
+            body: string;
+            /** @default text */
+            body_format: components["schemas"]["TicketBodyFormat"];
+        };
+        /**
+         * CardIn
+         * @description A card of the development tool of origin (docs/specs/cards.md, "Formato do card").
+         */
+        CardIn: {
+            acceptance_criteria?: components["schemas"]["CardDescriptionIn"] | null;
+            /** Assignees */
+            assignees?: components["schemas"]["CardPersonIn"][];
+            /** Attachments */
+            attachments?: components["schemas"]["CardAttachmentIn"][];
+            /** Comments */
+            comments?: components["schemas"]["CardCommentIn"][];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Custom Fields */
+            custom_fields?: {
+                [key: string]: string | number | boolean | null;
+            };
+            description?: components["schemas"]["CardDescriptionIn"] | null;
+            /** Done At */
+            done_at?: string | null;
+            /** External Id */
+            external_id: string;
+            /** Links */
+            links?: components["schemas"]["CardLinkIn"][];
+            /** Number */
+            number?: string | null;
+            /** Original Status */
+            original_status?: string | null;
+            /** Original Type */
+            original_type?: string | null;
+            /** Parent External Id */
+            parent_external_id?: string | null;
+            /** Priority */
+            priority?: string | null;
+            /** Product */
+            product?: string | null;
+            /** Release */
+            release?: string | null;
+            reporter?: components["schemas"]["CardPersonIn"] | null;
+            sprint?: components["schemas"]["CardSprintIn"] | null;
+            status: components["schemas"]["CardStatus"];
+            /** Tags */
+            tags?: string[];
+            /** Title */
+            title: string;
+            type: components["schemas"]["CardType"];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Url */
+            url?: string | null;
+        };
+        /** CardIngestIn */
+        CardIngestIn: {
+            /** Items */
+            items: (components["schemas"]["CardUpsertItemIn"] | components["schemas"]["CardDeleteItemIn"])[];
+        };
+        /** CardLinkIn */
+        CardLinkIn: {
+            kind: components["schemas"]["CardLinkKind"];
+            /** Relation */
+            relation?: string | null;
+            /** Target */
+            target: string;
+            /** Url */
+            url?: string | null;
+        };
+        /**
+         * CardLinkKind
+         * @enum {string}
+         */
+        CardLinkKind: "card" | "ticket" | "commit" | "pull_request" | "url";
+        /** CardPersonIn */
+        CardPersonIn: {
+            /** Email */
+            email?: string | null;
+            /** Name */
+            name?: string | null;
+        };
+        /**
+         * CardPreviewIn
+         * @description The card is validated like an upsert item (strict), so it arrives raw.
+         */
+        CardPreviewIn: {
+            /** Card */
+            card: components["schemas"]["CardIn"];
+        };
+        /** CardPreviewOut */
+        CardPreviewOut: {
+            /** Anonymize */
+            anonymize: boolean;
+            /** Include Comments */
+            include_comments: boolean;
+            /** Markdown */
+            markdown: string;
+            /** Markers */
+            markers: components["schemas"]["TicketPreviewMarker"][];
+            /** Title */
+            title: string;
+        };
+        /** CardSprintIn */
+        CardSprintIn: {
+            /** End At */
+            end_at?: string | null;
+            /** Name */
+            name: string;
+            /** Start At */
+            start_at?: string | null;
+        };
+        /**
+         * CardStatus
+         * @description Normalized status of a card (docs/specs/cards.md, "Status e tipo normalizados").
+         * @enum {string}
+         */
+        CardStatus: "backlog" | "in_progress" | "done" | "cancelled";
+        /**
+         * CardType
+         * @enum {string}
+         */
+        CardType: "feature" | "bug" | "task" | "story" | "epic" | "other";
+        /** CardUpsertItemIn */
+        CardUpsertItemIn: {
+            card: components["schemas"]["CardIn"];
+            /**
+             * Op
+             * @constant
+             */
+            op: "upsert";
         };
         /** ChangePasswordRequest */
         ChangePasswordRequest: {
@@ -2551,6 +2812,16 @@ export interface components {
         CitationOut: {
             /** Author */
             author?: string | null;
+            /** Card Date Kind */
+            card_date_kind?: ("done" | "updated") | null;
+            /** Card Number */
+            card_number?: string | null;
+            /** Card Sprint */
+            card_sprint?: string | null;
+            /** Card Status */
+            card_status?: ("backlog" | "in_progress" | "done" | "cancelled") | null;
+            /** Card Type */
+            card_type?: ("feature" | "bug" | "task" | "story" | "epic" | "other") | null;
             /** Confidence */
             confidence?: string | null;
             /** Date */
@@ -2819,7 +3090,7 @@ export interface components {
          * DocumentKind
          * @enum {string}
          */
-        DocumentKind: "file" | "commit" | "knowledge" | "ticket";
+        DocumentKind: "file" | "commit" | "knowledge" | "ticket" | "card";
         /** DocumentOut */
         DocumentOut: {
             /** Chunk Count */
@@ -5355,7 +5626,7 @@ export interface components {
          * SourceKind
          * @enum {string}
          */
-        SourceKind: "git" | "folder" | "runner" | "tickets";
+        SourceKind: "git" | "folder" | "runner" | "tickets" | "cards";
         /** SourceOut */
         SourceOut: {
             /** Active */
@@ -7283,6 +7554,72 @@ export interface operations {
             };
         };
     };
+    ingest_cards_v1_ingest_cards_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CardIngestIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketIngestOut"];
+                };
+            };
+            /** @description Missing, malformed, unknown or rotated token (`invalid_ingest_token`). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace of the source suspended (`workspace_suspended`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Source deactivated (`source_inactive`) or of the other kind (`source_kind_mismatch`, `details.expected`/`details.actual`): nothing written. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Body above 5 MiB (`payload_too_large`, `details.max_bytes`). */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Malformed body (`validation_error`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Database unavailable (`service_unavailable`): nothing written. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     ingest_tickets_v1_ingest_tickets_post: {
         parameters: {
             query?: never;
@@ -7319,7 +7656,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Source deactivated (`source_inactive`): nothing written. */
+            /** @description Source deactivated (`source_inactive`) or of the other kind (`source_kind_mismatch`, `details.expected`/`details.actual`): nothing written. */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -12026,6 +12363,196 @@ export interface operations {
             };
         };
     };
+    preview_card_markdown_v1_workspaces__workspace_id__sources__source_id__cards_preview_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CardPreviewIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardPreviewOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace not found or caller not a member, or not a `cards` source of the workspace (`source_not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Body above 2 MiB (`payload_too_large`). */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Card outside the format (`validation_error` with `{loc, problem}` relative to the card) or above 1 MiB (`card_too_large`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_cards_summary_v1_workspaces__workspace_id__sources__source_id__cards_summary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketsSummaryOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace suspended (`workspace_suspended`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace not found or caller not a member, or not a `cards` source of the workspace (`source_not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_card_file_v1_workspaces__workspace_id__sources__source_id__cards_upload_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                source_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * Format: binary
+                     * @description A .json (list or {items}) or .jsonl file, up to 50 MiB.
+                     */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketUploadOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace not found or caller not a member, or not a `cards` source of the workspace (`source_not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Source deactivated (`source_inactive`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description File above 50 MiB (`payload_too_large`, `details.max_bytes`). */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a .json/.jsonl file (`upload_format_unsupported`), malformed JSON (`upload_invalid_json`), empty file (`upload_empty`) or no file field (`validation_error`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     list_source_documents_v1_workspaces__workspace_id__sources__source_id__documents_get: {
         parameters: {
             query?: {
@@ -12239,7 +12766,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Workspace not found or caller not a member, or not a `tickets` source of the workspace (`source_not_found`). */
+            /** @description Workspace not found or caller not a member, or not a `tickets` or `cards` source of the workspace (`source_not_found`). */
             404: {
                 headers: {
                     [name: string]: unknown;

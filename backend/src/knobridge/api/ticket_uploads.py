@@ -8,7 +8,8 @@ refused before reading); the file is spooled by the multipart parser (memory up 
 temporary file) and read back in blocks by ``tickets/upload.py``. The answer comes after every
 block is committed, with the sync of the source already asked for (trigger ``ingest``). The
 preview renders one ticket with the source's settings and writes nothing; its body is capped by
-the body limit middleware (``body_limit.py``).
+the body limit middleware (``body_limit.py``). The cards' routes (``card_uploads.py``) reuse
+``handle_upload`` and the schemas of the answers.
 """
 
 from __future__ import annotations
@@ -20,6 +21,7 @@ from typing import Annotated, Literal, cast
 from anyio import to_thread
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, ConfigDict, PlainValidator
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from starlette.datastructures import FormData, UploadFile
 from starlette.formparsers import MultiPartException, MultiPartParser
 
@@ -33,6 +35,7 @@ from knobridge.api.deps import (
     require_role,
 )
 from knobridge.api.ingest import TicketIngestCounts
+from knobridge.core.clock import Clock
 from knobridge.core.errors import ValidationError
 from knobridge.core.logging import get_logger
 from knobridge.ingestion.source_config import (
@@ -40,10 +43,12 @@ from knobridge.ingestion.source_config import (
     TicketsSourceConfig,
     parse_source_config,
 )
+from knobridge.ingestion.sync import SyncStarter
 from knobridge.security.csrf import require_csrf
 from knobridge.tenancy.models import Role
 from knobridge.tickets.ingest import ItemStatus
 from knobridge.tickets.ingest_sync import SyncOutcome, request_ingest_sync
+from knobridge.tickets.push import TICKETS, PushKind
 from knobridge.tickets.upload import (
     UploadReport,
     audit_upload,
@@ -162,7 +167,7 @@ class TicketPreviewOut(BaseModel):
     include_internal_notes: bool
 
 
-_UPLOAD_BODY: dict[str, object] = {
+UPLOAD_BODY: dict[str, object] = {
     "requestBody": {
         "required": True,
         "content": {
@@ -184,15 +189,31 @@ _UPLOAD_BODY: dict[str, object] = {
         },
     }
 }
-_SESSION_ERRORS: dict[int | str, dict[str, object]] = {
-    401: {"description": "No live session (standard error shape)."},
-    403: {
-        "description": "Role below editor (`forbidden`), workspace suspended or CSRF failure "
-        "(`csrf_failed`)."
-    },
-    404: {
-        "description": "Workspace not found or caller not a member, or not a `tickets` source "
-        "of the workspace (`source_not_found`)."
+
+
+def session_errors(kind: SourceKind) -> dict[int | str, dict[str, object]]:
+    """The errors of a session route on a source of ``kind``."""
+    return {
+        401: {"description": "No live session (standard error shape)."},
+        403: {
+            "description": "Role below editor (`forbidden`), workspace suspended or CSRF "
+            "failure (`csrf_failed`)."
+        },
+        404: {
+            "description": f"Workspace not found or caller not a member, or not a `{kind.value}` "
+            "source of the workspace (`source_not_found`)."
+        },
+    }
+
+
+_SESSION_ERRORS = session_errors(SourceKind.TICKETS)
+UPLOAD_ERRORS: dict[int | str, dict[str, object]] = {
+    409: {"description": "Source deactivated (`source_inactive`)."},
+    413: {"description": "File above 50 MiB (`payload_too_large`, `details.max_bytes`)."},
+    422: {
+        "description": "Not a .json/.jsonl file (`upload_format_unsupported`), malformed "
+        "JSON (`upload_invalid_json`), empty file (`upload_empty`) or no file field "
+        "(`validation_error`)."
     },
 }
 
@@ -227,17 +248,8 @@ router = APIRouter(prefix="/workspaces/{workspace_id}/sources", tags=["sources"]
 @router.post(
     "/{source_id}/tickets/upload",
     dependencies=[Depends(require_csrf)],
-    openapi_extra=_UPLOAD_BODY,
-    responses={
-        **_SESSION_ERRORS,
-        409: {"description": "Source deactivated (`source_inactive`)."},
-        413: {"description": "File above 50 MiB (`payload_too_large`, `details.max_bytes`)."},
-        422: {
-            "description": "Not a .json/.jsonl file (`upload_format_unsupported`), malformed "
-            "JSON (`upload_invalid_json`), empty file (`upload_empty`) or no file field "
-            "(`validation_error`)."
-        },
-    },
+    openapi_extra=UPLOAD_BODY,
+    responses={**_SESSION_ERRORS, **UPLOAD_ERRORS},
 )
 async def upload_ticket_file(
     source_id: uuid.UUID,
@@ -250,9 +262,28 @@ async def upload_ticket_file(
 ) -> TicketUploadOut:
     """Validate and write every ticket or removal of the file (the rules of the API, in blocks
     of 100), then ask for the sync of the source; the counts and the rejected items."""
+    return await handle_upload(
+        source_id, request, context, factory, starter, clock, ip, kind=TICKETS
+    )
+
+
+async def handle_upload(
+    source_id: uuid.UUID,
+    request: Request,
+    context: WorkspaceContext,
+    factory: async_sessionmaker[AsyncSession],
+    starter: SyncStarter,
+    clock: Clock,
+    ip: str | None,
+    *,
+    kind: PushKind,
+) -> TicketUploadOut:
+    """The upload of a file of tickets or cards into the source of ``kind``."""
     workspace_id = context.workspace_id
     source = require_active(
-        await tickets_source(context.db, workspace_id=workspace_id, source_id=source_id)
+        await tickets_source(
+            context.db, workspace_id=workspace_id, source_id=source_id, kind=kind.source_kind
+        )
     )
     form = await _read_form(request)
     try:
@@ -272,6 +303,7 @@ async def upload_ticket_file(
             file_format=file_format,
             elements=elements,
             now=clock.now(),
+            kind=kind,
         )
     finally:
         await form.close()
@@ -291,9 +323,10 @@ async def upload_ticket_file(
         filename=upload.filename or "",
         report=report,
         ip=ip,
+        kind=kind,
     )
     _log.info(
-        "tickets_uploaded",
+        f"{kind.source_kind.value}_uploaded",
         workspace_id=str(workspace_id),
         source_id=str(source_id),
         run_id=None if run_id is None else str(run_id),

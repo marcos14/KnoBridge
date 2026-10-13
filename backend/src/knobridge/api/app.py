@@ -20,6 +20,7 @@ from knobridge.api import (
     api_keys,
     audit,
     auth,
+    card_uploads,
     collections,
     conversations,
     dashboard,
@@ -172,6 +173,8 @@ def create_app(
         ingest,
         # Tickets from the panel (plan 0005 F2.4).
         ticket_uploads,
+        # Cards by push and from the panel (plan 0009 F2.3).
+        card_uploads,
         # Ticket webhook of the products (plan 0005 F3.1).
         ticket_webhook,
         # Ticket requests from the chat (plan 0005 F3.2).

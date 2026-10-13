@@ -51,6 +51,11 @@ _NO_LOCATION: dict[str, object] = {
     "ticket_status": None,
     "ticket_date_kind": None,
     "url": None,
+    "card_number": None,
+    "card_type": None,
+    "card_status": None,
+    "card_sprint": None,
+    "card_date_kind": None,
 }
 
 

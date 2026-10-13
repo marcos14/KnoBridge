@@ -38,7 +38,7 @@ from knobridge.ingestion.models import (
     RunTrigger,
     Source,
 )
-from knobridge.ingestion.source_config import SourceKind
+from knobridge.ingestion.source_config import PUSH_SOURCE_KINDS, SourceKind
 from knobridge.llm.pricing import EmbeddingPriceTable
 
 # Rows per INSERT when storing a change set; keeps each statement well under the driver's
@@ -242,6 +242,6 @@ class RunLifecycle:
 
 
 def _pending_trigger(kind: SourceKind) -> RunTrigger:
-    """The trigger of a run queued by ``sync_pending``: only ticket sources (``ingest``) and
-    runner sources (``harness``) ask for pending syncs, through ``request_sync``."""
-    return RunTrigger.INGEST if kind is SourceKind.TICKETS else RunTrigger.HARNESS
+    """The trigger of a run queued by ``sync_pending``: only ticket and card sources (``ingest``)
+    and runner sources (``harness``) ask for pending syncs, through ``request_sync``."""
+    return RunTrigger.INGEST if kind in PUSH_SOURCE_KINDS else RunTrigger.HARNESS

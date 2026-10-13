@@ -33,7 +33,7 @@ import { SyncButton } from "./SyncButton";
 /** Rows per page of the source table (paged by the API). */
 export const SOURCES_PAGE_SIZE = 20;
 
-const SOURCE_KINDS: readonly SourceKind[] = ["git", "folder", "runner", "tickets"];
+const SOURCE_KINDS: readonly SourceKind[] = ["git", "folder", "runner", "tickets", "cards"];
 const LAST_RUN_FILTERS = [
   "never",
   "queued",

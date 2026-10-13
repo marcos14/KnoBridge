@@ -238,36 +238,47 @@ def _letters(word: str) -> int:
     return sum(char.isalpha() for char in word)
 
 
+class NameBook:
+    """Declared names (folded) → marker, filled in order of precedence: a name keeps the first
+    marker it gets. Shared by tickets and cards, which declare different people."""
+
+    def __init__(self) -> None:
+        self.names: dict[str, str] = {}
+
+    def add(self, name: str | None, marker: str, *, first_name: bool) -> None:
+        """``name`` (and its first word, with enough letters, when ``first_name``) → marker;
+        an empty name is ignored."""
+        key = name_key(name)
+        if not key:
+            return
+        self.names.setdefault(key, marker)
+        first = key.split()[0]
+        if first_name and _letters(first) >= MIN_FIRST_NAME_LETTERS:
+            self.names.setdefault(first, marker)
+
+    def number(self, candidates: Iterable[str | None], label: str) -> None:
+        """Each name not declared yet gets ``[<label>_<n>]``, from 1, in order."""
+        count = 0
+        for name in candidates:
+            if name_key(name) and name_key(name) not in self.names:
+                count += 1
+                self.add(name, f"[{label}_{count}]", first_name=True)
+
+
 def declared_names(ticket: TicketIn) -> dict[str, str]:
     """Folded name → marker, in the spec's precedence: requester, organization, agents
     (assignees, then agent authors in message order), then other customer authors."""
-    names: dict[str, str] = {}
-
-    def add(name: str | None, marker: str, *, first_name: bool) -> None:
-        key = name_key(name)
-        names.setdefault(key, marker)
-        first = key.split()[0]
-        if first_name and _letters(first) >= MIN_FIRST_NAME_LETTERS:
-            names.setdefault(first, marker)
-
-    def number(candidates: Iterable[str | None], label: str) -> None:
-        count = 0
-        for name in candidates:
-            if name_key(name) and name_key(name) not in names:
-                count += 1
-                add(name, f"[{label}_{count}]", first_name=True)
-
+    book = NameBook()
     requester = ticket.requester
-    if requester is not None and name_key(requester.name):
-        add(requester.name, REQUESTER, first_name=True)
-    if requester is not None and name_key(requester.organization):
-        add(requester.organization, ORGANIZATION, first_name=False)
+    if requester is not None:
+        book.add(requester.name, REQUESTER, first_name=True)
+        book.add(requester.organization, ORGANIZATION, first_name=False)
     agents = [person.name for person in ticket.assignees]
     agents += [m.author_name for m in ticket.messages if m.role is TicketMessageRole.AGENT]
-    number(agents, "ATENDENTE")
+    book.number(agents, "ATENDENTE")
     customers = [m.author_name for m in ticket.messages if m.role is TicketMessageRole.CUSTOMER]
-    number(customers, "CLIENTE")
-    return names
+    book.number(customers, "CLIENTE")
+    return book.names
 
 
 class TicketAnonymizer:

@@ -9,8 +9,8 @@ cursor belongs to the connector). The schedule is validated and stored, then mir
 source is still saved and the worker's reconciliation brings the schedule in line later.
 A ``runner`` source also has its runner, its unique ``(runner_id, repository)`` pair and its
 read-only ``head_commit`` checked, and is tested by the runner's presence instead of a
-connector (``harness/runner_sources.py``). A ``tickets`` source refuses globs (its documents
-have no paths) and is tested by the ``ConnectionCheck`` the caller gives for its kind (the
+connector (``harness/runner_sources.py``). A ``tickets`` or ``cards`` source refuses globs (its
+documents have no paths) and is tested by the ``ConnectionCheck`` the caller gives for its kind (the
 ingest token, ``tickets/tokens.py``).
 Deleting a source first cancels its running synchronization, then the database cascades to
 runs, documents and chunks. Audit metadata carries names, kinds and changed fields, never the
@@ -60,7 +60,7 @@ from knobridge.ingestion.source_check import (
     ConnectionFailure,
     check_connection,
 )
-from knobridge.ingestion.source_config import SourceKind, parse_source_config
+from knobridge.ingestion.source_config import PUSH_SOURCE_KINDS, SourceKind, parse_source_config
 from knobridge.ingestion.source_listing import SourceFilter, page_sources
 from knobridge.ingestion.sync import SyncStarter
 
@@ -127,11 +127,13 @@ def normalized_config(kind: SourceKind, data: Mapping[str, object]) -> dict[str,
 
 
 def _check_no_globs(kind: SourceKind, include: Sequence[str], exclude: Sequence[str]) -> None:
-    """Globs select paths; a ``tickets`` source has none, so it refuses non-empty ones."""
-    if kind is not SourceKind.TICKETS:
+    """Globs select paths; a ``tickets`` or ``cards`` source has none, so it refuses non-empty
+    ones."""
+    if kind not in PUSH_SOURCE_KINDS:
         return
+    message = f"Globs do not apply to {kind.value}."
     errors: list[JSONValue] = [
-        {"type": "globs_not_allowed", "loc": [field], "msg": "Globs do not apply to tickets."}
+        {"type": "globs_not_allowed", "loc": [field], "msg": message}
         for field, globs in (("include_globs", include), ("exclude_globs", exclude))
         if globs
     ]

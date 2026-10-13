@@ -24,7 +24,7 @@ export function ReindexButton({ workspaceId, source, onFeedback }: ReindexButton
   const reasonId = useId();
   const reindex = useReindexSource(workspaceId);
 
-  if (source.kind === "tickets") {
+  if (source.kind === "tickets" || source.kind === "cards") {
     return (
       <div className="flex flex-col items-start gap-1">
         <Button type="button" variant="outline" disabled aria-describedby={reasonId}>

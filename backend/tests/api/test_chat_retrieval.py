@@ -52,6 +52,10 @@ COMMIT = Passage(
     },
 )
 NO_SOURCE = "Não achei nas fontes."
+# The card fields of a citation that is not a card (chat-sse v0.9).
+NO_CARD = dict.fromkeys(
+    ("card_number", "card_type", "card_status", "card_sprint", "card_date_kind")
+)
 
 
 def _assistant(api: ApiEnv, world: SearchWorld, *collections: uuid.UUID) -> World:
@@ -108,6 +112,7 @@ def test_chat_with_indexed_source_streams_and_cites(api: ApiEnv, chat: ChatOverr
         "ticket_status": None,
         "ticket_date_kind": None,
         "url": None,
+        **NO_CARD,
     }
     assert (commit["title"], commit["uri"], commit["sha"]) == (
         "Corrige fechamento de caixa",
@@ -240,6 +245,7 @@ def test_chat_cites_a_ticket_with_number_status_date_and_link(
         "ticket_status": "resolved",
         "ticket_date_kind": "resolved",
         "url": "https://suporte.example.test/chamados/48213",
+        **NO_CARD,
     }
     (call,) = provider.calls
     rules, context = call.messages[0].content, call.messages[1].content
@@ -250,3 +256,80 @@ def test_chat_cites_a_ticket_with_number_status_date_and_link(
         f"{TICKET_BODY}"
     ) in context
     assert messages(api, world.workspace_id, conversation_id)[1]["citations"] == [ticket]
+
+
+CARD_BODY = "## Descrição\n\nO fechamento de caixa passa a exigir o relatório Z."
+CARD = Passage(
+    f"card: PROJ-123 · Relatório Z no fechamento\nstatus: done\nsection: Descrição\n\n{CARD_BODY}",
+    key="10001",
+    kind=DocumentKind.CARD,
+    meta={
+        "kind": "card",
+        "external_id": "10001",
+        "card_number": "PROJ-123",
+        "title": "Relatório Z no fechamento",
+        "card_type": "feature",
+        "card_status": "done",
+        "original_status": "Done",
+        "sprint": "Sprint 42",
+        "release": "12.5",
+        "date": "2026-09-29T17:40:00Z",
+        "date_kind": "done",
+        "url": "https://dev.example.test/browse/PROJ-123",
+        "headings": ["Card PROJ-123: Relatório Z no fechamento", "Descrição"],
+        "section": "description",
+        "display": CARD_BODY,
+    },
+)
+
+
+def test_chat_cites_a_card_with_type_status_sprint_and_link(
+    api: ApiEnv, chat: ChatOverrides
+) -> None:
+    provider = ScriptedLLMProvider(deltas=("Entregue na sprint 42 [1].",))
+    chat.provider(provider)
+    world = build_search_world(api, Role.OWNER)
+    add_passages(api, world, CARD)
+    conversation_id = start(api, _assistant(api, world, world.collection_id))
+
+    response = ask(api, world.workspace_id, conversation_id, QUESTION)
+
+    sent = events(response)
+    (card,) = cast(list[dict[str, object]], sent[0][1]["citations"])
+    assert card == {
+        "index": 1,
+        "title": "Relatório Z no fechamento",
+        "uri": "card:10001",
+        "snippet": CARD_BODY,
+        "document_id": card["document_id"],
+        "kind": "card",
+        "path": None,
+        "symbol": None,
+        "start_line": None,
+        "end_line": None,
+        "language": None,
+        "sha": None,
+        "author": None,
+        "date": "2026-09-29T17:40:00Z",
+        "confidence": None,
+        "evidence": None,
+        "ticket_number": None,
+        "ticket_status": None,
+        "ticket_date_kind": None,
+        "url": "https://dev.example.test/browse/PROJ-123",
+        "card_number": "PROJ-123",
+        "card_type": "feature",
+        "card_status": "done",
+        "card_sprint": "Sprint 42",
+        "card_date_kind": "done",
+    }
+    (call,) = provider.calls
+    rules, context = call.messages[0].content, call.messages[1].content
+    assert "Em cards de desenvolvimento, diga o status e a sprint quando os citar" in rules
+    assert (
+        "[1] Relatório Z no fechamento (card:10001)\n"
+        "Card PROJ-123 · Funcionalidade · Concluído · sprint Sprint 42 · 2026-09-29T17:40:00Z · "
+        "seção Descrição\n"
+        f"{CARD_BODY}"
+    ) in context
+    assert messages(api, world.workspace_id, conversation_id)[1]["citations"] == [card]

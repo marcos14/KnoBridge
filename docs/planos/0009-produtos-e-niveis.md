@@ -39,7 +39,7 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-13
         concluida_em: 2026-10-13
-        commit: null
+        commit: 3aabe2a
       - id: F2.2
         titulo: Chat por produto e nível (busca filtrada pelo nível, instruções e modelo do nível)
         status: pendente
@@ -49,10 +49,10 @@ fases:
         commit: null
       - id: F2.3
         titulo: Cards de desenvolvimento por push (tipo card na API de entrada, conector interno e citação)
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-13
-        concluida_em: null
+        concluida_em: 2026-10-13
         commit: null
       - id: F2.4
         titulo: API pública e webhook por produto e nível (chaves com produtos e nível máximo, model produto:nível, canal público só usuário final)
@@ -216,6 +216,13 @@ decisoes:
     decisao: "F2.1: serviços em products/ (service, listing, duplicate) e levels/ (defaults com os textos padrão, workspace com preço e custo estimado, members, grants de convite); rotas /assistants removidas (404) e webhook em /products/{id}/ticket-webhook; até a F2.2, criar produto copia credential_id, model e temperature do primeiro nível configurado (product_dev, support, end_user) e responde 409 level_not_configured sem nenhum; collection_ids repetidos e PATCH vazio dão 422; níveis de membro gravados com upsert; o E2E da stack quebra até a tela de níveis (F3.1/F4.1); os eventos de auditoria do webhook ainda usam assistant.* e passam a product.* na F2.4"
     motivo: "contrato da F1.1 com a suíte verde no meio da transição"
     alternativas: "manter /assistants como alias no painel"
+    adr: null
+  - id: D17
+    data: 2026-10-13
+    por: agente
+    decisao: "F2.3: cards reaproveitam o pacote tickets/ (push.py com TICKETS e CARDS; card_wire.py e card_markdown.py), mesma caixa ticket_inbox e token kbi_; token de fonte do outro tipo dá 409 source_kind_mismatch nos envios e 404 em upload, prévia e resumo; marcadores [RELATOR] e [RESPONSAVEL_n]; card inválido guardado falha com card_invalid; reindexar fonte de cards é recusado; auditoria source.cards_uploaded; as telas da fonte de cards (criar, integração, upload, prévia) entram na F3.2 e a citação de card na F3.3 (lacuna apontada pelo agente; generalizam as telas de chamados, sem escopo novo)"
+    motivo: "mesmo mecanismo dos chamados, sem duplicar código"
+    alternativas: "pacote cards/ separado; deixar a fonte de cards só pela API"
     adr: null
 pendencias_usuario: []
 ---
@@ -402,6 +409,7 @@ Convenções para todas as subfases: código em inglês, docs em pt-BR; regras 1
   - em **Membros**, o nível por produto (tabela membro × produto ou diálogo por membro);
   - o convite com nível;
   - nas **Fontes**, o nível mínimo, com os padrões por tipo e um aviso ao subir o nível de uma fonte em uso.
+  - a fonte de **cards** no painel (criar, Integração com token e exemplos, Upload e Prévia), generalizando as telas da fonte de chamados (D17).
 - **Contexto necessário**: `features/members` e `features/sources`; tipos gerados.
 - **Critérios de aceite**: testes de edição, validação e papéis.
 - **Depende de**: F2.1, F2.2.
@@ -413,6 +421,7 @@ Convenções para todas as subfases: código em inglês, docs em pt-BR; regras 1
   - **Chat** com seletor de produto e de nível (só até o máximo da pessoa) e o selo do nível em cada conversa;
   - **Conversas** e **Uso e custos** com filtro e agrupamento por produto e nível;
   - **Chaves de API** com produtos e nível máximo, e exemplos com `model` `produto:nível`.
+  - citação `kind: card` no chat com número, tipo, status e sprint.
 - **Contexto necessário**: `features/chat`, `features/conversations`, `features/usage` e `features/apikeys`; tipos gerados.
 - **Critérios de aceite**: testes do seletor (nível acima indisponível), filtros e chaves.
 - **Depende de**: F2.2, F2.4, F3.1.
@@ -469,6 +478,7 @@ Nenhuma.
 - 2026-10-13 — F2.1 iniciada (agente em worktree).
 - 2026-10-13 — F2.3 iniciada (agente em worktree).
 - 2026-10-13 — F2.1 concluída: produtos no lugar dos assistentes, configuração dos níveis do workspace, nível por membro e produto e convites com níveis; gates do agente: backend 2513 passed com 99,88%, frontend 1437; orquestrador: ruff, pyright e AGENTS na integração
+- 2026-10-13 — F2.3 concluída: cards de desenvolvimento por push (API e upload), conector interno cards, Markdown e chunking do card e citação kind card, integrados sobre a F2.1; backend 2621 passed com 99% de cobertura, frontend 1438
 
 ## 8. Encerramento
 

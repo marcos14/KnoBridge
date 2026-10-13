@@ -34,7 +34,7 @@ from knobridge.harness.knowledge_connector import KnowledgeConnectorFactory
 from knobridge.ingestion.collections import CollectionService
 from knobridge.ingestion.connectors import ConnectorFactory, SettingsConnectorFactory
 from knobridge.ingestion.schedule import ScheduleManager
-from knobridge.ingestion.source_config import SourceKind
+from knobridge.ingestion.source_config import PUSH_SOURCE_KINDS
 from knobridge.ingestion.sources import SourceService
 from knobridge.ingestion.sync import SyncStarter
 from knobridge.llm.chat_pricing import ChatPriceTable
@@ -395,11 +395,11 @@ def get_collection_service(request: Request) -> CollectionService:
 def get_source_service(
     request: Request, schedules: Annotated[ScheduleManager, Depends(get_schedule_manager)]
 ) -> SourceService:
-    # The ``tickets`` source is tested by its ingest token, not by a connector.
+    # ``tickets`` and ``cards`` sources are tested by their ingest token, not by a connector.
     return SourceService(
         request.app.state.clock,
         schedules,
-        checks={SourceKind.TICKETS: ingest_token_failure},
+        checks=dict.fromkeys(PUSH_SOURCE_KINDS, ingest_token_failure),
     )
 
 

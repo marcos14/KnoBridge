@@ -13,7 +13,7 @@ from knobridge.tickets.wire import (
     MAX_PROBLEMS,
     TicketDeleteItemIn,
     TicketIn,
-    canonical_ticket,
+    canonical_payload,
     problems,
 )
 
@@ -57,7 +57,7 @@ def test_ticket_wire_accepts_spec_example() -> None:
 
 
 def test_ticket_wire_canonical_payload_fills_defaults_and_uses_utc() -> None:
-    payload, _ = canonical_ticket(validate(minimal(created_at="2026-10-01T07:00:00-03:00")))
+    payload, _ = canonical_payload(validate(minimal(created_at="2026-10-01T07:00:00-03:00")))
 
     assert payload["created_at"] == "2026-10-01T10:00:00Z"
     assert payload["tags"] == []
@@ -69,13 +69,13 @@ def test_ticket_wire_hash_ignores_offset_and_key_order() -> None:
     first = minimal(updated_at="2026-10-01T10:00:00Z", title="  Erro  ")
     second = dict(reversed(list(minimal(updated_at="2026-10-01T07:00:00-03:00").items())))
 
-    assert canonical_ticket(validate(first))[1] == canonical_ticket(validate(second))[1]
+    assert canonical_payload(validate(first))[1] == canonical_payload(validate(second))[1]
 
 
 def test_ticket_wire_hash_changes_with_content() -> None:
     assert (
-        canonical_ticket(validate(minimal()))[1]
-        != canonical_ticket(validate(minimal(title="Outro")))[1]
+        canonical_payload(validate(minimal()))[1]
+        != canonical_payload(validate(minimal(title="Outro")))[1]
     )
 
 

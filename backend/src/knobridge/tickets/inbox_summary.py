@@ -1,4 +1,5 @@
-"""The summary of a ``tickets`` source for the panel (docs/specs/chamados.md, "Resumo no painel").
+"""The summary of a ``tickets`` or ``cards`` source for the panel (docs/specs/chamados.md,
+"Resumo no painel").
 
 Counts of the inbox by state, the pending entries that failed, the last time an item was queued
 and the prefix and date of the current ingest token. Never a payload: only states and dates.
@@ -13,6 +14,7 @@ from datetime import datetime
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from knobridge.ingestion.source_config import SourceKind
 from knobridge.tickets.models import IngestToken, TicketInboxItem, TicketInboxState
 from knobridge.tickets.upload import tickets_source
 
@@ -27,10 +29,15 @@ class InboxSummary:
 
 
 async def inbox_summary(
-    db: AsyncSession, *, workspace_id: uuid.UUID, source_id: uuid.UUID
+    db: AsyncSession,
+    *,
+    workspace_id: uuid.UUID,
+    source_id: uuid.UUID,
+    kind: SourceKind = SourceKind.TICKETS,
 ) -> InboxSummary:
-    """The summary of the ``tickets`` source of the workspace, or 404 ``source_not_found``."""
-    await tickets_source(db, workspace_id=workspace_id, source_id=source_id)
+    """The summary of the source of ``kind`` (``tickets`` or ``cards``) of the workspace, or 404
+    ``source_not_found``."""
+    await tickets_source(db, workspace_id=workspace_id, source_id=source_id, kind=kind)
     failed = func.count().filter(
         TicketInboxItem.state == TicketInboxState.PENDING,
         TicketInboxItem.last_error.is_not(None),

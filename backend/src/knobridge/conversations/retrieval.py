@@ -39,11 +39,12 @@ class Source:
 
     ``content`` is what the LLM reads (and the snippet's origin). The optional location
     fields let the panel show where it came from: ``kind`` is the document kind (``file``,
-    ``commit``, ``knowledge`` or ``ticket``), lines are 1-based and only known for text and
-    code; ``sha``, ``author`` and ``date`` only for commits (``date`` also for tickets);
-    ``confidence`` (``inferido``/``revisado``) and ``evidence`` only for knowledge items; the
-    ``ticket_*`` fields and ``url`` only for tickets. ``context_line`` is read by the LLM
-    before the content (a ticket's number, status, date and section) and is not cited.
+    ``commit``, ``knowledge``, ``ticket`` or ``card``), lines are 1-based and only known for
+    text and code; ``sha``, ``author`` and ``date`` only for commits (``date`` also for tickets
+    and cards); ``confidence`` (``inferido``/``revisado``) and ``evidence`` only for knowledge
+    items; the ``ticket_*`` fields only for tickets, the ``card_*`` fields only for cards and
+    ``url`` for both. ``context_line`` is read by the LLM before the content (a ticket's or a
+    card's number, status, date and section) and is not cited.
     """
 
     title: str
@@ -69,6 +70,13 @@ class Source:
     ticket_status: str | None = None
     ticket_date_kind: str | None = None
     url: str | None = None
+    # Cards only (chat-sse v0.9): number (or external id), normalized type and status, sprint
+    # name and which date ``date`` is (``done`` or ``updated``); ``url`` is the card's link.
+    card_number: str | None = None
+    card_type: str | None = None
+    card_status: str | None = None
+    card_sprint: str | None = None
+    card_date_kind: str | None = None
     context_line: str | None = None
 
 
@@ -115,6 +123,11 @@ def citation(index: int, source: Source) -> JSONValue:
         "ticket_status": source.ticket_status,
         "ticket_date_kind": source.ticket_date_kind,
         "url": source.url,
+        "card_number": source.card_number,
+        "card_type": source.card_type,
+        "card_status": source.card_status,
+        "card_sprint": source.card_sprint,
+        "card_date_kind": source.card_date_kind,
     }
 
 

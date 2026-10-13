@@ -85,10 +85,13 @@ class AuditAction(StrEnum):
     SOURCE_SYNC_CANCELLED = "source.sync.cancelled"
     # Cursor and content hashes reset before a manual sync (name and run id).
     SOURCE_REINDEX_STARTED = "source.reindex.started"
-    # Ingest token of a ``tickets`` source issued or rotated (the prefix only, never the token).
+    # Ingest token of a ``tickets`` or ``cards`` source issued or rotated (the prefix only,
+    # never the token).
     SOURCE_INGEST_TOKEN_ROTATED = "source.ingest_token_rotated"  # noqa: S105 - action name
     # File of tickets uploaded in the panel (file name and counts, never the content).
     SOURCE_TICKETS_UPLOADED = "source.tickets_uploaded"
+    # File of cards uploaded in the panel (the same details as the tickets').
+    SOURCE_CARDS_UPLOADED = "source.cards_uploaded"
     # Runners of the code harness (name, prefix and changed fields; never the token or hash).
     RUNNER_CREATED = "runner.created"
     RUNNER_UPDATED = "runner.updated"

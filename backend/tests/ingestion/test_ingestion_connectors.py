@@ -112,3 +112,23 @@ def test_connector_factory_without_tickets_refuses_tickets_sources(tmp_path: Pat
 
     with pytest.raises(SourceUnavailableError, match="tickets"):
         factory(_source(SourceKind.TICKETS, {}))
+
+
+def test_connector_factory_serves_cards_sources_with_the_inbox_factory(tmp_path: Path) -> None:
+    fake = FakeConnector()
+
+    def inbox(source: Source) -> Connector:
+        return fake
+
+    factory = SettingsConnectorFactory(
+        Settings(env="test", local_sources_root=tmp_path), tickets=inbox
+    )
+
+    assert factory(_source(SourceKind.CARDS, {})) is fake
+
+
+def test_connector_factory_without_inbox_factory_refuses_cards_sources(tmp_path: Path) -> None:
+    factory = SettingsConnectorFactory(Settings(env="test", local_sources_root=tmp_path))
+
+    with pytest.raises(SourceUnavailableError, match="cards sources"):
+        factory(_source(SourceKind.CARDS, {}))
