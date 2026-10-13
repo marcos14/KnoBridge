@@ -15,14 +15,15 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from knobridge.apikeys import models as apikeys_models
-from knobridge.assistants import models as assistants_models
 from knobridge.audit import models as audit_models
 from knobridge.conversations import models as conversations_models
 from knobridge.core.models import Base
 from knobridge.core.settings import get_settings
 from knobridge.harness import models as harness_models
 from knobridge.ingestion import models as ingestion_models
+from knobridge.levels import models as levels_models
 from knobridge.llm import models as llm_models
+from knobridge.products import models as products_models
 from knobridge.security import models as security_models
 from knobridge.tenancy import models as tenancy_models
 from knobridge.tickets import models as tickets_models
@@ -39,7 +40,8 @@ _MODEL_MODULES = (
     security_models,
     audit_models,
     llm_models,
-    assistants_models,
+    products_models,
+    levels_models,
     conversations_models,
     ingestion_models,
     harness_models,

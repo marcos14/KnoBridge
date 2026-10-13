@@ -24,10 +24,10 @@ fases:
         commit: fd381b8
       - id: F1.2
         titulo: Migração 0018 (produtos a partir dos assistentes, níveis por membro e produto, nível mínimo de fonte e documento, níveis do workspace) com RLS
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-13
-        concluida_em: null
+        concluida_em: 2026-10-13
         commit: null
   - id: F2
     titulo: Servidor
@@ -202,6 +202,13 @@ decisoes:
     decisao: "F1.1: produto mantém o id do assistente de origem (conversas, chaves e pedidos migram com o mesmo valor; segredo do webhook não é recifrado); temperatura, credencial e modelo vão para o nível do workspace, idioma, tom, mensagem de sem fonte, similaridade e system_prompt (instructions) ficam no produto; instruções de nível nulas = texto padrão do KnoBridge; nível sem modelo responde 409 level_not_configured (400 na rota OpenAI) e o checklist ganha o item levels; nível do membro sem registro segue o papel (owner/admin product_dev, demais end_user); nível fixo por conversa e conferido a cada pergunta; nível mínimo efetivo = maior entre fonte, documento e chunk, com refinamentos que só sobem (código em fonte de pasta = product_dev; seção de evidências do harness = support, citação end_user sem evidência); mudar o nível da fonte recalcula chunks sem reindexar; Testar busca passa a editor com level; rotas /assistants do painel removidas, API pública aceita assistant_id e os nomes antigos de model como alias; max_level obrigatório na chave, nível omitido = max_level da chave, chaves e conversas migradas em product_dev; sufixo :nível só para os três nomes; canal público limitado a end_user no núcleo; cards em cards.md reaproveitando ticket_inbox e o token kbi_ (409 source_kind_mismatch), status backlog/in_progress/done/cancelled; modelo inicial dos níveis = o do assistente mais usado; uso troca assistant por product e ganha level"
     motivo: "detalhes de contrato revisados pelo orquestrador; os refinamentos de nível fecham vazamentos de código por fontes de pasta, evidências do harness e Testar busca"
     alternativas: "nível só por fonte; manter /assistants no painel; nível omitido = end_user"
+    adr: null
+  - id: D15
+    data: 2026-10-13
+    por: agente
+    decisao: "F1.2: assistants renomeada para products (e assistant_collections para product_collections) com os mesmos ids e políticas renomeadas; nomes terminados em :nível viram ' - nível' (ou (2), (3)) e uma restrição impede novos; workspace_levels com o modelo do assistente mais usado; conversas, mensagens e chaves em product_dev; chunks.min_level com padrão product_dev no banco (o mais restritivo); a migração liga app.system só na transação para os passos de dados; downgrade recusa produto novo, conversa ou chave abaixo de product_dev, nível de membro, convite com níveis e fonte cards; colunas credential_id, model e temperature ficam transitórias em products e saem na F2.2 por uma migração 0019 (o downgrade devolve o modelo do nível product_dev)"
+    motivo: "suíte verde sem antecipar a F2; nada vaza por padrão"
+    alternativas: "editar a 0018 na F2; criar products e copiar"
     adr: null
 pendencias_usuario: []
 ---
@@ -449,6 +456,7 @@ Nenhuma.
 - 2026-10-13 — plano aprovado pelo usuário ("Aprovado"); F1.1 iniciada (agente em worktree).
 - 2026-10-13 — F1.1 concluída: ADR 0008, specs produtos-e-niveis.md e cards.md, ajustes em chat, chat-sse, api-publica, chamados, indexação, autenticação e uso-e-custos, visão v0.6; links e checagens verdes
 - 2026-10-13 — F1.2 iniciada (agente em worktree).
+- 2026-10-13 — F1.2 concluída: migração 0018 (assistentes viram produtos com o mesmo id, níveis do workspace e do membro, nível em conversas, mensagens e chaves, nível mínimo em fontes, documentos e trechos), RLS e teste com dados semeados; gates do agente: backend 2451 passed com 99,89%; orquestrador: ruff, pyright e AGENTS na integração
 
 ## 8. Encerramento
 

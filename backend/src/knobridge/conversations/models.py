@@ -2,7 +2,7 @@
 
 Workspace data with forced row-level security (``docs/adr/0001-tenancy-e-rls.md``). Children
 point to their parent by ``(workspace_id, <parent>_id)``, so the database itself refuses a row
-whose parent lives in another workspace; deletes cascade from the assistant down to the
+whose parent lives in another workspace; deletes cascade from the product down to the
 feedback. Who may read a conversation (its owner, or an owner/admin of the workspace) is an
 application rule on top of the workspace isolation.
 
@@ -32,10 +32,11 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, synonym
 
 from knobridge.audit.models import JSONValue
 from knobridge.core.models import Base, TimestampMixin, UUIDPrimaryKeyMixin, str_enum
+from knobridge.levels.level import ResponseLevel
 
 TITLE_MAX_LENGTH = 200
 FEEDBACK_COMMENT_MAX_LENGTH = 2000
@@ -80,8 +81,8 @@ class Conversation(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         # Target of the composite foreign key of ``messages``.
         UniqueConstraint("workspace_id", "id"),
         ForeignKeyConstraint(
-            ["workspace_id", "assistant_id"],
-            ["assistants.workspace_id", "assistants.id"],
+            ["workspace_id", "product_id"],
+            ["products.workspace_id", "products.id"],
             ondelete="CASCADE",
         ),
         ForeignKeyConstraint(
@@ -98,8 +99,12 @@ class Conversation(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     workspace_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
     )
-    assistant_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
-    # Who talks to the assistant in the panel (the owner); ``None`` in an API conversation.
+    product_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    # Transitional name (plan 0009): the chat still says ``assistant_id``.
+    assistant_id: Mapped[uuid.UUID] = synonym("product_id")
+    # Fixed for the whole conversation: the sources, instructions and model of every answer.
+    level: Mapped[ResponseLevel] = mapped_column(str_enum(ResponseLevel, "level"), nullable=False)
+    # Who talks to the product in the panel (the owner); ``None`` in an API conversation.
     user_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=True
     )
@@ -151,6 +156,9 @@ class Message(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     latency_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     # Estimated cost of an answer (chat price table); ``None`` when unknown, never zero.
     cost_usd: Mapped[Decimal | None] = mapped_column(Numeric(12, 6), nullable=True)
+    # Product and level of the conversation, kept on each message for usage sums.
+    product_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    level: Mapped[ResponseLevel] = mapped_column(str_enum(ResponseLevel, "level"), nullable=False)
     # Channel of the request that wrote the message (the conversation's, kept for usage sums).
     channel: Mapped[ConversationChannel] = mapped_column(
         str_enum(ConversationChannel, "channel"),

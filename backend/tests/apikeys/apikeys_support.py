@@ -18,6 +18,7 @@ from knobridge.apikeys.models import ApiKey
 from knobridge.assistants.models import Assistant, AssistantTone
 from knobridge.conversations.models import Conversation, ConversationChannel
 from knobridge.core.db import create_session_factory, system_session
+from knobridge.levels.level import ResponseLevel
 from knobridge.llm.models import ProviderCredential, ProviderKind
 from knobridge.tenancy.models import User, Workspace
 
@@ -62,6 +63,7 @@ def new_key(
         key_hash=hashlib.sha256(key.encode()).hexdigest(),
         assistant_ids=assistant_ids,
         created_by=created_by,
+        max_level=ResponseLevel.PRODUCT_DEV,
     )
 
 
@@ -72,6 +74,7 @@ def api_conversation(seeded: Seeded, key_id: uuid.UUID | None = None) -> Convers
         user_id=None,
         api_key_id=key_id or seeded.key_id,
         channel=ConversationChannel.API,
+        level=ResponseLevel.PRODUCT_DEV,
     )
 
 

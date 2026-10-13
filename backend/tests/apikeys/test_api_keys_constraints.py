@@ -99,9 +99,9 @@ def test_api_key_name_repeats_across_workspaces(app_database_url: str) -> None:
         ("key_prefix", "ABCD1234", "ck_api_keys_key_prefix_format"),
         ("key_prefix", "abc123", "ck_api_keys_key_prefix_format"),
         ("key_hash", "z" * 64, "ck_api_keys_key_hash_format"),
-        ("assistant_ids", [], "ck_api_keys_assistant_ids_size"),
-        ("assistant_ids", [uuid.uuid4() for _ in range(101)], "ck_api_keys_assistant_ids_size"),
-        ("assistant_ids", [uuid.uuid4(), None], "ck_api_keys_assistant_ids_size"),
+        ("assistant_ids", [], "ck_api_keys_product_ids_size"),
+        ("assistant_ids", [uuid.uuid4() for _ in range(101)], "ck_api_keys_product_ids_size"),
+        ("assistant_ids", [uuid.uuid4(), None], "ck_api_keys_product_ids_size"),
     ],
 )
 def test_api_key_checks_refuse_invalid_values(

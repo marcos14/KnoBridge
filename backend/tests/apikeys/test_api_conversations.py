@@ -24,6 +24,7 @@ from knobridge.conversations.models import (
 from knobridge.conversations.service import Reader, get_readable_conversation
 from knobridge.core.db import scoped_session, system_session
 from knobridge.core.errors import NotFoundError
+from knobridge.levels.level import ResponseLevel
 
 pytestmark = pytest.mark.integration
 
@@ -43,6 +44,8 @@ def _message(
         content="Resposta",
         status=MessageStatus.COMPLETED,
         cost_usd=cost_usd,
+        product_id=seeded.assistant_id,
+        level=ResponseLevel.PRODUCT_DEV,
     )
 
 
@@ -195,6 +198,7 @@ def test_admin_list_counts_api_conversations_with_their_key(app_database_url: st
                 assistant_id=seeded.assistant_id,
                 user_id=seeded.user_id,
                 channel=ConversationChannel.PANEL,
+                level=ResponseLevel.PRODUCT_DEV,
             )
             db.add(panel)
             await db.flush()

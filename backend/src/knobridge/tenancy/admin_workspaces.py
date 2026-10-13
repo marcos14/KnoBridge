@@ -26,6 +26,7 @@ from knobridge.audit.models import JSONValue
 from knobridge.audit.service import AuditService, AuditTarget
 from knobridge.core.clock import Clock
 from knobridge.core.errors import ConflictError, NotFoundError
+from knobridge.levels.models import create_workspace_levels
 from knobridge.tenancy.invitations import InvitationService, IssuedInvitation
 from knobridge.tenancy.models import Membership, Role, User, Workspace, WorkspaceStatus
 
@@ -147,6 +148,7 @@ class AdminWorkspaceService:
             raise SlugTakenError(
                 "This slug is already in use.", details={"slug": resolved}
             ) from exc
+        await create_workspace_levels(db, workspace.id)
         await self._record(
             db, AuditAction.WORKSPACE_CREATED, workspace.id, actor.id, {"slug": resolved}, ip
         )

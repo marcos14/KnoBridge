@@ -148,7 +148,7 @@ def _insert_api_conversation(database_url: str) -> None:
 def test_migration_0017_upgrade_downgrade(postgres_url: str) -> None:
     config = _config(postgres_url)
 
-    command.upgrade(config, "head")
+    command.upgrade(config, "0017")
     up = _shape(postgres_url)
     command.downgrade(config, "0016")
     down = _shape(postgres_url)
@@ -181,7 +181,7 @@ def test_migration_0017_upgrade_downgrade(postgres_url: str) -> None:
 
 def test_migration_0017_downgrade_refuses_api_conversations(postgres_url: str) -> None:
     config = _config(postgres_url)
-    command.upgrade(config, "head")
+    command.upgrade(config, "0017")
     _insert_api_conversation(postgres_url)
 
     try:

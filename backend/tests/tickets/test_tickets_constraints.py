@@ -280,7 +280,7 @@ def test_ticket_request_one_per_message(app_database_url: str) -> None:
 
 @pytest.mark.parametrize(
     "parent",
-    ["conversation", "message", "assistant"],
+    ["conversation", "message", "product"],
 )
 def test_ticket_request_parent_of_other_workspace_refused(
     app_database_url: str, parent: str

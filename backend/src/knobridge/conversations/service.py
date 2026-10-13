@@ -32,6 +32,7 @@ from knobridge.conversations.models import (
 from knobridge.conversations.stale import effective_status
 from knobridge.core.clock import Clock
 from knobridge.core.errors import ConflictError, ForbiddenError, NotFoundError, ValidationError
+from knobridge.levels.level import ResponseLevel
 
 
 class AssistantInactiveError(ConflictError):
@@ -194,6 +195,8 @@ class ConversationService:
             user_id=user_id,
             title=None,
             channel=ConversationChannel.PANEL,
+            # Every source, as before plan 0009; the level comes from the request in F2.2.
+            level=ResponseLevel.PRODUCT_DEV,
         )
         db.add(conversation)
         await db.flush()

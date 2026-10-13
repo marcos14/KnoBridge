@@ -15,14 +15,15 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.pool import NullPool
 
 from knobridge.apikeys import models as apikeys_models
-from knobridge.assistants import models as assistants_models
 from knobridge.audit import models as audit_models
 from knobridge.conversations import models as conversations_models
 from knobridge.core.models import Base
 from knobridge.core.settings import get_settings
 from knobridge.harness import models as harness_models
 from knobridge.ingestion import models as ingestion_models
+from knobridge.levels import models as levels_models
 from knobridge.llm import models as llm_models
+from knobridge.products import models as products_models
 from knobridge.security import models as security_models
 from knobridge.tenancy import models as tenancy_models
 from knobridge.tickets import models as tickets_models
@@ -33,7 +34,8 @@ _MODEL_MODULES = (
     security_models,
     audit_models,
     llm_models,
-    assistants_models,
+    products_models,
+    levels_models,
     conversations_models,
     ingestion_models,
     harness_models,
@@ -48,6 +50,7 @@ _HARNESS_TABLES = (
     "harness_rejections",
 )
 _TICKETS_TABLES = ("ingest_tokens", "ticket_inbox", "ticket_requests")
+_PRODUCT_TABLES = ("products", "product_collections", "workspace_levels", "member_product_levels")
 _TENANCY_TABLES = (
     "conversations",
     "messages",
@@ -73,6 +76,7 @@ _TENANCY_TABLES = (
     *_HARNESS_TABLES,
     *_TICKETS_TABLES,
     "api_keys",
+    *_PRODUCT_TABLES,
 )
 _INDEX_TABLES = ("collections", "sources", "runs", "run_errors", "documents", "chunks")
 
@@ -157,13 +161,15 @@ def test_migration_upgrade_downgrade_tenancy(postgres_url: str) -> None:
         "login_attempts": (True, True, 1),
         "invitations": (True, True, 1),
         "provider_credentials": (True, True, 1),
-        "assistants": (True, True, 4),
+        "products": (True, True, 4),
         "conversations": (True, True, 1),
         "messages": (True, True, 1),
         "feedback": (True, True, 1),
         **dict.fromkeys(_INDEX_TABLES, (True, True, 1)),
         "run_items": (True, True, 1),
-        "assistant_collections": (True, True, 1),
+        "product_collections": (True, True, 1),
+        "workspace_levels": (True, True, 1),
+        "member_product_levels": (True, True, 1),
         **dict.fromkeys(_HARNESS_TABLES, (True, True, 1)),
         **dict.fromkeys(_TICKETS_TABLES, (True, True, 1)),
         "api_keys": (True, True, 1),
@@ -298,7 +304,7 @@ def test_migration_upgrade_downgrade_assistants(postgres_url: str) -> None:
     config, _ = _alembic_config(postgres_url)
     composite_key = "uq_provider_credentials_workspace_id_id"
 
-    command.upgrade(config, "head")
+    command.upgrade(config, "0017")
     after_upgrade = _tenancy_catalog(postgres_url)
     key_after_upgrade = _constraint_exists(postgres_url, composite_key)
     command.downgrade(config, "0007")
@@ -319,7 +325,7 @@ def test_migration_upgrade_downgrade_conversations(postgres_url: str) -> None:
     composite_key = "uq_assistants_workspace_id_id"
     tables = ("conversations", "messages", "feedback")
 
-    command.upgrade(config, "head")
+    command.upgrade(config, "0017")
     after_upgrade = _tenancy_catalog(postgres_url)
     key_after_upgrade = _constraint_exists(postgres_url, composite_key)
     command.downgrade(config, "0008")
@@ -444,7 +450,7 @@ def _has_min_similarity(database_url: str) -> bool:
 def test_migration_upgrade_downgrade_assistant_collections(postgres_url: str) -> None:
     config, _ = _alembic_config(postgres_url)
 
-    command.upgrade(config, "head")
+    command.upgrade(config, "0017")
     after_upgrade = _tenancy_catalog(postgres_url)
     column_after_upgrade = _has_min_similarity(postgres_url)
     command.downgrade(config, "0011")
@@ -481,7 +487,7 @@ def _min_similarity_default(database_url: str) -> float:
 def test_migration_upgrade_downgrade_min_similarity_default(postgres_url: str) -> None:
     config, _ = _alembic_config(postgres_url)
 
-    command.upgrade(config, "head")
+    command.upgrade(config, "0017")
     default_after_upgrade = _min_similarity_default(postgres_url)
     command.downgrade(config, "0012")
     default_after_downgrade = _min_similarity_default(postgres_url)
@@ -649,7 +655,7 @@ def _tickets_shape(database_url: str) -> tuple[dict[str, str], set[str]]:
 def test_migration_0016_upgrade_downgrade(postgres_url: str) -> None:
     config, _ = _alembic_config(postgres_url)
 
-    command.upgrade(config, "head")
+    command.upgrade(config, "0017")
     tables_after_upgrade = _tenancy_catalog(postgres_url)
     checks_up, columns_up = _tickets_shape(postgres_url)
     command.downgrade(config, "0015")

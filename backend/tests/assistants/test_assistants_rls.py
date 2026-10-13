@@ -171,7 +171,7 @@ def test_assistant_credential_of_other_workspace_refused_by_database(
             )
             await db.flush()
 
-    with pytest.raises(IntegrityError, match="fk_assistants_workspace_id_provider_credentials"):
+    with pytest.raises(IntegrityError, match="fk_products_workspace_id_provider_credentials"):
         _run(app_database_url, scenario)
 
 
@@ -221,7 +221,7 @@ def test_credential_in_use_cannot_be_deleted_by_database(app_database_url: str) 
                 delete(ProviderCredential).where(ProviderCredential.id == credential_id)
             )
 
-    with pytest.raises(IntegrityError, match="fk_assistants_workspace_id_provider_credentials"):
+    with pytest.raises(IntegrityError, match="fk_products_workspace_id_provider_credentials"):
         _run(app_database_url, scenario)
 
 

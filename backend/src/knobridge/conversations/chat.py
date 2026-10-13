@@ -31,7 +31,6 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from knobridge.conversations.models import (
     Conversation,
-    ConversationChannel,
     Message,
     MessageRole,
     MessageStatus,
@@ -126,7 +125,6 @@ class ChatService:
         started_at = self._clock.now()
         conversation = await get_owned_conversation(db, workspace_id, conversation_id, reader)
         user_id = reader.user_id if isinstance(reader, Reader) else None
-        channel = conversation.channel
         assistant = await get_active_assistant(db, workspace_id, conversation.assistant_id)
         # Retrieval embeds the question over the network: done after the access checks but
         # before locking the conversation, so concurrent questions do not queue behind it.
@@ -155,20 +153,16 @@ class ChatService:
                 updated_at=func.now(),
             )
         )
-        # Question and answer carry the conversation's channel (usage sums by it).
-        user_message = self._message(
-            workspace_id, conversation_id, position, MessageRole.USER, question, channel=channel
-        )
+        # Question and answer carry the conversation's channel, product and level (usage sums).
+        user_message = self._message(conversation, position, MessageRole.USER, question)
         db.add(user_message)
         if not sources:
             answer = self._message(
-                workspace_id,
-                conversation_id,
+                conversation,
                 position + 1,
                 MessageRole.ASSISTANT,
                 assistant.no_source_message,
                 status=MessageStatus.NO_SOURCE,
-                channel=channel,
             )
             answer.latency_ms = self._elapsed_ms(started_at)
             db.add(answer)
@@ -195,13 +189,7 @@ class ChatService:
             no_source_message=assistant.no_source_message,
         )
         answer = self._message(
-            workspace_id,
-            conversation_id,
-            position + 1,
-            MessageRole.ASSISTANT,
-            "",
-            status=MessageStatus.STREAMING,
-            channel=channel,
+            conversation, position + 1, MessageRole.ASSISTANT, "", status=MessageStatus.STREAMING
         )
         answer.citations = list(citations)
         answer.model = assistant.model
@@ -413,23 +401,24 @@ class ChatService:
 
     @staticmethod
     def _message(
-        workspace_id: uuid.UUID,
-        conversation_id: uuid.UUID,
+        conversation: Conversation,
         position: int,
         role: MessageRole,
         content: str,
         *,
         status: MessageStatus = MessageStatus.COMPLETED,
-        channel: ConversationChannel,
     ) -> Message:
+        """A message of the conversation, with its channel, product and level (usage sums)."""
         return Message(
             id=uuid.uuid4(),
-            workspace_id=workspace_id,
-            conversation_id=conversation_id,
+            workspace_id=conversation.workspace_id,
+            conversation_id=conversation.id,
             position=position,
             role=role,
             content=content,
             citations=[],
             status=status,
-            channel=channel,
+            channel=conversation.channel,
+            product_id=conversation.product_id,
+            level=conversation.level,
         )

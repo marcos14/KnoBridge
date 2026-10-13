@@ -22,6 +22,7 @@ from knobridge.conversations.models import (
 )
 from knobridge.core.clock import FrozenClock
 from knobridge.core.db import scoped_session, system_session
+from knobridge.levels.level import ResponseLevel
 
 pytestmark = pytest.mark.integration
 
@@ -42,6 +43,8 @@ def _message(seeded: Seeded, conversation_id: uuid.UUID | None = None) -> Messag
         content="Resposta",
         citations=[],
         status=MessageStatus.COMPLETED,
+        product_id=seeded.assistant_id,
+        level=ResponseLevel.PRODUCT_DEV,
     )
 
 
@@ -120,6 +123,7 @@ def test_rls_refuses_insert_into_other_workspace(
                     assistant_id=mine.assistant_id,
                     user_id=other.user_id,
                     channel=ConversationChannel.PANEL,
+                    level=ResponseLevel.PRODUCT_DEV,
                 )
             )
             await db.flush()
@@ -147,11 +151,12 @@ def test_children_must_share_the_parent_workspace(app_database_url: str) -> None
                     assistant_id=mine.assistant_id,
                     user_id=other.user_id,
                     channel=ConversationChannel.PANEL,
+                    level=ResponseLevel.PRODUCT_DEV,
                 )
             )
             await db.flush()
 
     with pytest.raises(IntegrityError, match="fk_messages_workspace_id_conversations"):
         run(app_database_url, foreign_conversation)
-    with pytest.raises(IntegrityError, match="fk_conversations_workspace_id_assistants"):
+    with pytest.raises(IntegrityError, match="fk_conversations_workspace_id_products"):
         run(app_database_url, foreign_assistant)

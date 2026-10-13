@@ -34,11 +34,13 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, TSVECTOR
+from sqlalchemy.engine.default import DefaultExecutionContext
 from sqlalchemy.orm import Mapped, mapped_column
 
 from knobridge.audit.models import JSONValue
 from knobridge.core.models import Base, TimestampMixin, UUIDPrimaryKeyMixin, str_enum
 from knobridge.ingestion.source_config import SourceConfig, SourceKind, parse_source_config
+from knobridge.levels.level import ResponseLevel
 
 # Fixed for every collection (ADR 0004): one column type, one HNSW index. Models with larger
 # native vectors are used with a reduced output dimension (Matryoshka / ``dimensions``).
@@ -103,6 +105,22 @@ class RunItemChange(StrEnum):
 
 def _workspace_fk() -> Mapped[uuid.UUID]:
     return mapped_column(Uuid, ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False)
+
+
+# Minimum level of a new source by kind (docs/specs/produtos-e-niveis.md, "Padrões por tipo"):
+# documents and reviewed knowledge for everyone, tickets from support up, code from
+# development up.
+DEFAULT_SOURCE_MIN_LEVELS: dict[SourceKind, ResponseLevel] = {
+    SourceKind.FOLDER: ResponseLevel.END_USER,
+    SourceKind.RUNNER: ResponseLevel.END_USER,
+    SourceKind.TICKETS: ResponseLevel.SUPPORT,
+    SourceKind.GIT: ResponseLevel.PRODUCT_DEV,
+}
+
+
+def _default_min_level(context: DefaultExecutionContext) -> str:
+    kind = SourceKind(context.get_current_parameters()["kind"])
+    return DEFAULT_SOURCE_MIN_LEVELS[kind].value
 
 
 class Collection(UUIDPrimaryKeyMixin, TimestampMixin, Base):
@@ -185,6 +203,10 @@ class Source(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     # consumes it and the workflow continues with a new run (``ingestion.runs``).
     sync_pending: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default=text("false")
+    )
+    # Lowest level of question that may read the source; the default depends on the kind.
+    min_level: Mapped[ResponseLevel] = mapped_column(
+        str_enum(ResponseLevel, "min_level"), nullable=False, default=_default_min_level
     )
 
     def typed_config(self) -> SourceConfig:
@@ -328,6 +350,11 @@ class Document(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
     # When the current content was fully indexed; ``None`` while it is being (re)indexed.
     indexed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Refinement of the source's minimum level set by the connector (code in a folder, inferred
+    # knowledge); ``None``: the source's. Only raises the level, never editable by the API.
+    min_level: Mapped[ResponseLevel | None] = mapped_column(
+        str_enum(ResponseLevel, "min_level"), nullable=True
+    )
 
 
 class Chunk(UUIDPrimaryKeyMixin, TimestampMixin, Base):
@@ -375,4 +402,12 @@ class Chunk(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     embedding: Mapped[list[float]] = mapped_column(VECTOR(EMBEDDING_DIMENSION), nullable=False)
     tsv: Mapped[str] = mapped_column(
         TSVECTOR, Computed(CHUNK_TSV_EXPRESSION, persisted=True), nullable=False
+    )
+    # Effective minimum level: the highest of the source's, the document's and ``meta.min_level``.
+    # Search filters it in SQL. Unset, the database writes the highest level, so a chunk whose
+    # writer forgot the level is never shown below development.
+    min_level: Mapped[ResponseLevel] = mapped_column(
+        str_enum(ResponseLevel, "min_level"),
+        nullable=False,
+        server_default=ResponseLevel.PRODUCT_DEV.value,
     )

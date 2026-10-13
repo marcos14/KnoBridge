@@ -20,6 +20,7 @@ from knobridge.audit.service import AuditTarget
 from knobridge.core.clock import Clock
 from knobridge.core.db import system_session
 from knobridge.core.errors import ConflictError
+from knobridge.levels.models import create_workspace_levels
 from knobridge.security.passwords import PasswordHasher, validate_password
 from knobridge.tenancy.admin_workspaces import slugify
 from knobridge.tenancy.auth import AuthService, StartedSession, user_target
@@ -104,6 +105,7 @@ class SetupService:
         await db.flush()
         db.add(Membership(workspace_id=workspace.id, user_id=owner_id, role=Role.OWNER))
         await db.flush()
+        await create_workspace_levels(db, workspace.id)
         metadata: dict[str, JSONValue] = {
             "name": workspace.name,
             "slug": workspace.slug,

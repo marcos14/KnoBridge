@@ -28,6 +28,7 @@ from knobridge.core.db import create_session_factory, system_session
 from knobridge.core.models import Base
 from knobridge.ingestion.models import Collection, Source
 from knobridge.ingestion.source_config import SourceKind
+from knobridge.levels.level import ResponseLevel
 from knobridge.llm.models import ProviderCredential, ProviderKind
 from knobridge.tenancy.models import User, Workspace
 from knobridge.tickets.models import (
@@ -162,6 +163,7 @@ async def add_answer(
         select(func.count()).select_from(Message).where(Message.conversation_id == conversation_id)
     )
     base = position or 0
+    product_id = (await db.get_one(Conversation, conversation_id)).product_id
     question = Message(
         workspace_id=workspace_id,
         conversation_id=conversation_id,
@@ -169,6 +171,8 @@ async def add_answer(
         role=MessageRole.USER,
         content="Como emito nota de exportação?",
         status=MessageStatus.COMPLETED,
+        product_id=product_id,
+        level=ResponseLevel.PRODUCT_DEV,
     )
     answer = Message(
         workspace_id=workspace_id,
@@ -177,6 +181,8 @@ async def add_answer(
         role=MessageRole.ASSISTANT,
         content="Sem fonte.",
         status=MessageStatus.NO_SOURCE,
+        product_id=product_id,
+        level=ResponseLevel.PRODUCT_DEV,
     )
     db.add_all([question, answer])
     await db.flush()
@@ -201,6 +207,7 @@ async def seed(factory: SessionFactory) -> Seeded:
             assistant_id=assistant.id,
             user_id=user.id,
             channel=ConversationChannel.PANEL,
+            level=ResponseLevel.PRODUCT_DEV,
         )
         db.add_all([source, conversation])
         await db.flush()

@@ -31,6 +31,7 @@ from knobridge.core.clock import FrozenClock
 from knobridge.core.crypto import SecretBox
 from knobridge.core.db import create_session_factory, scoped_session, system_session
 from knobridge.core.outbound import DestinationValidator, OutboundClient
+from knobridge.levels.level import ResponseLevel
 from knobridge.llm.models import ProviderCredential, ProviderKind
 from knobridge.tenancy.models import User, Workspace
 from knobridge.tickets.delivery import TicketDelivery
@@ -145,6 +146,7 @@ async def _seed(factory: SessionFactory) -> Ids:
             assistant_id=assistant.id,
             user_id=user.id,
             channel=ConversationChannel.PANEL,
+            level=ResponseLevel.PRODUCT_DEV,
         )
         db.add(assistant)
         await db.flush()
@@ -157,6 +159,8 @@ async def _seed(factory: SessionFactory) -> Ids:
             role=MessageRole.USER,
             content="Como emito nota de exportação?",
             status=MessageStatus.COMPLETED,
+            product_id=conversation.product_id,
+            level=ResponseLevel.PRODUCT_DEV,
         )
         answer = Message(
             workspace_id=workspace.id,
@@ -165,6 +169,8 @@ async def _seed(factory: SessionFactory) -> Ids:
             role=MessageRole.ASSISTANT,
             content="Sem fonte.",
             status=MessageStatus.NO_SOURCE,
+            product_id=conversation.product_id,
+            level=ResponseLevel.PRODUCT_DEV,
         )
         db.add_all([question, answer])
         await db.flush()

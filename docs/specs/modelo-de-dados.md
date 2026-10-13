@@ -1,6 +1,8 @@
 # Modelo de dados
 
-> Rascunho v0.9 · 2026-10-12 · Em uso (planos 0002 a 0005 e 0008)
+> v1.0 · 2026-10-13 · Em uso (planos 0002 a 0005, 0008 e 0009)
+>
+> **Mudanças da v1.0**: migração `0018` (plano 0009, F1.2; [ADR 0008](../adr/0008-produtos-e-niveis.md), contrato em [produtos-e-niveis.md](produtos-e-niveis.md)): `assistants` vira [`products`](#products) com os mesmos ids (`system_prompt` vira `instructions`) e `assistant_collections` vira [`product_collections`](#product_collections); `conversations.product_id`, `ticket_requests.product_id` e `api_keys.product_ids` no lugar dos `assistant_*`, com os mesmos valores; tabelas novas [`workspace_levels`](#workspace_levels) e [`member_product_levels`](#member_product_levels); `level` em `conversations` e `messages` (que ganha também `product_id`), `max_level` em `api_keys`; nível mínimo em `sources`, `documents` e `chunks` ([Nível mínimo no índice](#nível-mínimo-no-índice)); `invitations.product_levels`; `sources.kind` aceita `cards`, `documents.kind` e `run_items.document_kind` aceitam `card` ([cards.md](cards.md)).
 >
 > **Mudanças da v0.9**: migração `0017` (plano 0008, F1.2): tabela `api_keys` (chaves da API pública, [ADR 0007](../adr/0007-chaves-e-api-publica.md), contrato em [api-publica.md](api-publica.md)); `conversations` aceita o canal `api` e um dono do tipo chave (`user_id` opcional, `api_key_id`, exatamente um dos dois); `messages` ganha `channel` e `cost_usd` ([chat.md](chat.md#custo-e-canal-por-resposta)); `sessions` ganha o acesso de superadmin da sessão (`superadmin_workspace_id`, `superadmin_entered_at`; [autenticacao.md](autenticacao.md#acesso-de-superadmin-a-um-workspace)).
 >
@@ -16,7 +18,7 @@
 >
 > **Mudanças da v0.3**: índice de conhecimento da migração `0010` (plano 0003, F1.1): `collections`, `sources`, `runs`, `run_errors`, `documents` e `chunks`, com `vector(1536)`, HNSW e `tsvector` gerado ([ADR 0004](../adr/0004-indice-de-conhecimento.md)). Migração `0011` (plano 0003, F3.1): `run_items` (trabalho pendente de uma execução), `runs.pending_cursor` e o índice do cache de embedding em `chunks`.
 
-Tabelas do Postgres do KnoBridge, criadas pelas migrações em [`backend/migrations/`](../../backend/migrations/AGENTS.md). Modelos ORM em `backend/src/knobridge/<módulo>/models.py`. Regras de tenancy e RLS no [ADR 0001](../adr/0001-tenancy-e-rls.md); sessão, tokens e limitação de login no [ADR 0002](../adr/0002-sessao-server-side.md); segredos cifrados no [ADR 0003](../adr/0003-segredos-cifrados.md); índice de conhecimento no [ADR 0004](../adr/0004-indice-de-conhecimento.md); harness de código com runner local no [ADR 0005](../adr/0005-runner-local-do-harness.md); chamados por push no [ADR 0006](../adr/0006-chamados-por-push.md); chaves e API pública no [ADR 0007](../adr/0007-chaves-e-api-publica.md). Autenticação e papéis em [autenticacao.md](autenticacao.md); chat em [chat.md](chat.md).
+Tabelas do Postgres do KnoBridge, criadas pelas migrações em [`backend/migrations/`](../../backend/migrations/AGENTS.md). Modelos ORM em `backend/src/knobridge/<módulo>/models.py`. Produtos e níveis de resposta no [ADR 0008](../adr/0008-produtos-e-niveis.md) e em [produtos-e-niveis.md](produtos-e-niveis.md). Regras de tenancy e RLS no [ADR 0001](../adr/0001-tenancy-e-rls.md); sessão, tokens e limitação de login no [ADR 0002](../adr/0002-sessao-server-side.md); segredos cifrados no [ADR 0003](../adr/0003-segredos-cifrados.md); índice de conhecimento no [ADR 0004](../adr/0004-indice-de-conhecimento.md); harness de código com runner local no [ADR 0005](../adr/0005-runner-local-do-harness.md); chamados por push no [ADR 0006](../adr/0006-chamados-por-push.md); chaves e API pública no [ADR 0007](../adr/0007-chaves-e-api-publica.md). Autenticação e papéis em [autenticacao.md](autenticacao.md); chat em [chat.md](chat.md).
 
 ## Migrações
 
@@ -39,6 +41,7 @@ Tabelas do Postgres do KnoBridge, criadas pelas migrações em [`backend/migrati
 | `0015` | `20261011_0015_harness_sync.py` | `runs.trigger` aceita `harness`; `sources.sync_pending` (`boolean`, padrão `false`). O `downgrade` falha se houver execução `harness` (não reescreve o histórico). |
 | `0016` | `20261012_0016_tickets.py` | Chamados: `ingest_tokens`, `ticket_inbox`, `ticket_requests` (RLS forçada); `assistants.ticket_webhook_url`, `ticket_webhook_secret_ciphertext` e `ticket_webhook_secret_created_at`; `sources.kind` aceita `tickets`, `runs.trigger` aceita `ingest`, `documents.kind` e `run_items.document_kind` aceitam `ticket`. O `downgrade` falha se houver fonte `tickets`, execução `ingest` ou documento `ticket` (não apaga dados). |
 | `0017` | `20261012_0017_api_keys_and_usage.py` | `api_keys` (RLS forçada); `conversations.user_id` opcional, `conversations.api_key_id` e canal `api`; `messages.channel` (as existentes ficam `panel`) e `messages.cost_usd`; `sessions.superadmin_workspace_id` e `superadmin_entered_at`. O `downgrade` falha se houver conversa da API (não apaga dados). |
+| `0018` | `20261013_0018_products_and_levels.py` | Produtos e níveis ([migração dos assistentes](#migração-dos-assistentes-0018)): `assistants` → `products` e `assistant_collections` → `product_collections` (mesmos ids, restrições e políticas renomeadas); `product_id` em `conversations`, `messages` e `ticket_requests`, `product_ids` em `api_keys`; `workspace_levels` e `member_product_levels` (RLS forçada); `level` em `conversations` e `messages`, `max_level` em `api_keys`; `min_level` em `sources`, `documents` e `chunks`; `invitations.product_levels`; `sources.kind` aceita `cards`, `documents.kind` e `run_items.document_kind` aceitam `card`. Os passos de dados rodam em modo de sistema. O `downgrade` falha se houver produto criado depois da migração, conversa ou chave abaixo de `product_dev`, nível gravado de membro, convite com níveis ou fonte `cards`. |
 
 Toda migração tem `downgrade` que desfaz o `upgrade`; o teste `test_migrations_match_orm_models` compara as migrações com os modelos ORM.
 
@@ -80,7 +83,7 @@ Todas as tabelas abaixo têm `ENABLE` + `FORCE ROW LEVEL SECURITY`. `users` é a
 | `login_attempts` | `login_attempts_system` | `ALL` | sistema |
 | `invitations` | `invitations_workspace` | `ALL` | workspace, ou sistema |
 | `provider_credentials` | `provider_credentials_workspace` | `ALL` | workspace, ou sistema |
-| `assistants` | `assistants_select`, `assistants_insert`, `assistants_update`, `assistants_delete` | um por comando | workspace, ou sistema |
+| `products` | `products_select`, `products_insert`, `products_update`, `products_delete` | um por comando | workspace, ou sistema |
 | `conversations` | `conversations_workspace` | `ALL` | workspace, ou sistema |
 | `messages` | `messages_workspace` | `ALL` | workspace, ou sistema |
 | `feedback` | `feedback_workspace` | `ALL` | workspace, ou sistema |
@@ -91,7 +94,9 @@ Todas as tabelas abaixo têm `ENABLE` + `FORCE ROW LEVEL SECURITY`. `users` é a
 | `documents` | `documents_workspace` | `ALL` | workspace, ou sistema |
 | `chunks` | `chunks_workspace` | `ALL` | workspace, ou sistema |
 | `run_items` | `run_items_workspace` | `ALL` | workspace, ou sistema |
-| `assistant_collections` | `assistant_collections_workspace` | `ALL` | workspace, ou sistema |
+| `product_collections` | `product_collections_workspace` | `ALL` | workspace, ou sistema |
+| `workspace_levels` | `workspace_levels_workspace` | `ALL` | workspace, ou sistema |
+| `member_product_levels` | `member_product_levels_workspace` | `ALL` | workspace, ou sistema |
 | `runners` | `runners_workspace` | `ALL` | workspace, ou sistema (a autenticação do runner busca por `token_prefix` em modo de sistema) |
 | `harness_modules` | `harness_modules_workspace` | `ALL` | workspace, ou sistema |
 | `harness_jobs` | `harness_jobs_workspace` | `ALL` | workspace, ou sistema |
@@ -128,16 +133,16 @@ erDiagram
         text key_ciphertext "AES-GCM; v1.base64url"
         varchar key_last4 "exibição ****1234"
     }
-    workspaces ||--o{ assistants : "configura"
-    provider_credentials ||--o{ assistants : "usada por"
-    assistants {
-        uuid id PK
+    workspaces ||--o{ products : "configura"
+    provider_credentials ||--o{ products : "usada por (transitório)"
+    products {
+        uuid id PK "o do assistente de origem"
         uuid workspace_id FK
-        varchar name "único por workspace"
-        text system_prompt
-        uuid credential_id FK "mesmo workspace"
-        varchar model
-        float temperature "0 a 2"
+        varchar name "único por workspace; sem :nível no fim"
+        text instructions "texto extra do produto"
+        uuid credential_id FK "transitório"
+        varchar model "transitório"
+        float temperature "transitório"
         varchar language "pt-BR"
         varchar tone "neutral | formal | friendly"
         text no_source_message "nunca vazia"
@@ -146,14 +151,32 @@ erDiagram
         varchar ticket_webhook_url "nulo = desligado"
         text ticket_webhook_secret_ciphertext "AES-GCM; v1.base64url"
     }
-    assistants ||--o{ assistant_collections : "consulta"
-    collections ||--o{ assistant_collections : "consultada por"
-    assistant_collections {
+    products ||--o{ product_collections : "consulta"
+    collections ||--o{ product_collections : "consultada por"
+    product_collections {
         uuid workspace_id FK
-        uuid assistant_id PK "mesmo workspace"
+        uuid product_id PK "mesmo workspace"
         uuid collection_id PK "mesmo workspace"
     }
-    assistants ||--o{ conversations : "atende"
+    workspaces ||--|{ workspace_levels : "configura"
+    provider_credentials |o--o{ workspace_levels : "usada por"
+    workspace_levels {
+        uuid workspace_id PK
+        varchar level PK "end_user | support | product_dev"
+        uuid credential_id FK "nulo = sem modelo"
+        varchar model "nulo = sem modelo"
+        float temperature "0 a 2"
+        text instructions "nulo = texto padrão"
+    }
+    products ||--o{ member_product_levels : "limita"
+    memberships ||--o{ member_product_levels : "tem"
+    member_product_levels {
+        uuid workspace_id FK
+        uuid product_id PK "mesmo workspace"
+        uuid user_id PK "membro do workspace"
+        varchar max_level "valor gravado; sem linha = padrão do papel"
+    }
+    products ||--o{ conversations : "atende"
     users |o--o{ conversations : "conversa"
     workspaces ||--o{ api_keys : "emite"
     users |o--o{ api_keys : "criou"
@@ -163,7 +186,8 @@ erDiagram
         varchar name "único por workspace"
         varchar key_prefix "único na instância"
         varchar key_hash "SHA-256"
-        uuid_array assistant_ids "nulo = todos"
+        uuid_array product_ids "nulo = todos"
+        varchar max_level "end_user | support | product_dev"
         uuid created_by FK
         timestamptz last_used_at
         timestamptz revoked_at
@@ -172,7 +196,8 @@ erDiagram
     conversations {
         uuid id PK
         uuid workspace_id FK
-        uuid assistant_id FK "mesmo workspace"
+        uuid product_id FK "mesmo workspace"
+        varchar level "fixo na conversa"
         uuid user_id FK "dono no painel"
         uuid api_key_id FK "dona na API, mesmo workspace"
         varchar title "da primeira pergunta"
@@ -193,6 +218,8 @@ erDiagram
         integer latency_ms
         numeric cost_usd "estimado; nulo sem preço"
         varchar channel "panel | api"
+        uuid product_id "o da conversa"
+        varchar level "o da conversa"
     }
     messages ||--o{ feedback : "recebe"
     users ||--o{ feedback : "avalia"
@@ -219,8 +246,9 @@ erDiagram
         uuid id PK
         uuid workspace_id FK
         uuid collection_id FK "mesmo workspace"
-        varchar kind "git | folder | runner | tickets"
+        varchar kind "git | folder | runner | tickets | cards"
         varchar name "único por workspace"
+        varchar min_level "padrão por tipo"
         jsonb config "validado por tipo"
         text_array include_globs
         text_array exclude_globs
@@ -333,7 +361,7 @@ erDiagram
     }
     conversations ||--o{ ticket_requests : "pede chamado"
     messages ||--o| ticket_requests : "sobre"
-    assistants ||--o{ ticket_requests : "envia"
+    products ||--o{ ticket_requests : "envia"
     ticket_requests {
         uuid id PK
         uuid workspace_id FK
@@ -351,12 +379,13 @@ erDiagram
         uuid workspace_id FK
         uuid source_id FK "mesmo workspace"
         text natural_key "único por fonte; caminho ou SHA"
-        varchar kind "file | commit | knowledge | ticket"
+        varchar kind "file | commit | knowledge | ticket | card"
         varchar title
         text uri
         varchar content_hash "SHA-256"
         jsonb meta
         timestamptz indexed_at
+        varchar min_level "refinamento do conector; nulo = o da fonte"
     }
     documents ||--o{ chunks : "divide em"
     collections ||--o{ chunks : "agrupa"
@@ -372,6 +401,7 @@ erDiagram
         varchar embedding_model
         vector embedding "1536; HNSW cosseno"
         tsvector tsv "gerado; GIN"
+        varchar min_level "efetivo: o maior entre fonte, documento e meta"
     }
     login_attempts {
         uuid id PK
@@ -535,6 +565,7 @@ Convite de um e-mail para um workspace com um papel (plano 0002, F2.3), em `back
 | `expires_at` | `timestamptz` | Cópia da validade do token atual, para listar sem ler `user_tokens`. |
 | `accepted_at` | `timestamptz` | Preenchido no aceite, junto com a membership. |
 | `revoked_at` | `timestamptz` | Preenchido ao revogar ou ao ser substituído por novo convite. |
+| `product_levels` | `jsonb` | Desde a `0018`: o nível máximo da pessoa em cada produto (`[{"product_id", "max_level"}]`), gravado em `member_product_levels` no aceite ([convites com nível](produtos-e-niveis.md#convites-com-nível)); padrão `[]` (vale o padrão do papel). Lista (`ck_invitations_product_levels_is_array`); o formato é validado pela aplicação. |
 
 ### `audit_events`
 
@@ -581,55 +612,100 @@ Chave de API de um provedor de LLM, por workspace (plano 0002, F4.1), em [`backe
 | `key_ciphertext` | `text` | `v<versão da chave>.<base64url(nonce ‖ cifrado ‖ tag)>`. Recifrado a cada troca de chave. |
 | `key_last4` | `varchar(4)` | Últimos 4 caracteres da chave (que tem no mínimo 8), para exibição. |
 
-Único extra `uq_provider_credentials_workspace_id_id` (`workspace_id`, `id`), alvo da FK composta de `assistants`. Credencial usada por assistente não pode ser excluída (409 `provider_in_use`).
+Único extra `uq_provider_credentials_workspace_id_id` (`workspace_id`, `id`), alvo das FKs compostas de `products` (colunas transitórias), `collections` e `workspace_levels`. Credencial em uso por um produto, uma coleção ou um nível não pode ser excluída (409 `provider_in_use`).
 
-### `assistants`
+### `products`
 
-Configuração de um assistente do workspace (plano 0002, F4.3), em [`backend/src/knobridge/assistants/`](../../backend/src/knobridge/assistants/AGENTS.md). Dado de workspace com RLS forçada, com o predicado padrão (`workspace_id = app.workspace_id` ou sistema) em políticas separadas: `assistants_select`, `assistants_insert`, `assistants_update` e `assistants_delete`. Todo membro lê; viewer só vê os ativos (filtro da aplicação); owner, admin e editor gerenciam. Criar, alterar e excluir auditam `assistant.created` (`name`, `model`, `provider_id`), `assistant.updated` (`name`, `fields`) e `assistant.deleted` (`name`), sem prompt nem mensagens. O webhook de chamados audita `assistant.ticket_webhook_secret_rotated` (`name`, nunca o segredo) e `assistant.ticket_webhook_tested` (`name`, `ok`, `status`, `error_code`) ([chamados.md](chamados.md#configuração-no-produto)).
+Um produto do workspace: o sistema sobre o qual as pessoas perguntam (plano 0009; [produtos-e-niveis.md](produtos-e-niveis.md#produto)). Até a `0018`, a tabela era `assistants` (plano 0002, F4.3): a migração renomeou a tabela, a coluna `system_prompt` (agora `instructions`), as restrições e as políticas, e manteve os ids, então conversas, chaves, pedidos de chamado e o segredo do webhook continuam valendo ([migração dos assistentes](#migração-dos-assistentes-0018)). Modelo ORM `Product` em `backend/src/knobridge/products/models.py` (o pacote `assistants/` ainda o usa pelo apelido `Assistant` até as rotas de produtos entrarem). Dado de workspace com RLS forçada, com o predicado padrão em políticas separadas: `products_select`, `products_insert`, `products_update` e `products_delete`. A auditoria dos produtos e dos assistentes de antes fica em [produtos-e-niveis.md](produtos-e-niveis.md#auditoria).
 
 | Coluna | Tipo | Regras |
 |---|---|---|
 | `workspace_id` | `uuid` | FK `workspaces.id`, `ON DELETE CASCADE`. |
-| `name` | `varchar(200)` | Obrigatório; único por workspace (`uq_assistants_workspace_id_name`; 409 `assistant_name_taken`). |
+| `name` | `varchar(200)` | Obrigatório; único por workspace (`uq_products_workspace_id_name`). Não termina em `:end_user`, `:support` nem `:product_dev` (`ck_products_name_without_level`), porque o nome é o `model` da API compatível com OpenAI; a `0018` trocou o último `:` desses nomes por ` - ` (com ` (2)`, ` (3)`... se o nome novo já existia). |
 | `description` | `text` | Até 1000 caracteres (validado na API); vazio permitido. |
-| `system_prompt` | `text` | Até 20000 caracteres (validado na API); vazio permitido. |
-| `credential_id` | `uuid` | FK composta `(workspace_id, credential_id)` → `provider_credentials (workspace_id, id)` (`fk_assistants_workspace_id_provider_credentials`), `NO ACTION` na exclusão: a credencial é sempre do mesmo workspace (422 `assistant_provider_invalid` na API) e não se exclui em uso; excluir o workspace cascateia para as duas tabelas. Na API, `provider_id`. |
-| `model` | `varchar(200)` | Identificador do modelo no provedor (ex.: `gpt-4.1-mini`), sem espaços. |
-| `temperature` | `double precision` | De 0 a 2 (`ck_assistants_temperature_range`); padrão da API 0,2. |
+| `instructions` | `text` | Texto extra do produto, acrescentado depois das instruções do nível; até 20000 caracteres (validado na API); vazio permitido. Era `system_prompt`. |
+| `credential_id`, `model`, `temperature` | `uuid`, `varchar(200)`, `double precision` | **Transitórios** (plano 0009): a credencial, o modelo e a temperatura do assistente de origem, que o chat ainda lê até passar a ler o nível ([`workspace_levels`](#workspace_levels)); saem numa migração seguinte do mesmo plano. FK composta `(workspace_id, credential_id)` → `provider_credentials (workspace_id, id)` (`fk_products_workspace_id_provider_credentials`), `NO ACTION`; temperatura de 0 a 2 (`ck_products_temperature_range`). |
 | `language` | `varchar(35)` | Tag BCP 47 das respostas; padrão da API `pt-BR`. |
-| `tone` | `varchar(32)` | `neutral`, `formal` ou `friendly`. |
-| `no_source_message` | `text` | Resposta quando não há fonte (regra 8 do AGENTS.md). Nunca vazia (`ck_assistants_no_source_message_not_empty`): vazio ou nulo na API grava a mensagem padrão em pt-BR, que diz que não sabe e oferece abrir chamado. |
-| `active` | `boolean` | Padrão `true`. Inativo some para viewer e não aceita conversa nova nem mensagem (409 `assistant_inactive`). |
-| `min_similarity` | `double precision` | Similaridade mínima (cosseno) para um chunk virar fonte no chat (decisão D12 do plano 0003): entra o chunk que alcança o limiar ou casa a busca textual. De 0 a 1 (`ck_assistants_min_similarity_range`); padrão 0,35 (migração `0013`), o mesmo da rota "testar busca": no [ensaio com dados reais](../pesquisa/0001-ensaio-minski.md), com `text-embedding-3-small`, a maior similaridade das perguntas relacionadas ficou entre 0,364 e 0,664 e a das sem relação entre 0,196 e 0,300. |
-| `ticket_webhook_url` | `varchar(2000)` | Destino dos pedidos de chamado ([chamados.md](chamados.md#abrir-chamado-webhook-de-saída)); nulo = desligado. O banco só exige `http://` ou `https://` (`ck_assistants_ticket_webhook_url_scheme`); a API exige `https` (salvo os hosts de `KNOBRIDGE_WEBHOOK_ALLOWED_HOSTS`) e aplica as regras de SSRF. |
-| `ticket_webhook_secret_ciphertext` | `text` | Segredo `kbw_` de assinatura cifrado com AES-256-GCM ([ADR 0003](../adr/0003-segredos-cifrados.md)), `info` próprio `knobridge/ticket-webhook-secrets/v1` e dados associados `assistant_ticket_webhook:<workspace_id>:<id>`; nunca o segredo em claro. Nulo até ser gerado. |
-| `ticket_webhook_secret_created_at` | `timestamptz` | Quando o segredo atual foi gerado; presente se e somente se houver segredo (`ck_assistants_ticket_webhook_secret_dated`). |
+| `tone` | `varchar(32)` | `neutral`, `formal` ou `friendly` (`ck_products_tone`). |
+| `no_source_message` | `text` | Resposta quando não há fonte (regra 8 do AGENTS.md). Nunca vazia (`ck_products_no_source_message_not_empty`): vazio ou nulo na API grava a mensagem padrão em pt-BR, que diz que não sabe e oferece abrir chamado. |
+| `active` | `boolean` | Padrão `true`. Inativo some para o leitor e não aceita conversa nova nem mensagem. |
+| `min_similarity` | `double precision` | Similaridade mínima (cosseno) para um chunk virar fonte no chat (decisão D12 do plano 0003): entra o chunk que alcança o limiar ou casa a busca textual. De 0 a 1 (`ck_products_min_similarity_range`); padrão 0,35 (migração `0013`), o mesmo da rota "testar busca": no [ensaio com dados reais](../pesquisa/0001-ensaio-minski.md), com `text-embedding-3-small`, a maior similaridade das perguntas relacionadas ficou entre 0,364 e 0,664 e a das sem relação entre 0,196 e 0,300. |
+| `ticket_webhook_url` | `varchar(2000)` | Destino dos pedidos de chamado ([chamados.md](chamados.md#abrir-chamado-webhook-de-saída)); nulo = desligado. O banco só exige `http://` ou `https://` (`ck_products_ticket_webhook_url_scheme`); a API exige `https` (salvo os hosts de `KNOBRIDGE_WEBHOOK_ALLOWED_HOSTS`) e aplica as regras de SSRF. |
+| `ticket_webhook_secret_ciphertext` | `text` | Segredo `kbw_` de assinatura cifrado com AES-256-GCM ([ADR 0003](../adr/0003-segredos-cifrados.md)), `info` próprio `knobridge/ticket-webhook-secrets/v1` e dados associados `assistant_ticket_webhook:<workspace_id>:<id>`; nunca o segredo em claro. Nulo até ser gerado. O rótulo `assistant_ticket_webhook` continua nos produtos: o id se preservou na `0018`, então o segredo não foi recifrado (e a migração não precisa da `KNOBRIDGE_SECRET_KEY`). |
+| `ticket_webhook_secret_created_at` | `timestamptz` | Quando o segredo atual foi gerado; presente se e somente se houver segredo (`ck_products_ticket_webhook_secret_dated`). |
 
 `ticket_webhook_configured` da API = URL e segredo presentes.
 
-Único extra `uq_assistants_workspace_id_id` (`workspace_id`, `id`), alvo das FKs compostas de `conversations` e `assistant_collections`. Excluir um assistente exclui as conversas dele (com mensagens e feedback); para preservar o histórico, desative-o.
+Único extra `uq_products_workspace_id_id` (`workspace_id`, `id`), alvo das FKs compostas de `conversations`, `product_collections`, `member_product_levels` e `ticket_requests`. Excluir um produto exclui as conversas dele (com mensagens, feedback e pedidos de chamado) e os níveis gravados dos membros; para preservar o histórico, desative-o.
 
-### `assistant_collections`
+### `product_collections`
 
-Coleções em que o chat de um assistente busca as fontes (plano 0003, F4.2), N:N. Dado de workspace com RLS forçada e uma política padrão (`assistant_collections_workspace`). Gerido pela API do assistente (`collection_ids`; trocar o conjunto substitui todas as linhas e audita `assistant.updated` com `collection_ids` em `fields`). Assistente sem coleção responde sempre "sem fonte", sem chamar embedding nem LLM. Chave primária `(assistant_id, collection_id)` (`pk_assistant_collections`).
+Coleções em que o chat de um produto busca as fontes, N:N (era `assistant_collections`, plano 0003, F4.2). Dado de workspace com RLS forçada e uma política padrão (`product_collections_workspace`). Produto sem coleção responde sempre "sem fonte", sem chamar embedding nem LLM. Chave primária `(product_id, collection_id)` (`pk_product_collections`).
 
 | Coluna | Tipo | Regras |
 |---|---|---|
 | `workspace_id` | `uuid` | FK `workspaces.id`, `ON DELETE CASCADE`. |
-| `assistant_id` | `uuid` | FK composta → `assistants (workspace_id, id)` (`fk_assistant_collections_workspace_id_assistants`), `ON DELETE CASCADE`. |
-| `collection_id` | `uuid` | FK composta → `collections (workspace_id, id)` (`fk_assistant_collections_workspace_id_collections`), `ON DELETE CASCADE`: a coleção excluída some dos assistentes que a usavam (coleção com fontes não se exclui). A API recusa coleção de outro workspace ou inexistente (422 `assistant_collection_invalid`). |
+| `product_id` | `uuid` | FK composta → `products (workspace_id, id)` (`fk_product_collections_workspace_id_products`), `ON DELETE CASCADE`. |
+| `collection_id` | `uuid` | FK composta → `collections (workspace_id, id)` (`fk_product_collections_workspace_id_collections`), `ON DELETE CASCADE`: a coleção excluída some dos produtos que a usavam (coleção com fontes não se exclui). |
 | `created_at` | `timestamptz` | Relógio do banco. |
 
-Índice `ix_assistant_collections_workspace_id_collection_id`, para a cascata a partir de `collections`.
+Índice `ix_product_collections_workspace_id_collection_id`, para a cascata a partir de `collections`.
+
+### `workspace_levels`
+
+A configuração de cada nível de resposta no workspace ([produtos-e-niveis.md](produtos-e-niveis.md#configuração-dos-níveis-no-workspace)), em `backend/src/knobridge/levels/models.py`. **Exatamente três linhas por workspace**, uma por nível, criadas com o workspace (setup inicial e criação pelo superadmin, `create_workspace_levels`) e, para os existentes, pela `0018`. Dado de workspace com RLS forçada e a política padrão (`workspace_levels_workspace`). Chave primária `(workspace_id, level)` (`pk_workspace_levels`).
+
+| Coluna | Tipo | Regras |
+|---|---|---|
+| `workspace_id` | `uuid` | FK `workspaces.id`, `ON DELETE CASCADE`. |
+| `level` | `varchar(32)` | `end_user`, `support` ou `product_dev` (`ck_workspace_levels_level`). |
+| `credential_id` | `uuid` | Credencial de LLM do nível. FK composta `(workspace_id, credential_id)` → `provider_credentials (workspace_id, id)` (`fk_workspace_levels_workspace_id_provider_credentials`), `NO ACTION`: credencial em uso por um nível não se exclui (409 `provider_in_use`). Índice `ix_workspace_levels_workspace_id_credential_id`. |
+| `model` | `varchar(200)` | Modelo no provedor. `credential_id` e `model` são os dois nulos (nível sem modelo: 409 `level_not_configured`) ou os dois preenchidos (`ck_workspace_levels_model_with_credential`). |
+| `temperature` | `double precision` | De 0 a 2 (`ck_workspace_levels_temperature_range`), padrão 0,2. |
+| `instructions` | `text` | Instruções do nível; nulo = o texto padrão do KnoBridge (`levels/defaults.py`), para o workspace receber as melhorias do padrão. |
+| `created_at`, `updated_at` | `timestamptz` | Relógio do banco. |
+
+Um workspace novo nasce com os três níveis sem modelo. A `0018` deu aos três níveis de cada workspace existente a credencial, o modelo e a temperatura do assistente mais usado (o que mais respondeu com `messages.model` preenchido; empate pelo mais antigo, depois pelo id); sem assistentes, ficaram sem modelo.
+
+### `member_product_levels`
+
+O nível máximo **gravado** por um admin para um membro num produto ([produtos-e-niveis.md](produtos-e-niveis.md#nível-por-membro-e-produto)), em `backend/src/knobridge/levels/models.py`. Sem linha, vale o padrão do papel (owner e admin: `product_dev`; editor e leitor: `end_user`), que acompanha mudanças de papel; a `0018` não grava nenhuma linha. Dado de workspace com RLS forçada e a política padrão (`member_product_levels_workspace`). Chave primária `(product_id, user_id)` (`pk_member_product_levels`).
+
+| Coluna | Tipo | Regras |
+|---|---|---|
+| `workspace_id` | `uuid` | FK `workspaces.id`, `ON DELETE CASCADE`. |
+| `product_id` | `uuid` | FK composta → `products (workspace_id, id)` (`fk_member_product_levels_workspace_id_products`), `ON DELETE CASCADE`. |
+| `user_id` | `uuid` | FK composta `(workspace_id, user_id)` → `memberships (workspace_id, user_id)` (`fk_member_product_levels_workspace_id_memberships`), `ON DELETE CASCADE`: remover a membership apaga os valores gravados. Índice `ix_member_product_levels_workspace_id_user_id`. |
+| `max_level` | `varchar(32)` | `end_user`, `support` ou `product_dev` (`ck_member_product_levels_max_level`). |
+| `created_at`, `updated_at` | `timestamptz` | Relógio do banco. |
+
+### Migração dos assistentes (`0018`)
+
+Numa transação, em modo de sistema (`app.system` local à transação, porque o papel das migrações é o dono das tabelas com RLS forçada):
+
+| Antes | Depois |
+|---|---|
+| `assistants` | `products`, mesmos ids e colunas (`system_prompt` → `instructions`); nomes terminados em `:<nível>` renomeados. |
+| `assistant_collections` | `product_collections`, mesmos pares. |
+| `conversations.assistant_id` | `conversations.product_id` (mesmo valor) e `level = product_dev`. |
+| `messages` | `product_id` (o da conversa) e `level = product_dev`. |
+| `api_keys.assistant_ids` | `api_keys.product_ids` (mesmos valores) e `max_level = product_dev`. |
+| `ticket_requests.assistant_id` | `ticket_requests.product_id`. |
+| Workspaces | Três `workspace_levels` cada, com o modelo do assistente mais usado. |
+| Membros | Nenhuma linha em `member_product_levels`. |
+| Índice | `min_level` de fontes, documentos e trechos ([Nível mínimo no índice](#nível-mínimo-no-índice)). |
+
+`product_dev` porque, até aqui, toda resposta usava todas as fontes. O `downgrade` volta os nomes, colunas e restrições e apaga as tabelas e colunas novas; é recusado (falha, sem apagar nada) se houver produto criado depois da migração (`created_at` a partir do dos níveis do workspace), conversa ou chave com nível abaixo de `product_dev`, linha em `member_product_levels`, convite com `product_levels` ou fonte `cards`. Os nomes renomeados ficam como estão.
 
 ### `conversations`
 
-Conversa de um membro (canal `panel`) ou de uma chave de API (canal `api`, desde a `0017`; [api-publica.md](api-publica.md#conversas-da-api)) com um assistente (plano 0002, F4.4), em [`backend/src/knobridge/conversations/`](../../backend/src/knobridge/conversations/AGENTS.md). Dado de workspace com RLS forçada e uma política padrão (`conversations_workspace`, `USING` e `WITH CHECK`). A privacidade entre membros é regra da aplicação: só o dono envia mensagens e exclui; owner e admin do workspace leem qualquer conversa; os demais recebem 404. Owner e admin também têm a visão administrativa (plano 0002, F4.5: `/v1/workspaces/{id}/admin/conversations`, com contagens por conversa e totais do período, em consultas de número constante de statements). Só a exclusão é auditada (`conversation.deleted`, com `assistant_id` e `message_count`, sem conteúdo).
+Conversa de um membro (canal `panel`) ou de uma chave de API (canal `api`, desde a `0017`; [api-publica.md](api-publica.md#conversas-da-api)) sobre um produto, num nível (plano 0002, F4.4; produto e nível desde a `0018`), em [`backend/src/knobridge/conversations/`](../../backend/src/knobridge/conversations/AGENTS.md). Dado de workspace com RLS forçada e uma política padrão (`conversations_workspace`, `USING` e `WITH CHECK`). A privacidade entre membros é regra da aplicação: só o dono envia mensagens e exclui; owner e admin do workspace leem qualquer conversa; os demais recebem 404. Owner e admin também têm a visão administrativa (plano 0002, F4.5: `/v1/workspaces/{id}/admin/conversations`, com contagens por conversa e totais do período, em consultas de número constante de statements). Só a exclusão é auditada (`conversation.deleted`, com `assistant_id` e `message_count`, sem conteúdo).
 
 | Coluna | Tipo | Regras |
 |---|---|---|
 | `workspace_id` | `uuid` | FK `workspaces.id`, `ON DELETE CASCADE`. |
-| `assistant_id` | `uuid` | FK composta `(workspace_id, assistant_id)` → `assistants (workspace_id, id)` (`fk_conversations_workspace_id_assistants`), `ON DELETE CASCADE`. |
+| `product_id` | `uuid` | FK composta `(workspace_id, product_id)` → `products (workspace_id, id)` (`fk_conversations_workspace_id_products`), `ON DELETE CASCADE`. Era `assistant_id` (mesmo valor). |
+| `level` | `varchar(32)` | Nível da conversa, fixo do início ao fim: `end_user`, `support` ou `product_dev` (`ck_conversations_level`). As conversas de antes da `0018` ficaram `product_dev`. |
 | `user_id` | `uuid` | Dono da conversa no painel. FK `users.id`, `ON DELETE CASCADE`. Nulo nas conversas da API. |
 | `api_key_id` | `uuid` | Chave dona de uma conversa da API. FK composta `(workspace_id, api_key_id)` → `api_keys (workspace_id, id)` (`fk_conversations_workspace_id_api_keys`), sem ação: chaves são revogadas, nunca excluídas, e uma chave com conversas não pode ser apagada (excluir o workspace apaga as duas). |
 | `title` | `varchar(200)` | Nulo até a primeira pergunta; depois, a pergunta numa linha, cortada em 80 caracteres (sem LLM). |
@@ -658,6 +734,8 @@ Pergunta ou resposta de uma conversa. RLS forçada, política `messages_workspac
 | `latency_ms` | `integer` | Da pergunta ao fim da resposta, pelo relógio injetado. |
 | `cost_usd` | `numeric(12,6)` | Custo estimado da resposta pela tabela de preços do chat ([chat.md](chat.md#custo-e-canal-por-resposta)); nulo em perguntas, em `no_source`, sem preço do modelo ou sem tokens, nunca zero por desconhecimento. ≥ 0 (`ck_messages_cost_usd_not_negative`) e só em respostas (`ck_messages_cost_usd_only_answers`). |
 | `channel` | `varchar(32)` | `panel` ou `api` (`ck_messages_channel`), o canal da requisição que gravou a mensagem (o mesmo da conversa, repetido para as agregações de [uso-e-custos.md](uso-e-custos.md) não precisarem do join); padrão `panel`, valor das mensagens anteriores à `0017`. |
+| `product_id` | `uuid` | O produto da conversa, repetido como `channel` para as agregações de uso por produto. Sem FK própria: a mensagem já cai junto com a conversa. |
+| `level` | `varchar(32)` | O nível da conversa (`ck_messages_level`), repetido pelo mesmo motivo. |
 
 Único extra `uq_messages_workspace_id_id`, alvo da FK de `feedback`.
 
@@ -698,7 +776,7 @@ Uma fonte de conteúdo de uma coleção: repositório Git ou pasta local.
 |---|---|---|
 | `workspace_id` | `uuid` | FK `workspaces.id`, `ON DELETE CASCADE`. |
 | `collection_id` | `uuid` | FK composta → `collections (workspace_id, id)` (`fk_sources_workspace_id_collections`), `NO ACTION`: coleção com fontes não se exclui. |
-| `kind` | `varchar(32)` | `git`, `folder`, `runner` ou `tickets` (`ck_sources_kind`). Fonte `tickets`: chamados enviados por um sistema externo ([Chamados](#chamados)). Fonte `runner`: repositório na máquina do usuário, mapeado por um runner ([Harness de código](#harness-de-código)); o par `(config->>'runner_id', config->>'repository')` é único no workspace (`uq_sources_workspace_id_runner_repository`, índice único parcial `WHERE kind = 'runner'`). |
+| `kind` | `varchar(32)` | `git`, `folder`, `runner`, `tickets` ou `cards` (`ck_sources_kind`; `cards` desde a `0018`, [cards.md](cards.md)). Fonte `tickets`: chamados enviados por um sistema externo ([Chamados](#chamados)). Fonte `runner`: repositório na máquina do usuário, mapeado por um runner ([Harness de código](#harness-de-código)); o par `(config->>'runner_id', config->>'repository')` é único no workspace (`uq_sources_workspace_id_runner_repository`, índice único parcial `WHERE kind = 'runner'`). |
 | `name` | `varchar(200)` | Obrigatório; único por workspace (`uq_sources_workspace_id_name`). |
 | `config` | `jsonb` | Objeto (`ck_sources_config_is_object`) com o formato do tipo, validado pela aplicação (`parse_source_config`). `git`: exatamente um entre `path` (caminho local absoluto) e `url` (https pública, sem credenciais), `branch` opcional (nulo = branch padrão) e `initial_commit_limit` (0 a 5000, padrão 200: quantos commits recentes a primeira execução indexa). `folder`: `path` absoluto. `runner`: formato em [runner.md](runner.md#fonte-do-tipo-runner) (`runner_id`, `repository`, `default_executor`, `models`, `budget_usd`, `timeout_seconds`, `auto_on_commit`, `excerpt_max_lines`, `head_commit`); até o plano 0004 F2.3, `parse_source_config` recusa esse tipo (`source_kind_unsupported`). `tickets`: `include_internal_notes` (padrão `false`), `anonymize` (padrão `true`) e `statuses` (subconjunto não vazio, sem repetição, de `open`, `pending`, `resolved`, `closed`; padrão os quatro), [chamados.md](chamados.md#fonte-do-tipo-tickets); a sincronização lê a caixa de entrada pelo conector interno `tickets` ([chamados.md](chamados.md#conector-interno-tickets)). Campos desconhecidos são recusados. |
 | `include_globs`, `exclude_globs` | `text[]` | Padrões glob sobre o caminho dos documentos, padrão `{}`. Colunas, e não parte de `config`, porque valem para todo tipo e são aplicados pelo motor de ingestão. |
@@ -707,6 +785,7 @@ Uma fonte de conteúdo de uma coleção: repositório Git ou pasta local.
 | `cursor` | `jsonb` | Posição incremental do conector (ex.: último commit indexado); nulo antes da primeira execução. |
 | `active` | `boolean` | Padrão `true`. |
 | `sync_pending` | `boolean` | Padrão `false`. Uma sincronização `harness` foi pedida enquanto outra execução da fonte estava em andamento: a execução que terminar com sucesso o consome e o workflow continua com uma execução nova; abrir uma execução (`queued` → `running`) também o limpa ([indexacao.md](indexacao.md#sincronização-pendente)). |
+| `min_level` | `varchar(32)` | Nível mínimo de pergunta que lê a fonte (`ck_sources_min_level`): padrão pelo tipo, gravado pelo modelo ORM quando omitido (`folder` e `runner`: `end_user`; `tickets`: `support`; `git` e `cards`: `product_dev`); só owner e admin mudam. |
 
 ### `runs`
 
@@ -736,7 +815,7 @@ Documentos que uma execução ainda tem que processar, na ordem da listagem (pla
 | `run_id` | `uuid` | FK composta → `runs (workspace_id, id)` (`fk_run_items_workspace_id_runs`), `ON DELETE CASCADE`. |
 | `ordinal` | `integer` | Posição na listagem, a partir de 0 (`ck_run_items_ordinal_not_negative`). |
 | `document_key` | `text` | Chave natural do documento. |
-| `document_kind` | `varchar(32)` | `file`, `commit`, `knowledge` ou `ticket` (`ck_run_items_document_kind`). |
+| `document_kind` | `varchar(32)` | `file`, `commit`, `knowledge`, `ticket` ou `card` (`ck_run_items_document_kind`). |
 | `change` | `varchar(32)` | `upsert` (novo ou alterado; commits do Git vêm sempre como novos) ou `remove` (`ck_run_items_change`). |
 | `done` | `boolean` | Padrão `false`; marcado na mesma transação que grava o documento, para um lote reexecutado pular o que já fez. |
 
@@ -762,13 +841,14 @@ Um arquivo ou commit de uma fonte, na versão indexada.
 | `workspace_id` | `uuid` | FK `workspaces.id`, `ON DELETE CASCADE`. |
 | `source_id` | `uuid` | FK composta → `sources (workspace_id, id)` (`fk_documents_workspace_id_sources`), `ON DELETE CASCADE`. |
 | `natural_key` | `text` | Caminho (`file`), SHA (`commit`), chave do item (`knowledge`) ou `external_id` do chamado (`ticket`); único por fonte (`uq_documents_source_id_natural_key`), chave do incremental. |
-| `kind` | `varchar(32)` | `file`, `commit`, `knowledge` (item de conhecimento de uma fonte `runner`, [harness.md](harness.md#no-índice-e-no-chat)) ou `ticket` (chamado de uma fonte `tickets`, [chamados.md](chamados.md#conector-interno-tickets)) (`ck_documents_kind`). |
+| `kind` | `varchar(32)` | `file`, `commit`, `knowledge` (item de conhecimento de uma fonte `runner`, [harness.md](harness.md#no-índice-e-no-chat)) `ticket` (chamado de uma fonte `tickets`, [chamados.md](chamados.md#conector-interno-tickets)) ou `card` (card de uma fonte `cards`, [cards.md](cards.md)) (`ck_documents_kind`). |
 | `title` | `varchar(500)` | Título exibido na citação. |
 | `uri` | `text` | Para onde a citação aponta (URL do arquivo ou do commit, ou caminho local). |
 | `content_hash` | `varchar(64)` | SHA-256 (hex) do conteúdo; igual ao anterior = nada a reindexar. |
 | `language` | `varchar(64)` | Linguagem detectada, quando conhecida. |
 | `meta` | `jsonb` | Metadados do documento, padrão `{}`. |
 | `indexed_at` | `timestamptz` | Quando o conteúdo atual terminou de ser indexado; nulo durante a (re)indexação. |
+| `min_level` | `varchar(32)` | Refinamento do nível mínimo pelo conector (`ck_documents_min_level`): código numa pasta (`product_dev`), conhecimento inferido (`support`); nulo = o da fonte. Nunca editável pela API. |
 
 ### `chunks`
 
@@ -786,6 +866,11 @@ Um trecho indexado de um documento. Índices: `ix_chunks_workspace_id_collection
 | `embedding_model` | `varchar(200)` | Modelo que gerou o vetor; diferente do da coleção depois de uma troca de modelo, até reindexar. |
 | `embedding` | `vector(1536)` | Vetor (pgvector). |
 | `tsv` | `tsvector` | Gerado (`GENERATED ALWAYS AS ... STORED`): `to_tsvector('portuguese', content)` concatenado a `to_tsvector('simple', ...)` sobre `meta->>'path'` (inteiro e quebrado em `/` e `.`) e `meta->>'symbol'`. Nunca escrito pela aplicação. |
+| `min_level` | `varchar(32)` | Nível mínimo **efetivo** do trecho (`ck_chunks_min_level`), filtrado no SQL da busca: o maior entre `sources.min_level`, `documents.min_level` e `meta.min_level` (refinamento do chunking, ex.: a seção de evidências do conhecimento, `support`). Padrão do banco `product_dev`: um trecho gravado sem nível nunca aparece abaixo de desenvolvimento. |
+
+### Nível mínimo no índice
+
+O nível mínimo de um trecho é o maior entre o da fonte, o do documento e o do próprio trecho, e só sobe ([produtos-e-niveis.md](produtos-e-niveis.md#nível-mínimo-de-fonte-de-documento-e-de-trecho)). Mudar o nível de uma fonte recalcula `chunks.min_level` dos trechos dela numa instrução, sem reindexar. A `0018` calculou os existentes: fontes pelo tipo; documentos de fontes `folder` cujos trechos têm `meta.language` (código) ficaram `product_dev`; documentos `knowledge` com `meta.confidence = inferido`, `support`; trechos `knowledge` com `Evidências` em `meta.headings` ganharam `meta.min_level = support`; e cada trecho ficou com o maior dos três.
 
 ## Harness de código
 
@@ -925,14 +1010,14 @@ A caixa de entrada: a última palavra recebida sobre cada chamado da fonte, cham
 
 ### `ticket_requests`
 
-Um pedido de chamado feito a partir de uma resposta do assistente, entregue pelo webhook ([Abrir chamado](chamados.md#abrir-chamado-webhook-de-saída)). Índices: único `uq_ticket_requests_message_id` (409 `ticket_request_exists`) e `ix_ticket_requests_conversation_id`.
+Um pedido de chamado feito a partir de uma resposta do chat, entregue pelo webhook ([Abrir chamado](chamados.md#abrir-chamado-webhook-de-saída)). Índices: único `uq_ticket_requests_message_id` (409 `ticket_request_exists`) e `ix_ticket_requests_conversation_id`.
 
 | Coluna | Tipo | Regras |
 |---|---|---|
 | `workspace_id` | `uuid` | FK `workspaces.id`, `ON DELETE CASCADE`. |
 | `conversation_id` | `uuid` | FK composta → `conversations` (`fk_ticket_requests_workspace_id_conversations`), `ON DELETE CASCADE`. |
 | `message_id` | `uuid` | Resposta do assistente; FK composta → `messages` (`fk_ticket_requests_workspace_id_messages`), `ON DELETE CASCADE`; única. |
-| `assistant_id` | `uuid` | FK composta → `assistants` (`fk_ticket_requests_workspace_id_assistants`), `ON DELETE CASCADE`. |
+| `product_id` | `uuid` | FK composta → `products` (`fk_ticket_requests_workspace_id_products`), `ON DELETE CASCADE`. Era `assistant_id` (mesmo valor). |
 | `user_id` | `uuid` | Quem pediu (dono da conversa); FK `users.id`, `ON DELETE CASCADE`. |
 | `status` | `varchar(32)` | `pending`, `delivered` ou `failed` (`ck_ticket_requests_status`). |
 | `attempts` | `integer` | Tentativas de entrega, ≥ 0 (`ck_ticket_requests_attempts_not_negative`), padrão 0. |
@@ -958,7 +1043,8 @@ A chave `kbk_<prefixo>_<segredo>` de um workspace, mostrada uma vez e nunca grav
 | `name` | `varchar(200)` | Não vazio (`ck_api_keys_name_not_empty`); **único no workspace** (`uq_api_keys_workspace_id_name`, 409 `api_key_name_taken`). |
 | `key_prefix` | `varchar(8)` | `[a-z0-9]{8}` (`ck_api_keys_key_prefix_format`); **único na instância** (`uq_api_keys_key_prefix`): a autenticação busca por ele em modo de sistema (`system_session`), antes de conhecer o workspace, e depois abre o escopo do workspace da chave. |
 | `key_hash` | `varchar(64)` | SHA-256 hex da chave inteira (`ck_api_keys_key_hash_format`), comparado em tempo constante. |
-| `assistant_ids` | `uuid[]` | Escopo: nulo = todos os assistentes ativos do workspace; senão de 1 a 100 ids, sem nulos (`ck_api_keys_assistant_ids_size`). Sem FK: um assistente excluído sai do escopo sem erro; ids do workspace e sem repetição são regra da aplicação. |
+| `product_ids` | `uuid[]` | Escopo: nulo = todos os produtos ativos do workspace; senão de 1 a 100 ids, sem nulos (`ck_api_keys_product_ids_size`). Sem FK: um produto excluído sai do escopo sem erro; ids do workspace e sem repetição são regra da aplicação. Era `assistant_ids` (mesmos valores). |
+| `max_level` | `varchar(32)` | Nível máximo das perguntas da chave em qualquer produto do escopo (`ck_api_keys_max_level`); obrigatório na criação pela API. As chaves de antes da `0018` ficaram `product_dev`. |
 | `created_by` | `uuid` | FK `users.id`, `ON DELETE SET NULL`. |
 | `last_used_at` | `timestamptz` | Última requisição autenticada, gravada no máximo uma vez por minuto (relógio injetado). |
 | `revoked_at` | `timestamptz` | Preenchido ao revogar (irreversível); chave revogada responde 401. |

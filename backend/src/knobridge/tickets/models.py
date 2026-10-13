@@ -31,19 +31,19 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, synonym
 
-from knobridge.assistants.models import Assistant
 from knobridge.audit.models import JSONValue
 from knobridge.conversations.models import Conversation, Message
 from knobridge.core.models import Base, TimestampMixin, UUIDPrimaryKeyMixin, str_enum
 from knobridge.ingestion.models import Source
+from knobridge.products.models import Product
 from knobridge.tenancy.models import User, Workspace
 
 # The tables these models reference by name. Importing them here puts them in the metadata
 # wherever the ticket models are used alone, as in the worker's ticket delivery; without them,
 # the first flush fails with ``NoReferencedTableError``.
-REFERENCED_MODELS = (Workspace, User, Source, Assistant, Conversation, Message)
+REFERENCED_MODELS = (Workspace, User, Source, Product, Conversation, Message)
 
 TOKEN_PREFIX_LENGTH = 8
 SHA256_HEX_LENGTH = 64
@@ -188,8 +188,8 @@ class TicketRequest(UUIDPrimaryKeyMixin, TimestampMixin, Base):
             ondelete="CASCADE",
         ),
         ForeignKeyConstraint(
-            ["workspace_id", "assistant_id"],
-            ["assistants.workspace_id", "assistants.id"],
+            ["workspace_id", "product_id"],
+            ["products.workspace_id", "products.id"],
             ondelete="CASCADE",
         ),
         CheckConstraint("attempts >= 0", name="attempts_not_negative"),
@@ -211,7 +211,9 @@ class TicketRequest(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     conversation_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     # The assistant answer the request is about.
     message_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
-    assistant_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    product_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    # Transitional name (plan 0009): the request service still says ``assistant_id``.
+    assistant_id: Mapped[uuid.UUID] = synonym("product_id")
     # Who asked (the owner of the conversation).
     user_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=False

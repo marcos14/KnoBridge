@@ -196,7 +196,7 @@ def test_assistant_collections_fk_refuses_collection_of_other_workspace(
             )
             await db.flush()
 
-    with pytest.raises(IntegrityError, match="fk_assistant_collections_workspace_id_coll"):
+    with pytest.raises(IntegrityError, match="fk_product_collections_workspace_id_coll"):
         _run(app_database_url, scenario)
 
 

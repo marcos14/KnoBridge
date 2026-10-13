@@ -28,6 +28,7 @@ from knobridge.audit.service import AuditService, AuditTarget
 from knobridge.core.clock import Clock
 from knobridge.core.errors import ConflictError, NotFoundError, ValidationError
 from knobridge.core.listing import text_match
+from knobridge.levels.level import ResponseLevel
 from knobridge.tenancy.models import User
 
 
@@ -144,6 +145,8 @@ class ApiKeyService:
             key_prefix=generated.prefix,
             key_hash=generated.hash,
             assistant_ids=None if assistant_ids is None else list(assistant_ids),
+            # Every source, as before plan 0009; chosen on creation from F2.4 on.
+            max_level=ResponseLevel.PRODUCT_DEV,
             created_by=actor_id,
         )
         db.add(key)

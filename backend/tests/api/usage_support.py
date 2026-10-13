@@ -29,6 +29,7 @@ from knobridge.conversations.models import (
 from knobridge.core.db import system_session
 from knobridge.ingestion.models import Collection, Run, RunStatus, RunTrigger, Source
 from knobridge.ingestion.source_config import SourceKind
+from knobridge.levels.level import ResponseLevel
 from knobridge.tenancy.models import Role
 
 _positions = itertools.count()
@@ -152,6 +153,7 @@ def add_api_key(api: ApiEnv, world: UsageWorld, name: str) -> uuid.UUID:
                 name=name,
                 key_prefix=uuid.uuid4().hex[:8],
                 key_hash=hashlib.sha256(unique("key").encode()).hexdigest(),
+                max_level=ResponseLevel.PRODUCT_DEV,
             )
             db.add(key)
             return key.id
@@ -176,6 +178,7 @@ def add_conversation(
                 user_id=None if api_key_id else world.users[0].id,
                 api_key_id=api_key_id,
                 channel=ConversationChannel.API if api_key_id else ConversationChannel.PANEL,
+                level=ResponseLevel.PRODUCT_DEV,
             )
             if created_at is not None:
                 conversation.created_at = conversation.updated_at = created_at
@@ -202,10 +205,13 @@ def add_answer(
 
     async def scenario(factory: SessionFactory) -> uuid.UUID:
         async with system_session(factory) as db:
+            conversation = await db.get_one(Conversation, conversation_id)
             message = Message(
                 id=uuid.uuid4(),
                 workspace_id=world.workspace_id,
                 conversation_id=conversation_id,
+                product_id=conversation.product_id,
+                level=conversation.level,
                 position=next(_positions),
                 role=MessageRole.ASSISTANT,
                 content="Resposta sintética.",

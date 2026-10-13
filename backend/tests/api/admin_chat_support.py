@@ -57,10 +57,13 @@ def add_message(
 
     async def scenario(factory: SessionFactory) -> str:
         async with system_session(factory) as db:
+            conversation = await db.get_one(Conversation, uuid.UUID(conversation_id))
             message = Message(
                 id=uuid.uuid4(),
                 workspace_id=workspace_id,
-                conversation_id=uuid.UUID(conversation_id),
+                conversation_id=conversation.id,
+                product_id=conversation.product_id,
+                level=conversation.level,
                 position=position,
                 role=role,
                 content="Texto sintético.",

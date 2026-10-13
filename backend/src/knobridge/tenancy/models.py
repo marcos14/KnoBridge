@@ -14,6 +14,7 @@ from enum import StrEnum
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     DateTime,
     ForeignKey,
     Index,
@@ -23,6 +24,7 @@ from sqlalchemy import (
     func,
     text,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from knobridge.core.models import Base, TimestampMixin, UUIDPrimaryKeyMixin, str_enum
@@ -133,6 +135,9 @@ class Invitation(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     """
 
     __tablename__ = "invitations"
+    __table_args__ = (
+        CheckConstraint("jsonb_typeof(product_levels) = 'array'", name="product_levels_is_array"),
+    )
 
     workspace_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
@@ -149,6 +154,11 @@ class Invitation(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Maximum level per product given on the invitation (``[{"product_id", "max_level"}]``),
+    # recorded as the member's levels when it is accepted; ``[]``: the defaults of the role.
+    product_levels: Mapped[list[dict[str, str]]] = mapped_column(
+        JSONB, nullable=False, default=list, server_default=text("'[]'::jsonb")
+    )
 
 
 Index(
