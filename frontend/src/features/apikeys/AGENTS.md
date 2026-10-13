@@ -10,7 +10,7 @@
 - `apiKeyForm.ts`: schema do formulário, valores iniciais, corpo do `POST` e diferença para o `PATCH` (`assistant_ids: null` = todos).
 - `usageExamples.ts`: os textos dos exemplos (`restCurlExample`, `openAiPythonExample`, `openAiJavaScriptExample`, `apiBaseUrl`) e `API_KEY_VARIABLE` (`KNOBRIDGE_API_KEY`).
 
-**Não entra aqui**: chamadas de API (`lib/api/apiKeys.ts`), assistentes (`lib/api/assistants.ts`), o botão de copiar (`components/CopyButton.tsx`), textos (`i18n/locales/`, chaves `apiKeys.*`; erros `apiErrors.api_key_*`).
+**Não entra aqui**: chamadas de API (`lib/api/apiKeys.ts`), produtos (`lib/api/products.ts`), o botão de copiar (`components/CopyButton.tsx`), textos (`i18n/locales/`, chaves `apiKeys.*`; erros `apiErrors.api_key_*`).
 
 **Convenções locais**:
 

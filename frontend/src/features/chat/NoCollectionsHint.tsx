@@ -1,10 +1,10 @@
 import { Info } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import type { Assistant } from "@/lib/api/assistants";
+import type { Product } from "@/lib/api/products";
 
 /** Discreet note above the composer when the assistant has no collection to answer from. */
-export function NoCollectionsHint({ assistant }: { assistant: Assistant | undefined }) {
+export function NoCollectionsHint({ assistant }: { assistant: Product | undefined }) {
   const { t } = useTranslation();
   if (assistant === undefined || assistant.collection_ids.length > 0) {
     return null;

@@ -1,20 +1,20 @@
 import type { TFunction } from "i18next";
 import { z } from "zod";
 
-import type { Assistant, AssistantInput, AssistantTone } from "@/lib/api/assistants";
+import type { Product, ProductInput, ProductTone } from "@/lib/api/products";
 import { NAME_MAX_LENGTH } from "@/lib/schemas";
 
 import { isWebhookUrl, WEBHOOK_URL_MAX_LENGTH } from "./ticketWebhook";
 
 /** Tones offered by the form, in display order. */
-export const ASSISTANT_TONES: readonly AssistantTone[] = ["neutral", "formal", "friendly"];
+export const PRODUCT_TONES: readonly ProductTone[] = ["neutral", "formal", "friendly"];
 
 /**
  * Limits and defaults of the contract (`api/products.py`, `products/models.py`). Since plan 0009
  * the provider, model and temperature belong to the levels of the workspace, not to the product.
  */
 export const DESCRIPTION_MAX_LENGTH = 1000;
-export const SYSTEM_PROMPT_MAX_LENGTH = 20000;
+export const INSTRUCTIONS_MAX_LENGTH = 20000;
 export const LANGUAGE_MAX_LENGTH = 35;
 export const NO_SOURCE_MESSAGE_MAX_LENGTH = 2000;
 export const LANGUAGE_PATTERN = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/;
@@ -35,13 +35,13 @@ export function parseMinSimilarity(text: string): number | null {
   return value <= MAX_MIN_SIMILARITY ? value : null;
 }
 
-export interface AssistantFormValues {
+export interface ProductFormValues {
   name: string;
   description: string;
   /** The extra instructions of the product (`instructions` in the API). */
-  systemPrompt: string;
+  instructions: string;
   language: string;
-  tone: AssistantTone;
+  tone: ProductTone;
   noSourceMessage: string;
   active: boolean;
   collectionIds: string[];
@@ -51,23 +51,23 @@ export interface AssistantFormValues {
   ticketWebhookUrl: string;
 }
 
-export function assistantFormSchema(t: TFunction) {
+export function productFormSchema(t: TFunction) {
   const tooLong = (max: number) => ({ error: t("auth.validation.tooLong", { max }) });
   const text = (max: number) => z.string().trim().max(max, tooLong(max));
   return z
     .object({
-      name: text(NAME_MAX_LENGTH).min(1, { error: t("assistants.form.validation.nameRequired") }),
+      name: text(NAME_MAX_LENGTH).min(1, { error: t("products.form.validation.nameRequired") }),
       description: text(DESCRIPTION_MAX_LENGTH),
-      systemPrompt: text(SYSTEM_PROMPT_MAX_LENGTH),
+      instructions: text(INSTRUCTIONS_MAX_LENGTH),
       language: text(LANGUAGE_MAX_LENGTH).regex(LANGUAGE_PATTERN, {
-        error: t("assistants.form.validation.languageInvalid"),
+        error: t("products.form.validation.languageInvalid"),
       }),
-      tone: z.enum(ASSISTANT_TONES),
+      tone: z.enum(PRODUCT_TONES),
       noSourceMessage: text(NO_SOURCE_MESSAGE_MAX_LENGTH),
       active: z.boolean(),
       collectionIds: z.array(z.string()),
       minSimilarity: z.string().refine((value) => parseMinSimilarity(value) !== null, {
-        error: t("assistants.form.validation.minSimilarityInvalid"),
+        error: t("products.form.validation.minSimilarityInvalid"),
       }),
       ticketWebhookEnabled: z.boolean(),
       ticketWebhookUrl: text(WEBHOOK_URL_MAX_LENGTH),
@@ -79,23 +79,23 @@ export function assistantFormSchema(t: TFunction) {
       }
       const message =
         values.ticketWebhookUrl === ""
-          ? t("assistants.webhook.validation.urlRequired")
+          ? t("products.webhook.validation.urlRequired")
           : isWebhookUrl(values.ticketWebhookUrl)
             ? null
-            : t("assistants.webhook.validation.urlInvalid");
+            : t("products.webhook.validation.urlInvalid");
       if (message !== null) {
         ctx.addIssue({ code: "custom", path: ["ticketWebhookUrl"], message });
       }
     });
 }
 
-/** Initial values: the stored assistant for an edit; otherwise the contract's defaults. */
-export function assistantFormDefaults(assistant: Assistant | undefined): AssistantFormValues {
-  if (assistant === undefined) {
+/** Initial values: the stored product for an edit; otherwise the contract's defaults. */
+export function productFormDefaults(product: Product | undefined): ProductFormValues {
+  if (product === undefined) {
     return {
       name: "",
       description: "",
-      systemPrompt: "",
+      instructions: "",
       language: DEFAULT_LANGUAGE,
       tone: "neutral",
       noSourceMessage: "",
@@ -107,17 +107,17 @@ export function assistantFormDefaults(assistant: Assistant | undefined): Assista
     };
   }
   return {
-    name: assistant.name,
-    description: assistant.description,
-    systemPrompt: assistant.instructions,
-    language: assistant.language,
-    tone: assistant.tone,
-    noSourceMessage: assistant.no_source_message,
-    active: assistant.active,
-    collectionIds: [...assistant.collection_ids],
-    minSimilarity: String(assistant.min_similarity),
-    ticketWebhookEnabled: assistant.ticket_webhook_url !== null,
-    ticketWebhookUrl: assistant.ticket_webhook_url ?? "",
+    name: product.name,
+    description: product.description,
+    instructions: product.instructions,
+    language: product.language,
+    tone: product.tone,
+    noSourceMessage: product.no_source_message,
+    active: product.active,
+    collectionIds: [...product.collection_ids],
+    minSimilarity: String(product.min_similarity),
+    ticketWebhookEnabled: product.ticket_webhook_url !== null,
+    ticketWebhookUrl: product.ticket_webhook_url ?? "",
   };
 }
 
@@ -127,7 +127,7 @@ export function assistantFormDefaults(assistant: Assistant | undefined): Assista
  * (`null` when off) is left out when it is the one `current` already has: the server checks the
  * destination again whenever it receives one, and an unchanged URL needs no new check.
  */
-export function assistantBody(values: AssistantFormValues, current?: Assistant): AssistantInput {
+export function productBody(values: ProductFormValues, current?: Product): ProductInput {
   const webhookUrl = values.ticketWebhookEnabled ? values.ticketWebhookUrl : null;
   const webhook =
     current?.ticket_webhook_url === webhookUrl ? {} : { ticket_webhook_url: webhookUrl };
@@ -135,12 +135,12 @@ export function assistantBody(values: AssistantFormValues, current?: Assistant):
     ...webhook,
     name: values.name,
     description: values.description,
-    instructions: values.systemPrompt,
+    instructions: values.instructions,
     language: values.language,
     tone: values.tone,
     no_source_message: values.noSourceMessage,
     active: values.active,
-    // The whole set is sent: on a PATCH it replaces the assistant's collections.
+    // The whole set is sent: on a PATCH it replaces the product's collections.
     collection_ids: values.collectionIds,
     min_similarity: parseMinSimilarity(values.minSimilarity) ?? DEFAULT_MIN_SIMILARITY,
   };

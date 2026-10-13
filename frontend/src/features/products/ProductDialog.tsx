@@ -35,24 +35,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { type Assistant, useCreateAssistant, useUpdateAssistant } from "@/lib/api/assistants";
+import { type Product, useCreateProduct, useUpdateProduct } from "@/lib/api/products";
 import { useCollections } from "@/lib/api/collections";
 
 import {
-  ASSISTANT_TONES,
-  assistantBody,
-  assistantFormDefaults,
-  assistantFormSchema,
-  type AssistantFormValues,
-} from "./assistantForm";
+  PRODUCT_TONES,
+  productBody,
+  productFormDefaults,
+  productFormSchema,
+  type ProductFormValues,
+} from "./productForm";
 import { webhookApiErrorText } from "./ticketWebhook";
 import { TicketWebhookFields } from "./TicketWebhookFields";
 import { TicketWebhookPanel } from "./TicketWebhookPanel";
 
-interface AssistantDialogProps {
+interface ProductDialogProps {
   workspaceId: string;
-  /** The assistant to edit; absent, the dialog creates one. */
-  assistant?: Assistant;
+  /** The product to edit; absent, the dialog creates one. */
+  product?: Product;
   /** The element that opens the dialog (a `Button`); absent, the dialog opens on its own. */
   trigger?: ReactElement;
   /** Opens at once, without a trigger (editing the copy right after "Duplicar"). */
@@ -61,32 +61,32 @@ interface AssistantDialogProps {
   onClosed?: () => void;
   /** Owners and admins generate the webhook secret (a credential); editors only test it. */
   canManageSecret: boolean;
-  onSaved: (assistant: Assistant) => void;
+  onSaved: (product: Product) => void;
 }
 
 /**
- * Create or edit an assistant (a product of the API; the model is the workspace level's):
- * instructions, behavior, the ticket webhook and
+ * Create or edit a product (the model and its instructions are the workspace levels'):
+ * collections, extra instructions, behavior, the ticket webhook and
  * whether it is active. Editing also offers the webhook secret and the test delivery.
  */
-export function AssistantDialog({
+export function ProductDialog({
   workspaceId,
-  assistant,
+  product,
   trigger,
   canManageSecret,
   onSaved,
   defaultOpen = false,
   onClosed,
-}: AssistantDialogProps) {
+}: ProductDialogProps) {
   const { t } = useTranslation();
   const [open, setOpenState] = useState(defaultOpen);
-  const editing = assistant !== undefined;
-  const create = useCreateAssistant(workspaceId);
-  const update = useUpdateAssistant(workspaceId);
+  const editing = product !== undefined;
+  const create = useCreateProduct(workspaceId);
+  const update = useUpdateProduct(workspaceId);
   const save = editing ? update : create;
-  const schema = useMemo(() => assistantFormSchema(t), [t]);
-  const defaults = () => assistantFormDefaults(assistant);
-  const form = useForm<AssistantFormValues>({
+  const schema = useMemo(() => productFormSchema(t), [t]);
+  const defaults = () => productFormDefaults(product);
+  const form = useForm<ProductFormValues>({
     resolver: zodResolver(schema),
     defaultValues: defaults(),
   });
@@ -106,16 +106,16 @@ export function AssistantDialog({
     }
   }
 
-  function onSubmit(values: AssistantFormValues) {
-    const body = assistantBody(values, assistant);
+  function onSubmit(values: ProductFormValues) {
+    const body = productBody(values, product);
     const done = {
-      onSuccess: (saved: Assistant) => {
+      onSuccess: (saved: Product) => {
         setOpen(false);
         onSaved(saved);
       },
     };
     if (editing) {
-      update.mutate({ assistantId: assistant.id, changes: body }, done);
+      update.mutate({ productId: product.id, changes: body }, done);
     } else {
       create.mutate(body, done);
     }
@@ -127,9 +127,9 @@ export function AssistantDialog({
       <DialogContent showCloseButton={false} className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>
-            {editing ? t("assistants.form.editTitle") : t("assistants.form.createTitle")}
+            {editing ? t("products.form.editTitle") : t("products.form.createTitle")}
           </DialogTitle>
-          <DialogDescription>{t("assistants.form.description")}</DialogDescription>
+          <DialogDescription>{t("products.form.description")}</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form
@@ -138,26 +138,26 @@ export function AssistantDialog({
             onSubmit={(event) => void form.handleSubmit(onSubmit)(event)}
           >
             {save.isError && <FormAlert message={webhookApiErrorText(save.error, t)} />}
-            <TextField control={form.control} name="name" label={t("assistants.form.name")} />
+            <TextField control={form.control} name="name" label={t("products.form.name")} />
             <TextField
               control={form.control}
               name="description"
               rows={2}
-              label={t("assistants.form.summary")}
+              label={t("products.form.summary")}
             />
             <TextField
               control={form.control}
-              name="systemPrompt"
+              name="instructions"
               rows={6}
-              label={t("assistants.form.systemPrompt")}
-              description={t("assistants.form.systemPromptHint")}
+              label={t("products.form.instructions")}
+              description={t("products.form.instructionsHint")}
             />
             <div className="grid gap-4 sm:grid-cols-2">
               <TextField
                 control={form.control}
                 name="language"
-                label={t("assistants.form.language")}
-                description={t("assistants.form.languageHint")}
+                label={t("products.form.language")}
+                description={t("products.form.languageHint")}
               />
               <ToneField control={form.control} />
             </div>
@@ -166,21 +166,21 @@ export function AssistantDialog({
               control={form.control}
               name="minSimilarity"
               inputMode="decimal"
-              label={t("assistants.form.minSimilarity")}
-              description={t("assistants.form.minSimilarityHint")}
+              label={t("products.form.minSimilarity")}
+              description={t("products.form.minSimilarityHint")}
             />
             <TextField
               control={form.control}
               name="noSourceMessage"
               rows={3}
-              label={t("assistants.form.noSourceMessage")}
-              description={t("assistants.form.noSourceMessageHint")}
+              label={t("products.form.noSourceMessage")}
+              description={t("products.form.noSourceMessageHint")}
             />
             <TicketWebhookFields control={form.control} />
             {editing && (
               <TicketWebhookPanel
                 workspaceId={workspaceId}
-                assistant={assistant}
+                product={product}
                 canManageSecret={canManageSecret}
               />
             )}
@@ -198,8 +198,8 @@ export function AssistantDialog({
                     />
                   </FormControl>
                   <div className="flex flex-col gap-1">
-                    <FormLabel>{t("assistants.form.active")}</FormLabel>
-                    <FormDescription>{t("assistants.form.activeHint")}</FormDescription>
+                    <FormLabel>{t("products.form.active")}</FormLabel>
+                    <FormDescription>{t("products.form.activeHint")}</FormDescription>
                   </div>
                 </FormItem>
               )}
@@ -207,11 +207,11 @@ export function AssistantDialog({
             <DialogFooter>
               <DialogClose asChild>
                 <Button type="button" variant="outline">
-                  {t("assistants.form.cancel")}
+                  {t("products.form.cancel")}
                 </Button>
               </DialogClose>
               <Button type="submit" disabled={save.isPending}>
-                {save.isPending ? t("auth.submitting") : t("assistants.form.submit")}
+                {save.isPending ? t("auth.submitting") : t("products.form.submit")}
               </Button>
             </DialogFooter>
           </form>
@@ -222,12 +222,12 @@ export function AssistantDialog({
 }
 
 interface FieldProps {
-  control: Control<AssistantFormValues>;
+  control: Control<ProductFormValues>;
 }
 
 /**
- * The collections the assistant answers from, as checkboxes. Mounted only with the dialog open,
- * so the list is fetched when someone edits an assistant, not for every row of the table.
+ * The collections the product answers from, as checkboxes. Mounted only with the dialog open,
+ * so the list is fetched when someone edits a product, not for every row of the table.
  */
 function CollectionsField({ control, workspaceId }: FieldProps & { workspaceId: string }) {
   const { t } = useTranslation();
@@ -246,14 +246,14 @@ function CollectionsField({ control, workspaceId }: FieldProps & { workspaceId: 
   if (collections.isPending) {
     options = (
       <p role="status" className="text-sm">
-        {t("assistants.form.collectionsLoading")}
+        {t("products.form.collectionsLoading")}
       </p>
     );
   } else if (collections.isError) {
     options = (
       <div className="flex flex-wrap items-center gap-2">
         <p role="alert" className="text-sm">
-          {t("assistants.form.collectionsLoadFailed")}
+          {t("products.form.collectionsLoadFailed")}
         </p>
         <Button
           type="button"
@@ -263,16 +263,16 @@ function CollectionsField({ control, workspaceId }: FieldProps & { workspaceId: 
             void collections.refetch();
           }}
         >
-          {t("assistants.retry")}
+          {t("products.retry")}
         </Button>
       </div>
     );
   } else if (collections.data.length === 0) {
     options = (
       <p className="text-sm">
-        {t("assistants.form.collectionsEmpty")}{" "}
+        {t("products.form.collectionsEmpty")}{" "}
         <Link to={`/w/${workspaceId}/collections`} className="underline underline-offset-4">
-          {t("assistants.form.goToCollections")}
+          {t("products.form.goToCollections")}
         </Link>
       </p>
     );
@@ -305,13 +305,13 @@ function CollectionsField({ control, workspaceId }: FieldProps & { workspaceId: 
 
   return (
     <fieldset className="flex flex-col gap-2">
-      <legend className="text-sm font-medium">{t("assistants.form.collections")}</legend>
-      <p className="text-muted-foreground text-sm">{t("assistants.form.collectionsHint")}</p>
+      <legend className="text-sm font-medium">{t("products.form.collections")}</legend>
+      <p className="text-muted-foreground text-sm">{t("products.form.collectionsHint")}</p>
       {options}
       {selected.length === 0 && (
         <p className="flex items-start gap-2 rounded-md border border-amber-500/50 px-3 py-2 text-sm">
           <AlertTriangle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-          <span>{t("assistants.form.noCollections")}</span>
+          <span>{t("products.form.noCollections")}</span>
         </p>
       )}
     </fieldset>
@@ -326,7 +326,7 @@ function ToneField({ control }: FieldProps) {
       name="tone"
       render={({ field }) => (
         <FormItem>
-          <FormLabel>{t("assistants.form.tone")}</FormLabel>
+          <FormLabel>{t("products.form.tone")}</FormLabel>
           <Select value={field.value} onValueChange={field.onChange}>
             <FormControl>
               <SelectTrigger className="w-full">
@@ -334,9 +334,9 @@ function ToneField({ control }: FieldProps) {
               </SelectTrigger>
             </FormControl>
             <SelectContent>
-              {ASSISTANT_TONES.map((tone) => (
+              {PRODUCT_TONES.map((tone) => (
                 <SelectItem key={tone} value={tone}>
-                  {t(`assistants.form.tones.${tone}`)}
+                  {t(`products.form.tones.${tone}`)}
                 </SelectItem>
               ))}
             </SelectContent>

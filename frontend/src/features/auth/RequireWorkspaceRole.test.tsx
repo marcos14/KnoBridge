@@ -39,7 +39,7 @@ describe("RequireWorkspaceRole", () => {
 
   it.each([
     ["viewer", "settings"],
-    ["viewer", "assistants"],
+    ["viewer", "products"],
     ["viewer", "providers"],
     ["editor", "conversations"],
     ["editor", "audit"],

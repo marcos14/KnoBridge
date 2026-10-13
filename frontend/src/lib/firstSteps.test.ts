@@ -12,7 +12,7 @@ describe("pendingSteps", () => {
     expect(steps).toEqual([
       { key: "collection", to: `/w/${WORKSPACE_ID}/collections` },
       { key: "levels", to: `/w/${WORKSPACE_ID}/settings` },
-      { key: "product", to: `/w/${WORKSPACE_ID}/assistants` },
+      { key: "product", to: `/w/${WORKSPACE_ID}/products` },
       { key: "chat", to: `/w/${WORKSPACE_ID}/chat` },
     ]);
   });

@@ -5,40 +5,40 @@ import { describe, expect, it } from "vitest";
 
 import type { Role } from "@/lib/api/auth";
 import {
-  ASSISTANT_ID,
+  PRODUCT_ID,
   COLLECTION_ID,
-  makeAssistant,
+  makeProduct,
   makeMe,
   makeWorkspace,
-  OTHER_ASSISTANT_ID,
+  OTHER_PRODUCT_ID,
   OTHER_COLLECTION_ID,
   OTHER_WORKSPACE_ID,
   WORKSPACE_ID,
 } from "@/test/factories";
 import {
-  assistantsAs,
-  assistantsOk,
-  assistantsRecorder,
-  assistantsServerError,
-  assistantStore,
+  productsAs,
+  productsOk,
+  productsRecorder,
+  productsServerError,
+  productStore,
   collectionsAs,
   collectionsServerError,
-  createAssistantFails,
+  createProductFails,
   DEFAULT_NO_SOURCE_MESSAGE,
-  deleteAssistantFails,
-  duplicateAssistantFails,
-  duplicateAssistantRecorder,
+  deleteProductFails,
+  duplicateProductFails,
+  duplicateProductRecorder,
   meAs,
   providersAs,
-  updateAssistantFails,
+  updateProductFails,
 } from "@/test/handlers";
 import { renderWithProviders } from "@/test/renderWithProviders";
 import { server } from "@/test/server";
 
-import { AssistantsPage } from "./AssistantsPage";
+import { ProductsPage } from "./ProductsPage";
 
-const PATH = `/w/${WORKSPACE_ID}/assistants`;
-const TABLE = "Assistentes do workspace";
+const PATH = `/w/${WORKSPACE_ID}/products`;
+const TABLE = "Produtos do workspace";
 
 type User = ReturnType<typeof userEvent.setup>;
 
@@ -46,7 +46,7 @@ function asRole(role: Role) {
   server.use(meAs(makeMe({ workspaces: [makeWorkspace({ role })] })));
 }
 
-async function renderAssistants() {
+async function renderProducts() {
   const result = renderWithProviders({ path: PATH });
   await screen.findByRole("table", { name: TABLE });
   return result;
@@ -63,13 +63,13 @@ function rowOf(name: string): HTMLElement {
 }
 
 async function openCreate(user: User) {
-  await user.click(screen.getByRole("button", { name: "Novo assistente" }));
-  return screen.findByRole("dialog", { name: "Novo assistente" });
+  await user.click(screen.getByRole("button", { name: "Novo produto" }));
+  return screen.findByRole("dialog", { name: "Novo produto" });
 }
 
 async function openEdit(user: User, name: string) {
   await user.click(screen.getByRole("button", { name: `Editar ${name}` }));
-  return screen.findByRole("dialog", { name: "Editar assistente" });
+  return screen.findByRole("dialog", { name: "Editar produto" });
 }
 
 async function pick(user: User, dialog: HTMLElement, field: string, option: string) {
@@ -77,11 +77,11 @@ async function pick(user: User, dialog: HTMLElement, field: string, option: stri
   await user.click(await screen.findByRole("option", { name: option }));
 }
 
-describe("AssistantsPage list", () => {
-  it("test_assistants_page_lists_assistants_with_status", async () => {
-    await renderAssistants();
+describe("ProductsPage list", () => {
+  it("test_products_page_lists_products_with_status", async () => {
+    await renderProducts();
 
-    expect(screen.getByRole("heading", { level: 1, name: "Assistentes" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Produtos" })).toBeInTheDocument();
     const active = rowOf("Suporte ERP");
     expect(within(active).getByText("Dúvidas sobre o ERP.")).toBeInTheDocument();
     expect(within(active).getByText("Ativo")).toBeInTheDocument();
@@ -89,62 +89,69 @@ describe("AssistantsPage list", () => {
     expect(within(draft).getByText("Inativo")).toBeInTheDocument();
   });
 
-  it("test_assistants_page_without_providers_points_to_providers", async () => {
-    server.use(providersAs([]), assistantsAs([]));
-    await renderAssistants();
+  it("test_products_page_old_assistants_address_redirects", async () => {
+    const { router } = renderWithProviders({ path: `/w/${WORKSPACE_ID}/assistants` });
 
-    expect(screen.queryByRole("button", { name: "Novo assistente" })).not.toBeInTheDocument();
+    expect(await screen.findByRole("table", { name: TABLE })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe(PATH);
+  });
+
+  it("test_products_page_without_providers_points_to_providers", async () => {
+    server.use(providersAs([]), productsAs([]));
+    await renderProducts();
+
+    expect(screen.queryByRole("button", { name: "Novo produto" })).not.toBeInTheDocument();
     expect(
-      screen.getByText(/Cadastre um provedor de LLM antes de criar assistentes./),
+      screen.getByText(
+        /Cadastre um provedor de LLM e configure os níveis de resposta antes de criar produtos./,
+      ),
     ).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Ir para provedores" })).toHaveAttribute(
       "href",
       `/w/${WORKSPACE_ID}/providers`,
     );
-    expect(screen.getByText("Nenhum assistente cadastrado.")).toBeInTheDocument();
+    expect(screen.getByText("Nenhum produto cadastrado.")).toBeInTheDocument();
   });
 
-  it("test_assistants_page_edits_without_providers", async () => {
+  it("test_products_page_edits_without_providers", async () => {
     const user = userEvent.setup();
-    server.use(providersAs([]), assistantsAs([makeAssistant()]));
-    await renderAssistants();
+    server.use(providersAs([]), productsAs([makeProduct()]));
+    await renderProducts();
 
     const dialog = await openEdit(user, "Suporte ERP");
     expect(within(dialog).getByLabelText("Nome")).toHaveValue("Suporte ERP");
   });
 
-  it("test_assistants_page_pages_long_lists", async () => {
+  it("test_products_page_pages_long_lists", async () => {
     const user = userEvent.setup();
     const many = Array.from({ length: 22 }, (_, index) =>
-      makeAssistant({
+      makeProduct({
         id: `00000000-0000-4000-8000-${String(600 + index).padStart(12, "0")}`,
-        name: `Assistente ${String(index).padStart(2, "0")}`,
+        name: `Produto ${String(index).padStart(2, "0")}`,
       }),
     );
-    server.use(assistantsAs(many));
-    await renderAssistants();
+    server.use(productsAs(many));
+    await renderProducts();
 
     await user.click(screen.getByRole("button", { name: "Próxima" }));
 
     expect(screen.getByText("21–22 de 22")).toBeInTheDocument();
-    expect(rowOf("Assistente 21")).toBeInTheDocument();
+    expect(rowOf("Produto 21")).toBeInTheDocument();
   });
 
-  it("test_assistants_page_retries_after_load_failure", async () => {
+  it("test_products_page_retries_after_load_failure", async () => {
     const user = userEvent.setup();
-    server.use(assistantsServerError);
+    server.use(productsServerError);
     renderWithProviders({ path: PATH });
 
-    expect(await screen.findByText("Não foi possível carregar os assistentes.")).toHaveRole(
-      "alert",
-    );
-    server.use(assistantsOk);
+    expect(await screen.findByText("Não foi possível carregar os produtos.")).toHaveRole("alert");
+    server.use(productsOk);
     await user.click(screen.getByRole("button", { name: "Tentar novamente" }));
 
     expect(await screen.findByRole("table", { name: TABLE })).toBeInTheDocument();
   });
 
-  it("test_assistants_page_shows_loading_state", async () => {
+  it("test_products_page_shows_loading_state", async () => {
     server.use(
       http.get("*/v1/workspaces/:workspaceId/products", async () => {
         await delay("infinite");
@@ -153,22 +160,20 @@ describe("AssistantsPage list", () => {
     );
     renderWithProviders({ path: PATH });
 
-    expect(await screen.findByText("Carregando assistentes…")).toHaveRole("status");
+    expect(await screen.findByText("Carregando produtos…")).toHaveRole("status");
   });
 
-  it("test_assistants_page_renders_only_title_without_membership", async () => {
+  it("test_products_page_renders_only_title_without_membership", async () => {
     renderWithProviders({
-      routes: [{ path: "/w/:workspaceId/assistants", element: <AssistantsPage /> }],
-      path: `/w/${OTHER_WORKSPACE_ID}/assistants`,
+      routes: [{ path: "/w/:workspaceId/products", element: <ProductsPage /> }],
+      path: `/w/${OTHER_WORKSPACE_ID}/products`,
     });
 
-    expect(
-      await screen.findByRole("heading", { level: 1, name: "Assistentes" }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Produtos" })).toBeInTheDocument();
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
   });
 
-  it("test_assistants_page_viewer_cannot_edit", async () => {
+  it("test_products_page_viewer_cannot_edit", async () => {
     asRole("viewer");
     renderWithProviders({ path: PATH });
 
@@ -178,23 +183,23 @@ describe("AssistantsPage list", () => {
     expect(screen.queryByRole("button", { name: /Editar/ })).not.toBeInTheDocument();
   });
 
-  it("test_assistants_page_editor_manages_assistants", async () => {
+  it("test_products_page_editor_manages_products", async () => {
     asRole("editor");
-    await renderAssistants();
+    await renderProducts();
 
-    expect(screen.getByRole("button", { name: "Novo assistente" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "Novo produto" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "Editar Suporte ERP" })).toBeEnabled();
   });
 });
 
-describe("AssistantsPage search, filters and sort", () => {
-  it("test_assistants_page_searches_filters_and_sorts_on_the_api", async () => {
+describe("ProductsPage search, filters and sort", () => {
+  it("test_products_page_searches_filters_and_sorts_on_the_api", async () => {
     const user = userEvent.setup();
-    const recorder = assistantsRecorder();
+    const recorder = productsRecorder();
     server.use(recorder.handler);
-    const { router } = await renderAssistants();
+    const { router } = await renderProducts();
 
-    await user.type(screen.getByRole("searchbox", { name: "Buscar assistentes" }), "suporte");
+    await user.type(screen.getByRole("searchbox", { name: "Buscar produtos" }), "suporte");
     await waitFor(() => {
       expect(recorder.last()).toBe("query=suporte&sort=name");
     });
@@ -221,19 +226,19 @@ describe("AssistantsPage search, filters and sort", () => {
     );
   });
 
-  it("test_assistants_page_empty_state_points_to_collections", async () => {
-    server.use(assistantsAs([]));
-    await renderAssistants();
+  it("test_products_page_empty_state_points_to_collections", async () => {
+    server.use(productsAs([]));
+    await renderProducts();
 
-    expect(screen.getByText(/Crie um em "Novo assistente"/)).toBeInTheDocument();
+    expect(screen.getByText(/Crie um em "Novo produto"/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Ver coleções" })).toHaveAttribute(
       "href",
       `/w/${WORKSPACE_ID}/collections`,
     );
   });
 
-  it("test_assistants_page_filtered_without_results_says_so", async () => {
-    server.use(assistantsRecorder([]).handler);
+  it("test_products_page_filtered_without_results_says_so", async () => {
+    server.use(productsRecorder([]).handler);
     renderWithProviders({ path: `${PATH}?active=false` });
 
     expect(
@@ -243,34 +248,34 @@ describe("AssistantsPage search, filters and sort", () => {
   });
 });
 
-describe("AssistantsPage duplicate", () => {
-  it("test_assistants_page_duplicates_and_opens_the_copy_for_editing", async () => {
+describe("ProductsPage duplicate", () => {
+  it("test_products_page_duplicates_and_opens_the_copy_for_editing", async () => {
     const user = userEvent.setup();
-    const duplicate = duplicateAssistantRecorder();
+    const duplicate = duplicateProductRecorder();
     server.use(duplicate.handler);
-    await renderAssistants();
+    await renderProducts();
 
     await user.click(screen.getByRole("button", { name: "Duplicar Suporte ERP" }));
 
-    const dialog = await screen.findByRole("dialog", { name: "Editar assistente" });
+    const dialog = await screen.findByRole("dialog", { name: "Editar produto" });
     expect(within(dialog).getByLabelText("Nome")).toHaveValue("Suporte ERP (cópia)");
-    expect(duplicate.requests).toEqual([{ assistantId: ASSISTANT_ID, body: {} }]);
+    expect(duplicate.requests).toEqual([{ productId: PRODUCT_ID, body: {} }]);
     expect(
       screen.getByText("Cópia criada: Suporte ERP (cópia). Ajuste o que precisar e salve."),
     ).toHaveRole("status");
 
     await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
 
-    expect(await screen.findByText("Assistente Suporte ERP atualizado.")).toHaveRole("status");
+    expect(await screen.findByText("Produto Suporte ERP atualizado.")).toHaveRole("status");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("test_assistants_page_duplicate_dialog_can_be_dismissed", async () => {
+  it("test_products_page_duplicate_dialog_can_be_dismissed", async () => {
     const user = userEvent.setup();
-    await renderAssistants();
+    await renderProducts();
 
     await user.click(screen.getByRole("button", { name: "Duplicar Rascunho" }));
-    const dialog = await screen.findByRole("dialog", { name: "Editar assistente" });
+    const dialog = await screen.findByRole("dialog", { name: "Editar produto" });
     await user.click(within(dialog).getByRole("button", { name: "Cancelar" }));
 
     await waitFor(() => {
@@ -278,10 +283,10 @@ describe("AssistantsPage duplicate", () => {
     });
   });
 
-  it("test_assistants_page_duplicate_failure_shows_reason", async () => {
+  it("test_products_page_duplicate_failure_shows_reason", async () => {
     const user = userEvent.setup();
-    server.use(duplicateAssistantFails(403, "forbidden"));
-    await renderAssistants();
+    server.use(duplicateProductFails(403, "forbidden"));
+    await renderProducts();
 
     await user.click(screen.getByRole("button", { name: "Duplicar Suporte ERP" }));
 
@@ -290,12 +295,12 @@ describe("AssistantsPage duplicate", () => {
   });
 });
 
-describe("AssistantsPage create", () => {
-  it("test_assistants_page_creates_assistant", async () => {
+describe("ProductsPage create", () => {
+  it("test_products_page_creates_product", async () => {
     const user = userEvent.setup();
-    const store = assistantStore();
+    const store = productStore();
     server.use(...store.handlers);
-    await renderAssistants();
+    await renderProducts();
     const dialog = await openCreate(user);
 
     expect(within(dialog).queryByRole("combobox", { name: "Provedor" })).not.toBeInTheDocument();
@@ -303,20 +308,20 @@ describe("AssistantsPage create", () => {
     expect(within(dialog).getByRole("checkbox", { name: "Ativo" })).toBeChecked();
     await user.type(within(dialog).getByLabelText("Nome"), "Financeiro");
     await user.type(within(dialog).getByLabelText("Descrição"), "Dúvidas de cobrança.");
-    await user.type(within(dialog).getByLabelText("Prompt de sistema"), "Seja breve.");
+    await user.type(within(dialog).getByLabelText("Texto extra"), "Seja breve.");
     const language = within(dialog).getByLabelText("Idioma");
     await user.clear(language);
     await user.type(language, "en");
     await pick(user, dialog, "Tom", "Formal");
     expect(
       within(dialog).getByText(
-        "Nenhuma coleção selecionada: o assistente responderá sempre sem fonte.",
+        "Nenhuma coleção selecionada: o produto responderá sempre sem fonte.",
       ),
     ).toBeVisible();
     await user.click(await within(dialog).findByRole("checkbox", { name: "Código ERP" }));
     expect(
       within(dialog).queryByText(
-        "Nenhuma coleção selecionada: o assistente responderá sempre sem fonte.",
+        "Nenhuma coleção selecionada: o produto responderá sempre sem fonte.",
       ),
     ).not.toBeInTheDocument();
     const minSimilarity = within(dialog).getByLabelText("Similaridade mínima");
@@ -327,7 +332,7 @@ describe("AssistantsPage create", () => {
     await user.click(within(dialog).getByRole("checkbox", { name: "Ativo" }));
     await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
 
-    expect(await screen.findByText("Assistente Financeiro criado.")).toHaveRole("status");
+    expect(await screen.findByText("Produto Financeiro criado.")).toHaveRole("status");
     expect(store.created).toEqual([
       {
         name: "Financeiro",
@@ -348,11 +353,11 @@ describe("AssistantsPage create", () => {
     });
   });
 
-  it("test_assistants_page_validates_create_form", async () => {
+  it("test_products_page_validates_create_form", async () => {
     const user = userEvent.setup();
-    const store = assistantStore();
+    const store = productStore();
     server.use(...store.handlers);
-    await renderAssistants();
+    await renderProducts();
     const dialog = await openCreate(user);
     const language = within(dialog).getByLabelText("Idioma");
     const minSimilarity = within(dialog).getByLabelText("Similaridade mínima");
@@ -363,7 +368,7 @@ describe("AssistantsPage create", () => {
     await user.type(minSimilarity, "3");
     await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
 
-    expect(await within(dialog).findByText("Informe o nome do assistente.")).toBeInTheDocument();
+    expect(await within(dialog).findByText("Informe o nome do produto.")).toBeInTheDocument();
     expect(within(dialog).getByText("Informe um número de 0 a 1.")).toBeInTheDocument();
     expect(
       within(dialog).getByText("Informe um código de idioma válido, como pt-BR."),
@@ -371,11 +376,11 @@ describe("AssistantsPage create", () => {
     expect(store.created).toEqual([]);
   });
 
-  it("test_assistants_page_shows_name_taken_error", async () => {
+  it("test_products_page_shows_name_taken_error", async () => {
     const user = userEvent.setup();
-    const store = assistantStore();
+    const store = productStore();
     server.use(...store.handlers);
-    await renderAssistants();
+    await renderProducts();
     const dialog = await openCreate(user);
 
     await user.type(within(dialog).getByLabelText("Nome"), "Rascunho");
@@ -386,10 +391,10 @@ describe("AssistantsPage create", () => {
     );
   });
 
-  it("test_assistants_page_shows_level_not_configured_error", async () => {
+  it("test_products_page_shows_level_not_configured_error", async () => {
     const user = userEvent.setup();
-    await renderAssistants();
-    server.use(createAssistantFails(409, "level_not_configured"));
+    await renderProducts();
+    server.use(createProductFails(409, "level_not_configured"));
     const dialog = await openCreate(user);
 
     await user.type(within(dialog).getByLabelText("Nome"), "Novo");
@@ -400,9 +405,9 @@ describe("AssistantsPage create", () => {
     );
   });
 
-  it("test_assistants_page_disables_submit_while_saving", async () => {
+  it("test_products_page_disables_submit_while_saving", async () => {
     const user = userEvent.setup();
-    await renderAssistants();
+    await renderProducts();
     server.use(
       http.post("*/v1/workspaces/:workspaceId/products", async () => {
         await delay("infinite");
@@ -418,15 +423,15 @@ describe("AssistantsPage create", () => {
   });
 });
 
-describe("AssistantsPage edit", () => {
-  it("test_assistants_page_edits_and_deactivates", async () => {
+describe("ProductsPage edit", () => {
+  it("test_products_page_edits_and_deactivates", async () => {
     const user = userEvent.setup();
-    const store = assistantStore();
+    const store = productStore();
     server.use(...store.handlers);
-    await renderAssistants();
+    await renderProducts();
     const dialog = await openEdit(user, "Suporte ERP");
 
-    expect(within(dialog).getByLabelText("Prompt de sistema")).toHaveValue(
+    expect(within(dialog).getByLabelText("Texto extra")).toHaveValue(
       "Responda com base nas fontes.",
     );
     expect(within(dialog).getByRole("combobox", { name: "Tom" })).toHaveTextContent("Neutro");
@@ -434,10 +439,10 @@ describe("AssistantsPage edit", () => {
     await user.click(within(dialog).getByRole("checkbox", { name: "Ativo" }));
     await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
 
-    expect(await screen.findByText("Assistente Suporte ERP atualizado.")).toHaveRole("status");
+    expect(await screen.findByText("Produto Suporte ERP atualizado.")).toHaveRole("status");
     expect(store.changes).toEqual([
       {
-        assistantId: ASSISTANT_ID,
+        productId: PRODUCT_ID,
         body: expect.objectContaining({
           instructions: "Responda com base nas fontes.",
           no_source_message: "",
@@ -454,10 +459,10 @@ describe("AssistantsPage edit", () => {
     );
   });
 
-  it("test_assistants_page_shows_update_error", async () => {
+  it("test_products_page_shows_update_error", async () => {
     const user = userEvent.setup();
-    await renderAssistants();
-    server.use(updateAssistantFails(403, "forbidden"));
+    await renderProducts();
+    server.use(updateProductFails(403, "forbidden"));
     const dialog = await openEdit(user, "Rascunho");
 
     await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
@@ -468,18 +473,18 @@ describe("AssistantsPage edit", () => {
   });
 });
 
-describe("AssistantsPage collections", () => {
+describe("ProductsPage collections", () => {
   const NO_COLLECTION_WARNING =
-    "Nenhuma coleção selecionada: o assistente responderá sempre sem fonte.";
+    "Nenhuma coleção selecionada: o produto responderá sempre sem fonte.";
 
-  it("test_assistants_page_lists_how_many_collections_each_uses", async () => {
+  it("test_products_page_lists_how_many_collections_each_uses", async () => {
     server.use(
-      assistantsAs([
-        makeAssistant({ collection_ids: [COLLECTION_ID, OTHER_COLLECTION_ID] }),
-        makeAssistant({ id: OTHER_ASSISTANT_ID, name: "Rascunho", collection_ids: [] }),
+      productsAs([
+        makeProduct({ collection_ids: [COLLECTION_ID, OTHER_COLLECTION_ID] }),
+        makeProduct({ id: OTHER_PRODUCT_ID, name: "Rascunho", collection_ids: [] }),
       ]),
     );
-    await renderAssistants();
+    await renderProducts();
 
     const header = screen.getByRole("columnheader", { name: "Coleções" });
     expect(header).toBeInTheDocument();
@@ -487,11 +492,11 @@ describe("AssistantsPage collections", () => {
     expect(within(rowOf("Rascunho")).getByText("Nenhuma (sem fonte)")).toBeInTheDocument();
   });
 
-  it("test_assistants_page_edit_replaces_the_collection_set", async () => {
+  it("test_products_page_edit_replaces_the_collection_set", async () => {
     const user = userEvent.setup();
-    const store = assistantStore();
+    const store = productStore();
     server.use(...store.handlers);
-    await renderAssistants();
+    await renderProducts();
     const dialog = await openEdit(user, "Suporte ERP");
 
     const erp = await within(dialog).findByRole("checkbox", { name: "Código ERP" });
@@ -505,10 +510,10 @@ describe("AssistantsPage collections", () => {
     await user.click(manuals);
     await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
 
-    expect(await screen.findByText("Assistente Suporte ERP atualizado.")).toHaveRole("status");
+    expect(await screen.findByText("Produto Suporte ERP atualizado.")).toHaveRole("status");
     expect(store.changes).toEqual([
       {
-        assistantId: ASSISTANT_ID,
+        productId: PRODUCT_ID,
         body: expect.objectContaining({
           collection_ids: [OTHER_COLLECTION_ID],
           min_similarity: 0.35,
@@ -517,28 +522,28 @@ describe("AssistantsPage collections", () => {
     ]);
   });
 
-  it("test_assistants_page_can_save_without_collections", async () => {
+  it("test_products_page_can_save_without_collections", async () => {
     const user = userEvent.setup();
-    const store = assistantStore();
+    const store = productStore();
     server.use(...store.handlers);
-    await renderAssistants();
+    await renderProducts();
     const dialog = await openEdit(user, "Suporte ERP");
 
     await user.click(await within(dialog).findByRole("checkbox", { name: "Código ERP" }));
     await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
 
-    expect(await screen.findByText("Assistente Suporte ERP atualizado.")).toHaveRole("status");
+    expect(await screen.findByText("Produto Suporte ERP atualizado.")).toHaveRole("status");
     expect(store.changes[0]?.body.collection_ids).toEqual([]);
     await waitFor(() => {
       expect(within(rowOf("Suporte ERP")).getByText("Nenhuma (sem fonte)")).toBeInTheDocument();
     });
   });
 
-  it("test_assistants_page_validates_min_similarity", async () => {
+  it("test_products_page_validates_min_similarity", async () => {
     const user = userEvent.setup();
-    const store = assistantStore();
+    const store = productStore();
     server.use(...store.handlers);
-    await renderAssistants();
+    await renderProducts();
     const dialog = await openEdit(user, "Suporte ERP");
     const minSimilarity = within(dialog).getByLabelText("Similaridade mínima");
 
@@ -550,10 +555,10 @@ describe("AssistantsPage collections", () => {
     expect(store.changes).toEqual([]);
   });
 
-  it("test_assistants_page_shows_collection_invalid_error", async () => {
+  it("test_products_page_shows_collection_invalid_error", async () => {
     const user = userEvent.setup();
-    await renderAssistants();
-    server.use(updateAssistantFails(422, "assistant_collection_invalid"));
+    await renderProducts();
+    server.use(updateProductFails(422, "product_collection_invalid"));
     const dialog = await openEdit(user, "Suporte ERP");
 
     await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
@@ -563,10 +568,10 @@ describe("AssistantsPage collections", () => {
     );
   });
 
-  it("test_assistants_page_without_collections_points_to_collections", async () => {
+  it("test_products_page_without_collections_points_to_collections", async () => {
     const user = userEvent.setup();
     server.use(...collectionsAs([]));
-    await renderAssistants();
+    await renderProducts();
     const dialog = await openCreate(user);
 
     expect(
@@ -579,10 +584,10 @@ describe("AssistantsPage collections", () => {
     expect(within(dialog).getByText(NO_COLLECTION_WARNING)).toBeVisible();
   });
 
-  it("test_assistants_page_retries_loading_collections", async () => {
+  it("test_products_page_retries_loading_collections", async () => {
     const user = userEvent.setup();
     server.use(collectionsServerError);
-    await renderAssistants();
+    await renderProducts();
     const dialog = await openCreate(user);
 
     expect(await within(dialog).findByText("Não foi possível carregar as coleções.")).toHaveRole(
@@ -595,33 +600,33 @@ describe("AssistantsPage collections", () => {
   });
 });
 
-describe("AssistantsPage delete", () => {
-  it("test_assistants_page_delete_warns_about_conversations", async () => {
+describe("ProductsPage delete", () => {
+  it("test_products_page_delete_warns_about_conversations", async () => {
     const user = userEvent.setup();
-    const store = assistantStore();
+    const store = productStore();
     server.use(...store.handlers);
-    await renderAssistants();
+    await renderProducts();
 
     await user.click(screen.getByRole("button", { name: "Excluir Rascunho" }));
     const dialog = await screen.findByRole("alertdialog", {
-      name: "Excluir o assistente Rascunho?",
+      name: "Excluir o produto Rascunho?",
     });
     expect(dialog).toHaveAccessibleDescription(
-      "As conversas deste assistente também serão excluídas, sem volta. Para manter o histórico, desative o assistente em vez de excluí-lo.",
+      "As conversas deste produto e os níveis dos membros nele também serão excluídos, sem volta. Para manter o histórico, desative o produto em vez de excluí-lo.",
     );
     await user.click(within(dialog).getByRole("button", { name: "Excluir" }));
 
-    expect(await screen.findByText("O assistente Rascunho foi excluído.")).toHaveRole("status");
-    expect(store.deleted).toEqual([OTHER_ASSISTANT_ID]);
+    expect(await screen.findByText("O produto Rascunho foi excluído.")).toHaveRole("status");
+    expect(store.deleted).toEqual([OTHER_PRODUCT_ID]);
     await waitFor(() => {
       expect(screen.queryByRole("button", { name: "Excluir Rascunho" })).not.toBeInTheDocument();
     });
   });
 
-  it("test_assistants_page_shows_delete_error", async () => {
+  it("test_products_page_shows_delete_error", async () => {
     const user = userEvent.setup();
-    await renderAssistants();
-    server.use(deleteAssistantFails(404, "not_found"));
+    await renderProducts();
+    server.use(deleteProductFails(404, "not_found"));
 
     await user.click(screen.getByRole("button", { name: "Excluir Suporte ERP" }));
     await user.click(

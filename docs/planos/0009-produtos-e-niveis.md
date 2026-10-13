@@ -46,7 +46,7 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-13
         concluida_em: 2026-10-13
-        commit: null
+        commit: 768d1e6
       - id: F2.3
         titulo: Cards de desenvolvimento por push (tipo card na API de entrada, conector interno e citação)
         status: concluida
@@ -67,10 +67,10 @@ fases:
     subfases:
       - id: F3.1
         titulo: Produtos no lugar de Assistentes e a configuração dos níveis nas Configurações
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-13
+        concluida_em: 2026-10-13
         commit: null
       - id: F3.2
         titulo: Nível por produto em Membros e convites, e nível mínimo nas fontes
@@ -230,6 +230,13 @@ decisoes:
     decisao: "F2.2: conversa criada com product_id e level opcional (sem level = máximo de quem cria); a cada pergunta, antes do embedding: produto ativo (409 product_inactive), nível até o máximo atual (403 level_not_allowed) e nível configurado (409 level_not_configured); filtro de chunks.min_level no SQL dos dois braços sem statement a mais; prompt = instruções do nível (ou padrão) + texto do produto + regras fixas, com credencial, modelo e temperatura do nível; citação knowledge em end_user com evidence null; lote grava documents/chunks.min_level (código em pasta = product_dev, inferido = support, seção de evidências sempre trecho próprio support); só owner/admin muda o nível mínimo da fonte (recalcula trechos sem reindexar, auditado); uso com group_by product e level; checklist provider, collection, source, levels, product, chat; migração 0019 remove credential_id, model e temperature de products; pacote assistants/ removido (F2.4 troca os imports transitórios Product as Assistant)"
     motivo: "contrato da F1.1; garantia de nível no banco"
     alternativas: "filtro depois da busca; manter assistants/"
+    adr: null
+  - id: D19
+    data: 2026-10-13
+    por: agente
+    decisao: "F3.1: área Produtos no lugar de Assistentes (redireciona /assistants), seção Níveis de resposta nas Configurações salva por PATCH .../levels/{level} com todos os campos; instruções iguais ao texto padrão vão como nulo; sugestões de modelo fixas a partir dos preços conhecidos; checklist com levels e product sem o apelido assistant (a API já manda as chaves novas desde a F2.2); E2E da stack ainda vai a /assistants e é refeito na F4.1"
+    motivo: "contrato gerado é PATCH por nível"
+    alternativas: "PUT de todos os níveis; manter o apelido assistant"
     adr: null
 pendencias_usuario: []
 ---
@@ -488,6 +495,7 @@ Nenhuma.
 - 2026-10-13 — F2.3 concluída: cards de desenvolvimento por push (API e upload), conector interno cards, Markdown e chunking do card e citação kind card, integrados sobre a F2.1; backend 2621 passed com 99% de cobertura, frontend 1438
 - 2026-10-13 — F2.2 iniciada (agente em worktree).
 - 2026-10-13 — F2.2 concluída: chat por produto e nível com filtro de nível mínimo no SQL da busca (teste prova que trecho acima do nível nunca chega ao LLM), modelo, temperatura e instruções do nível, ingestão gravando o nível, nível mínimo da fonte editável, uso por produto e nível e migração 0019; gates do agente: backend 2676 passed com 99,88%, frontend 1440; orquestrador: ruff, pyright e AGENTS na integração
+- 2026-10-13 — F3.1 concluída: telas de Produtos e Níveis de resposta, checklist com níveis; integrada sobre a F2.2; frontend 1466 passed, 98,62% branches
 
 ## 8. Encerramento
 

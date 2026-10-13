@@ -1,5 +1,4 @@
 import {
-  Bot,
   Building2,
   ChartColumn,
   Cable,
@@ -11,6 +10,7 @@ import {
   Library,
   MessageSquare,
   MessagesSquare,
+  Package,
   ScrollText,
   Server,
   Settings,
@@ -29,7 +29,7 @@ export type WorkspaceArea =
   | "chat"
   | "conversations"
   | "usage"
-  | "assistants"
+  | "products"
   | "providers"
   | "sources"
   | "runners"
@@ -64,7 +64,7 @@ export const WORKSPACE_AREAS: readonly WorkspaceAreaDefinition[] = [
   { key: "chat", path: "chat", minRole: "viewer", icon: MessageSquare },
   { key: "conversations", path: "conversations", minRole: "admin", icon: MessagesSquare },
   { key: "usage", path: "usage", minRole: "admin", icon: ChartColumn },
-  { key: "assistants", path: "assistants", minRole: "editor", icon: Bot },
+  { key: "products", path: "products", minRole: "editor", icon: Package },
   { key: "providers", path: "providers", minRole: "editor", icon: Cpu },
   { key: "sources", path: "sources", minRole: "viewer", icon: Database },
   { key: "runners", path: "runners", minRole: "admin", icon: Server },

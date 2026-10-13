@@ -9,7 +9,7 @@ import type {
   TicketUploadReport,
 } from "@/lib/api/tickets";
 
-import { ASSISTANT_ID, CONVERSATION_ID, makeCitation, makeSource, messageId } from "./factories";
+import { PRODUCT_ID, CONVERSATION_ID, makeCitation, makeSource, messageId } from "./factories";
 
 /** Synthetic data of the tickets source "suporte" (plan 0005); nothing comes from a real system. */
 export const TICKETS_SOURCE_ID = "00000000-0000-4000-8000-0000000001b4";
@@ -153,7 +153,7 @@ export function makeTicketRequest(overrides: Partial<TicketRequest> = {}): Ticke
     id: TICKET_REQUEST_ID,
     conversation_id: CONVERSATION_ID,
     message_id: messageId(2),
-    assistant_id: ASSISTANT_ID,
+    assistant_id: PRODUCT_ID,
     status: "pending",
     attempts: 0,
     external_ticket_id: null,

@@ -2,11 +2,10 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 
 import type { Role } from "@/lib/api/auth";
-import type { ChecklistItem } from "@/lib/api/dashboard";
-import { pendingSteps } from "@/lib/firstSteps";
+import { pendingSteps, type StepItem } from "@/lib/firstSteps";
 
 interface FirstStepsProps {
-  checklist: readonly ChecklistItem[];
+  checklist: readonly StepItem[];
   workspaceId: string;
   role: Role;
 }

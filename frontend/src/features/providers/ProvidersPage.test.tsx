@@ -572,7 +572,7 @@ describe("ProvidersPage delete", () => {
     );
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Este provedor é usado por um assistente. Troque o provedor do assistente ou exclua-o antes.",
+      "Esta credencial está em uso por uma coleção ou por um nível de resposta. Troque a credencial onde ela é usada antes de excluí-la.",
     );
     expect(store.deleted).toEqual([]);
     expect(rowOf("OpenAI Produção")).toBeInTheDocument();

@@ -1,9 +1,11 @@
 import type { InstanceDashboard, InstanceHealth, ServiceCheck } from "@/lib/api/adminDashboard";
-import type { ChecklistKey, WorkspaceDashboard } from "@/lib/api/dashboard";
+import type { WorkspaceDashboard } from "@/lib/api/dashboard";
+import type { StepKey } from "@/lib/firstSteps";
 
 import { OTHER_WORKSPACE_ID, RUN_ID, SOURCE_ID, WORKSPACE_ID } from "./factories";
 
-const CHECKLIST_KEYS: readonly ChecklistKey[] = [
+/** The checklist of `docs/specs/uso-e-custos.md` v0.3, in the API order. */
+const CHECKLIST_KEYS: readonly StepKey[] = [
   "provider",
   "collection",
   "source",
@@ -13,7 +15,7 @@ const CHECKLIST_KEYS: readonly ChecklistKey[] = [
 ];
 
 /** The six checklist items in the API order, done when their key is in `done`. */
-export function makeChecklist(done: readonly ChecklistKey[] = []): WorkspaceDashboard["checklist"] {
+export function makeChecklist(done: readonly StepKey[] = []): WorkspaceDashboard["checklist"] {
   return CHECKLIST_KEYS.map((key) => ({ key, done: done.includes(key) }));
 }
 

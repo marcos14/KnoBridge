@@ -5,28 +5,28 @@ import { fetchAllPages } from "./pages";
 import type { components, operations } from "./schema.gen";
 
 /*
- * Transitional (plan 0009): assistants became products in the API (`/products`, same ids). The
- * screens still speak of assistants until the Products screen replaces them, so this module keeps
- * its names over the product routes and types.
+ * Products (plan 0009, `docs/specs/produtos-e-niveis.md`): the systems people ask about, which
+ * replaced the assistants with the same ids. The model, credential and temperature are the
+ * workspace levels' (`levels.ts`), not the product's.
  */
-export type Assistant = components["schemas"]["ProductOut"];
-export type AssistantTone = components["schemas"]["ProductTone"];
-export type AssistantInput = components["schemas"]["ProductCreate"];
-export type AssistantChanges = components["schemas"]["ProductUpdate"];
+export type Product = components["schemas"]["ProductOut"];
+export type ProductTone = components["schemas"]["ProductTone"];
+export type ProductInput = components["schemas"]["ProductCreate"];
+export type ProductChanges = components["schemas"]["ProductUpdate"];
 export type TicketWebhookSecret = components["schemas"]["TicketWebhookSecretOut"];
 export type TicketWebhookTest = components["schemas"]["TicketWebhookTestOut"];
 
-export function assistantsQueryKey(workspaceId: string) {
-  return ["api", "workspaces", workspaceId, "assistants"] as const;
+export function productsQueryKey(workspaceId: string) {
+  return ["api", "workspaces", workspaceId, "products"] as const;
 }
 
 /**
- * Every assistant of the workspace, ordered by name (viewers get only the active ones). A
+ * Every product of the workspace, ordered by name (viewers get only the active ones). A
  * workspace has a handful: the screens page them locally.
  */
-export function useAssistants(workspaceId: string) {
+export function useProducts(workspaceId: string) {
   return useQuery({
-    queryKey: assistantsQueryKey(workspaceId),
+    queryKey: productsQueryKey(workspaceId),
     queryFn: ({ signal }) =>
       fetchAllPages(async (query) =>
         unwrap(
@@ -40,17 +40,17 @@ export function useAssistants(workspaceId: string) {
 }
 
 /** Search, filters, sort and page of `GET /v1/workspaces/{workspace_id}/products` (`docs/specs`, "Listagens"). */
-export type AssistantListQuery = NonNullable<
+export type ProductListQuery = NonNullable<
   operations["list_products_v1_workspaces__workspace_id__products_get"]["parameters"]["query"]
 >;
 
 /**
- * One page of the assistant list as the screen asks for it (search by name, status, provider, collection, sort). The previous page stays on screen while the next one loads; mutations reload it (same key
+ * One page of the product list as the screen asks for it (search by name or description, status, collection, sort). The previous page stays on screen while the next one loads; mutations reload it (same key
  * prefix as the full list).
  */
-export function useAssistantPage(workspaceId: string, query: AssistantListQuery) {
+export function useProductPage(workspaceId: string, query: ProductListQuery) {
   return useQuery({
-    queryKey: [...assistantsQueryKey(workspaceId), "page", query],
+    queryKey: [...productsQueryKey(workspaceId), "page", query],
     queryFn: async ({ signal }) =>
       unwrap(
         await apiClient.GET("/v1/workspaces/{workspace_id}/products", {
@@ -62,22 +62,22 @@ export function useAssistantPage(workspaceId: string, query: AssistantListQuery)
   });
 }
 
-function useRefreshAssistants(workspaceId: string) {
+function useRefreshProducts(workspaceId: string) {
   const queryClient = useQueryClient();
-  return () => queryClient.invalidateQueries({ queryKey: assistantsQueryKey(workspaceId) });
+  return () => queryClient.invalidateQueries({ queryKey: productsQueryKey(workspaceId) });
 }
 
 /**
- * `POST .../products/{product_id}/duplicate` (201, editor or above): a new assistant with the
+ * `POST .../products/{product_id}/duplicate` (201, editor or above): a new product with the
  * original's configuration, named "<nome> (cópia)" by the API. The webhook secret is not copied.
  */
-export function useDuplicateAssistant(workspaceId: string) {
-  const refresh = useRefreshAssistants(workspaceId);
+export function useDuplicateProduct(workspaceId: string) {
+  const refresh = useRefreshProducts(workspaceId);
   return useMutation({
-    mutationFn: async (assistantId: string) =>
+    mutationFn: async (productId: string) =>
       unwrap(
         await apiClient.POST("/v1/workspaces/{workspace_id}/products/{product_id}/duplicate", {
-          params: { path: { workspace_id: workspaceId, product_id: assistantId } },
+          params: { path: { workspace_id: workspaceId, product_id: productId } },
           body: {},
         }),
       ),
@@ -89,10 +89,10 @@ export function useDuplicateAssistant(workspaceId: string) {
  * `POST /v1/workspaces/{id}/products` (201). 409 `product_name_taken` or, while no level of the
  * workspace has a model, `level_not_configured`; 422 `product_name_invalid`.
  */
-export function useCreateAssistant(workspaceId: string) {
-  const refresh = useRefreshAssistants(workspaceId);
+export function useCreateProduct(workspaceId: string) {
+  const refresh = useRefreshProducts(workspaceId);
   return useMutation({
-    mutationFn: async (body: AssistantInput) =>
+    mutationFn: async (body: ProductInput) =>
       unwrap(
         await apiClient.POST("/v1/workspaces/{workspace_id}/products", {
           params: { path: { workspace_id: workspaceId } },
@@ -103,22 +103,22 @@ export function useCreateAssistant(workspaceId: string) {
   });
 }
 
-export interface AssistantUpdate {
-  assistantId: string;
-  changes: AssistantChanges;
+export interface ProductUpdate {
+  productId: string;
+  changes: ProductChanges;
 }
 
 /**
  * `PATCH /v1/workspaces/{id}/products/{product_id}`; an empty `no_source_message` restores
  * the default message.
  */
-export function useUpdateAssistant(workspaceId: string) {
-  const refresh = useRefreshAssistants(workspaceId);
+export function useUpdateProduct(workspaceId: string) {
+  const refresh = useRefreshProducts(workspaceId);
   return useMutation({
-    mutationFn: async ({ assistantId, changes }: AssistantUpdate) =>
+    mutationFn: async ({ productId, changes }: ProductUpdate) =>
       unwrap(
         await apiClient.PATCH("/v1/workspaces/{workspace_id}/products/{product_id}", {
-          params: { path: { workspace_id: workspaceId, product_id: assistantId } },
+          params: { path: { workspace_id: workspaceId, product_id: productId } },
           body: changes,
         }),
       ),
@@ -132,13 +132,13 @@ export function useUpdateAssistant(workspaceId: string) {
  * comes only in this answer; the list is reloaded for `ticket_webhook_configured` and the date.
  */
 export function useRotateTicketWebhookSecret(workspaceId: string) {
-  const refresh = useRefreshAssistants(workspaceId);
+  const refresh = useRefreshProducts(workspaceId);
   return useMutation({
-    mutationFn: async (assistantId: string) =>
+    mutationFn: async (productId: string) =>
       unwrap(
         await apiClient.POST(
           "/v1/workspaces/{workspace_id}/products/{product_id}/ticket-webhook/secret",
-          { params: { path: { workspace_id: workspaceId, product_id: assistantId } } },
+          { params: { path: { workspace_id: workspaceId, product_id: productId } } },
         ),
       ),
     onSuccess: refresh,
@@ -152,27 +152,27 @@ export function useRotateTicketWebhookSecret(workspaceId: string) {
  */
 export function useTestTicketWebhook(workspaceId: string) {
   return useMutation({
-    mutationFn: async (assistantId: string) =>
+    mutationFn: async (productId: string) =>
       unwrap(
         await apiClient.POST(
           "/v1/workspaces/{workspace_id}/products/{product_id}/ticket-webhook/test",
-          { params: { path: { workspace_id: workspaceId, product_id: assistantId } } },
+          { params: { path: { workspace_id: workspaceId, product_id: productId } } },
         ),
       ),
   });
 }
 
 /**
- * `DELETE /v1/workspaces/{id}/products/{product_id}` (204). The assistant's conversations go
+ * `DELETE /v1/workspaces/{id}/products/{product_id}` (204). The product's conversations go
  * with it; deactivating keeps them.
  */
-export function useDeleteAssistant(workspaceId: string) {
-  const refresh = useRefreshAssistants(workspaceId);
+export function useDeleteProduct(workspaceId: string) {
+  const refresh = useRefreshProducts(workspaceId);
   return useMutation({
-    mutationFn: async (assistantId: string) => {
+    mutationFn: async (productId: string) => {
       unwrap(
         await apiClient.DELETE("/v1/workspaces/{workspace_id}/products/{product_id}", {
-          params: { path: { workspace_id: workspaceId, product_id: assistantId } },
+          params: { path: { workspace_id: workspaceId, product_id: productId } },
         }),
       );
     },

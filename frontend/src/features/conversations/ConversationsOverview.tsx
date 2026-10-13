@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router";
 
 import { DataTable, type DataTableColumn } from "@/components/DataTable";
 import { Button } from "@/components/ui/button";
-import { useAssistants } from "@/lib/api/assistants";
+import { useProducts } from "@/lib/api/products";
 import { useMembers } from "@/lib/api/members";
 import {
   useConversationStats,
@@ -36,7 +36,7 @@ export function ConversationsOverview({ workspaceId }: { workspaceId: string }) 
   );
   const stats = useConversationStats(workspaceId, toCreationPeriod(search.filters));
   // Both fill the filters; while they load, a filter from a shared link shows its id.
-  const assistants = useAssistants(workspaceId);
+  const assistants = useProducts(workspaceId);
   const members = useMembers(workspaceId);
 
   const columns: DataTableColumn<WorkspaceConversation>[] = [

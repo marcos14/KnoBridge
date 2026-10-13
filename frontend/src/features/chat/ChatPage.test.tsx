@@ -5,10 +5,10 @@ import { describe, expect, it } from "vitest";
 
 import type { Role } from "@/lib/api/auth";
 import {
-  ASSISTANT_ID,
+  PRODUCT_ID,
   CONVERSATION_ID,
-  makeAssistant,
-  makeAssistants,
+  makeProduct,
+  makeProducts,
   makeCitation,
   makeConversation,
   makeConversationDetail,
@@ -18,15 +18,15 @@ import {
   makeThread,
   makeWorkspace,
   messageId,
-  OTHER_ASSISTANT_ID,
+  OTHER_PRODUCT_ID,
   OTHER_CONVERSATION_ID,
   WORKSPACE_ID,
 } from "@/test/factories";
 import {
   answerFrames,
   apiErrorResponse,
-  assistantsAs,
-  assistantsServerError,
+  productsAs,
+  productsServerError,
   chatStore,
   controlledStream,
   conversationServerError,
@@ -71,7 +71,7 @@ describe("ChatPage", () => {
     asRole("viewer");
     useStore();
     // The API lists only active assistants to viewers.
-    server.use(assistantsAs([makeAssistant()]));
+    server.use(productsAs([makeProduct()]));
     await openChat();
 
     const list = screen.getByRole("navigation", { name: "Suas conversas" });
@@ -101,7 +101,7 @@ describe("ChatPage", () => {
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(`${CHAT}/${NEW_CONVERSATION_ID}`);
     });
-    expect(store.created).toEqual([makeAssistant().id]);
+    expect(store.created).toEqual([makeProduct().id]);
     expect(await screen.findByText("O assistente está respondendo…")).toBeVisible();
     expect(screen.getByRole("button", { name: "Parar" })).toBeVisible();
     const [citations, first, second, done] = answerFrames({
@@ -175,7 +175,7 @@ describe("ChatPage", () => {
         firstRead = true;
         const untitled = makeConversation({
           id: NEW_CONVERSATION_ID,
-          product_id: ASSISTANT_ID,
+          product_id: PRODUCT_ID,
           title: null,
         });
         await held;
@@ -211,9 +211,9 @@ describe("ChatPage", () => {
     asRole("editor");
     const store = useStore();
     server.use(
-      assistantsAs([
-        ...makeAssistants(),
-        makeAssistant({ id: OTHER_ASSISTANT_ID, name: "Fiscal", description: "" }),
+      productsAs([
+        ...makeProducts(),
+        makeProduct({ id: OTHER_PRODUCT_ID, name: "Fiscal", description: "" }),
       ]),
     );
     const { user } = await openChat();
@@ -225,7 +225,7 @@ describe("ChatPage", () => {
     await user.type(composer(), "Nota?{Enter}");
 
     await waitFor(() => {
-      expect(store.created).toEqual([OTHER_ASSISTANT_ID]);
+      expect(store.created).toEqual([OTHER_PRODUCT_ID]);
     });
   });
 
@@ -338,9 +338,9 @@ describe("ChatPage", () => {
   it("test_chat_hints_when_the_chosen_assistant_has_no_collection", async () => {
     useStore();
     server.use(
-      assistantsAs([
-        makeAssistant(),
-        makeAssistant({ id: OTHER_ASSISTANT_ID, name: "Fiscal", collection_ids: [] }),
+      productsAs([
+        makeProduct(),
+        makeProduct({ id: OTHER_PRODUCT_ID, name: "Fiscal", collection_ids: [] }),
       ]),
     );
     const { user } = await openChat();
@@ -355,7 +355,7 @@ describe("ChatPage", () => {
 
   it("test_chat_conversation_hints_when_its_assistant_has_no_collection", async () => {
     useStore();
-    server.use(assistantsAs([makeAssistant({ collection_ids: [] })]));
+    server.use(productsAs([makeProduct({ collection_ids: [] })]));
     await openChat(`${CHAT}/${CONVERSATION_ID}`);
 
     expect(await screen.findByText(NO_COLLECTIONS_HINT)).toBeVisible();
@@ -657,7 +657,7 @@ describe("ChatPage", () => {
   it("test_chat_without_active_assistant_guides_the_member", async () => {
     asRole("viewer");
     useStore();
-    server.use(assistantsAs([]));
+    server.use(productsAs([]));
     await openChat();
 
     expect(
@@ -670,7 +670,7 @@ describe("ChatPage", () => {
   it("test_chat_without_active_assistant_links_managers_to_assistants", async () => {
     asRole("editor");
     useStore();
-    server.use(assistantsAs([makeAssistant({ active: false })]));
+    server.use(productsAs([makeProduct({ active: false })]));
     await openChat();
 
     expect(await screen.findByRole("link", { name: "Configurar assistentes" })).toHaveAttribute(
@@ -680,13 +680,13 @@ describe("ChatPage", () => {
   });
 
   it("test_chat_load_failures_offer_retry", async () => {
-    server.use(conversationsServerError, assistantsServerError);
+    server.use(conversationsServerError, productsServerError);
     const { user } = await openChat();
 
     expect(await screen.findByText("Não foi possível carregar as conversas.")).toBeVisible();
     expect(await screen.findByText("Não foi possível carregar os assistentes.")).toBeVisible();
     useStore();
-    server.use(assistantsAs());
+    server.use(productsAs());
     for (const button of screen.getAllByRole("button", { name: "Tentar de novo" })) {
       await user.click(button);
     }

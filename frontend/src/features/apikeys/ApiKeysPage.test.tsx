@@ -12,11 +12,11 @@ import {
   SCOPED_API_KEY_ID,
 } from "@/test/apiKeyFactories";
 import {
-  ASSISTANT_ID,
-  makeAssistant,
+  PRODUCT_ID,
+  makeProduct,
   makeMe,
   makeWorkspace,
-  OTHER_ASSISTANT_ID,
+  OTHER_PRODUCT_ID,
   OTHER_WORKSPACE_ID,
   WORKSPACE_ID,
 } from "@/test/factories";
@@ -25,8 +25,8 @@ import {
   apiKeysAs,
   apiKeysServerError,
   apiKeyStore,
-  assistantsAs,
-  assistantsServerError,
+  productsAs,
+  productsServerError,
   meAs,
   pendingPost,
 } from "@/test/handlers";
@@ -97,7 +97,7 @@ describe("ApiKeysPage list", () => {
   });
 
   it("test_api_keys_page_scope_without_the_assistants_list_shows_a_count", async () => {
-    server.use(assistantsServerError);
+    server.use(productsServerError);
     await renderApiKeys();
 
     expect(within(rowOf("integracao-erp")).getByText("1 assistente")).toBeInTheDocument();
@@ -232,7 +232,7 @@ describe("ApiKeysPage create", () => {
     await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
 
     expect(await screen.findByRole("dialog", { name: "Chave erp criada" })).toBeInTheDocument();
-    expect(store.created).toEqual([{ name: "erp", assistant_ids: [ASSISTANT_ID] }]);
+    expect(store.created).toEqual([{ name: "erp", assistant_ids: [PRODUCT_ID] }]);
   });
 
   it("test_create_api_key_with_taken_name_shows_the_error", async () => {
@@ -279,7 +279,7 @@ describe("ApiKeysPage create", () => {
 
   it("test_create_api_key_scope_without_assistants", async () => {
     const user = userEvent.setup();
-    server.use(assistantsAs([]));
+    server.use(productsAs([]));
     await renderApiKeys();
 
     const dialog = await openCreate(user);
@@ -313,7 +313,7 @@ describe("ApiKeysPage edit", () => {
     expect(store.changes).toEqual([
       {
         apiKeyId: SCOPED_API_KEY_ID,
-        body: { name: "erp", assistant_ids: [ASSISTANT_ID, OTHER_ASSISTANT_ID] },
+        body: { name: "erp", assistant_ids: [PRODUCT_ID, OTHER_PRODUCT_ID] },
       },
     ]);
     await waitFor(() => {
@@ -369,7 +369,7 @@ describe("ApiKeysPage edit", () => {
 
   it("test_edit_api_key_scope_when_assistants_fail_to_load", async () => {
     const user = userEvent.setup();
-    server.use(assistantsServerError);
+    server.use(productsServerError);
     await renderApiKeys();
 
     const dialog = await openEdit(user, "integracao-erp");
@@ -426,7 +426,7 @@ describe("ApiKeysPage examples", () => {
     expect(within(examples).getByText(/Exemplos com o assistente Suporte ERP/)).toBeInTheDocument();
     const curl = within(examples).getByRole("region", { name: "curl (API REST)" });
     expect(curl).toHaveTextContent(`${window.location.origin}/v1/conversations`);
-    expect(curl).toHaveTextContent(ASSISTANT_ID);
+    expect(curl).toHaveTextContent(PRODUCT_ID);
     const python = within(examples).getByRole("region", {
       name: "Python (SDK oficial da OpenAI)",
     });
@@ -444,7 +444,7 @@ describe("ApiKeysPage examples", () => {
   });
 
   it("test_api_key_examples_without_an_active_assistant_use_placeholders", async () => {
-    server.use(assistantsAs([makeAssistant({ active: false })]));
+    server.use(productsAs([makeProduct({ active: false })]));
     await renderApiKeys();
 
     const examples = screen.getByRole("region", { name: "Como usar" });

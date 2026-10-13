@@ -263,7 +263,7 @@ describe("ticket request in the chat", () => {
     const dialog = await openDialog(user);
 
     expect(await within(dialog).findByRole("alert")).toHaveTextContent(
-      "O webhook de chamados deste assistente não está configurado.",
+      "O webhook de chamados deste produto não está configurado.",
     );
     await user.click(within(dialog).getByRole("button", { name: "Fechar" }));
     await waitFor(() => {

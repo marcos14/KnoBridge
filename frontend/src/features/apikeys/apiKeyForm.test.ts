@@ -2,7 +2,7 @@ import type { TFunction } from "i18next";
 import { describe, expect, it } from "vitest";
 
 import { makeApiKey } from "@/test/apiKeyFactories";
-import { ASSISTANT_ID, OTHER_ASSISTANT_ID } from "@/test/factories";
+import { PRODUCT_ID, OTHER_PRODUCT_ID } from "@/test/factories";
 
 import {
   API_KEY_SCOPE_MAX,
@@ -39,9 +39,7 @@ describe("apiKeyFormSchema", () => {
     expect(issuesOf({ name: "portal", scope: "selected", assistantIds: tooMany })).toEqual([
       "apiKeys.form.validation.tooManyAssistants",
     ]);
-    expect(issuesOf({ name: "portal", scope: "selected", assistantIds: [ASSISTANT_ID] })).toEqual(
-      [],
-    );
+    expect(issuesOf({ name: "portal", scope: "selected", assistantIds: [PRODUCT_ID] })).toEqual([]);
   });
 });
 
@@ -52,34 +50,35 @@ describe("apiKeyFormDefaults", () => {
 
   it("test_api_key_form_defaults_read_the_scope_of_an_existing_key", () => {
     expect(apiKeyFormDefaults(makeApiKey())).toMatchObject({ scope: "all", assistantIds: [] });
-    expect(apiKeyFormDefaults(makeApiKey({ assistant_ids: [ASSISTANT_ID] }))).toEqual({
+    expect(apiKeyFormDefaults(makeApiKey({ assistant_ids: [PRODUCT_ID] }))).toEqual({
       name: "portal-cliente",
       scope: "selected",
-      assistantIds: [ASSISTANT_ID],
+      assistantIds: [PRODUCT_ID],
     });
   });
 });
 
 describe("toApiKeyInput", () => {
   it("test_to_api_key_input_trims_the_name_and_maps_the_scope", () => {
-    expect(toApiKeyInput({ name: " portal ", scope: "all", assistantIds: [ASSISTANT_ID] })).toEqual(
-      { name: "portal", assistant_ids: null },
-    );
+    expect(toApiKeyInput({ name: " portal ", scope: "all", assistantIds: [PRODUCT_ID] })).toEqual({
+      name: "portal",
+      assistant_ids: null,
+    });
     expect(
-      toApiKeyInput({ name: "portal", scope: "selected", assistantIds: [ASSISTANT_ID] }),
-    ).toEqual({ name: "portal", assistant_ids: [ASSISTANT_ID] });
+      toApiKeyInput({ name: "portal", scope: "selected", assistantIds: [PRODUCT_ID] }),
+    ).toEqual({ name: "portal", assistant_ids: [PRODUCT_ID] });
   });
 });
 
 describe("toApiKeyChanges", () => {
-  const scoped = makeApiKey({ assistant_ids: [ASSISTANT_ID, OTHER_ASSISTANT_ID] });
+  const scoped = makeApiKey({ assistant_ids: [PRODUCT_ID, OTHER_PRODUCT_ID] });
 
   it("test_to_api_key_changes_is_null_when_nothing_changed", () => {
     expect(
       toApiKeyChanges(scoped, {
         name: " portal-cliente ",
         scope: "selected",
-        assistantIds: [OTHER_ASSISTANT_ID, ASSISTANT_ID],
+        assistantIds: [OTHER_PRODUCT_ID, PRODUCT_ID],
       }),
     ).toBeNull();
     expect(
@@ -92,23 +91,23 @@ describe("toApiKeyChanges", () => {
       toApiKeyChanges(scoped, {
         name: "portal",
         scope: "selected",
-        assistantIds: [ASSISTANT_ID, OTHER_ASSISTANT_ID],
+        assistantIds: [PRODUCT_ID, OTHER_PRODUCT_ID],
       }),
     ).toEqual({ name: "portal" });
     expect(
       toApiKeyChanges(scoped, {
         name: "portal-cliente",
         scope: "selected",
-        assistantIds: [ASSISTANT_ID],
+        assistantIds: [PRODUCT_ID],
       }),
-    ).toEqual({ assistant_ids: [ASSISTANT_ID] });
+    ).toEqual({ assistant_ids: [PRODUCT_ID] });
     expect(
       toApiKeyChanges(scoped, {
         name: "portal-cliente",
         scope: "selected",
-        assistantIds: [ASSISTANT_ID, "other"],
+        assistantIds: [PRODUCT_ID, "other"],
       }),
-    ).toEqual({ assistant_ids: [ASSISTANT_ID, "other"] });
+    ).toEqual({ assistant_ids: [PRODUCT_ID, "other"] });
     expect(
       toApiKeyChanges(scoped, { name: "portal-cliente", scope: "all", assistantIds: [] }),
     ).toEqual({ assistant_ids: null });
@@ -116,8 +115,8 @@ describe("toApiKeyChanges", () => {
       toApiKeyChanges(makeApiKey(), {
         name: "portal-cliente",
         scope: "selected",
-        assistantIds: [ASSISTANT_ID],
+        assistantIds: [PRODUCT_ID],
       }),
-    ).toEqual({ assistant_ids: [ASSISTANT_ID] });
+    ).toEqual({ assistant_ids: [PRODUCT_ID] });
   });
 });

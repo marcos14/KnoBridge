@@ -1,49 +1,49 @@
 import { http, HttpResponse } from "msw";
 
 import type {
-  Assistant,
-  AssistantChanges,
-  AssistantInput,
+  Product,
+  ProductChanges,
+  ProductInput,
   TicketWebhookSecret,
   TicketWebhookTest,
-} from "@/lib/api/assistants";
+} from "@/lib/api/products";
 
-import { makeAssistant, makeAssistants } from "../factories";
+import { makeProduct, makeProducts } from "../factories";
 import { apiErrorResponse } from "./errors";
 import { listRecorder, page } from "./page";
 
 const ASSISTANTS = "*/v1/workspaces/:workspaceId/products";
-const ASSISTANT = "*/v1/workspaces/:workspaceId/products/:assistantId";
+const ASSISTANT = "*/v1/workspaces/:workspaceId/products/:productId";
 const SECRET = `${ASSISTANT}/ticket-webhook/secret`;
 const TEST = `${ASSISTANT}/ticket-webhook/test`;
 const DUPLICATE = `${ASSISTANT}/duplicate`;
 
 /** Id of the copy `POST .../duplicate` answers by default. */
-export const DUPLICATED_ASSISTANT_ID = "00000000-0000-4000-8000-0000000000f9";
+export const DUPLICATED_PRODUCT_ID = "00000000-0000-4000-8000-0000000000f9";
 
 /**
  * POST .../duplicate answering `copy` (201; default: "Suporte ERP (cópia)"), keeping the id of the
  * original and the JSON body of each request in `requests`.
  */
-export function duplicateAssistantRecorder(
-  copy: Assistant = makeAssistant({ id: DUPLICATED_ASSISTANT_ID, name: "Suporte ERP (cópia)" }),
+export function duplicateProductRecorder(
+  copy: Product = makeProduct({ id: DUPLICATED_PRODUCT_ID, name: "Suporte ERP (cópia)" }),
 ) {
-  const requests: { assistantId: string; body: unknown }[] = [];
+  const requests: { productId: string; body: unknown }[] = [];
   const handler = http.post(DUPLICATE, async ({ params, request }) => {
-    requests.push({ assistantId: String(params.assistantId), body: await request.json() });
-    return HttpResponse.json<Assistant>(copy, { status: 201 });
+    requests.push({ productId: String(params.productId), body: await request.json() });
+    return HttpResponse.json<Product>(copy, { status: 201 });
   });
   return { handler, requests };
 }
 
 /** POST .../duplicate refused with `status` and `code`. */
-export function duplicateAssistantFails(status: number, code: string) {
+export function duplicateProductFails(status: number, code: string) {
   return http.post(DUPLICATE, () => apiErrorResponse(status, code));
 }
 
-/** GET of the assistant list recording each query string; `query` matches the name. */
-export function assistantsRecorder(assistants: Assistant[] = makeAssistants()) {
-  return listRecorder(ASSISTANTS, assistants, (item) => [item.name]);
+/** GET of the product list recording each query string; `query` matches the name. */
+export function productsRecorder(products: Product[] = makeProducts()) {
+  return listRecorder(ASSISTANTS, products, (item) => [item.name]);
 }
 
 /** POST .../ticket-webhook/secret refused with `status` and `code`. */
@@ -58,13 +58,13 @@ function noContent() {
   return new HttpResponse(null, { status: 204 });
 }
 
-/** GET /v1/workspaces/{id}/products listing `assistants` (default: Rascunho and Suporte ERP). */
-export function assistantsAs(assistants: Assistant[] = makeAssistants()) {
-  return http.get(ASSISTANTS, ({ request }) => page(request, assistants));
+/** GET /v1/workspaces/{id}/products listing `products` (default: Rascunho and Suporte ERP). */
+export function productsAs(products: Product[] = makeProducts()) {
+  return http.get(ASSISTANTS, ({ request }) => page(request, products));
 }
 
 /** Drops the fields a PATCH sent as null, which the backend keeps as they are. */
-function definedChanges(body: AssistantChanges): Partial<Assistant> {
+function definedChanges(body: ProductChanges): Partial<Product> {
   return Object.fromEntries(Object.entries(body).filter(([, value]) => value !== null));
 }
 
@@ -79,7 +79,7 @@ function storedNoSourceMessage(message: string | null | undefined): string {
 export const DEFAULT_MIN_SIMILARITY = 0.35;
 
 /** What the backend stores for a `POST` body: its defaults for the omitted fields. */
-function storedInput(body: AssistantInput): Partial<Assistant> {
+function storedInput(body: ProductInput): Partial<Product> {
   return {
     ...body,
     collection_ids: body.collection_ids ?? [],
@@ -90,11 +90,11 @@ function storedInput(body: AssistantInput): Partial<Assistant> {
 }
 
 /** `ticket_webhook_configured` as the backend computes it: URL and secret. */
-function withWebhookState(assistant: Assistant): Assistant {
+function withWebhookState(product: Product): Product {
   return {
-    ...assistant,
+    ...product,
     ticket_webhook_configured:
-      assistant.ticket_webhook_url !== null && assistant.ticket_webhook_secret_created_at !== null,
+      product.ticket_webhook_url !== null && product.ticket_webhook_secret_created_at !== null,
   };
 }
 
@@ -114,42 +114,42 @@ export function makeWebhookTest(overrides: Partial<TicketWebhookTest> = {}): Tic
   };
 }
 
-interface AssistantStoreOptions {
+interface ProductStoreOptions {
   /** Answer of "Testar entrega" (default: accepted with 204), or a JSON error. */
   webhookTest?: TicketWebhookTest | Response;
 }
 
 /**
- * Assistants that really change: `POST` adds one (409 `assistant_name_taken` for a name in use),
+ * Products that really change: `POST` adds one (409 `assistant_name_taken` for a name in use),
  * `PATCH` applies the given fields (`ticket_webhook_url: null` turns the webhook off) and `DELETE`
  * removes it. An empty `no_source_message` stores `DEFAULT_NO_SOURCE_MESSAGE`. The webhook secret
  * is "generated" as `WEBHOOK_SECRET` and the test answers `options.webhookTest`.
  * `created`, `changes`, `deleted`, `secretRotations` and `webhookTests` keep what was asked.
  */
-export function assistantStore(
-  initial: Assistant[] = makeAssistants(),
-  options: AssistantStoreOptions = {},
+export function productStore(
+  initial: Product[] = makeProducts(),
+  options: ProductStoreOptions = {},
 ) {
-  let assistants = [...initial];
-  const created: AssistantInput[] = [];
-  const changes: { assistantId: string; body: AssistantChanges }[] = [];
+  let products = [...initial];
+  const created: ProductInput[] = [];
+  const changes: { productId: string; body: ProductChanges }[] = [];
   const deleted: string[] = [];
   const secretRotations: string[] = [];
   const webhookTests: string[] = [];
-  const find = (id: string) => assistants.find((item) => item.id === id);
-  const replace = (updated: Assistant) => {
-    assistants = assistants.map((item) => (item.id === updated.id ? updated : item));
+  const find = (id: string) => products.find((item) => item.id === id);
+  const replace = (updated: Product) => {
+    products = products.map((item) => (item.id === updated.id ? updated : item));
   };
   const handlers = [
     http.post(SECRET, ({ params }) => {
-      const assistant = find(String(params.assistantId));
-      if (assistant === undefined) {
+      const product = find(String(params.productId));
+      if (product === undefined) {
         return apiErrorResponse(404, "not_found");
       }
-      secretRotations.push(assistant.id);
+      secretRotations.push(product.id);
       replace(
         withWebhookState({
-          ...assistant,
+          ...product,
           ticket_webhook_secret_created_at: WEBHOOK_SECRET_CREATED_AT,
         }),
       );
@@ -159,54 +159,54 @@ export function assistantStore(
       );
     }),
     http.post(TEST, ({ params }) => {
-      webhookTests.push(String(params.assistantId));
+      webhookTests.push(String(params.productId));
       const answer = options.webhookTest ?? makeWebhookTest();
       return answer instanceof Response ? answer : HttpResponse.json<TicketWebhookTest>(answer);
     }),
-    http.get(ASSISTANTS, ({ request }) => page(request, assistants)),
+    http.get(ASSISTANTS, ({ request }) => page(request, products)),
     http.post(ASSISTANTS, async ({ request }) => {
-      const body = (await request.json()) as AssistantInput;
-      if (assistants.some((item) => item.name === body.name)) {
+      const body = (await request.json()) as ProductInput;
+      if (products.some((item) => item.name === body.name)) {
         return apiErrorResponse(409, "product_name_taken");
       }
-      const assistant = makeAssistant({
+      const product = makeProduct({
         ...storedInput(body),
         id: `00000000-0000-4000-8000-${String(970 + created.length).padStart(12, "0")}`,
       });
-      assistants = [...assistants, assistant].sort((a, b) => a.name.localeCompare(b.name));
+      products = [...products, product].sort((a, b) => a.name.localeCompare(b.name));
       created.push(body);
-      return HttpResponse.json<Assistant>(assistant, { status: 201 });
+      return HttpResponse.json<Product>(product, { status: 201 });
     }),
     http.patch(ASSISTANT, async ({ params, request }) => {
-      const assistantId = String(params.assistantId);
-      const body = (await request.json()) as AssistantChanges;
-      const assistant = find(assistantId);
-      if (assistant === undefined) {
+      const productId = String(params.productId);
+      const body = (await request.json()) as ProductChanges;
+      const product = find(productId);
+      if (product === undefined) {
         return apiErrorResponse(404, "not_found");
       }
       const updated = withWebhookState({
-        ...assistant,
+        ...product,
         ...definedChanges(body),
         no_source_message:
           body.no_source_message === undefined
-            ? assistant.no_source_message
+            ? product.no_source_message
             : storedNoSourceMessage(body.no_source_message),
         ticket_webhook_url:
           body.ticket_webhook_url === undefined
-            ? assistant.ticket_webhook_url
+            ? product.ticket_webhook_url
             : body.ticket_webhook_url,
       });
       replace(updated);
-      changes.push({ assistantId, body });
-      return HttpResponse.json<Assistant>(updated);
+      changes.push({ productId, body });
+      return HttpResponse.json<Product>(updated);
     }),
     http.delete(ASSISTANT, ({ params }) => {
-      const assistantId = String(params.assistantId);
-      if (find(assistantId) === undefined) {
+      const productId = String(params.productId);
+      if (find(productId) === undefined) {
         return apiErrorResponse(404, "not_found");
       }
-      assistants = assistants.filter((item) => item.id !== assistantId);
-      deleted.push(assistantId);
+      products = products.filter((item) => item.id !== productId);
+      deleted.push(productId);
       return noContent();
     }),
   ];
@@ -214,46 +214,46 @@ export function assistantStore(
 }
 
 /** GET /v1/workspaces/{id}/products with the default list. */
-export const assistantsOk = assistantsAs();
+export const productsOk = productsAs();
 
 /** GET /v1/workspaces/{id}/products failing on the server (500). */
-export const assistantsServerError = http.get(ASSISTANTS, () =>
+export const productsServerError = http.get(ASSISTANTS, () =>
   apiErrorResponse(500, "internal_error"),
 );
 
-/** POST /v1/workspaces/{id}/products creating the assistant (201). */
-export const createAssistantOk = http.post(ASSISTANTS, async ({ request }) => {
-  const body = (await request.json()) as AssistantInput;
-  return HttpResponse.json<Assistant>(makeAssistant(storedInput(body)), { status: 201 });
+/** POST /v1/workspaces/{id}/products creating the product (201). */
+export const createProductOk = http.post(ASSISTANTS, async ({ request }) => {
+  const body = (await request.json()) as ProductInput;
+  return HttpResponse.json<Product>(makeProduct(storedInput(body)), { status: 201 });
 });
 
 /** POST /v1/workspaces/{id}/products refused with `status` and `code`. */
-export function createAssistantFails(status: number, code: string) {
+export function createProductFails(status: number, code: string) {
   return http.post(ASSISTANTS, () => apiErrorResponse(status, code));
 }
 
-/** PATCH /v1/workspaces/{id}/products/{product_id} answering with the default assistant. */
-export const updateAssistantOk = http.patch(ASSISTANT, () =>
-  HttpResponse.json<Assistant>(makeAssistant()),
+/** PATCH /v1/workspaces/{id}/products/{product_id} answering with the default product. */
+export const updateProductOk = http.patch(ASSISTANT, () =>
+  HttpResponse.json<Product>(makeProduct()),
 );
 
 /** PATCH /v1/workspaces/{id}/products/{product_id} refused with `status`, `code`, `details`. */
-export function updateAssistantFails(status: number, code: string, details: unknown = null) {
+export function updateProductFails(status: number, code: string, details: unknown = null) {
   return http.patch(ASSISTANT, () => apiErrorResponse(status, code, details));
 }
 
 /** DELETE /v1/workspaces/{id}/products/{product_id} removing it (204). */
-export const deleteAssistantOk = http.delete(ASSISTANT, noContent);
+export const deleteProductOk = http.delete(ASSISTANT, noContent);
 
 /** DELETE /v1/workspaces/{id}/products/{product_id} refused with `status` and `code`. */
-export function deleteAssistantFails(status: number, code: string) {
+export function deleteProductFails(status: number, code: string) {
   return http.delete(ASSISTANT, () => apiErrorResponse(status, code));
 }
 
-export const assistantsHandlers = [
-  assistantsOk,
-  createAssistantOk,
-  updateAssistantOk,
-  deleteAssistantOk,
-  duplicateAssistantRecorder().handler,
+export const productsHandlers = [
+  productsOk,
+  createProductOk,
+  updateProductOk,
+  deleteProductOk,
+  duplicateProductRecorder().handler,
 ];

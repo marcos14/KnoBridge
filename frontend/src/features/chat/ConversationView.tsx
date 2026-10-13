@@ -7,7 +7,7 @@ import { FormAlert } from "@/components/FormAlert";
 import { Button } from "@/components/ui/button";
 import { translateApiError } from "@/i18n/apiErrors";
 import { isApiErrorCode } from "@/lib/api/client";
-import { useAssistants } from "@/lib/api/assistants";
+import { useProducts } from "@/lib/api/products";
 import type { ChatStream } from "@/lib/api/chatStream";
 import { type Citation, useConversation } from "@/lib/api/conversations";
 import { usePreviewTicketRequest } from "@/lib/api/ticketRequests";
@@ -34,7 +34,7 @@ export function ConversationView({
 }: ConversationViewProps) {
   const { t } = useTranslation();
   const conversation = useConversation(workspaceId, conversationId);
-  const assistants = useAssistants(workspaceId);
+  const assistants = useProducts(workspaceId);
   const [ticketFor, setTicketFor] = useState<string | null>(null);
   const preview = usePreviewTicketRequest(workspaceId);
   const streaming = stream.pending !== null;

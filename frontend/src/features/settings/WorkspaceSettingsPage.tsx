@@ -16,7 +16,9 @@ import type { UserWorkspace } from "@/lib/api/auth";
 import { useRenameWorkspace } from "@/lib/api/workspaces";
 import { workspaceNameField } from "@/lib/schemas";
 
-/** `/w/:workspaceId/settings` (owner or admin): the workspace's general data. */
+import { LevelsSection } from "./LevelsSection";
+
+/** `/w/:workspaceId/settings` (owner or admin): the workspace's general data and response levels. */
 export function WorkspaceSettingsPage() {
   const { t } = useTranslation();
   // The route sits under `RequireWorkspaceRole`, which already checked the membership.
@@ -29,7 +31,12 @@ export function WorkspaceSettingsPage() {
         <p className="text-muted-foreground text-sm">{t("workspaceSettings.description")}</p>
       </div>
       {/* Keyed by workspace: switching workspaces starts the form over with the other's data. */}
-      {workspace !== undefined && <GeneralSection key={workspace.id} workspace={workspace} />}
+      {workspace !== undefined && (
+        <>
+          <GeneralSection key={workspace.id} workspace={workspace} />
+          <LevelsSection key={`levels-${workspace.id}`} workspaceId={workspace.id} />
+        </>
+      )}
     </div>
   );
 }

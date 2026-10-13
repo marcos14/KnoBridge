@@ -3,7 +3,7 @@ import { http, HttpResponse } from "msw";
 import type { ApiKey, ApiKeyChanges, ApiKeyCreated, ApiKeyInput } from "@/lib/api/apiKeys";
 
 import { API_KEY_SECRET, makeApiKey, makeApiKeys } from "../apiKeyFactories";
-import { makeAssistants } from "../factories";
+import { makeProducts } from "../factories";
 import { apiErrorResponse } from "./errors";
 import { page } from "./page";
 
@@ -46,7 +46,7 @@ export function apiKeyActionFails(action: ApiKeyAction, status: number, code: st
  */
 export function apiKeyStore(
   initial: ApiKey[] = makeApiKeys(),
-  assistantIds: string[] = makeAssistants().map(({ id }) => id),
+  assistantIds: string[] = makeProducts().map(({ id }) => id),
 ) {
   let apiKeys = [...initial];
   const created: ApiKeyInput[] = [];

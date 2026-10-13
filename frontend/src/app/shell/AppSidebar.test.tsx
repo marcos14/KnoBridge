@@ -38,10 +38,10 @@ describe("AppSidebar", () => {
     ]);
   });
 
-  it("test_app_sidebar_editor_sees_assistants_and_providers_but_not_settings", async () => {
+  it("test_app_sidebar_editor_sees_products_and_providers_but_not_settings", async () => {
     const { nav } = await renderMenu("editor");
 
-    expect(within(nav).getByRole("link", { name: "Assistentes" })).toBeInTheDocument();
+    expect(within(nav).getByRole("link", { name: "Produtos" })).toBeInTheDocument();
     expect(within(nav).getByRole("link", { name: "Provedores" })).toBeInTheDocument();
     expect(within(nav).queryByRole("link", { name: "Configurações" })).not.toBeInTheDocument();
     expect(within(nav).queryByRole("link", { name: "Conversas" })).not.toBeInTheDocument();

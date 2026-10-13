@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import type { Role } from "@/lib/api/auth";
 import { formatDate } from "@/lib/intl";
 import {
-  ASSISTANT_ID,
+  PRODUCT_ID,
   CONVERSATION_ID,
   makeConversationStats,
   makeMe,
@@ -186,7 +186,7 @@ describe("ConversationsPage list", () => {
 
     await waitFor(() => {
       expect(last(recorder.listQueries)).toEqual({
-        product_id: ASSISTANT_ID,
+        product_id: PRODUCT_ID,
         user_id: memberId(1),
         created_from: new Date(2026, 9, 1).toISOString(),
         created_to: new Date(2026, 10, 1).toISOString(),
@@ -200,7 +200,7 @@ describe("ConversationsPage list", () => {
       created_to: new Date(2026, 10, 1).toISOString(),
     });
     expect(Object.fromEntries(new URLSearchParams(router.state.location.search))).toEqual({
-      assistant: ASSISTANT_ID,
+      assistant: PRODUCT_ID,
       user: memberId(1),
       from: "2026-10-01",
       to: "2026-10-31",
@@ -237,7 +237,7 @@ describe("ConversationsPage list", () => {
   it("test_conversations_clearing_one_filter_keeps_the_others", async () => {
     const recorder = record();
     const { user, router } = await renderConversations(
-      `${PATH}?assistant=${ASSISTANT_ID}&from=2026-10-01&negative=1`,
+      `${PATH}?assistant=${PRODUCT_ID}&from=2026-10-01&negative=1`,
     );
 
     await pick(user, "Assistente", "Todos os assistentes");

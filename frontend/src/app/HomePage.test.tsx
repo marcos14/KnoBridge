@@ -102,6 +102,14 @@ describe("HomePage", () => {
       `/w/${WORKSPACE_ID}/chat`,
     );
 
+    expect(
+      within(checklist).getByRole("link", { name: "Ir para Níveis de resposta" }),
+    ).toHaveAttribute("href", `/w/${WORKSPACE_ID}/settings`);
+    expect(within(checklist).getByRole("link", { name: "Ir para Produtos" })).toHaveAttribute(
+      "href",
+      `/w/${WORKSPACE_ID}/products`,
+    );
+
     await user.click(within(checklist).getByRole("link", { name: "Ir para Fontes" }));
 
     expect(router.state.location.pathname).toBe(`/w/${WORKSPACE_ID}/sources`);
@@ -118,6 +126,19 @@ describe("HomePage", () => {
     ).toHaveLength(5);
     expect(within(checklist).getAllByRole("link")).toHaveLength(1);
     expect(within(checklist).getByRole("link", { name: "Ir para o Chat" })).toBeInTheDocument();
+  });
+
+  it("test_home_page_checklist_editor_asks_an_admin_for_the_levels", async () => {
+    asRole("editor");
+    server.use(workspaceDashboardAs(makeWorkspaceDashboard({ checklist: makeChecklist() })));
+    await renderHome();
+
+    const checklist = await screen.findByRole("region", { name: "Primeiros passos" });
+    const levels = within(checklist)
+      .getByText("Configure a credencial e o modelo do nível Usuário final")
+      .closest("li");
+    expect(levels).toHaveTextContent("Peça a um administrador do workspace para fazer este passo.");
+    expect(within(checklist).getAllByRole("link")).toHaveLength(5);
   });
 
   it("test_home_page_hides_checklist_when_every_step_is_done", async () => {

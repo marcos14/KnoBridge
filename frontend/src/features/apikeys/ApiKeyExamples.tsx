@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 
 import { CopyButton } from "@/components/CopyButton";
-import { useAssistants } from "@/lib/api/assistants";
+import { useProducts } from "@/lib/api/products";
 
 import {
   API_KEY_VARIABLE,
@@ -23,7 +23,7 @@ const EXAMPLES = [
  */
 export function ApiKeyExamples({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation();
-  const assistants = useAssistants(workspaceId);
+  const assistants = useProducts(workspaceId);
   const first = assistants.data?.find((assistant) => assistant.active);
   const assistant: ExampleAssistant = first ?? {
     id: t("apiKeys.examples.assistantIdPlaceholder"),

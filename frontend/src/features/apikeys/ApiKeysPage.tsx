@@ -10,7 +10,7 @@ import { useClock } from "@/hooks/use-clock";
 import { useCurrentWorkspace } from "@/hooks/use-current-workspace";
 import { translateApiError } from "@/i18n/apiErrors";
 import { type ApiKey, useApiKeys, useRevokeApiKey } from "@/lib/api/apiKeys";
-import { type Assistant, useAssistants } from "@/lib/api/assistants";
+import { type Product, useProducts } from "@/lib/api/products";
 import { formatDateTime, formatRelativeTime } from "@/lib/intl";
 import { clampOffset, pageOf } from "@/lib/pagination";
 
@@ -59,7 +59,7 @@ function LastUsed({ value }: { value: string | null }) {
   );
 }
 
-function Scope({ apiKey, assistants }: { apiKey: ApiKey; assistants: Assistant[] | undefined }) {
+function Scope({ apiKey, assistants }: { apiKey: ApiKey; assistants: Product[] | undefined }) {
   const { t } = useTranslation();
   const ids = apiKey.assistant_ids;
   if (ids === null) {
@@ -81,7 +81,7 @@ function ApiKeysList({ workspaceId }: { workspaceId: string }) {
   const [requestedOffset, setRequestedOffset] = useState(0);
   const [feedback, setFeedback] = useState<Feedback>(null);
   const apiKeys = useApiKeys(workspaceId);
-  const assistants = useAssistants(workspaceId);
+  const assistants = useProducts(workspaceId);
   const revoke = useRevokeApiKey(workspaceId);
 
   const showStatus = (message: string) => {

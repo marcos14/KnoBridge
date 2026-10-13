@@ -1,6 +1,6 @@
 import type { UsageGroup, UsageReport, UsageRow, UsageTotals } from "@/lib/api/usage";
 
-import { ASSISTANT_ID, OTHER_ASSISTANT_ID } from "./factories";
+import { PRODUCT_ID, OTHER_PRODUCT_ID } from "./factories";
 
 /** Totals of the default report: embeddings and chat, three answers without a price. */
 export function makeUsageTotals(overrides: Partial<UsageTotals> = {}): UsageTotals {
@@ -96,8 +96,8 @@ export function makeUsageRows(group: UsageGroup): UsageRow[] {
       return makeUsageDays();
     case "product":
       return [
-        chatRow(ASSISTANT_ID, "Suporte ERP", 0.0584, 117),
-        chatRow(OTHER_ASSISTANT_ID, "Rascunho", 0, 3, 3),
+        chatRow(PRODUCT_ID, "Suporte ERP", 0.0584, 117),
+        chatRow(OTHER_PRODUCT_ID, "Rascunho", 0, 3, 3),
       ];
     case "level":
       return [

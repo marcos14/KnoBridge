@@ -27,11 +27,11 @@ describe("workspaceNavItems", () => {
     ]);
   });
 
-  it("test_workspace_nav_items_for_editor_add_assistants_and_providers", () => {
+  it("test_workspace_nav_items_for_editor_add_products_and_providers", () => {
     expect(keysFor("editor")).toEqual([
       "home",
       "chat",
-      "assistants",
+      "products",
       "providers",
       "sources",
       "pipelines",
@@ -47,7 +47,7 @@ describe("workspaceNavItems", () => {
       "chat",
       "conversations",
       "usage",
-      "assistants",
+      "products",
       "providers",
       "sources",
       "runners",
@@ -93,7 +93,7 @@ describe("areaMinRole", () => {
   it("test_area_min_role_reads_the_menu_table", () => {
     expect(areaMinRole("members")).toBe("viewer");
     expect(areaMinRole("settings")).toBe("admin");
-    expect(areaMinRole("assistants")).toBe("editor");
+    expect(areaMinRole("products")).toBe("editor");
     expect(areaMinRole("sources")).toBe("viewer");
     expect(areaMinRole("runners")).toBe("admin");
     expect(areaMinRole("apiKeys")).toBe("admin");

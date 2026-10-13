@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { translateApiError } from "@/i18n/apiErrors";
-import { type Assistant, useAssistants } from "@/lib/api/assistants";
+import { type Product, useProducts } from "@/lib/api/products";
 
 import { Composer } from "./Composer";
 import { NoCollectionsHint } from "./NoCollectionsHint";
@@ -32,7 +32,7 @@ export function NewConversation({
   onStart,
 }: NewConversationProps) {
   const { t } = useTranslation();
-  const assistants = useAssistants(workspaceId);
+  const assistants = useProducts(workspaceId);
 
   if (assistants.isPending) {
     return (
@@ -83,7 +83,7 @@ export function NewConversation({
 }
 
 interface StartFormProps {
-  assistants: readonly Assistant[];
+  assistants: readonly Product[];
   onStart: (assistantId: string, content: string) => Promise<void>;
 }
 

@@ -62,14 +62,14 @@ export function webhookErrorText(code: string, details: unknown, t: TFunction): 
   const message = translateApiErrorCode(code, t);
   const reason = WEBHOOK_REASONS.find((item) => item === field(details, "reason"));
   if (reason !== undefined) {
-    return t("assistants.webhook.withReason", {
+    return t("products.webhook.withReason", {
       message,
-      reason: t(`assistants.webhook.reasons.${reason}`),
+      reason: t(`products.webhook.reasons.${reason}`),
     });
   }
   const status = field(details, "status");
   if (typeof status === "number") {
-    return t("assistants.webhook.withStatus", { message, status });
+    return t("products.webhook.withStatus", { message, status });
   }
   return message;
 }

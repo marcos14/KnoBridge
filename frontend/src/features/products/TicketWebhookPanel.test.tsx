@@ -2,41 +2,41 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
-import type { Assistant } from "@/lib/api/assistants";
+import type { Product } from "@/lib/api/products";
 import type { Role } from "@/lib/api/auth";
 import { formatDateTime } from "@/lib/intl";
 import {
-  ASSISTANT_ID,
-  makeAssistant,
-  makeAssistants,
+  PRODUCT_ID,
+  makeProduct,
+  makeProducts,
   makeMe,
   makeWorkspace,
   WORKSPACE_ID,
 } from "@/test/factories";
 import {
   apiErrorResponse,
-  assistantStore,
+  productStore,
   makeWebhookTest,
   meAs,
   rotateWebhookSecretFails,
-  updateAssistantFails,
+  updateProductFails,
   WEBHOOK_SECRET,
   WEBHOOK_SECRET_CREATED_AT,
 } from "@/test/handlers";
 import { renderWithProviders } from "@/test/renderWithProviders";
 import { server } from "@/test/server";
 
-const PATH = `/w/${WORKSPACE_ID}/assistants`;
+const PATH = `/w/${WORKSPACE_ID}/products`;
 const URL_LABEL = "URL do webhook";
 const ENABLED = 'Oferecer "Abrir chamado" no chat';
 const HOOK = "https://chamados.example.test/kb";
 
-type Store = ReturnType<typeof assistantStore>;
+type Store = ReturnType<typeof productStore>;
 
 /** Suporte ERP with `overrides` (the webhook fields), beside the default Rascunho. */
-function assistantsWith(overrides: Partial<Assistant>): Assistant[] {
-  return makeAssistants().map((item) =>
-    item.id === ASSISTANT_ID ? makeAssistant({ ...item, ...overrides }) : item,
+function productsWith(overrides: Partial<Product>): Product[] {
+  return makeProducts().map((item) =>
+    item.id === PRODUCT_ID ? makeProduct({ ...item, ...overrides }) : item,
   );
 }
 
@@ -48,11 +48,11 @@ const CONFIGURED = {
 
 function setup(
   role: Role = "owner",
-  assistants: Assistant[] = makeAssistants(),
-  options?: Parameters<typeof assistantStore>[1],
+  products: Product[] = makeProducts(),
+  options?: Parameters<typeof productStore>[1],
 ): Store {
   server.use(meAs(makeMe({ workspaces: [makeWorkspace({ role })] })));
-  const store = assistantStore(assistants, options);
+  const store = productStore(products, options);
   server.use(...store.handlers);
   return store;
 }
@@ -61,7 +61,7 @@ async function openEdit() {
   const user = userEvent.setup();
   renderWithProviders({ path: PATH });
   await user.click(await screen.findByRole("button", { name: "Editar Suporte ERP" }));
-  const dialog = await screen.findByRole("dialog", { name: "Editar assistente" });
+  const dialog = await screen.findByRole("dialog", { name: "Editar produto" });
   return { user, dialog };
 }
 
@@ -69,7 +69,7 @@ function panel(dialog: HTMLElement) {
   return within(dialog).getByRole("region", { name: "Segredo e teste do webhook" });
 }
 
-describe("assistant ticket webhook", () => {
+describe("product ticket webhook", () => {
   it("test_webhook_turned_on_saves_the_url_and_waits_for_a_secret", async () => {
     const store = setup();
     const { user, dialog } = await openEdit();
@@ -83,7 +83,7 @@ describe("assistant ticket webhook", () => {
     await user.type(within(dialog).getByLabelText(URL_LABEL), HOOK);
     await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
 
-    expect(await screen.findByText("Assistente Suporte ERP atualizado.")).toBeVisible();
+    expect(await screen.findByText("Produto Suporte ERP atualizado.")).toBeVisible();
     expect(store.changes[0]?.body).toHaveProperty("ticket_webhook_url", HOOK);
     const reopened = await openEditAgain(user);
     expect(within(reopened).getByLabelText(URL_LABEL)).toHaveValue(HOOK);
@@ -111,19 +111,19 @@ describe("assistant ticket webhook", () => {
   });
 
   it("test_webhook_turned_off_sends_null", async () => {
-    const store = setup("owner", assistantsWith(CONFIGURED));
+    const store = setup("owner", productsWith(CONFIGURED));
     const { user, dialog } = await openEdit();
 
     await user.click(within(dialog).getByRole("checkbox", { name: ENABLED }));
     await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
 
-    await screen.findByText("Assistente Suporte ERP atualizado.");
+    await screen.findByText("Produto Suporte ERP atualizado.");
     expect(store.changes[0]?.body).toHaveProperty("ticket_webhook_url", null);
   });
 
   it("test_webhook_save_error_says_why_the_destination_was_refused", async () => {
     setup();
-    server.use(updateAssistantFails(422, "webhook_destination_blocked", { reason: "loopback" }));
+    server.use(updateProductFails(422, "webhook_destination_blocked", { reason: "loopback" }));
     const { user, dialog } = await openEdit();
 
     await user.click(within(dialog).getByRole("checkbox", { name: ENABLED }));
@@ -136,7 +136,7 @@ describe("assistant ticket webhook", () => {
   });
 
   it("test_webhook_secret_is_generated_and_shown_once", async () => {
-    const store = setup("admin", assistantsWith({ ticket_webhook_url: HOOK }));
+    const store = setup("admin", productsWith({ ticket_webhook_url: HOOK }));
     const { user, dialog } = await openEdit();
 
     await user.click(within(panel(dialog)).getByRole("button", { name: "Gerar segredo" }));
@@ -144,7 +144,7 @@ describe("assistant ticket webhook", () => {
     expect(await within(dialog).findByLabelText("Segredo do webhook")).toHaveTextContent(
       WEBHOOK_SECRET,
     );
-    expect(store.secretRotations).toEqual([ASSISTANT_ID]);
+    expect(store.secretRotations).toEqual([PRODUCT_ID]);
     await user.click(within(dialog).getByRole("button", { name: "Copiar segredo" }));
     await expect(navigator.clipboard.readText()).resolves.toBe(WEBHOOK_SECRET);
     await waitFor(() => {
@@ -162,7 +162,7 @@ describe("assistant ticket webhook", () => {
   });
 
   it("test_webhook_secret_replacement_asks_first", async () => {
-    const store = setup("owner", assistantsWith(CONFIGURED));
+    const store = setup("owner", productsWith(CONFIGURED));
     const { user, dialog } = await openEdit();
 
     await user.click(within(panel(dialog)).getByRole("button", { name: "Gerar novo segredo" }));
@@ -174,11 +174,11 @@ describe("assistant ticket webhook", () => {
     await user.click(within(panel(dialog)).getByRole("button", { name: "Gerar e substituir" }));
 
     expect(await within(dialog).findByLabelText("Segredo do webhook")).toBeVisible();
-    expect(store.secretRotations).toEqual([ASSISTANT_ID]);
+    expect(store.secretRotations).toEqual([PRODUCT_ID]);
   });
 
   it("test_webhook_secret_failure_is_shown", async () => {
-    setup("owner", assistantsWith({ ticket_webhook_url: HOOK }));
+    setup("owner", productsWith({ ticket_webhook_url: HOOK }));
     server.use(rotateWebhookSecretFails(403, "forbidden"));
     const { user, dialog } = await openEdit();
 
@@ -190,7 +190,7 @@ describe("assistant ticket webhook", () => {
   });
 
   it("test_webhook_editor_tests_but_does_not_generate_the_secret", async () => {
-    const store = setup("editor", assistantsWith(CONFIGURED));
+    const store = setup("editor", productsWith(CONFIGURED));
     const { user, dialog } = await openEdit();
 
     expect(within(panel(dialog)).queryByRole("button", { name: /Gerar/ })).not.toBeInTheDocument();
@@ -202,11 +202,11 @@ describe("assistant ticket webhook", () => {
     const result = await within(panel(dialog)).findByRole("status");
     expect(result).toHaveTextContent("O destino aceitou a entrega de teste.");
     expect(result).toHaveTextContent(`Id da entrega: ${makeWebhookTest().delivery_id}`);
-    expect(store.webhookTests).toEqual([ASSISTANT_ID]);
+    expect(store.webhookTests).toEqual([PRODUCT_ID]);
   });
 
   it("test_webhook_test_failure_shows_what_the_destination_answered", async () => {
-    setup("owner", assistantsWith(CONFIGURED), {
+    setup("owner", productsWith(CONFIGURED), {
       webhookTest: makeWebhookTest({
         ok: false,
         status: 500,
@@ -223,7 +223,7 @@ describe("assistant ticket webhook", () => {
   });
 
   it("test_webhook_test_refused_by_the_api_is_an_alert", async () => {
-    setup("owner", assistantsWith(CONFIGURED), {
+    setup("owner", productsWith(CONFIGURED), {
       webhookTest: apiErrorResponse(409, "ticket_webhook_not_configured"),
     });
     const { user, dialog } = await openEdit();
@@ -231,7 +231,7 @@ describe("assistant ticket webhook", () => {
     await user.click(within(panel(dialog)).getByRole("button", { name: "Testar entrega" }));
 
     expect(await within(panel(dialog)).findByRole("alert")).toHaveTextContent(
-      "O webhook de chamados deste assistente não está configurado.",
+      "O webhook de chamados deste produto não está configurado.",
     );
   });
 });
@@ -241,5 +241,5 @@ async function openEditAgain(user: ReturnType<typeof userEvent.setup>) {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
   await user.click(screen.getByRole("button", { name: "Editar Suporte ERP" }));
-  return screen.findByRole("dialog", { name: "Editar assistente" });
+  return screen.findByRole("dialog", { name: "Editar produto" });
 }

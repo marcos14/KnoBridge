@@ -1,6 +1,6 @@
 import type { Session } from "@/lib/api/account";
 import type { AdminUser, AdminWorkspace } from "@/lib/api/admin";
-import type { Assistant } from "@/lib/api/assistants";
+import type { Product } from "@/lib/api/products";
 import type { AuditEvent } from "@/lib/api/audit";
 import type { Me, UserWorkspace } from "@/lib/api/auth";
 import type { Collection, SearchResult } from "@/lib/api/collections";
@@ -342,13 +342,13 @@ export function makeProviders(): Provider[] {
   ];
 }
 
-export const ASSISTANT_ID = "00000000-0000-4000-8000-0000000000f1";
-export const OTHER_ASSISTANT_ID = "00000000-0000-4000-8000-0000000000f2";
+export const PRODUCT_ID = "00000000-0000-4000-8000-0000000000f1";
+export const OTHER_PRODUCT_ID = "00000000-0000-4000-8000-0000000000f2";
 
-/** One product (`GET /v1/workspaces/{id}/products`, still "assistant" on screen): by default the active "Suporte ERP", on Código ERP. */
-export function makeAssistant(overrides: Partial<Assistant> = {}): Assistant {
+/** One product (`GET /v1/workspaces/{id}/products`): by default the active "Suporte ERP", on Código ERP. */
+export function makeProduct(overrides: Partial<Product> = {}): Product {
   return {
-    id: ASSISTANT_ID,
+    id: PRODUCT_ID,
     name: "Suporte ERP",
     description: "Dúvidas sobre o ERP.",
     instructions: "Responda com base nas fontes.",
@@ -369,17 +369,17 @@ export function makeAssistant(overrides: Partial<Assistant> = {}): Assistant {
 }
 
 /** The default assistants, by name: Rascunho (inactive, no collection) and Suporte ERP (active). */
-export function makeAssistants(): Assistant[] {
+export function makeProducts(): Product[] {
   return [
-    makeAssistant({
-      id: OTHER_ASSISTANT_ID,
+    makeProduct({
+      id: OTHER_PRODUCT_ID,
       name: "Rascunho",
       description: "",
       tone: "friendly",
       active: false,
       collection_ids: [],
     }),
-    makeAssistant(),
+    makeProduct(),
   ];
 }
 
@@ -395,7 +395,7 @@ export function messageId(n: number): string {
 export function makeConversation(overrides: Partial<Conversation> = {}): Conversation {
   return {
     id: CONVERSATION_ID,
-    product_id: ASSISTANT_ID,
+    product_id: PRODUCT_ID,
     product_name: "Suporte ERP",
     level: "product_dev",
     user_id: USER_ID,
@@ -495,7 +495,7 @@ export function makeWorkspaceConversation(
 ): WorkspaceConversation {
   return {
     id: CONVERSATION_ID,
-    product_id: ASSISTANT_ID,
+    product_id: PRODUCT_ID,
     product_name: "Suporte ERP",
     level: "product_dev",
     user_id: USER_ID,

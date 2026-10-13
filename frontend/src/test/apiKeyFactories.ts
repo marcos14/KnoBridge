@@ -1,6 +1,6 @@
 import type { ApiKey } from "@/lib/api/apiKeys";
 
-import { ASSISTANT_ID, USER_ID } from "./factories";
+import { PRODUCT_ID, USER_ID } from "./factories";
 
 export const API_KEY_ID = "00000000-0000-4000-8000-0000000003a1";
 export const SCOPED_API_KEY_ID = "00000000-0000-4000-8000-0000000003a2";
@@ -43,7 +43,7 @@ export function makeApiKeys(): ApiKey[] {
       id: SCOPED_API_KEY_ID,
       name: "integracao-erp",
       key_prefix: "ie56cd78",
-      assistant_ids: [ASSISTANT_ID],
+      assistant_ids: [PRODUCT_ID],
       created_by: null,
       created_by_name: null,
       last_used_at: null,

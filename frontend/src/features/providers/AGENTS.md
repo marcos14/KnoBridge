@@ -8,7 +8,7 @@
 - `ProviderDialog.tsx`: diálogo de criar/editar com react-hook-form + zod: tipo (travado na edição, o backend não o muda), nome, URL base opcional e chave (campo de senha). Na edição a chave é opcional e a dica mostra só o `key_hint` atual.
 - `providerForm.ts`: schema, valores iniciais e corpos de `POST`/`PATCH` (funções puras, com teste).
 
-**Não entra aqui**: chamadas de API (`lib/api/providers.ts`), assistentes (`features/assistants/`), textos (`i18n/locales/`, chaves `providers.*`; erros em `apiErrors.*`).
+**Não entra aqui**: chamadas de API (`lib/api/providers.ts`), produtos (`features/products/`), níveis de resposta (`features/settings/`), textos (`i18n/locales/`, chaves `providers.*`; erros em `apiErrors.*`).
 
 **Convenções locais**:
 

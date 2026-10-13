@@ -1,6 +1,15 @@
 import type { Role } from "./api/auth";
-import type { ChecklistItem, ChecklistKey } from "./api/dashboard";
+import type { ChecklistKey } from "./api/dashboard";
 import { hasRole } from "./roles";
+
+/** Keys of the checklist (`docs/specs/uso-e-custos.md`, v0.3). */
+export type StepKey = ChecklistKey;
+
+/** One checklist item as the API sends it. */
+export interface StepItem {
+  key: StepKey;
+  done: boolean;
+}
 
 interface StepScreen {
   /** Path below `/w/:workspaceId`. */
@@ -10,18 +19,17 @@ interface StepScreen {
 }
 
 /** Screen where each first step is done, and who can do it. */
-const STEP_SCREENS: Record<ChecklistKey, StepScreen> = {
+const STEP_SCREENS: Record<StepKey, StepScreen> = {
   provider: { path: "providers", minRole: "editor" },
   collection: { path: "collections", minRole: "editor" },
   source: { path: "sources", minRole: "editor" },
   levels: { path: "settings", minRole: "admin" },
-  // The products screen still lives at the assistants route until plan 0009, F3.1.
-  product: { path: "assistants", minRole: "editor" },
+  product: { path: "products", minRole: "editor" },
   chat: { path: "chat", minRole: "viewer" },
 };
 
 export interface PendingStep {
-  key: ChecklistKey;
+  key: StepKey;
   /** Link to the step's screen, or `undefined` when `role` cannot do it there. */
   to: string | undefined;
 }
@@ -31,7 +39,7 @@ export interface PendingStep {
  * Done steps are left out; an empty list means the checklist is complete.
  */
 export function pendingSteps(
-  checklist: readonly ChecklistItem[],
+  checklist: readonly StepItem[],
   workspaceId: string,
   role: Role,
 ): PendingStep[] {

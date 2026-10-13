@@ -38,8 +38,8 @@ const AdminWorkspacesPage = lazyPage(() =>
 const ApiKeysPage = lazyPage(() =>
   import("@/features/apikeys/ApiKeysPage").then((m) => m.ApiKeysPage),
 );
-const AssistantsPage = lazyPage(() =>
-  import("@/features/assistants/AssistantsPage").then((m) => m.AssistantsPage),
+const ProductsPage = lazyPage(() =>
+  import("@/features/products/ProductsPage").then((m) => m.ProductsPage),
 );
 const InstanceAuditPage = lazyPage(() =>
   import("@/features/audit/InstanceAuditPage").then((m) => m.InstanceAuditPage),
@@ -171,7 +171,9 @@ export const routes: RouteObject[] = [
                           workspaceArea("chat", ChatPage, [":conversationId"]),
                           workspaceArea("conversations", ConversationsPage, [":conversationId"]),
                           workspaceArea("usage", UsagePage),
-                          workspaceArea("assistants", AssistantsPage),
+                          workspaceArea("products", ProductsPage),
+                          // Old address of the screen (plan 0009 turned assistants into products).
+                          { path: "assistants", element: <Navigate to="../products" replace /> },
                           workspaceArea("providers", ProvidersPage),
                           workspaceArea("sources", SourcesPage, [":sourceId"]),
                           workspaceArea("runners", RunnersPage),

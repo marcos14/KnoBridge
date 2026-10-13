@@ -28,7 +28,7 @@ import {
   useCreateApiKey,
   useUpdateApiKey,
 } from "@/lib/api/apiKeys";
-import { useAssistants } from "@/lib/api/assistants";
+import { useProducts } from "@/lib/api/products";
 
 import { API_KEY_VARIABLE } from "./usageExamples";
 import {
@@ -189,7 +189,7 @@ function ScopeField({ workspaceId, control }: ScopeFieldProps) {
 function AssistantsField({ workspaceId, control }: ScopeFieldProps) {
   const { t } = useTranslation();
   const idPrefix = useId();
-  const assistants = useAssistants(workspaceId);
+  const assistants = useProducts(workspaceId);
 
   return (
     <FormField
