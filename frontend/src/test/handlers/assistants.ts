@@ -10,12 +10,41 @@ import type {
 
 import { makeAssistant, makeAssistants } from "../factories";
 import { apiErrorResponse } from "./errors";
-import { page } from "./page";
+import { listRecorder, page } from "./page";
 
 const ASSISTANTS = "*/v1/workspaces/:workspaceId/assistants";
 const ASSISTANT = "*/v1/workspaces/:workspaceId/assistants/:assistantId";
 const SECRET = `${ASSISTANT}/ticket-webhook/secret`;
 const TEST = `${ASSISTANT}/ticket-webhook/test`;
+const DUPLICATE = `${ASSISTANT}/duplicate`;
+
+/** Id of the copy `POST .../duplicate` answers by default. */
+export const DUPLICATED_ASSISTANT_ID = "00000000-0000-4000-8000-0000000000f9";
+
+/**
+ * POST .../duplicate answering `copy` (201; default: "Suporte ERP (cópia)"), keeping the id of the
+ * original and the JSON body of each request in `requests`.
+ */
+export function duplicateAssistantRecorder(
+  copy: Assistant = makeAssistant({ id: DUPLICATED_ASSISTANT_ID, name: "Suporte ERP (cópia)" }),
+) {
+  const requests: { assistantId: string; body: unknown }[] = [];
+  const handler = http.post(DUPLICATE, async ({ params, request }) => {
+    requests.push({ assistantId: String(params.assistantId), body: await request.json() });
+    return HttpResponse.json<Assistant>(copy, { status: 201 });
+  });
+  return { handler, requests };
+}
+
+/** POST .../duplicate refused with `status` and `code`. */
+export function duplicateAssistantFails(status: number, code: string) {
+  return http.post(DUPLICATE, () => apiErrorResponse(status, code));
+}
+
+/** GET of the assistant list recording each query string; `query` matches the name. */
+export function assistantsRecorder(assistants: Assistant[] = makeAssistants()) {
+  return listRecorder(ASSISTANTS, assistants, (item) => [item.name]);
+}
 
 /** POST .../ticket-webhook/secret refused with `status` and `code`. */
 export function rotateWebhookSecretFails(status: number, code: string) {
@@ -226,4 +255,5 @@ export const assistantsHandlers = [
   createAssistantOk,
   updateAssistantOk,
   deleteAssistantOk,
+  duplicateAssistantRecorder().handler,
 ];

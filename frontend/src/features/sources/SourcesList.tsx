@@ -4,12 +4,23 @@ import { Link } from "react-router";
 
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { DataTable, type DataTableColumn } from "@/components/DataTable";
+import { ListToolbar } from "@/components/ListToolbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useListSearch } from "@/hooks/use-list-search";
+import { useOffsetClamp } from "@/hooks/use-offset-clamp";
 import { translateApiError } from "@/i18n/apiErrors";
 import { useCollections } from "@/lib/api/collections";
-import { type Source, useDeleteSource, useSources } from "@/lib/api/sources";
-import { clampOffset, pageOf } from "@/lib/pagination";
+import { type Source, type SourceKind, useDeleteSource, useSourcePage } from "@/lib/api/sources";
+import {
+  booleanFilter,
+  hasListCriteria,
+  isBooleanFilter,
+  type ListSearchSpec,
+  oneOf,
+  sortLabelKey,
+} from "@/lib/listSearch";
+import { isUuid } from "@/lib/uuid";
 
 import { type Feedback, FeedbackMessage } from "./Feedback";
 import { NextRun } from "./NextRun";
@@ -19,8 +30,33 @@ import { SourceDialog } from "./SourceDialog";
 import { sourceLocation } from "./sourceForm";
 import { SyncButton } from "./SyncButton";
 
-/** Rows per page of the source table (paged in the browser). */
+/** Rows per page of the source table (paged by the API). */
 export const SOURCES_PAGE_SIZE = 20;
+
+const SOURCE_KINDS: readonly SourceKind[] = ["git", "folder", "runner", "tickets"];
+const LAST_RUN_FILTERS = [
+  "never",
+  "queued",
+  "running",
+  "succeeded",
+  "failed",
+  "cancelled",
+] as const;
+const SOURCE_SORTS = ["name", "-name", "-last_run_at", "-created_at", "-updated_at"] as const;
+
+/** Search, filters and sort of the list, in the URL. */
+const SOURCE_LIST: ListSearchSpec<
+  "kind" | "collection" | "active" | "lastRun",
+  (typeof SOURCE_SORTS)[number]
+> = {
+  filters: {
+    kind: oneOf(SOURCE_KINDS),
+    collection: isUuid,
+    active: isBooleanFilter,
+    lastRun: oneOf(LAST_RUN_FILTERS),
+  },
+  sorts: SOURCE_SORTS,
+};
 
 interface SourcesListProps {
   workspaceId: string;
@@ -30,9 +66,20 @@ interface SourcesListProps {
 
 export function SourcesList({ workspaceId, canManage }: SourcesListProps) {
   const { t } = useTranslation();
-  const [requestedOffset, setRequestedOffset] = useState(0);
   const [feedback, setFeedback] = useState<Feedback>(null);
-  const sources = useSources(workspaceId);
+  const { search, setQuery, setFilter, setSort, setOffset, clear } = useListSearch(SOURCE_LIST);
+  const { filters } = search;
+  const sources = useSourcePage(workspaceId, {
+    query: search.query === "" ? undefined : search.query,
+    kind: SOURCE_KINDS.find((kind) => kind === filters.kind),
+    collection_id: filters.collection,
+    active: booleanFilter(filters.active),
+    last_run_status: LAST_RUN_FILTERS.find((status) => status === filters.lastRun),
+    sort: search.sort,
+    limit: SOURCES_PAGE_SIZE,
+    offset: search.offset,
+  });
+  useOffsetClamp(search.offset, SOURCES_PAGE_SIZE, sources.data?.total, setOffset);
   const collections = useCollections(workspaceId);
   const remove = useDeleteSource(workspaceId);
 
@@ -89,10 +136,17 @@ export function SourcesList({ workspaceId, canManage }: SourcesListProps) {
     );
   }
 
-  const all = sources.data;
+  const { items, total } = sources.data;
   const allCollections = collections.data;
   const collectionNames = new Map(allCollections.map((item) => [item.id, item.name] as const));
-  const offset = clampOffset(requestedOffset, SOURCES_PAGE_SIZE, all.length);
+  const criteria = hasListCriteria(search);
+  const filter = (key: keyof typeof filters) => ({
+    key,
+    value: filters[key],
+    onChange: (value: string | undefined) => {
+      setFilter(key, value);
+    },
+  });
   const showSaved = (key: "sources.created" | "sources.updated") => (saved: Source) => {
     setFeedback({ kind: "status", message: t(key, { name: saved.name }) });
   };
@@ -218,17 +272,72 @@ export function SourcesList({ workspaceId, canManage }: SourcesListProps) {
         </p>
       )}
       <FeedbackMessage feedback={feedback} />
+      <ListToolbar
+        searchLabel={t("sources.search")}
+        searchPlaceholder={t("sources.searchPlaceholder")}
+        query={search.query}
+        onQueryChange={setQuery}
+        filters={[
+          {
+            ...filter("kind"),
+            label: t("sources.columns.kind"),
+            allLabel: t("sources.allKinds"),
+            options: SOURCE_KINDS.map((kind) => ({
+              value: kind,
+              label: t(`sources.kinds.${kind}`),
+            })),
+          },
+          {
+            ...filter("collection"),
+            label: t("sources.columns.collection"),
+            allLabel: t("sources.allCollections"),
+            options: allCollections.map((item) => ({ value: item.id, label: item.name })),
+          },
+          {
+            ...filter("active"),
+            label: t("listToolbar.status"),
+            allLabel: t("listToolbar.allStatuses"),
+            options: [
+              { value: "true", label: t("sources.activeFilter") },
+              { value: "false", label: t("sources.inactiveFilter") },
+            ],
+          },
+          {
+            ...filter("lastRun"),
+            label: t("sources.columns.lastRun"),
+            allLabel: t("sources.anyLastRun"),
+            options: LAST_RUN_FILTERS.map((status) => ({
+              value: status,
+              label:
+                status === "never" ? t("sources.neverSynced") : t(`sources.runStatus.${status}`),
+            })),
+          },
+        ]}
+        sort={{
+          value: search.sort,
+          options: SOURCE_SORTS.map((sort) => ({ value: sort, label: t(sortLabelKey(sort)) })),
+          onChange: setSort,
+        }}
+        onClear={criteria ? clear : undefined}
+      />
       <DataTable
         label={t("sources.tableLabel")}
         columns={columns}
-        rows={pageOf(all, offset, SOURCES_PAGE_SIZE)}
+        rows={items}
         rowKey={(item) => item.id}
-        emptyMessage={t("sources.empty")}
+        emptyMessage={
+          criteria
+            ? t("listToolbar.noResults")
+            : canManage && allCollections.length > 0
+              ? t("sources.emptyNext")
+              : t("sources.empty")
+        }
+        busy={sources.isPlaceholderData}
         pagination={{
-          offset,
+          offset: search.offset,
           limit: SOURCES_PAGE_SIZE,
-          total: all.length,
-          onOffsetChange: setRequestedOffset,
+          total,
+          onOffsetChange: setOffset,
         }}
       />
     </>

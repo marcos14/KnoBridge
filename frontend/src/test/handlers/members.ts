@@ -12,7 +12,7 @@ import {
   makeWorkspace,
 } from "../factories";
 import { apiErrorResponse } from "./errors";
-import { page } from "./page";
+import { listRecorder, page } from "./page";
 
 const WORKSPACE = "*/v1/workspaces/:workspaceId";
 const MEMBERS = "*/v1/workspaces/:workspaceId/members";
@@ -189,6 +189,11 @@ export const renameWorkspaceOk = http.patch(WORKSPACE, async ({ params, request 
 /** PATCH /v1/workspaces/{id} refused with `status` and `code`. */
 export function renameWorkspaceFails(status: number, code: string) {
   return http.patch(WORKSPACE, () => apiErrorResponse(status, code));
+}
+
+/** GET of the member list recording each query string; `query` matches name or e-mail. */
+export function membersRecorder(members: Member[] = makeMembers()) {
+  return listRecorder(MEMBERS, members, (item) => [item.name, item.email]);
 }
 
 export const membersHandlers = [

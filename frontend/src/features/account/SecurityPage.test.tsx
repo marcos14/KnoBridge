@@ -1,12 +1,13 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { HttpResponse } from "msw";
+import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
 import { makeSession, OTHER_SESSION_ID } from "@/test/factories";
 import {
   changePasswordInvalidCurrent,
   changePasswordWeak,
+  logoutAllFails,
   pendingPost,
   recordingPost,
   revokeSessionCsrfFailed,
@@ -284,5 +285,97 @@ describe("SecurityPage sessions", () => {
     expect(await sessionItems()).toHaveLength(1);
     expect(screen.getByRole("button", { name: "Encerrar todas as outras" })).toBeDisabled();
     expect(screen.getByText("Não há outras sessões abertas.")).toBeInTheDocument();
+  });
+});
+
+/** `POST /v1/auth/logout-all` answering 204 (no body), counting the calls. */
+function countingLogoutAll() {
+  let calls = 0;
+  server.use(
+    http.post("*/v1/auth/logout-all", () => {
+      calls += 1;
+      return new HttpResponse(null, { status: 204 });
+    }),
+  );
+  return { calls: () => calls };
+}
+
+describe("SecurityPage logout everywhere", () => {
+  function logoutAllSection() {
+    return screen.getByRole("region", { name: "Sair de todas as sessões" });
+  }
+
+  it("test_security_page_logout_all_after_confirm_goes_to_login", async () => {
+    const user = userEvent.setup();
+    const logoutAll = countingLogoutAll();
+    const { router } = await renderSecurity();
+
+    await user.click(
+      within(logoutAllSection()).getByRole("button", { name: "Sair de todas as sessões" }),
+    );
+    const dialog = await screen.findByRole("alertdialog", { name: "Sair de todas as sessões?" });
+    expect(dialog).toHaveTextContent("inclusive este");
+    await user.click(within(dialog).getByRole("button", { name: "Sair de todas as sessões" }));
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/login");
+    });
+    expect(logoutAll.calls()).toBe(1);
+  });
+
+  it("test_security_page_logout_all_with_expired_session_still_logs_out", async () => {
+    const user = userEvent.setup();
+    server.use(logoutAllFails(401, "unauthenticated"));
+    const { router } = await renderSecurity();
+
+    await user.click(
+      within(logoutAllSection()).getByRole("button", { name: "Sair de todas as sessões" }),
+    );
+    await user.click(
+      within(await screen.findByRole("alertdialog")).getByRole("button", {
+        name: "Sair de todas as sessões",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/login");
+    });
+  });
+
+  it("test_security_page_logout_all_failure_stays_and_shows_reason", async () => {
+    const user = userEvent.setup();
+    server.use(logoutAllFails(403, "csrf_failed"));
+    const { router } = await renderSecurity();
+
+    await user.click(
+      within(logoutAllSection()).getByRole("button", { name: "Sair de todas as sessões" }),
+    );
+    await user.click(
+      within(await screen.findByRole("alertdialog")).getByRole("button", {
+        name: "Sair de todas as sessões",
+      }),
+    );
+
+    expect(await within(logoutAllSection()).findByRole("alert")).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe("/account/security");
+  });
+
+  it("test_security_page_logout_all_cancel_keeps_session", async () => {
+    const user = userEvent.setup();
+    const logoutAll = countingLogoutAll();
+    const { router } = await renderSecurity();
+
+    await user.click(
+      within(logoutAllSection()).getByRole("button", { name: "Sair de todas as sessões" }),
+    );
+    await user.click(
+      within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Cancelar" }),
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    });
+    expect(logoutAll.calls()).toBe(0);
+    expect(router.state.location.pathname).toBe("/account/security");
   });
 });

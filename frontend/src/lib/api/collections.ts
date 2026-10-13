@@ -1,14 +1,16 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { apiClient, unwrap } from "./client";
 import { fetchAllPages } from "./pages";
-import type { components } from "./schema.gen";
+import type { components, operations } from "./schema.gen";
 
 export type Collection = components["schemas"]["CollectionOut"];
 export type CollectionInput = components["schemas"]["CollectionCreate"];
 export type CollectionChanges = components["schemas"]["CollectionUpdate"];
 export type SearchRequest = components["schemas"]["SearchRequest"];
 export type SearchResult = components["schemas"]["SearchResult"];
+export type CollectionSync = components["schemas"]["CollectionSyncOut"];
+export type SyncSkipReason = components["schemas"]["SkipReason"];
 
 export function collectionsQueryKey(workspaceId: string) {
   return ["api", "workspaces", workspaceId, "collections"] as const;
@@ -34,6 +36,29 @@ export function useCollections(workspaceId: string) {
           }),
         ),
       ),
+  });
+}
+
+/** Search, filters, sort and page of `GET /v1/workspaces/{workspace_id}/collections` (`docs/specs`, "Listagens"). */
+export type CollectionListQuery = NonNullable<
+  operations["list_collections_v1_workspaces__workspace_id__collections_get"]["parameters"]["query"]
+>;
+
+/**
+ * One page of the collection list as the screen asks for it (search by name or description, credential, sort). The previous page stays on screen while the next one loads; mutations reload it (same key
+ * prefix as the full list).
+ */
+export function useCollectionPage(workspaceId: string, query: CollectionListQuery) {
+  return useQuery({
+    queryKey: [...collectionsQueryKey(workspaceId), "page", query],
+    queryFn: async ({ signal }) =>
+      unwrap(
+        await apiClient.GET("/v1/workspaces/{workspace_id}/collections", {
+          params: { path: { workspace_id: workspaceId }, query },
+          signal,
+        }),
+      ),
+    placeholderData: keepPreviousData,
   });
 }
 

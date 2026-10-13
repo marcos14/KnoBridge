@@ -5,19 +5,46 @@ import { Link } from "react-router";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { DataTable, type DataTableColumn } from "@/components/DataTable";
 import { FormAlert } from "@/components/FormAlert";
+import { ListToolbar } from "@/components/ListToolbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useCurrentWorkspace } from "@/hooks/use-current-workspace";
+import { useListSearch } from "@/hooks/use-list-search";
+import { useOffsetClamp } from "@/hooks/use-offset-clamp";
 import { translateApiError } from "@/i18n/apiErrors";
-import { type Assistant, useAssistants, useDeleteAssistant } from "@/lib/api/assistants";
+import {
+  type Assistant,
+  useAssistantPage,
+  useDeleteAssistant,
+  useDuplicateAssistant,
+} from "@/lib/api/assistants";
+import { useCollections } from "@/lib/api/collections";
 import { useProviders } from "@/lib/api/providers";
-import { clampOffset, pageOf } from "@/lib/pagination";
+import {
+  booleanFilter,
+  hasListCriteria,
+  isBooleanFilter,
+  type ListSearchSpec,
+  sortLabelKey,
+} from "@/lib/listSearch";
 import { canManageWorkspace } from "@/lib/roles";
+import { isUuid } from "@/lib/uuid";
 
 import { AssistantDialog } from "./AssistantDialog";
 
-/** Rows per page of the assistant table (paged in the browser). */
+/** Rows per page of the assistant table (paged by the API). */
 export const ASSISTANTS_PAGE_SIZE = 20;
+
+const ASSISTANT_SORTS = ["name", "-name", "-created_at", "-updated_at"] as const;
+
+/** Search, filters and sort of the list, in the URL. */
+const ASSISTANT_LIST: ListSearchSpec<
+  "active" | "provider" | "collection",
+  (typeof ASSISTANT_SORTS)[number]
+> = {
+  filters: { active: isBooleanFilter, provider: isUuid, collection: isUuid },
+  sorts: ASSISTANT_SORTS,
+};
 
 type Feedback = { kind: "status" | "alert"; message: string } | null;
 
@@ -53,11 +80,43 @@ function AssistantsList({
   canManageSecret: boolean;
 }) {
   const { t } = useTranslation();
-  const [requestedOffset, setRequestedOffset] = useState(0);
   const [feedback, setFeedback] = useState<Feedback>(null);
-  const assistants = useAssistants(workspaceId);
+  // The copy just made by "Duplicar", whose edit dialog opens at once.
+  const [copy, setCopy] = useState<Assistant | null>(null);
+  const { search, setQuery, setFilter, setSort, setOffset, clear } = useListSearch(ASSISTANT_LIST);
+  const { filters } = search;
+  const assistants = useAssistantPage(workspaceId, {
+    query: search.query === "" ? undefined : search.query,
+    active: booleanFilter(filters.active),
+    provider_id: filters.provider,
+    collection_id: filters.collection,
+    sort: search.sort,
+    limit: ASSISTANTS_PAGE_SIZE,
+    offset: search.offset,
+  });
+  useOffsetClamp(search.offset, ASSISTANTS_PAGE_SIZE, assistants.data?.total, setOffset);
   const providers = useProviders(workspaceId);
+  // Only names for the collection filter: while they load (or if they fail) it offers none.
+  const collections = useCollections(workspaceId);
   const remove = useDeleteAssistant(workspaceId);
+  const duplicate = useDuplicateAssistant(workspaceId);
+  const busy = remove.isPending || duplicate.isPending;
+
+  function onDuplicate(assistant: Assistant) {
+    setFeedback(null);
+    duplicate.mutate(assistant.id, {
+      onSuccess: (created) => {
+        setFeedback({
+          kind: "status",
+          message: t("assistants.duplicated", { name: created.name }),
+        });
+        setCopy(created);
+      },
+      onError: (error) => {
+        setFeedback({ kind: "alert", message: translateApiError(error, t) });
+      },
+    });
+  }
 
   function onDelete(assistant: Assistant) {
     setFeedback(null);
@@ -88,7 +147,7 @@ function AssistantsList({
       </>
     );
   }
-  if (assistants.isError || providers.isError) {
+  if (assistants.data === undefined || providers.isError) {
     return (
       <>
         {title}
@@ -111,10 +170,17 @@ function AssistantsList({
     );
   }
 
-  const all = assistants.data;
+  const { items, total } = assistants.data;
   const providerList = providers.data;
   const providerNames = new Map(providerList.map((item) => [item.id, item.name] as const));
-  const offset = clampOffset(requestedOffset, ASSISTANTS_PAGE_SIZE, all.length);
+  const criteria = hasListCriteria(search);
+  const filter = (key: keyof typeof filters) => ({
+    key,
+    value: filters[key],
+    onChange: (value: string | undefined) => {
+      setFilter(key, value);
+    },
+  });
   const showSaved = (key: "assistants.created" | "assistants.updated") => (saved: Assistant) => {
     setFeedback({ kind: "status", message: t(key, { name: saved.name }) });
   };
@@ -174,7 +240,7 @@ function AssistantsList({
                 type="button"
                 variant="outline"
                 size="sm"
-                disabled={remove.isPending}
+                disabled={busy}
                 aria-label={t("assistants.editLabel", { name: item.name })}
               >
                 {t("assistants.edit")}
@@ -182,13 +248,27 @@ function AssistantsList({
             }
             onSaved={showSaved("assistants.updated")}
           />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={busy}
+            aria-label={t("assistants.duplicateLabel", { name: item.name })}
+            onClick={() => {
+              onDuplicate(item);
+            }}
+          >
+            {duplicate.isPending && duplicate.variables === item.id
+              ? t("assistants.duplicating")
+              : t("assistants.duplicate")}
+          </Button>
           <ConfirmDialog
             trigger={
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                disabled={remove.isPending}
+                disabled={busy}
                 aria-label={t("assistants.deleteLabel", { name: item.name })}
               >
                 {t("assistants.delete")}
@@ -236,19 +316,82 @@ function AssistantsList({
           {feedback.message}
         </p>
       )}
+      <ListToolbar
+        searchLabel={t("assistants.search")}
+        searchPlaceholder={t("assistants.searchPlaceholder")}
+        query={search.query}
+        onQueryChange={setQuery}
+        filters={[
+          {
+            ...filter("active"),
+            label: t("assistants.columns.status"),
+            allLabel: t("listToolbar.allStatuses"),
+            options: [
+              { value: "true", label: t("listToolbar.activeOnly") },
+              { value: "false", label: t("listToolbar.inactiveOnly") },
+            ],
+          },
+          {
+            ...filter("provider"),
+            label: t("assistants.providerFilter"),
+            allLabel: t("assistants.allProviders"),
+            options: providerList.map((item) => ({ value: item.id, label: item.name })),
+          },
+          {
+            ...filter("collection"),
+            label: t("assistants.columns.collections"),
+            allLabel: t("assistants.allCollections"),
+            options: (collections.data ?? []).map((item) => ({ value: item.id, label: item.name })),
+          },
+        ]}
+        sort={{
+          value: search.sort,
+          options: ASSISTANT_SORTS.map((sort) => ({ value: sort, label: t(sortLabelKey(sort)) })),
+          onChange: setSort,
+        }}
+        onClear={criteria ? clear : undefined}
+      />
       <DataTable
         label={t("assistants.tableLabel")}
         columns={columns}
-        rows={pageOf(all, offset, ASSISTANTS_PAGE_SIZE)}
+        rows={items}
         rowKey={(item) => item.id}
-        emptyMessage={t("assistants.empty")}
+        emptyMessage={
+          criteria ? (
+            t("listToolbar.noResults")
+          ) : providerList.length > 0 ? (
+            <>
+              {t("assistants.emptyNext")}{" "}
+              <Link to={`/w/${workspaceId}/collections`} className="underline underline-offset-4">
+                {t("assistants.goToCollections")}
+              </Link>
+            </>
+          ) : (
+            t("assistants.empty")
+          )
+        }
+        busy={assistants.isPlaceholderData}
         pagination={{
-          offset,
+          offset: search.offset,
           limit: ASSISTANTS_PAGE_SIZE,
-          total: all.length,
-          onOffsetChange: setRequestedOffset,
+          total,
+          onOffsetChange: setOffset,
         }}
       />
+      {copy !== null && (
+        <AssistantDialog
+          key={copy.id}
+          workspaceId={workspaceId}
+          assistant={copy}
+          providers={providerList}
+          canManageSecret={canManageSecret}
+          defaultOpen
+          onClosed={() => {
+            setCopy(null);
+          }}
+          onSaved={showSaved("assistants.updated")}
+        />
+      )}
     </>
   );
 }

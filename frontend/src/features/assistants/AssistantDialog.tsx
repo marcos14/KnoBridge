@@ -57,8 +57,12 @@ interface AssistantDialogProps {
   assistant?: Assistant;
   /** Providers of the workspace, offered by the provider picker. */
   providers: readonly Provider[];
-  /** The element that opens the dialog (a `Button`). */
-  trigger: ReactElement;
+  /** The element that opens the dialog (a `Button`); absent, the dialog opens on its own. */
+  trigger?: ReactElement;
+  /** Opens at once, without a trigger (editing the copy right after "Duplicar"). */
+  defaultOpen?: boolean;
+  /** Called when the dialog closes (saved or dismissed). */
+  onClosed?: () => void;
   /** Owners and admins generate the webhook secret (a credential); editors only test it. */
   canManageSecret: boolean;
   onSaved: (assistant: Assistant) => void;
@@ -75,9 +79,11 @@ export function AssistantDialog({
   trigger,
   canManageSecret,
   onSaved,
+  defaultOpen = false,
+  onClosed,
 }: AssistantDialogProps) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
+  const [open, setOpenState] = useState(defaultOpen);
   const editing = assistant !== undefined;
   const create = useCreateAssistant(workspaceId);
   const update = useUpdateAssistant(workspaceId);
@@ -88,6 +94,13 @@ export function AssistantDialog({
     resolver: zodResolver(schema),
     defaultValues: defaults(),
   });
+
+  function setOpen(next: boolean) {
+    setOpenState(next);
+    if (!next) {
+      onClosed?.();
+    }
+  }
 
   function onOpenChange(next: boolean) {
     setOpen(next);
@@ -114,7 +127,7 @@ export function AssistantDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      {trigger !== undefined && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent showCloseButton={false} className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>

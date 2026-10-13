@@ -4,17 +4,42 @@ import type {
   Collection,
   CollectionChanges,
   CollectionInput,
+  CollectionSync,
   SearchRequest,
   SearchResult,
 } from "@/lib/api/collections";
 
 import { makeCollection, makeCollections, makeSearchResults } from "../factories";
 import { apiErrorResponse } from "./errors";
-import { page } from "./page";
+import { listRecorder, page } from "./page";
 
 const COLLECTIONS = "*/v1/workspaces/:workspaceId/collections";
 const COLLECTION = "*/v1/workspaces/:workspaceId/collections/:collectionId";
 const SEARCH = "*/v1/workspaces/:workspaceId/collections/:collectionId/search";
+const SYNC_ALL = "*/v1/workspaces/:workspaceId/collections/:collectionId/sync";
+
+/**
+ * POST .../collections/{id}/sync answering `result` (202; default: nothing started or skipped),
+ * keeping the collection ids in `synced`.
+ */
+export function collectionSyncAs(result: CollectionSync = { started: [], skipped: [] }) {
+  const synced: string[] = [];
+  const handler = http.post(SYNC_ALL, ({ params }) => {
+    synced.push(String(params.collectionId));
+    return HttpResponse.json<CollectionSync>(result, { status: 202 });
+  });
+  return { handler, synced };
+}
+
+/** POST .../collections/{id}/sync refused with `status` and `code` (503 `sync_unavailable`). */
+export function collectionSyncFails(status: number, code: string) {
+  return http.post(SYNC_ALL, () => apiErrorResponse(status, code));
+}
+
+/** GET of the collection list recording each query string; `query` matches name or description. */
+export function collectionsRecorder(collections: Collection[] = makeCollections()) {
+  return listRecorder(COLLECTIONS, collections, (item) => [item.name, item.description]);
+}
 
 function noContent() {
   return new HttpResponse(null, { status: 204 });
@@ -184,4 +209,5 @@ export const collectionsHandlers = [
   updateCollectionOk,
   deleteCollectionOk,
   searchRecorder().handler,
+  collectionSyncAs().handler,
 ];

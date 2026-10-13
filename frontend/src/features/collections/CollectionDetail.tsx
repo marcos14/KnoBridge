@@ -63,7 +63,11 @@ export function CollectionDetail({ workspaceId, collectionId, canManage }: Colle
             collection={collection.data}
             canManage={canManage}
           />
-          <CollectionSources workspaceId={workspaceId} collectionId={collectionId} />
+          <CollectionSources
+            workspaceId={workspaceId}
+            collectionId={collectionId}
+            canManage={canManage}
+          />
           <SearchPanel workspaceId={workspaceId} collectionId={collectionId} />
         </>
       )}

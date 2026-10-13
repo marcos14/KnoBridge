@@ -22,6 +22,7 @@ import {
   meAs,
   sourceActionFails,
   sourcesAs,
+  sourcesRecorder,
   sourcesServerError,
   sourceStore,
 } from "@/test/handlers";
@@ -53,6 +54,14 @@ function rowOf(name: string): HTMLElement {
     throw new Error(`No row for ${name}`);
   }
   return row;
+}
+
+async function confirmCancel(user: User) {
+  await user.click(screen.getByRole("button", { name: "Cancelar a sincronização de erp-core" }));
+  const dialog = await screen.findByRole("alertdialog", {
+    name: "Cancelar a sincronização de erp-core?",
+  });
+  await user.click(within(dialog).getByRole("button", { name: "Cancelar sincronização" }));
 }
 
 async function openCreate(user: User) {
@@ -385,6 +394,81 @@ describe("SourcesPage edit and delete", () => {
   });
 });
 
+describe("SourcesPage search, filters and sort", () => {
+  async function choose(user: User, label: string, option: string) {
+    await user.click(screen.getByRole("combobox", { name: label }));
+    await user.click(await screen.findByRole("option", { name: option }));
+  }
+
+  it("test_sources_page_searches_and_filters_on_the_api", async () => {
+    const user = userEvent.setup();
+    const recorder = sourcesRecorder([makeSource(), makeFolderSource()]);
+    server.use(recorder.handler);
+    const { router } = await renderSources();
+
+    await user.type(screen.getByRole("searchbox", { name: "Buscar fontes" }), "manu");
+    await waitFor(() => {
+      expect(recorder.last()).toBe("query=manu&sort=name");
+    });
+    await waitFor(() => {
+      expect(screen.queryByText("erp-core")).not.toBeInTheDocument();
+    });
+    expect(rowOf("manuais")).toBeInTheDocument();
+
+    await choose(user, "Tipo", "Pasta");
+    await choose(user, "Coleção", "Manuais");
+    await choose(user, "Situação", "Desativadas");
+    await choose(user, "Última execução", "Nunca sincronizada");
+
+    await waitFor(() => {
+      expect(recorder.last()).toBe(
+        `active=false&collection_id=${OTHER_COLLECTION_ID}&kind=folder&last_run_status=never&query=manu&sort=name`,
+      );
+    });
+    expect(router.state.location.search).toBe(
+      `?q=manu&kind=folder&collection=${OTHER_COLLECTION_ID}&active=false&lastRun=never`,
+    );
+  });
+
+  it("test_sources_page_sorts_by_last_run_and_shares_the_link", async () => {
+    const user = userEvent.setup();
+    const recorder = sourcesRecorder();
+    server.use(recorder.handler);
+    const { router } = renderWithProviders({ path: `${PATH}?active=true&lastRun=failed` });
+    await screen.findByRole("table", { name: TABLE });
+    expect(recorder.last()).toBe("active=true&last_run_status=failed&sort=name");
+
+    await choose(user, "Ordenar por", "Execução mais recente");
+
+    await waitFor(() => {
+      expect(recorder.last()).toBe("active=true&last_run_status=failed&sort=-last_run_at");
+    });
+    expect(router.state.location.search).toBe("?active=true&lastRun=failed&sort=-last_run_at");
+  });
+
+  it("test_sources_page_empty_state_says_what_to_do_next", async () => {
+    server.use(sourcesAs([]));
+    await renderSources();
+
+    expect(screen.getByText(/Use "Nova fonte" para ligar um repositório/)).toBeInTheDocument();
+  });
+
+  it("test_sources_page_filtered_without_results_offers_clear", async () => {
+    const user = userEvent.setup();
+    server.use(sourcesRecorder([]).handler);
+    const { router } = renderWithProviders({ path: `${PATH}?kind=tickets` });
+
+    expect(
+      await screen.findByText("Nada encontrado com a busca e os filtros atuais."),
+    ).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Limpar filtros" }));
+
+    await waitFor(() => {
+      expect(router.state.location.search).toBe("");
+    });
+  });
+});
+
 describe("SourcesPage sync", () => {
   it("test_sync_now_queues_a_run_and_offers_cancel", async () => {
     const user = userEvent.setup();
@@ -412,13 +496,33 @@ describe("SourcesPage sync", () => {
     await renderSources();
 
     expect(within(rowOf("erp-core")).getByText("Em execução")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Cancelar a sincronização de erp-core" }));
+    await confirmCancel(user);
 
     expect(await screen.findByText("Cancelamento da sincronização de erp-core pedido.")).toHaveRole(
       "status",
     );
     expect(store.cancelled).toEqual([SOURCE_ID]);
     expect(await within(rowOf("erp-core")).findByText("Cancelada")).toBeInTheDocument();
+  });
+
+  it("test_cancel_sync_dismissed_keeps_the_run", async () => {
+    const user = userEvent.setup();
+    const running = makeRun({ status: "running", finished_at: null });
+    const store = sourceStore([makeSource({ last_run: running })], {
+      runs: { [SOURCE_ID]: [running] },
+    });
+    server.use(...store.handlers);
+    await renderSources();
+
+    await user.click(screen.getByRole("button", { name: "Cancelar a sincronização de erp-core" }));
+    const dialog = await screen.findByRole("alertdialog");
+    expect(dialog).toHaveTextContent("O que já foi indexado continua no índice");
+    await user.click(within(dialog).getByRole("button", { name: "Cancelar" }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    });
+    expect(store.cancelled).toEqual([]);
   });
 
   it("test_sync_failure_shows_reason", async () => {
@@ -443,7 +547,7 @@ describe("SourcesPage sync", () => {
     );
     await renderSources();
 
-    await user.click(screen.getByRole("button", { name: "Cancelar a sincronização de erp-core" }));
+    await confirmCancel(user);
 
     expect(await screen.findByText("Não há sincronização em andamento nesta fonte.")).toHaveRole(
       "alert",

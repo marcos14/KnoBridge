@@ -95,10 +95,10 @@ fases:
         commit: null
       - id: F3.4
         titulo: Melhorias nas telas existentes (busca, filtros, paginação, ações novas e estados vazios)
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
-        concluida_em: null
+        concluida_em: 2026-10-12
         commit: null
   - id: F4
     titulo: Entrega
@@ -223,6 +223,13 @@ decisoes:
     decisao: "F3.2: área Uso e custos (owner/admin) em features/usage com período (este mês, mês passado, 30 dias, personalizado) e agrupamento na query string, cartões de totais, tabela ordenável com linha de total, barras em CSS por dia e CSV pelo navegador; períodos em dias UTC como o backend; formatadores de número e moeda movidos para lib/numberFormat.ts (features/sources/format.ts reexporta; a F3.1 passou a importar de lib/ na integração)"
     motivo: "consistência com o agrupamento do backend; uma área não importa a outra"
     alternativas: "dias no fuso do navegador; biblioteca de gráficos"
+    adr: null
+  - id: D17
+    data: 2026-10-12
+    por: agente
+    decisao: "F3.4: listas de assistentes, provedores, coleções, fontes, membros e runners com busca, filtros, ordenação e paginação no servidor (20 por página, estado na URL, busca com espera de 300 ms) via components/ListToolbar.tsx, hooks/use-list-search.ts e use-offset-clamp.ts; Reindexar (desabilitado com motivo para chamados), Sincronizar todas, Duplicar (abre a edição da cópia) e Sair de todas as sessões; estados vazios com o próximo passo e Limpar filtros; Cancelar sincronização passou a pedir confirmação; os hooks de lista completa continuam para diálogos e filtros"
+    motivo: "contrato da F2.5 e telas que orientam o próximo passo"
+    alternativas: "busca no navegador; paginação infinita"
     adr: null
 pendencias_usuario: []
 ---
@@ -469,6 +476,7 @@ Nenhuma.
 - 2026-10-12 — F3.2 concluída: tela de Uso e custos com filtros, totais, tabela, gráfico por dia e CSV, integrada sobre a F3.1; frontend 1342 testes, 98,62% de branches, lint, formato, build e check:api
 - 2026-10-12 — F3.3 iniciada (agente em worktree).
 - 2026-10-12 — F3.4 iniciada (agente em worktree).
+- 2026-10-12 — F3.4 concluída: busca, filtros, ordenação e paginação nas seis listas, Reindexar, Sincronizar todas, Duplicar, Sair de todas as sessões e estados vazios; gates do agente: frontend 1398 testes, 98,54% de branches, build e check:api; orquestrador: lint, typecheck e formato na integração
 
 ## 8. Encerramento
 

@@ -18,6 +18,7 @@ import {
 } from "@/test/factories";
 import {
   collectionsAs,
+  collectionsRecorder,
   collectionsServerError,
   collectionStore,
   createCollectionFails,
@@ -168,6 +169,67 @@ describe("CollectionsPage list", () => {
 
     expect(await screen.findByRole("heading", { level: 1, name: "Coleções" })).toBeInTheDocument();
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
+  });
+});
+
+describe("CollectionsPage search, filter and sort", () => {
+  it("test_collections_page_searches_filters_by_credential_and_sorts", async () => {
+    const user = userEvent.setup();
+    const recorder = collectionsRecorder();
+    server.use(recorder.handler);
+    const { router } = await renderCollections();
+
+    await user.type(screen.getByRole("searchbox", { name: "Buscar coleções" }), "commits");
+    await waitFor(() => {
+      expect(recorder.last()).toBe("query=commits&sort=name");
+    });
+    await waitFor(() => {
+      expect(screen.queryByText("Manuais")).not.toBeInTheDocument();
+    });
+    expect(rowOf("Código ERP")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("combobox", { name: "Credencial" }));
+    await user.click(await screen.findByRole("option", { name: "OpenAI Produção" }));
+    await waitFor(() => {
+      expect(recorder.last()).toBe(`provider_id=${PROVIDER_ID}&query=commits&sort=name`);
+    });
+
+    await user.click(screen.getByRole("combobox", { name: "Ordenar por" }));
+    await user.click(await screen.findByRole("option", { name: "Mais documentos" }));
+    await waitFor(() => {
+      expect(router.state.location.search).toBe(
+        `?q=commits&provider=${PROVIDER_ID}&sort=-document_count`,
+      );
+    });
+  });
+
+  it("test_collections_page_viewer_searches_without_credential_filter", async () => {
+    asRole("viewer");
+    await renderCollections();
+
+    expect(screen.getByRole("searchbox", { name: "Buscar coleções" })).toBeInTheDocument();
+    expect(screen.queryByRole("combobox", { name: "Credencial" })).not.toBeInTheDocument();
+  });
+
+  it("test_collections_page_empty_state_points_to_sources", async () => {
+    server.use(...collectionsAs([]));
+    await renderCollections();
+
+    expect(screen.getByText(/Crie uma em "Nova coleção"/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Ir para fontes" })).toHaveAttribute(
+      "href",
+      `/w/${WORKSPACE_ID}/sources`,
+    );
+  });
+
+  it("test_collections_page_filtered_without_results_says_so", async () => {
+    server.use(collectionsRecorder([]).handler);
+    renderWithProviders({ path: `${PATH}?q=nada` });
+
+    expect(
+      await screen.findByText("Nada encontrado com a busca e os filtros atuais."),
+    ).toBeVisible();
+    expect(screen.queryByRole("link", { name: "Ir para fontes" })).not.toBeInTheDocument();
   });
 });
 

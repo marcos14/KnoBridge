@@ -34,8 +34,8 @@ interface DataTableProps<Row> {
   columns: readonly DataTableColumn<Row>[];
   rows: readonly Row[];
   rowKey: (row: Row) => string;
-  /** Shown in place of the rows when there are none. */
-  emptyMessage: string;
+  /** Shown in place of the rows when there are none (text, or text with the next step's link). */
+  emptyMessage: ReactNode;
   pagination?: DataTablePagination;
   /** Marks the table busy while a new page loads (the previous rows stay on screen). */
   busy?: boolean;

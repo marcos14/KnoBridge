@@ -9,9 +9,13 @@ import {
   makeSource,
   makeWorkspace,
   OTHER_COLLECTION_ID,
+  RUN_ID,
+  SOURCE_ID,
   WORKSPACE_ID,
 } from "@/test/factories";
 import {
+  collectionSyncAs,
+  collectionSyncFails,
   collectionServerError,
   collectionStore,
   collectionsAs,
@@ -173,6 +177,90 @@ describe("CollectionDetail", () => {
     await search(user, "fechar caixa");
 
     expect(await screen.findByText("Trechos encontrados: 2")).toBeInTheDocument();
+  });
+});
+
+describe("CollectionDetail sync all", () => {
+  const PAUSED_ID = "00000000-0000-4000-8000-0000000000c9";
+  const RUNNING_ID = "00000000-0000-4000-8000-0000000000ca";
+  const SOURCES = [
+    makeSource(),
+    makeSource({ id: PAUSED_ID, name: "docs-antigas", active: false }),
+    makeSource({ id: RUNNING_ID, name: "portal" }),
+  ];
+
+  it("test_collection_detail_syncs_all_and_lists_skipped_with_reason", async () => {
+    const user = userEvent.setup();
+    const sync = collectionSyncAs({
+      started: [{ source_id: SOURCE_ID, run_id: RUN_ID }],
+      skipped: [
+        { source_id: PAUSED_ID, reason: "source_inactive" },
+        { source_id: RUNNING_ID, reason: "sync_already_running" },
+      ],
+    });
+    server.use(sourcesAs(SOURCES), sync.handler);
+    await renderDetail();
+
+    await user.click(await screen.findByRole("button", { name: "Sincronizar todas" }));
+
+    expect(await screen.findByText("Sincronização iniciada em 1 fonte.")).toBeInTheDocument();
+    expect(screen.getByText("2 fontes ficaram de fora:")).toBeInTheDocument();
+    expect(screen.getByText("docs-antigas: está desativada")).toBeInTheDocument();
+    expect(screen.getByText("portal: já está sincronizando")).toBeInTheDocument();
+    expect(sync.synced).toEqual([COLLECTION_ID]);
+  });
+
+  it("test_collection_detail_sync_all_without_start_says_so", async () => {
+    const user = userEvent.setup();
+    const unknown = "00000000-0000-4000-8000-0000000000cb";
+    server.use(
+      sourcesAs([makeSource()]),
+      collectionSyncAs({
+        started: [],
+        skipped: [
+          { source_id: SOURCE_ID, reason: "sync_unavailable" },
+          { source_id: unknown, reason: "source_inactive" },
+        ],
+      }).handler,
+    );
+    await renderDetail();
+
+    await user.click(await screen.findByRole("button", { name: "Sincronizar todas" }));
+
+    expect(await screen.findByText("Nenhuma sincronização foi iniciada.")).toBeInTheDocument();
+    expect(
+      screen.getByText("erp-core: o serviço de sincronização ficou indisponível"),
+    ).toBeInTheDocument();
+    expect(screen.getByText(`${unknown}: está desativada`)).toBeInTheDocument();
+  });
+
+  it("test_collection_detail_sync_all_failure_shows_reason", async () => {
+    const user = userEvent.setup();
+    server.use(collectionSyncFails(503, "sync_unavailable"));
+    await renderDetail();
+
+    await user.click(await screen.findByRole("button", { name: "Sincronizar todas" }));
+
+    expect(
+      await screen.findByText(
+        "O serviço de sincronização está indisponível. Tente de novo em instantes.",
+      ),
+    ).toHaveRole("alert");
+  });
+
+  it("test_collection_detail_sync_all_disabled_without_sources", async () => {
+    server.use(sourcesAs([]));
+    await renderDetail();
+
+    expect(await screen.findByRole("button", { name: "Sincronizar todas" })).toBeDisabled();
+  });
+
+  it("test_collection_detail_viewer_cannot_sync_all", async () => {
+    asRole("viewer");
+    await renderDetail();
+    await screen.findByRole("table", { name: "Fontes da coleção" });
+
+    expect(screen.queryByRole("button", { name: "Sincronizar todas" })).not.toBeInTheDocument();
   });
 });
 

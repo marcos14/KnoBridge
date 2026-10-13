@@ -4,21 +4,33 @@ import { useTranslation } from "react-i18next";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { DataTable, type DataTableColumn } from "@/components/DataTable";
 import { FormAlert } from "@/components/FormAlert";
+import { ListToolbar } from "@/components/ListToolbar";
 import { Button } from "@/components/ui/button";
 import { useCurrentWorkspace } from "@/hooks/use-current-workspace";
+import { useListSearch } from "@/hooks/use-list-search";
+import { useOffsetClamp } from "@/hooks/use-offset-clamp";
 import { translateApiError, translateApiErrorCode } from "@/i18n/apiErrors";
 import {
   type Provider,
   useDeleteProvider,
-  useProviders,
+  useProviderPage,
   useTestProvider,
 } from "@/lib/api/providers";
-import { clampOffset, pageOf } from "@/lib/pagination";
+import { hasListCriteria, type ListSearchSpec, oneOf, sortLabelKey } from "@/lib/listSearch";
 
 import { ProviderDialog } from "./ProviderDialog";
+import { PROVIDER_KINDS } from "./providerForm";
 
-/** Rows per page of the provider table (paged in the browser). */
+/** Rows per page of the provider table (paged by the API). */
 export const PROVIDERS_PAGE_SIZE = 20;
+
+const PROVIDER_SORTS = ["name", "-name", "-created_at", "-updated_at"] as const;
+
+/** Search, kind filter and sort of the list, in the URL. */
+const PROVIDER_LIST: ListSearchSpec<"kind", (typeof PROVIDER_SORTS)[number]> = {
+  filters: { kind: oneOf(PROVIDER_KINDS) },
+  sorts: PROVIDER_SORTS,
+};
 
 type Feedback = { kind: "status" | "alert"; message: string } | null;
 
@@ -44,9 +56,16 @@ export function ProvidersPage() {
 
 function ProvidersList({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation();
-  const [requestedOffset, setRequestedOffset] = useState(0);
   const [feedback, setFeedback] = useState<Feedback>(null);
-  const providers = useProviders(workspaceId);
+  const { search, setQuery, setFilter, setSort, setOffset, clear } = useListSearch(PROVIDER_LIST);
+  const providers = useProviderPage(workspaceId, {
+    query: search.query === "" ? undefined : search.query,
+    kind: PROVIDER_KINDS.find((kind) => kind === search.filters.kind),
+    sort: search.sort,
+    limit: PROVIDERS_PAGE_SIZE,
+    offset: search.offset,
+  });
+  useOffsetClamp(search.offset, PROVIDERS_PAGE_SIZE, providers.data?.total, setOffset);
   const remove = useDeleteProvider(workspaceId);
   const test = useTestProvider(workspaceId);
   const busy = remove.isPending || test.isPending;
@@ -108,6 +127,37 @@ function ProvidersList({ workspaceId }: { workspaceId: string }) {
     </div>
   );
 
+  const criteria = hasListCriteria(search);
+  const toolbar = (
+    <ListToolbar
+      searchLabel={t("providers.search")}
+      searchPlaceholder={t("providers.searchPlaceholder")}
+      query={search.query}
+      onQueryChange={setQuery}
+      filters={[
+        {
+          key: "kind",
+          label: t("providers.columns.kind"),
+          allLabel: t("providers.allKinds"),
+          value: search.filters.kind,
+          options: PROVIDER_KINDS.map((kind) => ({
+            value: kind,
+            label: t(`providers.kinds.${kind}`),
+          })),
+          onChange: (value) => {
+            setFilter("kind", value);
+          },
+        },
+      ]}
+      sort={{
+        value: search.sort,
+        options: PROVIDER_SORTS.map((sort) => ({ value: sort, label: t(sortLabelKey(sort)) })),
+        onChange: setSort,
+      }}
+      onClear={criteria ? clear : undefined}
+    />
+  );
+
   if (providers.isPending) {
     return (
       <>
@@ -118,7 +168,7 @@ function ProvidersList({ workspaceId }: { workspaceId: string }) {
       </>
     );
   }
-  if (providers.isError) {
+  if (providers.data === undefined) {
     return (
       <>
         {header}
@@ -140,8 +190,7 @@ function ProvidersList({ workspaceId }: { workspaceId: string }) {
     );
   }
 
-  const all = providers.data;
-  const offset = clampOffset(requestedOffset, PROVIDERS_PAGE_SIZE, all.length);
+  const { items, total } = providers.data;
   const columns: DataTableColumn<Provider>[] = [
     { key: "name", header: t("providers.columns.name"), cell: (item) => item.name },
     {
@@ -235,17 +284,19 @@ function ProvidersList({ workspaceId }: { workspaceId: string }) {
           {feedback.message}
         </p>
       )}
+      {toolbar}
       <DataTable
         label={t("providers.tableLabel")}
         columns={columns}
-        rows={pageOf(all, offset, PROVIDERS_PAGE_SIZE)}
+        rows={items}
         rowKey={(item) => item.id}
-        emptyMessage={t("providers.empty")}
+        emptyMessage={criteria ? t("listToolbar.noResults") : t("providers.empty")}
+        busy={providers.isPlaceholderData}
         pagination={{
-          offset,
+          offset: search.offset,
           limit: PROVIDERS_PAGE_SIZE,
-          total: all.length,
-          onOffsetChange: setRequestedOffset,
+          total,
+          onOffsetChange: setOffset,
         }}
       />
     </>

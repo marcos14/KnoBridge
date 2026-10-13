@@ -21,19 +21,20 @@ import {
   SOURCE_ID,
 } from "../factories";
 import { apiErrorResponse } from "./errors";
-import { page } from "./page";
+import { listRecorder, page } from "./page";
 
 const SOURCES = "*/v1/workspaces/:workspaceId/sources";
 const SOURCE = "*/v1/workspaces/:workspaceId/sources/:sourceId";
 const TEST = "*/v1/workspaces/:workspaceId/sources/:sourceId/test";
 const SYNC = "*/v1/workspaces/:workspaceId/sources/:sourceId/sync";
 const CANCEL = "*/v1/workspaces/:workspaceId/sources/:sourceId/cancel";
+const REINDEX = "*/v1/workspaces/:workspaceId/sources/:sourceId/reindex";
 const RUNS = "*/v1/workspaces/:workspaceId/sources/:sourceId/runs";
 const DOCUMENTS = "*/v1/workspaces/:workspaceId/sources/:sourceId/documents";
 const RUN = "*/v1/workspaces/:workspaceId/runs/:runId";
 
 /** Mutations of a source, for `sourceActionFails`. */
-export type SourceAction = "create" | "update" | "delete" | "test" | "sync" | "cancel";
+export type SourceAction = "create" | "update" | "delete" | "test" | "sync" | "cancel" | "reindex";
 
 const ACTION_HANDLERS = {
   create: [http.post, SOURCES],
@@ -42,7 +43,24 @@ const ACTION_HANDLERS = {
   test: [http.post, TEST],
   sync: [http.post, SYNC],
   cancel: [http.post, CANCEL],
+  reindex: [http.post, REINDEX],
 } as const;
+
+/** The run a sync or a reindex queues: synthetic id number `n`. */
+function queuedRun(sourceId: string, n: number): Run {
+  return makeRun({
+    id: `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`,
+    source_id: sourceId,
+    status: "queued",
+    documents_new: 0,
+    chunks_written: 0,
+    embedding_tokens: 0,
+    cost_usd: null,
+    created_at: "2026-10-10T12:00:00Z",
+    started_at: null,
+    finished_at: null,
+  });
+}
 
 function noContent() {
   return new HttpResponse(null, { status: 204 });
@@ -88,6 +106,11 @@ export function sourcesAs(sources: Source[] = [makeSource()]) {
   return http.get(SOURCES, ({ request }) => listOf(request, sources));
 }
 
+/** GET of the source list recording each query string; `query` matches the name. */
+export function sourcesRecorder(sources: Source[] = [makeSource()]) {
+  return listRecorder(SOURCES, sources, (item) => [item.name]);
+}
+
 /** GET /v1/workspaces/{id}/sources with the default list. */
 export const sourcesOk = sourcesAs();
 
@@ -128,7 +151,8 @@ interface SourceStoreOptions {
 /**
  * Sources that really change, with the backend's rules: `POST` adds one (409
  * `source_name_taken`), `PATCH` applies the given fields (`schedule_cron: null` clears it), `DELETE`
- * removes it, `sync` queues a run (409 `source_inactive` or `sync_already_running`), `cancel`
+ * removes it, `sync` queues a run (409 `source_inactive` or `sync_already_running`), `reindex`
+ * too (and 409 `source_reindex_unsupported` for tickets; ids in `reindexed`), `cancel`
  * cancels the active one (409 `sync_not_running`). Runs, run errors and documents are served from
  * the options. `finishRun(sourceId, status)` plays the worker ending the active run. `created`,
  * `changes`, `deleted`, `tested`, `synced`, `cancelled`, `documentQueries` and `reads` (the source
@@ -148,6 +172,7 @@ export function sourceStore(initial: Source[] = [makeSource()], options: SourceS
   const tested: string[] = [];
   const synced: string[] = [];
   const cancelled: string[] = [];
+  const reindexed: string[] = [];
   const documentQueries: URLSearchParams[] = [];
   const reads: string[] = [];
   const find = (id: unknown) => sources.find((item) => item.id === id);
@@ -250,20 +275,29 @@ export function sourceStore(initial: Source[] = [makeSource()], options: SourceS
       if (activeRun(source) !== undefined) {
         return apiErrorResponse(409, "sync_already_running");
       }
-      const run = makeRun({
-        id: `00000000-0000-4000-8000-${String(970 + synced.length).padStart(12, "0")}`,
-        source_id: sourceId,
-        status: "queued",
-        documents_new: 0,
-        chunks_written: 0,
-        embedding_tokens: 0,
-        cost_usd: null,
-        created_at: "2026-10-10T12:00:00Z",
-        started_at: null,
-        finished_at: null,
-      });
+      const run = queuedRun(sourceId, 970 + synced.length);
       setRun(sourceId, run);
       synced.push(sourceId);
+      return HttpResponse.json<Run>(run, { status: 202 });
+    }),
+    http.post(REINDEX, ({ params }) => {
+      const sourceId = String(params.sourceId);
+      const source = find(sourceId);
+      if (source === undefined) {
+        return apiErrorResponse(404, "source_not_found");
+      }
+      if (source.kind === "tickets") {
+        return apiErrorResponse(409, "source_reindex_unsupported");
+      }
+      if (!source.active) {
+        return apiErrorResponse(409, "source_inactive");
+      }
+      if (activeRun(source) !== undefined) {
+        return apiErrorResponse(409, "sync_already_running");
+      }
+      const run = queuedRun(sourceId, 990 + reindexed.length);
+      setRun(sourceId, run);
+      reindexed.push(sourceId);
       return HttpResponse.json<Run>(run, { status: 202 });
     }),
     http.post(CANCEL, ({ params }) => {
@@ -300,6 +334,7 @@ export function sourceStore(initial: Source[] = [makeSource()], options: SourceS
     tested,
     synced,
     cancelled,
+    reindexed,
     documentQueries,
     reads,
     finishRun,
@@ -318,6 +353,7 @@ export const sourcesHandlers = [
   http.post(CANCEL, () =>
     HttpResponse.json<Run>(makeRun({ status: "cancelled" }), { status: 202 }),
   ),
+  http.post(REINDEX, () => HttpResponse.json<Run>(makeRun({ status: "queued" }), { status: 202 })),
   http.get(RUNS, ({ request }) => page(request, makeRuns())),
   http.get(RUN, () => HttpResponse.json<RunDetail>(makeRunDetail())),
   http.get(DOCUMENTS, ({ request }) => documentsOf(request, makeSourceDocuments())),

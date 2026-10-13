@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Button } from "@/components/ui/button";
 import { translateApiError } from "@/i18n/apiErrors";
 import { isRunActive, type Source, useCancelSync, useSyncSource } from "@/lib/api/sources";
@@ -14,8 +15,8 @@ interface SyncButtonProps {
 }
 
 /**
- * "Sincronizar agora", or "Cancelar sincronização" while the last run is queued or running. The
- * reload after either starts (or ends) the polling of the screen.
+ * "Sincronizar agora", or "Cancelar sincronização" (after a confirmation) while the last run is
+ * queued or running. The reload after either starts (or ends) the polling of the screen.
  */
 export function SyncButton({ workspaceId, source, size = "default", onFeedback }: SyncButtonProps) {
   const { t } = useTranslation();
@@ -33,19 +34,26 @@ export function SyncButton({ workspaceId, source, size = "default", onFeedback }
   });
 
   return running ? (
-    <Button
-      type="button"
-      variant="outline"
-      size={size}
-      disabled={busy}
-      aria-label={t("sources.cancelLabel", { name: source.name })}
-      onClick={() => {
+    <ConfirmDialog
+      trigger={
+        <Button
+          type="button"
+          variant="outline"
+          size={size}
+          disabled={busy}
+          aria-label={t("sources.cancelLabel", { name: source.name })}
+        >
+          {t("sources.cancel")}
+        </Button>
+      }
+      title={t("sources.cancelTitle", { name: source.name })}
+      description={t("sources.cancelDescription")}
+      confirmLabel={t("sources.cancel")}
+      onConfirm={() => {
         onFeedback(null);
         cancel.mutate(source.id, callbacks("sources.cancelRequested"));
       }}
-    >
-      {t("sources.cancel")}
-    </Button>
+    />
   ) : (
     <Button
       type="button"

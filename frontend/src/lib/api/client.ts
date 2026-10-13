@@ -18,6 +18,7 @@ const EXPECTED_UNAUTHORIZED = [
   { method: "GET", path: "/v1/me" },
   { method: "POST", path: "/v1/auth/login" },
   { method: "POST", path: "/v1/auth/logout" },
+  { method: "POST", path: "/v1/auth/logout-all" },
   { method: "POST", path: "/v1/invites/accept" },
 ];
 

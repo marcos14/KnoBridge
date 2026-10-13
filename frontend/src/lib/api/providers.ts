@@ -1,8 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { apiClient, unwrap } from "./client";
 import { fetchAllPages } from "./pages";
-import type { components } from "./schema.gen";
+import type { components, operations } from "./schema.gen";
 
 export type Provider = components["schemas"]["ProviderOut"];
 export type ProviderKind = components["schemas"]["ProviderKind"];
@@ -32,6 +32,29 @@ export function useProviders(workspaceId: string, { enabled = true }: { enabled?
           }),
         ),
       ),
+  });
+}
+
+/** Search, filters, sort and page of `GET /v1/workspaces/{workspace_id}/providers` (`docs/specs`, "Listagens"). */
+export type ProviderListQuery = NonNullable<
+  operations["list_providers_v1_workspaces__workspace_id__providers_get"]["parameters"]["query"]
+>;
+
+/**
+ * One page of the provider list as the screen asks for it (search by name, kind, sort). The previous page stays on screen while the next one loads; mutations reload it (same key
+ * prefix as the full list).
+ */
+export function useProviderPage(workspaceId: string, query: ProviderListQuery) {
+  return useQuery({
+    queryKey: [...providersQueryKey(workspaceId), "page", query],
+    queryFn: async ({ signal }) =>
+      unwrap(
+        await apiClient.GET("/v1/workspaces/{workspace_id}/providers", {
+          params: { path: { workspace_id: workspaceId }, query },
+          signal,
+        }),
+      ),
+    placeholderData: keepPreviousData,
   });
 }
 

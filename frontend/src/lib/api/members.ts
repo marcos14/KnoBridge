@@ -1,8 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { type Me, meQueryKey, type Role } from "./auth";
 import { apiClient, unwrap } from "./client";
-import type { components } from "./schema.gen";
+import type { components, operations } from "./schema.gen";
 
 export type Member = components["schemas"]["MemberOut"];
 
@@ -33,14 +33,34 @@ export async function fetchMembers(workspaceId: string, signal?: AbortSignal): P
   }
 }
 
-/**
- * Members of the workspace. The whole list is loaded because the API has no search: the screen
- * filters and pages it locally (a workspace has people, not thousands of rows).
- */
+/** Every member of the workspace (filters of other screens, like the conversations'). */
 export function useMembers(workspaceId: string) {
   return useQuery({
     queryKey: membersQueryKey(workspaceId),
     queryFn: ({ signal }) => fetchMembers(workspaceId, signal),
+  });
+}
+
+/** Search, filters, sort and page of `GET /v1/workspaces/{workspace_id}/members` (`docs/specs`, "Listagens"). */
+export type MemberListQuery = NonNullable<
+  operations["list_members_v1_workspaces__workspace_id__members_get"]["parameters"]["query"]
+>;
+
+/**
+ * One page of the member list as the screen asks for it (search by name or e-mail, role, sort). The previous page stays on screen while the next one loads; mutations reload it (same key
+ * prefix as the full list).
+ */
+export function useMemberPage(workspaceId: string, query: MemberListQuery) {
+  return useQuery({
+    queryKey: [...membersQueryKey(workspaceId), "page", query],
+    queryFn: async ({ signal }) =>
+      unwrap(
+        await apiClient.GET("/v1/workspaces/{workspace_id}/members", {
+          params: { path: { workspace_id: workspaceId }, query },
+          signal,
+        }),
+      ),
+    placeholderData: keepPreviousData,
   });
 }
 

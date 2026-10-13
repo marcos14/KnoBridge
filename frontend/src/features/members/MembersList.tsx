@@ -1,26 +1,39 @@
-import { useId, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { DataTable, type DataTableColumn } from "@/components/DataTable";
 import { FormAlert } from "@/components/FormAlert";
+import { ListToolbar } from "@/components/ListToolbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useListSearch } from "@/hooks/use-list-search";
+import { useOffsetClamp } from "@/hooks/use-offset-clamp";
 import { translateApiError } from "@/i18n/apiErrors";
 import type { Role } from "@/lib/api/auth";
-import { type Member, useChangeMemberRole, useMembers, useRemoveMember } from "@/lib/api/members";
+import {
+  type Member,
+  useChangeMemberRole,
+  useMemberPage,
+  useRemoveMember,
+} from "@/lib/api/members";
 import { formatDateTime } from "@/lib/intl";
-import { clampOffset, pageOf } from "@/lib/pagination";
-import { canHandleRole } from "@/lib/roles";
+import { hasListCriteria, type ListSearchSpec, oneOf, sortLabelKey } from "@/lib/listSearch";
+import { canHandleRole, ROLES } from "@/lib/roles";
 
-import { filterMembers } from "./filterMembers";
 import { RoleSelect } from "./RoleSelect";
 
-/** Rows per page of the member table. */
+/** Rows per page of the member table (paged by the API). */
 export const MEMBERS_PAGE_SIZE = 20;
+
+const MEMBER_SORTS = ["name", "-name", "email", "role", "-joined_at", "joined_at"] as const;
+
+/** Search, role filter and sort of the list, in the URL. */
+const MEMBER_LIST: ListSearchSpec<"role", (typeof MEMBER_SORTS)[number]> = {
+  filters: { role: oneOf(ROLES) },
+  sorts: MEMBER_SORTS,
+};
 
 interface MembersListProps {
   workspaceId: string;
@@ -30,25 +43,29 @@ interface MembersListProps {
 }
 
 /**
- * Members of the workspace with search and paging in the browser. Owners and admins change roles
- * and remove members they may manage; everyone else reads the list.
+ * Members of the workspace with search, role filter, sort and paging by the API (state in the
+ * URL). Owners and admins change roles and remove members they may manage; everyone else reads.
  */
 export function MembersList({ workspaceId, currentUserId, actorRole }: MembersListProps) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const searchId = useId();
-  const [query, setQuery] = useState("");
-  const [requestedOffset, setRequestedOffset] = useState(0);
   const [notice, setNotice] = useState<string | null>(null);
-  const members = useMembers(workspaceId);
+  const { search, setQuery, setFilter, setSort, setOffset, clear } = useListSearch(MEMBER_LIST);
+  const members = useMemberPage(workspaceId, {
+    query: search.query === "" ? undefined : search.query,
+    role: ROLES.find((role) => role === search.filters.role),
+    sort: search.sort,
+    limit: MEMBERS_PAGE_SIZE,
+    offset: search.offset,
+  });
+  useOffsetClamp(search.offset, MEMBERS_PAGE_SIZE, members.data?.total, setOffset);
   const changeRole = useChangeMemberRole(workspaceId);
   const remove = useRemoveMember(workspaceId);
   const busy = changeRole.isPending || remove.isPending;
+  const criteria = hasListCriteria(search);
 
-  const filtered = filterMembers(members.data ?? [], query);
-  const offset = clampOffset(requestedOffset, MEMBERS_PAGE_SIZE, filtered.length);
   const canManage = (member: Member) => canHandleRole(actorRole, member.role);
-  const anyManageable = members.data?.some(canManage) ?? false;
+  const anyManageable = members.data?.items.some(canManage) ?? false;
 
   function startAction() {
     setNotice(null);
@@ -146,7 +163,7 @@ export function MembersList({ workspaceId, currentUserId, actorRole }: MembersLi
       </p>
     );
   }
-  if (members.isError) {
+  if (members.data === undefined) {
     return (
       <div className="flex flex-col items-start gap-3">
         <p role="alert" className="text-sm">
@@ -167,19 +184,30 @@ export function MembersList({ workspaceId, currentUserId, actorRole }: MembersLi
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2 sm:max-w-sm">
-        <Label htmlFor={searchId}>{t("members.search")}</Label>
-        <Input
-          id={searchId}
-          type="search"
-          value={query}
-          placeholder={t("members.searchPlaceholder")}
-          onChange={(event) => {
-            setQuery(event.target.value);
-            setRequestedOffset(0);
-          }}
-        />
-      </div>
+      <ListToolbar
+        searchLabel={t("members.search")}
+        searchPlaceholder={t("members.searchPlaceholder")}
+        query={search.query}
+        onQueryChange={setQuery}
+        filters={[
+          {
+            key: "role",
+            label: t("members.columns.role"),
+            allLabel: t("members.allRoles"),
+            value: search.filters.role,
+            options: ROLES.map((role) => ({ value: role, label: t(`members.roleNames.${role}`) })),
+            onChange: (value) => {
+              setFilter("role", value);
+            },
+          },
+        ]}
+        sort={{
+          value: search.sort,
+          options: MEMBER_SORTS.map((sort) => ({ value: sort, label: t(sortLabelKey(sort)) })),
+          onChange: setSort,
+        }}
+        onClear={criteria ? clear : undefined}
+      />
       {changeRole.isError && <FormAlert message={translateApiError(changeRole.error, t)} />}
       {remove.isError && <FormAlert message={translateApiError(remove.error, t)} />}
       {notice !== null && (
@@ -190,14 +218,15 @@ export function MembersList({ workspaceId, currentUserId, actorRole }: MembersLi
       <DataTable
         label={t("members.tableLabel")}
         columns={columns}
-        rows={pageOf(filtered, offset, MEMBERS_PAGE_SIZE)}
+        rows={members.data.items}
         rowKey={(member) => member.user_id}
-        emptyMessage={t("members.empty")}
+        emptyMessage={criteria ? t("listToolbar.noResults") : t("members.empty")}
+        busy={members.isPlaceholderData}
         pagination={{
-          offset,
+          offset: search.offset,
           limit: MEMBERS_PAGE_SIZE,
-          total: filtered.length,
-          onOffsetChange: setRequestedOffset,
+          total: members.data.total,
+          onOffsetChange: setOffset,
         }}
       />
     </div>

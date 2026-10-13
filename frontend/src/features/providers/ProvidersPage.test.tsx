@@ -20,6 +20,7 @@ import {
   meAs,
   providersAs,
   providersOk,
+  providersRecorder,
   providersServerError,
   providerStore,
   testProviderFails,
@@ -88,7 +89,7 @@ describe("ProvidersPage list", () => {
     await renderProviders();
 
     expect(
-      screen.getByText("Nenhum provedor cadastrado. Cadastre um para criar assistentes."),
+      screen.getByText(/Nenhum provedor cadastrado\. Comece por "Novo provedor"/),
     ).toBeInTheDocument();
   });
 
@@ -106,7 +107,7 @@ describe("ProvidersPage list", () => {
     expect(screen.getByText("1–20 de 25")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Próxima" }));
 
-    expect(screen.getByText("21–25 de 25")).toBeInTheDocument();
+    expect(await screen.findByText("21–25 de 25")).toBeInTheDocument();
     expect(rowOf("Provedor 24")).toBeInTheDocument();
   });
 
@@ -162,6 +163,92 @@ describe("ProvidersPage list", () => {
 
     expect(screen.getByRole("button", { name: "Novo provedor" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "Excluir Anthropic" })).toBeEnabled();
+  });
+});
+
+describe("ProvidersPage search, filter and sort", () => {
+  async function choose(user: User, label: string, option: string) {
+    await user.click(screen.getByRole("combobox", { name: label }));
+    await user.click(await screen.findByRole("option", { name: option }));
+  }
+
+  it("test_providers_page_searches_by_name_on_the_api", async () => {
+    const user = userEvent.setup();
+    const recorder = providersRecorder();
+    server.use(recorder.handler);
+    const { router } = await renderProviders();
+
+    await user.type(screen.getByRole("searchbox", { name: "Buscar provedores" }), "open");
+
+    await waitFor(() => {
+      expect(recorder.last()).toBe("query=open&sort=name");
+    });
+    await waitFor(() => {
+      expect(screen.queryByText("Anthropic")).not.toBeInTheDocument();
+    });
+    expect(rowOf("OpenAI Produção")).toBeInTheDocument();
+    expect(router.state.location.search).toBe("?q=open");
+  });
+
+  it("test_providers_page_filters_by_kind_and_clears", async () => {
+    const user = userEvent.setup();
+    const recorder = providersRecorder();
+    server.use(recorder.handler);
+    const { router } = await renderProviders();
+
+    await choose(user, "Tipo", "Anthropic");
+
+    await waitFor(() => {
+      expect(recorder.last()).toBe("kind=anthropic&sort=name");
+    });
+    expect(router.state.location.search).toBe("?kind=anthropic");
+    await user.click(screen.getByRole("button", { name: "Limpar filtros" }));
+    await waitFor(() => {
+      expect(router.state.location.search).toBe("");
+    });
+    expect(screen.queryByRole("button", { name: "Limpar filtros" })).not.toBeInTheDocument();
+  });
+
+  it("test_providers_page_sorts_and_goes_back_to_page_one", async () => {
+    const user = userEvent.setup();
+    const recorder = providersRecorder();
+    server.use(recorder.handler);
+    const { router } = renderWithProviders({ path: `${PATH}?offset=20` });
+    await screen.findByRole("table", { name: TABLE });
+
+    await choose(user, "Ordenar por", "Mais recentes primeiro");
+
+    await waitFor(() => {
+      expect(recorder.last()).toBe("sort=-created_at");
+    });
+    expect(recorder.queries.at(-1)?.get("offset")).toBe("0");
+    expect(router.state.location.search).toBe("?sort=-created_at");
+  });
+
+  it("test_providers_page_link_past_the_end_goes_to_the_last_page", async () => {
+    const recorder = providersRecorder();
+    server.use(recorder.handler);
+    const { router } = renderWithProviders({ path: `${PATH}?offset=40` });
+
+    expect(await screen.findByText("1–2 de 2")).toBeInTheDocument();
+    expect(router.state.location.search).toBe("");
+    await waitFor(() => {
+      expect(rowOf("Anthropic")).toBeInTheDocument();
+    });
+    expect(recorder.queries.map((query) => query.get("offset"))).toEqual(["40", "0"]);
+  });
+
+  it("test_providers_page_opens_a_shared_filtered_link", async () => {
+    const recorder = providersRecorder([]);
+    server.use(recorder.handler);
+    renderWithProviders({ path: `${PATH}?q=nada&kind=openai&sort=-name` });
+
+    expect(
+      await screen.findByText("Nada encontrado com a busca e os filtros atuais."),
+    ).toBeVisible();
+    expect(recorder.last()).toBe("kind=openai&query=nada&sort=-name");
+    expect(screen.getByRole("searchbox", { name: "Buscar provedores" })).toHaveValue("nada");
+    expect(screen.getByRole("combobox", { name: "Tipo" })).toHaveTextContent("OpenAI");
   });
 });
 

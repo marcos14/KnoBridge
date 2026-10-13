@@ -18,6 +18,7 @@ import {
   meAs,
   membersAs,
   membersOk,
+  membersRecorder,
   membersServerError,
   memberStore,
   removeMemberFails,
@@ -74,7 +75,7 @@ describe("MembersList read-only", () => {
     expect(bodyRowTexts()).toHaveLength(4);
     expect(within(rowOf("Ana Teste")).getByText("Proprietário")).toBeInTheDocument();
     expect(within(rowOf("Ana Teste")).getByText("você")).toBeInTheDocument();
-    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    expect(within(table()).queryByRole("combobox")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Remover/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("columnheader", { name: "Ações" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Convidar" })).not.toBeInTheDocument();
@@ -85,7 +86,7 @@ describe("MembersList read-only", () => {
     asRole("editor");
     await renderMembers();
 
-    expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
+    expect(within(table()).queryByRole("combobox")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Convidar" })).not.toBeInTheDocument();
   });
 
@@ -100,20 +101,49 @@ describe("MembersList read-only", () => {
 });
 
 describe("MembersList search and paging", () => {
-  it("test_members_list_filters_by_name_or_email", async () => {
+  it("test_members_list_searches_by_name_or_email_on_the_api", async () => {
     const user = userEvent.setup();
-    await renderMembers();
+    const recorder = membersRecorder();
+    server.use(recorder.handler);
+    const { router } = await renderMembers();
     const search = screen.getByRole("searchbox", { name: "Buscar membros" });
 
     await user.type(search, "souza");
 
-    expect(bodyRowTexts()).toHaveLength(1);
+    await waitFor(() => {
+      expect(bodyRowTexts()).toHaveLength(1);
+    });
     expect(rowOf("Carla Souza")).toBeInTheDocument();
+    expect(recorder.last()).toBe("query=souza&sort=name");
+    expect(router.state.location.search).toBe("?q=souza");
 
     await user.clear(search);
     await user.type(search, "ninguém");
 
-    expect(within(table()).getByText("Nenhum membro encontrado.")).toBeInTheDocument();
+    expect(
+      await within(table()).findByText("Nada encontrado com a busca e os filtros atuais."),
+    ).toBeInTheDocument();
+  });
+
+  it("test_members_list_filters_by_role_and_sorts", async () => {
+    const user = userEvent.setup();
+    const recorder = membersRecorder();
+    server.use(recorder.handler);
+    const { router } = await renderMembers();
+
+    await user.click(screen.getByRole("combobox", { name: "Papel" }));
+    await user.click(await screen.findByRole("option", { name: "Administrador" }));
+    await waitFor(() => {
+      expect(recorder.last()).toBe("role=admin&sort=name");
+    });
+
+    await user.click(screen.getByRole("combobox", { name: "Ordenar por" }));
+    await user.click(await screen.findByRole("option", { name: "Entrada mais recente" }));
+
+    await waitFor(() => {
+      expect(recorder.last()).toBe("role=admin&sort=-joined_at");
+    });
+    expect(router.state.location.search).toBe("?role=admin&sort=-joined_at");
   });
 
   it("test_members_list_pages_long_lists", async () => {
@@ -135,7 +165,9 @@ describe("MembersList search and paging", () => {
 
     await user.click(within(pagination).getByRole("button", { name: "Próxima" }));
 
-    expect(pagination).toHaveTextContent("21–25 de 25");
+    await waitFor(() => {
+      expect(pagination).toHaveTextContent("21–25 de 25");
+    });
     expect(bodyRowTexts()[0]).toContain("Pessoa 20");
   });
 

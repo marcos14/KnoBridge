@@ -9,7 +9,7 @@ import type {
 
 import { makeProvider, makeProviders } from "../factories";
 import { apiErrorResponse } from "./errors";
-import { page } from "./page";
+import { listRecorder, page } from "./page";
 
 const PROVIDERS = "*/v1/workspaces/:workspaceId/providers";
 const PROVIDER = "*/v1/workspaces/:workspaceId/providers/:providerId";
@@ -120,6 +120,11 @@ export function providerStore(
     }),
   ];
   return { handlers, created, changes, deleted, tested };
+}
+
+/** GET of the provider list recording each query string; `query` matches the name. */
+export function providersRecorder(providers: Provider[] = makeProviders()) {
+  return listRecorder(PROVIDERS, providers, (item) => [item.name]);
 }
 
 /** GET /v1/workspaces/{id}/providers with the default list. */

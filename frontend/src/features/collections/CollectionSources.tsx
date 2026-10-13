@@ -6,13 +6,24 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { type Source, useSources } from "@/lib/api/sources";
 
+import { SyncAllButton } from "./SyncAllButton";
+
 interface CollectionSourcesProps {
   workspaceId: string;
   collectionId: string;
+  /** Owner, admin or editor: "Sincronizar todas". */
+  canManage: boolean;
 }
 
-/** The sources that feed the collection, with their documents and last sync (read only here). */
-export function CollectionSources({ workspaceId, collectionId }: CollectionSourcesProps) {
+/**
+ * The sources that feed the collection, with their documents and last sync; managers also sync
+ * them all at once (each source is edited and synced on its own in the sources area).
+ */
+export function CollectionSources({
+  workspaceId,
+  collectionId,
+  canManage,
+}: CollectionSourcesProps) {
   const { t } = useTranslation();
   const sources = useSources(workspaceId, collectionId);
 
@@ -73,13 +84,22 @@ export function CollectionSources({ workspaceId, collectionId }: CollectionSourc
           </Button>
         </div>
       ) : (
-        <DataTable
-          label={t("collections.detail.sourcesTableLabel")}
-          columns={columns}
-          rows={sources.data}
-          rowKey={(item) => item.id}
-          emptyMessage={t("collections.detail.sourcesEmpty")}
-        />
+        <>
+          {canManage && (
+            <SyncAllButton
+              workspaceId={workspaceId}
+              collectionId={collectionId}
+              sources={sources.data}
+            />
+          )}
+          <DataTable
+            label={t("collections.detail.sourcesTableLabel")}
+            columns={columns}
+            rows={sources.data}
+            rowKey={(item) => item.id}
+            emptyMessage={t("collections.detail.sourcesEmpty")}
+          />
+        </>
       )}
     </section>
   );

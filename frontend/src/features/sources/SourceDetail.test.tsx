@@ -29,6 +29,7 @@ import {
 } from "@/test/handlers";
 import { renderWithProviders } from "@/test/renderWithProviders";
 import { server } from "@/test/server";
+import { makeTicketsSource, TICKETS_SOURCE_ID } from "@/test/ticketFactories";
 
 const PATH = `/w/${WORKSPACE_ID}/sources/${SOURCE_ID}`;
 const RUNS = "Execuções da fonte";
@@ -177,6 +178,85 @@ describe("SourceDetail header", () => {
     await user.click(screen.getByRole("button", { name: "Tentar novamente" }));
 
     expect(await screen.findByRole("heading", { level: 1, name: "erp-core" })).toBeInTheDocument();
+  });
+});
+
+describe("SourceDetail reindex", () => {
+  it("test_source_detail_reindexes_after_confirmation", async () => {
+    const user = userEvent.setup();
+    const store = sourceStore();
+    server.use(...store.handlers);
+    await renderDetail();
+
+    await user.click(screen.getByRole("button", { name: "Reindexar" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Reindexar erp-core?" });
+    expect(dialog).toHaveTextContent("Todos os documentos da fonte são processados de novo");
+    await user.click(within(dialog).getByRole("button", { name: "Reindexar" }));
+
+    expect(await screen.findByText("Reindexação de erp-core na fila.")).toHaveRole("status");
+    expect(store.reindexed).toEqual([SOURCE_ID]);
+    // The queued run disables it until the run ends.
+    expect(await screen.findByRole("button", { name: "Reindexar" })).toBeDisabled();
+  });
+
+  it("test_source_detail_reindex_dismissed_does_nothing", async () => {
+    const user = userEvent.setup();
+    const store = sourceStore();
+    server.use(...store.handlers);
+    await renderDetail();
+
+    await user.click(screen.getByRole("button", { name: "Reindexar" }));
+    await user.click(
+      within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Cancelar" }),
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    });
+    expect(store.reindexed).toEqual([]);
+  });
+
+  it("test_source_detail_reindex_failure_shows_reason", async () => {
+    const user = userEvent.setup();
+    server.use(sourceActionFails("reindex", 503, "sync_unavailable"));
+    await renderDetail();
+
+    await user.click(screen.getByRole("button", { name: "Reindexar" }));
+    await user.click(
+      within(await screen.findByRole("alertdialog")).getByRole("button", { name: "Reindexar" }),
+    );
+
+    expect(
+      await screen.findByText(
+        "O serviço de sincronização está indisponível. Tente de novo em instantes.",
+      ),
+    ).toHaveRole("alert");
+  });
+
+  it("test_source_detail_reindex_disabled_for_inactive_source", async () => {
+    server.use(...sourceStore([makeSource({ active: false })]).handlers);
+    await renderDetail();
+
+    expect(screen.getByRole("button", { name: "Reindexar" })).toBeDisabled();
+  });
+
+  it("test_source_detail_tickets_source_explains_why_it_cannot_reindex", async () => {
+    server.use(...sourceStore([makeTicketsSource()]).handlers);
+    renderWithProviders({ path: `/w/${WORKSPACE_ID}/sources/${TICKETS_SOURCE_ID}` });
+
+    const button = await screen.findByRole("button", { name: "Reindexar" });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAccessibleDescription(
+      "Fontes de chamados não são reindexadas: os chamados brutos são apagados depois de indexados.",
+    );
+  });
+
+  it("test_source_detail_viewer_has_no_reindex", async () => {
+    asRole("viewer");
+    server.use(...sourceStore().handlers);
+    await renderDetail();
+
+    expect(screen.queryByRole("button", { name: "Reindexar" })).not.toBeInTheDocument();
   });
 });
 

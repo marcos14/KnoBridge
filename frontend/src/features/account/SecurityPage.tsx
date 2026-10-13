@@ -2,9 +2,10 @@ import { useTranslation } from "react-i18next";
 
 import { AccountPage } from "./AccountPage";
 import { ChangePasswordForm } from "./ChangePasswordForm";
+import { LogoutAllSection } from "./LogoutAllSection";
 import { SessionsSection } from "./SessionsSection";
 
-/** `/account/security`: change the password and manage the live sessions. */
+/** `/account/security`: change the password, manage the live sessions or end them all. */
 export function SecurityPage() {
   const { t } = useTranslation();
 
@@ -15,6 +16,7 @@ export function SecurityPage() {
     >
       <ChangePasswordForm />
       <SessionsSection />
+      <LogoutAllSection />
     </AccountPage>
   );
 }

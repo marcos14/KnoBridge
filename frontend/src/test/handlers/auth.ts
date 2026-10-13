@@ -8,6 +8,7 @@ import { apiErrorResponse } from "./errors";
 const ME = "*/v1/me";
 const LOGIN = "*/v1/auth/login";
 const LOGOUT = "*/v1/auth/logout";
+const LOGOUT_ALL = "*/v1/auth/logout-all";
 const CSRF = "*/v1/auth/csrf";
 
 /** GET /v1/me answering with `me` (default: `makeMe()`). */
@@ -67,4 +68,12 @@ export const csrfOk = http.get(CSRF, () =>
   HttpResponse.json({ csrf_token: "synthetic-nonce.synthetic-signature" }),
 );
 
-export const authHandlers = [meOk, updateProfileOk, loginOk, logoutOk, csrfOk];
+/** POST /v1/auth/logout-all ending every session of the user, this one included (204). */
+export const logoutAllOk = http.post(LOGOUT_ALL, () => new HttpResponse(null, { status: 204 }));
+
+/** POST /v1/auth/logout-all refused with `status` and `code`. */
+export function logoutAllFails(status: number, code: string) {
+  return http.post(LOGOUT_ALL, () => apiErrorResponse(status, code));
+}
+
+export const authHandlers = [meOk, updateProfileOk, loginOk, logoutOk, logoutAllOk, csrfOk];

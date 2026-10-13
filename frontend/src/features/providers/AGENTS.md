@@ -4,7 +4,7 @@
 
 **Entra aqui**:
 
-- `ProvidersPage.tsx`: `h1`, "Novo provedor", tabela paginada no navegador (20 por página; a lista inteira vem de `useProviders`) com nome, tipo, URL base (ou "Padrão do provedor"), chave mascarada (`key_hint`) e as ações "Testar conexão", "Editar" e "Excluir" (com `ConfirmDialog`). Sucesso em `role="status"`, falha no `FormAlert`.
+- `ProvidersPage.tsx`: `h1`, "Novo provedor", busca (com espera de digitação), filtros, ordenação e paginação no servidor (20 por página), com o estado na query string (`useListSearch`, `ListToolbar`): busca por nome, filtro de tipo e ordenação por nome e datas; vazia, o próximo passo; tabela com nome, tipo, URL base (ou "Padrão do provedor"), chave mascarada (`key_hint`) e as ações "Testar conexão", "Editar" e "Excluir" (com `ConfirmDialog`). Sucesso em `role="status"`, falha no `FormAlert`.
 - `ProviderDialog.tsx`: diálogo de criar/editar com react-hook-form + zod: tipo (travado na edição, o backend não o muda), nome, URL base opcional e chave (campo de senha). Na edição a chave é opcional e a dica mostra só o `key_hint` atual.
 - `providerForm.ts`: schema, valores iniciais e corpos de `POST`/`PATCH` (funções puras, com teste).
 
@@ -16,6 +16,6 @@
 - O teste de conexão responde 200 com `{ok, error}`: a falha do provedor vira mensagem pelo `error.code` (`translateApiErrorCode`); erro da própria API (403, 404) vem por `translateApiError`.
 - Excluir provedor usado por assistente responde 409 `provider_in_use`, mostrado no `FormAlert`.
 
-**Como testar**: de `frontend/`, `pnpm test -- --coverage`. Pela árvore real (`renderWithProviders({ path: "/w/<id>/providers" })`) com MSW: `providerStore(initial, { inUse, testResults })` (mudanças persistem; `created`, `changes`, `deleted`, `tested`), `failedTest(code)`, `providersAs`, `providersServerError`, `createProviderFails`, `updateProviderFails`, `deleteProviderFails`, `testProviderFails`.
+**Como testar**: de `frontend/`, `pnpm test -- --coverage`. Pela árvore real (`renderWithProviders({ path: "/w/<id>/providers" })`) com MSW: `providerStore(initial, { inUse, testResults })` (mudanças persistem; `created`, `changes`, `deleted`, `tested`), `failedTest(code)`, `providersAs`, `providersRecorder` (busca, filtros e ordenação pela query string gravada), `providersServerError`, `createProviderFails`, `updateProviderFails`, `deleteProviderFails`, `testProviderFails`.
 
 **Leia também**: [../AGENTS.md](../AGENTS.md); [../../lib/api/AGENTS.md](../../lib/api/AGENTS.md); `docs/specs/openapi.json` (`/v1/workspaces/{workspace_id}/providers`).

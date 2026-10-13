@@ -4,14 +4,17 @@ import { useTranslation } from "react-i18next";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { DataTable, type DataTableColumn } from "@/components/DataTable";
 import { FormAlert } from "@/components/FormAlert";
+import { ListToolbar } from "@/components/ListToolbar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useClock } from "@/hooks/use-clock";
 import { useCurrentWorkspace } from "@/hooks/use-current-workspace";
+import { useListSearch } from "@/hooks/use-list-search";
+import { useOffsetClamp } from "@/hooks/use-offset-clamp";
 import { translateApiError } from "@/i18n/apiErrors";
 import { formatDateTime, formatRelativeTime } from "@/lib/intl";
-import { type Runner, useDeleteRunner, useRunners, useUpdateRunner } from "@/lib/api/runners";
-import { clampOffset, pageOf } from "@/lib/pagination";
+import { type Runner, useDeleteRunner, useRunnerPage, useUpdateRunner } from "@/lib/api/runners";
+import { hasListCriteria, type ListSearchSpec, oneOf, sortLabelKey } from "@/lib/listSearch";
 
 import { CreateRunnerDialog } from "./CreateRunnerDialog";
 import {
@@ -21,8 +24,17 @@ import {
   type RunnerStatus,
 } from "@/lib/runnerStatus";
 
-/** Rows per page of the runner table (paged in the browser). */
+/** Rows per page of the runner table (paged by the API). */
 export const RUNNERS_PAGE_SIZE = 20;
+
+const RUNNER_STATUSES: readonly RunnerStatus[] = ["online", "offline", "revoked"];
+const RUNNER_SORTS = ["name", "-name", "-last_seen_at", "-created_at"] as const;
+
+/** Search, presence filter and sort of the list, in the URL. */
+const RUNNER_LIST: ListSearchSpec<"status", (typeof RUNNER_SORTS)[number]> = {
+  filters: { status: oneOf(RUNNER_STATUSES) },
+  sorts: RUNNER_SORTS,
+};
 
 type Feedback = { kind: "status" | "alert"; message: string } | null;
 
@@ -119,9 +131,16 @@ function Repositories({ runner }: { runner: Runner }) {
 function RunnersList({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation();
   const clock = useClock();
-  const [requestedOffset, setRequestedOffset] = useState(0);
   const [feedback, setFeedback] = useState<Feedback>(null);
-  const runners = useRunners(workspaceId);
+  const { search, setQuery, setFilter, setSort, setOffset, clear } = useListSearch(RUNNER_LIST);
+  const runners = useRunnerPage(workspaceId, {
+    query: search.query === "" ? undefined : search.query,
+    status: RUNNER_STATUSES.find((status) => status === search.filters.status),
+    sort: search.sort,
+    limit: RUNNERS_PAGE_SIZE,
+    offset: search.offset,
+  });
+  useOffsetClamp(search.offset, RUNNERS_PAGE_SIZE, runners.data?.total, setOffset);
   const update = useUpdateRunner(workspaceId);
   const remove = useDeleteRunner(workspaceId);
   const busy = update.isPending || remove.isPending;
@@ -171,6 +190,37 @@ function RunnersList({ workspaceId }: { workspaceId: string }) {
     </div>
   );
 
+  const criteria = hasListCriteria(search);
+  const toolbar = (
+    <ListToolbar
+      searchLabel={t("runners.search")}
+      searchPlaceholder={t("runners.searchPlaceholder")}
+      query={search.query}
+      onQueryChange={setQuery}
+      filters={[
+        {
+          key: "status",
+          label: t("runners.columns.status"),
+          allLabel: t("listToolbar.allStatuses"),
+          value: search.filters.status,
+          options: RUNNER_STATUSES.map((status) => ({
+            value: status,
+            label: t(`runners.status.${status}`),
+          })),
+          onChange: (value) => {
+            setFilter("status", value);
+          },
+        },
+      ]}
+      sort={{
+        value: search.sort,
+        options: RUNNER_SORTS.map((sort) => ({ value: sort, label: t(sortLabelKey(sort)) })),
+        onChange: setSort,
+      }}
+      onClear={criteria ? clear : undefined}
+    />
+  );
+
   if (runners.isPending) {
     return (
       <>
@@ -181,7 +231,7 @@ function RunnersList({ workspaceId }: { workspaceId: string }) {
       </>
     );
   }
-  if (runners.isError) {
+  if (runners.data === undefined) {
     return (
       <>
         {header}
@@ -203,8 +253,7 @@ function RunnersList({ workspaceId }: { workspaceId: string }) {
     );
   }
 
-  const all = runners.data;
-  const offset = clampOffset(requestedOffset, RUNNERS_PAGE_SIZE, all.length);
+  const { items, total } = runners.data;
   const now = clock();
   const columns: DataTableColumn<Runner>[] = [
     {
@@ -309,17 +358,19 @@ function RunnersList({ workspaceId }: { workspaceId: string }) {
           {feedback.message}
         </p>
       )}
+      {toolbar}
       <DataTable
         label={t("runners.tableLabel")}
         columns={columns}
-        rows={pageOf(all, offset, RUNNERS_PAGE_SIZE)}
+        rows={items}
         rowKey={(item) => item.id}
-        emptyMessage={t("runners.empty")}
+        emptyMessage={criteria ? t("listToolbar.noResults") : t("runners.empty")}
+        busy={runners.isPlaceholderData}
         pagination={{
-          offset,
+          offset: search.offset,
           limit: RUNNERS_PAGE_SIZE,
-          total: all.length,
-          onOffsetChange: setRequestedOffset,
+          total,
+          onOffsetChange: setOffset,
         }}
       />
     </>

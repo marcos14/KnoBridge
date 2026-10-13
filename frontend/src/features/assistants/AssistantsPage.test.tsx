@@ -19,6 +19,7 @@ import {
 import {
   assistantsAs,
   assistantsOk,
+  assistantsRecorder,
   assistantsServerError,
   assistantStore,
   collectionsAs,
@@ -26,6 +27,8 @@ import {
   createAssistantFails,
   DEFAULT_NO_SOURCE_MESSAGE,
   deleteAssistantFails,
+  duplicateAssistantFails,
+  duplicateAssistantRecorder,
   meAs,
   providersAs,
   updateAssistantFails,
@@ -185,6 +188,110 @@ describe("AssistantsPage list", () => {
 
     expect(screen.getByRole("button", { name: "Novo assistente" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "Editar Suporte ERP" })).toBeEnabled();
+  });
+});
+
+describe("AssistantsPage search, filters and sort", () => {
+  it("test_assistants_page_searches_filters_and_sorts_on_the_api", async () => {
+    const user = userEvent.setup();
+    const recorder = assistantsRecorder();
+    server.use(recorder.handler);
+    const { router } = await renderAssistants();
+
+    await user.type(screen.getByRole("searchbox", { name: "Buscar assistentes" }), "suporte");
+    await waitFor(() => {
+      expect(recorder.last()).toBe("query=suporte&sort=name");
+    });
+    await waitFor(() => {
+      expect(screen.queryByText("Rascunho")).not.toBeInTheDocument();
+    });
+
+    for (const [label, option] of [
+      ["Status", "Ativos"],
+      ["Provedor", "OpenAI Produção"],
+      ["Coleções", "Código ERP"],
+      ["Ordenar por", "Atualizados recentemente"],
+    ] as const) {
+      await user.click(screen.getByRole("combobox", { name: label }));
+      await user.click(await screen.findByRole("option", { name: option }));
+    }
+
+    await waitFor(() => {
+      expect(recorder.last()).toBe(
+        `active=true&collection_id=${COLLECTION_ID}&provider_id=${PROVIDER_ID}&query=suporte&sort=-updated_at`,
+      );
+    });
+    expect(router.state.location.search).toBe(
+      `?q=suporte&active=true&provider=${PROVIDER_ID}&collection=${COLLECTION_ID}&sort=-updated_at`,
+    );
+  });
+
+  it("test_assistants_page_empty_state_points_to_collections", async () => {
+    server.use(assistantsAs([]));
+    await renderAssistants();
+
+    expect(screen.getByText(/Crie um em "Novo assistente"/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Ver coleções" })).toHaveAttribute(
+      "href",
+      `/w/${WORKSPACE_ID}/collections`,
+    );
+  });
+
+  it("test_assistants_page_filtered_without_results_says_so", async () => {
+    server.use(assistantsRecorder([]).handler);
+    renderWithProviders({ path: `${PATH}?active=false` });
+
+    expect(
+      await screen.findByText("Nada encontrado com a busca e os filtros atuais."),
+    ).toBeVisible();
+    expect(screen.getByRole("button", { name: "Limpar filtros" })).toBeInTheDocument();
+  });
+});
+
+describe("AssistantsPage duplicate", () => {
+  it("test_assistants_page_duplicates_and_opens_the_copy_for_editing", async () => {
+    const user = userEvent.setup();
+    const duplicate = duplicateAssistantRecorder();
+    server.use(duplicate.handler);
+    await renderAssistants();
+
+    await user.click(screen.getByRole("button", { name: "Duplicar Suporte ERP" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Editar assistente" });
+    expect(within(dialog).getByLabelText("Nome")).toHaveValue("Suporte ERP (cópia)");
+    expect(duplicate.requests).toEqual([{ assistantId: ASSISTANT_ID, body: {} }]);
+    expect(
+      screen.getByText("Cópia criada: Suporte ERP (cópia). Ajuste o que precisar e salve."),
+    ).toHaveRole("status");
+
+    await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
+
+    expect(await screen.findByText("Assistente Suporte ERP atualizado.")).toHaveRole("status");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("test_assistants_page_duplicate_dialog_can_be_dismissed", async () => {
+    const user = userEvent.setup();
+    await renderAssistants();
+
+    await user.click(screen.getByRole("button", { name: "Duplicar Rascunho" }));
+    const dialog = await screen.findByRole("dialog", { name: "Editar assistente" });
+    await user.click(within(dialog).getByRole("button", { name: "Cancelar" }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+  });
+
+  it("test_assistants_page_duplicate_failure_shows_reason", async () => {
+    const user = userEvent.setup();
+    server.use(duplicateAssistantFails(403, "forbidden"));
+    await renderAssistants();
+
+    await user.click(screen.getByRole("button", { name: "Duplicar Suporte ERP" }));
+
+    expect(await screen.findByText("Você não tem permissão para fazer isso.")).toHaveRole("alert");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });
 

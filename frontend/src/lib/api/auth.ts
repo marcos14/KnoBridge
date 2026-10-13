@@ -121,6 +121,26 @@ export function endSession(queryClient: QueryClient): void {
 }
 
 /**
+ * `POST /v1/auth/logout-all`: ends every session of the user, this one included. A 401 means this
+ * session had already ended, which still leaves the tab logged out. Afterwards, as after a logout,
+ * `useMe` answers `null` and the guards send the user to the login.
+ */
+export function useLogoutAll() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { error, response } = await apiClient.POST("/v1/auth/logout-all");
+      if (!response.ok && response.status !== 401) {
+        throw toApiError(response.status, error);
+      }
+    },
+    onSuccess: () => {
+      endSession(queryClient);
+    },
+  });
+}
+
+/**
  * `POST /v1/auth/logout`. A 401 means the session had already ended, which is the goal too.
  * Afterwards `useMe` answers `null`, `useLoggedOutByUser` answers `true` and every user-scoped
  * query is dropped from the cache.

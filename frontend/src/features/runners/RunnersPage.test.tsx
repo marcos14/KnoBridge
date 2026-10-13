@@ -20,6 +20,7 @@ import {
   pendingPost,
   runnerActionFails,
   runnersAs,
+  runnersRecorder,
   runnersServerError,
   runnerStore,
 } from "@/test/handlers";
@@ -135,9 +136,7 @@ describe("RunnersPage list", () => {
     server.use(runnersAs([]));
     await renderRunners();
 
-    expect(
-      screen.getByText("Nenhum runner cadastrado. Cadastre um para criar fontes do tipo runner."),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Nenhum runner cadastrado\. Use "Novo runner"/)).toBeInTheDocument();
   });
 
   it("test_runners_page_retries_after_load_failure", async () => {
@@ -161,6 +160,51 @@ describe("RunnersPage list", () => {
 
     expect(await screen.findByRole("heading", { level: 1, name: "Runners" })).toBeInTheDocument();
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
+  });
+});
+
+describe("RunnersPage search, filter and sort", () => {
+  it("test_runners_page_searches_filters_and_sorts_on_the_api", async () => {
+    const user = userEvent.setup();
+    const recorder = runnersRecorder();
+    server.use(recorder.handler);
+    const { router } = await renderRunners();
+
+    await user.type(screen.getByRole("searchbox", { name: "Buscar runners" }), "servidor");
+    await waitFor(() => {
+      expect(recorder.last()).toBe("query=servidor&sort=name");
+    });
+    await waitFor(() => {
+      expect(screen.queryByText("notebook-ana")).not.toBeInTheDocument();
+    });
+    expect(rowOf("servidor-build")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("combobox", { name: "Status" }));
+    await user.click(await screen.findByRole("option", { name: "Offline" }));
+    await waitFor(() => {
+      expect(recorder.last()).toBe("query=servidor&sort=name&status=offline");
+    });
+
+    await user.click(screen.getByRole("combobox", { name: "Ordenar por" }));
+    await user.click(await screen.findByRole("option", { name: "Contato mais recente" }));
+    await waitFor(() => {
+      expect(router.state.location.search).toBe("?q=servidor&status=offline&sort=-last_seen_at");
+    });
+  });
+
+  it("test_runners_page_filtered_empty_state_offers_clear", async () => {
+    const user = userEvent.setup();
+    server.use(runnersRecorder([]).handler);
+    const { router } = renderWithProviders({ path: `${PATH}?status=revoked` });
+
+    expect(
+      await screen.findByText("Nada encontrado com a busca e os filtros atuais."),
+    ).toBeVisible();
+    await user.click(screen.getByRole("button", { name: "Limpar filtros" }));
+
+    await waitFor(() => {
+      expect(router.state.location.search).toBe("");
+    });
   });
 });
 

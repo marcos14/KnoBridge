@@ -14,6 +14,7 @@ import { DocumentsSection } from "./DocumentsSection";
 import { type Feedback, FeedbackMessage } from "./Feedback";
 import { RunnerSourceTabs } from "./harness/RunnerSourceTabs";
 import { NextRun } from "./NextRun";
+import { ReindexButton } from "./ReindexButton";
 import { RunsSection } from "./RunsSection";
 import { SourceDialog } from "./SourceDialog";
 import { testFailureReason } from "./format";
@@ -193,11 +194,12 @@ function SourceHeader({ workspaceId, source, collections, canManage }: SourceHea
           </div>
         </div>
         {canManage && (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-start gap-2">
             <Button type="button" variant="outline" disabled={test.isPending} onClick={onTest}>
               {test.isPending ? t("sources.testing") : t("sources.test")}
             </Button>
             <SyncButton workspaceId={workspaceId} source={source} onFeedback={setFeedback} />
+            <ReindexButton workspaceId={workspaceId} source={source} onFeedback={setFeedback} />
             <SourceDialog
               workspaceId={workspaceId}
               source={source}

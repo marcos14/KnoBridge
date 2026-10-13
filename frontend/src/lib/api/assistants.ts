@@ -1,8 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { apiClient, unwrap } from "./client";
 import { fetchAllPages } from "./pages";
-import type { components } from "./schema.gen";
+import type { components, operations } from "./schema.gen";
 
 export type Assistant = components["schemas"]["AssistantOut"];
 export type AssistantTone = components["schemas"]["AssistantTone"];
@@ -34,9 +34,50 @@ export function useAssistants(workspaceId: string) {
   });
 }
 
+/** Search, filters, sort and page of `GET /v1/workspaces/{workspace_id}/assistants` (`docs/specs`, "Listagens"). */
+export type AssistantListQuery = NonNullable<
+  operations["list_assistants_v1_workspaces__workspace_id__assistants_get"]["parameters"]["query"]
+>;
+
+/**
+ * One page of the assistant list as the screen asks for it (search by name, status, provider, collection, sort). The previous page stays on screen while the next one loads; mutations reload it (same key
+ * prefix as the full list).
+ */
+export function useAssistantPage(workspaceId: string, query: AssistantListQuery) {
+  return useQuery({
+    queryKey: [...assistantsQueryKey(workspaceId), "page", query],
+    queryFn: async ({ signal }) =>
+      unwrap(
+        await apiClient.GET("/v1/workspaces/{workspace_id}/assistants", {
+          params: { path: { workspace_id: workspaceId }, query },
+          signal,
+        }),
+      ),
+    placeholderData: keepPreviousData,
+  });
+}
+
 function useRefreshAssistants(workspaceId: string) {
   const queryClient = useQueryClient();
   return () => queryClient.invalidateQueries({ queryKey: assistantsQueryKey(workspaceId) });
+}
+
+/**
+ * `POST .../assistants/{assistant_id}/duplicate` (201, editor or above): a new assistant with the
+ * original's configuration, named "<nome> (cópia)" by the API. The webhook secret is not copied.
+ */
+export function useDuplicateAssistant(workspaceId: string) {
+  const refresh = useRefreshAssistants(workspaceId);
+  return useMutation({
+    mutationFn: async (assistantId: string) =>
+      unwrap(
+        await apiClient.POST("/v1/workspaces/{workspace_id}/assistants/{assistant_id}/duplicate", {
+          params: { path: { workspace_id: workspaceId, assistant_id: assistantId } },
+          body: {},
+        }),
+      ),
+    onSuccess: refresh,
+  });
 }
 
 /**

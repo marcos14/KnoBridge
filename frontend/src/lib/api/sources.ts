@@ -3,7 +3,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import { apiClient, unwrap } from "./client";
 import { collectionsQueryKey } from "./collections";
 import { fetchAllPages } from "./pages";
-import type { components } from "./schema.gen";
+import type { components, operations } from "./schema.gen";
 
 export type Source = components["schemas"]["SourceOut"];
 export type SourceKind = components["schemas"]["SourceKind"];
@@ -69,6 +69,34 @@ export function useSources(workspaceId: string, collectionId?: string) {
       ),
     refetchInterval: (query) =>
       pollWhile(query.state.data?.some((item) => isRunActive(item.last_run?.status)) ?? false),
+  });
+}
+
+/** Search, filters, sort and page of `GET .../sources` (`docs/specs/indexacao.md`, "Listagens"). */
+export type SourceListQuery = NonNullable<
+  operations["list_sources_v1_workspaces__workspace_id__sources_get"]["parameters"]["query"]
+>;
+
+/**
+ * One page of the source list as the screen asks for it (search by name, kind, collection, status,
+ * last run, sort). The previous page stays on screen while the next one loads; polls while a
+ * source of the page is syncing.
+ */
+export function useSourcePage(workspaceId: string, query: SourceListQuery) {
+  return useQuery({
+    queryKey: [...sourcesRootKey(workspaceId), "page", query],
+    queryFn: async ({ signal }) =>
+      unwrap(
+        await apiClient.GET("/v1/workspaces/{workspace_id}/sources", {
+          params: { path: { workspace_id: workspaceId }, query },
+          signal,
+        }),
+      ),
+    placeholderData: keepPreviousData,
+    refetchInterval: (query) =>
+      pollWhile(
+        query.state.data?.items.some((item) => isRunActive(item.last_run?.status)) ?? false,
+      ),
   });
 }
 
@@ -261,6 +289,42 @@ export function useSyncSource(workspaceId: string) {
       unwrap(
         await apiClient.POST("/v1/workspaces/{workspace_id}/sources/{source_id}/sync", {
           params: { path: { workspace_id: workspaceId, source_id: sourceId } },
+        }),
+      ),
+    onSuccess: refresh,
+  });
+}
+
+/**
+ * `POST .../{source_id}/reindex` (202 with the queued run): processes every document again, even
+ * the unchanged ones. 409 `source_reindex_unsupported` (tickets), `source_inactive` or
+ * `sync_already_running`; 503 `sync_unavailable`.
+ */
+export function useReindexSource(workspaceId: string) {
+  const refresh = useRefreshSources(workspaceId);
+  return useMutation({
+    mutationFn: async (sourceId: string) =>
+      unwrap(
+        await apiClient.POST("/v1/workspaces/{workspace_id}/sources/{source_id}/reindex", {
+          params: { path: { workspace_id: workspaceId, source_id: sourceId } },
+        }),
+      ),
+    onSuccess: refresh,
+  });
+}
+
+/**
+ * `POST .../collections/{collection_id}/sync` (202): starts a sync of each active source of the
+ * collection; `started` and `skipped` (with the reason) per source. 503 `sync_unavailable` when
+ * none started. Reloads the sources and runs, which starts the polling.
+ */
+export function useSyncCollection(workspaceId: string) {
+  const refresh = useRefreshSources(workspaceId);
+  return useMutation({
+    mutationFn: async (collectionId: string) =>
+      unwrap(
+        await apiClient.POST("/v1/workspaces/{workspace_id}/collections/{collection_id}/sync", {
+          params: { path: { workspace_id: workspaceId, collection_id: collectionId } },
         }),
       ),
     onSuccess: refresh,

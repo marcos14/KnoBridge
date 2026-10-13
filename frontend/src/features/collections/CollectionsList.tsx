@@ -5,17 +5,35 @@ import { Link } from "react-router";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { DataTable, type DataTableColumn } from "@/components/DataTable";
 import { FormAlert } from "@/components/FormAlert";
+import { ListToolbar, type ListToolbarFilter } from "@/components/ListToolbar";
 import { Button } from "@/components/ui/button";
+import { useListSearch } from "@/hooks/use-list-search";
+import { useOffsetClamp } from "@/hooks/use-offset-clamp";
 import { translateApiError } from "@/i18n/apiErrors";
-import { type Collection, useCollections, useDeleteCollection } from "@/lib/api/collections";
+import { type Collection, useCollectionPage, useDeleteCollection } from "@/lib/api/collections";
 import { type Provider, useProviders } from "@/lib/api/providers";
-import { clampOffset, pageOf } from "@/lib/pagination";
+import { hasListCriteria, type ListSearchSpec, sortLabelKey } from "@/lib/listSearch";
+import { isUuid } from "@/lib/uuid";
 
 import { CollectionDialog } from "./CollectionDialog";
 import { embeddingProviders } from "./collectionForm";
 
-/** Rows per page of the collection table (paged in the browser). */
+/** Rows per page of the collection table (paged by the API). */
 export const COLLECTIONS_PAGE_SIZE = 20;
+
+const COLLECTION_SORTS = [
+  "name",
+  "-name",
+  "-document_count",
+  "-created_at",
+  "-updated_at",
+] as const;
+
+/** Search, credential filter and sort of the list, in the URL. */
+const COLLECTION_LIST: ListSearchSpec<"provider", (typeof COLLECTION_SORTS)[number]> = {
+  filters: { provider: isUuid },
+  sorts: COLLECTION_SORTS,
+};
 
 type Feedback = { kind: "status" | "alert"; message: string } | null;
 
@@ -27,9 +45,16 @@ interface CollectionsListProps {
 
 export function CollectionsList({ workspaceId, canManage }: CollectionsListProps) {
   const { t } = useTranslation();
-  const [requestedOffset, setRequestedOffset] = useState(0);
   const [feedback, setFeedback] = useState<Feedback>(null);
-  const collections = useCollections(workspaceId);
+  const { search, setQuery, setFilter, setSort, setOffset, clear } = useListSearch(COLLECTION_LIST);
+  const collections = useCollectionPage(workspaceId, {
+    query: search.query === "" ? undefined : search.query,
+    provider_id: search.filters.provider,
+    sort: search.sort,
+    limit: COLLECTIONS_PAGE_SIZE,
+    offset: search.offset,
+  });
+  useOffsetClamp(search.offset, COLLECTIONS_PAGE_SIZE, collections.data?.total, setOffset);
   // Viewers may not list credentials (403); they see the model alone.
   const providers = useProviders(workspaceId, { enabled: canManage });
   const remove = useDeleteCollection(workspaceId);
@@ -66,7 +91,7 @@ export function CollectionsList({ workspaceId, canManage }: CollectionsListProps
       </>
     );
   }
-  if (collections.isError || providers.isError) {
+  if (collections.data === undefined || providers.isError) {
     return (
       <>
         {title}
@@ -91,11 +116,26 @@ export function CollectionsList({ workspaceId, canManage }: CollectionsListProps
     );
   }
 
-  const all = collections.data;
+  const { items, total } = collections.data;
   const allProviders: readonly Provider[] = providers.data ?? [];
   const choices = embeddingProviders(allProviders);
   const providerNames = new Map(allProviders.map((item) => [item.id, item.name] as const));
-  const offset = clampOffset(requestedOffset, COLLECTIONS_PAGE_SIZE, all.length);
+  const criteria = hasListCriteria(search);
+  // Viewers may not list credentials: they search and sort, without the credential filter.
+  const filters: ListToolbarFilter[] = canManage
+    ? [
+        {
+          key: "provider",
+          label: t("collections.providerFilter"),
+          allLabel: t("collections.allProviders"),
+          value: search.filters.provider,
+          options: choices.map((item) => ({ value: item.id, label: item.name })),
+          onChange: (value) => {
+            setFilter("provider", value);
+          },
+        },
+      ]
+    : [];
   const showSaved = (key: "collections.created" | "collections.updated") => (saved: Collection) => {
     setFeedback({ kind: "status", message: t(key, { name: saved.name }) });
   };
@@ -220,17 +260,44 @@ export function CollectionsList({ workspaceId, canManage }: CollectionsListProps
           {feedback.message}
         </p>
       )}
+      <ListToolbar
+        searchLabel={t("collections.listSearch")}
+        searchPlaceholder={t("collections.listSearchPlaceholder")}
+        query={search.query}
+        onQueryChange={setQuery}
+        filters={filters}
+        sort={{
+          value: search.sort,
+          options: COLLECTION_SORTS.map((sort) => ({ value: sort, label: t(sortLabelKey(sort)) })),
+          onChange: setSort,
+        }}
+        onClear={criteria ? clear : undefined}
+      />
       <DataTable
         label={t("collections.tableLabel")}
         columns={columns}
-        rows={pageOf(all, offset, COLLECTIONS_PAGE_SIZE)}
+        rows={items}
         rowKey={(item) => item.id}
-        emptyMessage={t("collections.empty")}
+        emptyMessage={
+          criteria ? (
+            t("listToolbar.noResults")
+          ) : canManage && choices.length > 0 ? (
+            <>
+              {t("collections.emptyNext")}{" "}
+              <Link to={`/w/${workspaceId}/sources`} className="underline underline-offset-4">
+                {t("collections.goToSources")}
+              </Link>
+            </>
+          ) : (
+            t("collections.empty")
+          )
+        }
+        busy={collections.isPlaceholderData}
         pagination={{
-          offset,
+          offset: search.offset,
           limit: COLLECTIONS_PAGE_SIZE,
-          total: all.length,
-          onOffsetChange: setRequestedOffset,
+          total,
+          onOffsetChange: setOffset,
         }}
       />
     </>

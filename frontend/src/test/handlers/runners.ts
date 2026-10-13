@@ -4,7 +4,7 @@ import type { Runner, RunnerChanges, RunnerCreated } from "@/lib/api/runners";
 
 import { makeNewRunner, makeRunners, RUNNER_TOKEN } from "../factories";
 import { apiErrorResponse } from "./errors";
-import { page } from "./page";
+import { listRecorder, page } from "./page";
 
 const RUNNERS = "*/v1/workspaces/:workspaceId/runners";
 const RUNNER = "*/v1/workspaces/:workspaceId/runners/:runnerId";
@@ -116,6 +116,11 @@ export function runnerStore(
 }
 
 /** Stateless defaults: the default list, and mutations that work. */
+/** GET of the runner list recording each query string; `query` matches the name. */
+export function runnersRecorder(runners: Runner[] = makeRunners()) {
+  return listRecorder(RUNNERS, runners, (item) => [item.name]);
+}
+
 export const runnersHandlers = [
   runnersOk,
   http.post(RUNNERS, () =>

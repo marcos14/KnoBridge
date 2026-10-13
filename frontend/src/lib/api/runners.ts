@@ -1,8 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { apiClient, unwrap } from "./client";
 import { fetchAllPages } from "./pages";
-import type { components } from "./schema.gen";
+import type { components, operations } from "./schema.gen";
 
 export type Runner = components["schemas"]["RunnerOut"];
 export type RunnerCreated = components["schemas"]["RunnerCreated"];
@@ -38,6 +38,30 @@ export function useRunners(workspaceId: string, { enabled = true }: { enabled?: 
           }),
         ),
       ),
+    refetchInterval: RUNNER_POLL_INTERVAL_MS,
+  });
+}
+
+/** Search, filters, sort and page of `GET /v1/workspaces/{workspace_id}/runners` (`docs/specs`, "Listagens"). */
+export type RunnerListQuery = NonNullable<
+  operations["list_runners_v1_workspaces__workspace_id__runners_get"]["parameters"]["query"]
+>;
+
+/**
+ * One page of the runner list as the screen asks for it (search by name, presence, sort), asked again every `RUNNER_POLL_INTERVAL_MS`. The previous page stays on screen while the next one loads; mutations reload it (same key
+ * prefix as the full list).
+ */
+export function useRunnerPage(workspaceId: string, query: RunnerListQuery) {
+  return useQuery({
+    queryKey: [...runnersQueryKey(workspaceId), "page", query],
+    queryFn: async ({ signal }) =>
+      unwrap(
+        await apiClient.GET("/v1/workspaces/{workspace_id}/runners", {
+          params: { path: { workspace_id: workspaceId }, query },
+          signal,
+        }),
+      ),
+    placeholderData: keepPreviousData,
     refetchInterval: RUNNER_POLL_INTERVAL_MS,
   });
 }
