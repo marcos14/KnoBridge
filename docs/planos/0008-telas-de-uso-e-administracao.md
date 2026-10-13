@@ -70,7 +70,7 @@ fases:
         commit: 80a245f
   - id: F3
     titulo: Painel
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F3.1
         titulo: Primeiro acesso com workspace, Início com painel e primeiros passos, painel da instância e entrar no workspace
@@ -92,7 +92,7 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
         concluida_em: 2026-10-12
-        commit: null
+        commit: 58bb146
       - id: F3.4
         titulo: Melhorias nas telas existentes (busca, filtros, paginação, ações novas e estados vazios)
         status: concluida
@@ -102,13 +102,13 @@ fases:
         commit: fbd2c02
   - id: F4
     titulo: Entrega
-    status: pendente
+    status: em_execucao
     subfases:
       - id: F4.1
         titulo: E2E da stack, guias (primeiro acesso, usar a API), README, CHANGELOG e AGENTS raiz
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-12
         concluida_em: null
         commit: null
 decisoes:
@@ -485,6 +485,7 @@ Nenhuma.
 - 2026-10-12 — F3.4 iniciada (agente em worktree).
 - 2026-10-12 — F3.4 concluída: busca, filtros, ordenação e paginação nas seis listas, Reindexar, Sincronizar todas, Duplicar, Sair de todas as sessões e estados vazios; gates do agente: frontend 1398 testes, 98,54% de branches, build e check:api; orquestrador: lint, typecheck e formato na integração
 - 2026-10-12 — F3.3 concluída: tela de chaves de API com escopo por assistente, token mostrado uma vez, revogação e exemplos REST e SDK da OpenAI, integrada sobre a F3.4; frontend 1439 testes, 98,58% de branches, lint, formato, build e check:api
+- 2026-10-12 — F4.1 iniciada (agente em worktree).
 
 ## 8. Encerramento
 
