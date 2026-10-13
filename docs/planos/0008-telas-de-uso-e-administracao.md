@@ -85,19 +85,19 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
         concluida_em: 2026-10-12
-        commit: null
+        commit: 7f98606
       - id: F3.3
         titulo: Tela de chaves de API com exemplos
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-12
         concluida_em: null
         commit: null
       - id: F3.4
         titulo: Melhorias nas telas existentes (busca, filtros, paginação, ações novas e estados vazios)
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-12
         concluida_em: null
         commit: null
   - id: F4
@@ -467,6 +467,8 @@ Nenhuma.
 - 2026-10-12 — F3.2 iniciada (agente em worktree).
 - 2026-10-12 — F3.1 concluída: configuração inicial com o nome do workspace, Início com painel e primeiros passos, painel da instância e acesso de superadmin com faixa; gates do agente: frontend 1283 testes, 98,55% de branches, build e check:api; orquestrador: lint e typecheck na integração
 - 2026-10-12 — F3.2 concluída: tela de Uso e custos com filtros, totais, tabela, gráfico por dia e CSV, integrada sobre a F3.1; frontend 1342 testes, 98,62% de branches, lint, formato, build e check:api
+- 2026-10-12 — F3.3 iniciada (agente em worktree).
+- 2026-10-12 — F3.4 iniciada (agente em worktree).
 
 ## 8. Encerramento
 
