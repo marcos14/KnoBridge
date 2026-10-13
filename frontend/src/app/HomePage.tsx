@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/button";
-import { formatCount, formatUsd } from "@/features/sources/format";
+import { formatCount, formatUsd } from "@/lib/numberFormat";
 import { useCurrentWorkspace } from "@/hooks/use-current-workspace";
 import { useWorkspaceDashboard, type WorkspaceDashboard } from "@/lib/api/dashboard";
 import { formatDate } from "@/lib/intl";

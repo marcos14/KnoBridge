@@ -1,6 +1,7 @@
 import {
   Bot,
   Building2,
+  ChartColumn,
   Cable,
   Cpu,
   Database,
@@ -26,6 +27,7 @@ export type WorkspaceArea =
   | "home"
   | "chat"
   | "conversations"
+  | "usage"
   | "assistants"
   | "providers"
   | "sources"
@@ -59,6 +61,7 @@ export const WORKSPACE_AREAS: readonly WorkspaceAreaDefinition[] = [
   { key: "home", path: "", minRole: "viewer", icon: House },
   { key: "chat", path: "chat", minRole: "viewer", icon: MessageSquare },
   { key: "conversations", path: "conversations", minRole: "admin", icon: MessagesSquare },
+  { key: "usage", path: "usage", minRole: "admin", icon: ChartColumn },
   { key: "assistants", path: "assistants", minRole: "editor", icon: Bot },
   { key: "providers", path: "providers", minRole: "editor", icon: Cpu },
   { key: "sources", path: "sources", minRole: "viewer", icon: Database },

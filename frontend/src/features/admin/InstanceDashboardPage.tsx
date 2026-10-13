@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 
 import { DataTable, type DataTableColumn } from "@/components/DataTable";
-import { formatCount } from "@/features/sources/format";
+import { formatCount } from "@/lib/numberFormat";
 import { type InstanceDashboard, useInstanceDashboard } from "@/lib/api/adminDashboard";
 import { formatDateTime } from "@/lib/intl";
 

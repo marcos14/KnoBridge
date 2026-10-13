@@ -40,6 +40,7 @@ describe("workspaceNavItems", () => {
       "home",
       "chat",
       "conversations",
+      "usage",
       "assistants",
       "providers",
       "sources",

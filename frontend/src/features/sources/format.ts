@@ -5,27 +5,8 @@ import type { Run } from "@/lib/api/sources";
 
 import { type CronDescription, describeCron, formatCronTime } from "./cron";
 
-/**
- * Cost in US dollars for reading. Embedding runs cost fractions of a cent, so small values keep
- * 4 to 6 decimals ("US$ 0,000048"); from one cent up, 2 to 4. `null` (unknown price) is "—".
- */
-export function formatUsd(value: number | null, locale: string): string {
-  if (value === null) {
-    return "—";
-  }
-  const small = value > 0 && value < 0.01;
-  return new Intl.NumberFormat(locale, {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: small ? 4 : 2,
-    maximumFractionDigits: small ? 6 : 4,
-  }).format(value);
-}
-
-/** A whole number with the locale's grouping ("51.000"). */
-export function formatCount(value: number, locale: string): string {
-  return new Intl.NumberFormat(locale).format(value);
-}
+// Shared with other areas (usage and costs) from `lib/`; re-exported for the sources screens.
+export { formatCount, formatUsd } from "@/lib/numberFormat";
 
 /** Milliseconds as "45 s", "1 min 59 s" or "2 h 5 min" (seconds are dropped past one hour). */
 export function formatDuration(milliseconds: number): string {

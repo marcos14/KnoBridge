@@ -78,13 +78,13 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
         concluida_em: 2026-10-12
-        commit: null
+        commit: a33e6c4
       - id: F3.2
         titulo: Tela de uso e custos
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
-        concluida_em: null
+        concluida_em: 2026-10-12
         commit: null
       - id: F3.3
         titulo: Tela de chaves de API com exemplos
@@ -216,6 +216,13 @@ decisoes:
     decisao: "F3.1: campo Nome do workspace na configuração inicial, que leva ao Início do workspace criado; Início com os cartões do painel (custo do mês só quando a API envia, owner/admin) e o checklist de 5 itens só com os pendentes, com links pelo papel da spec; painel da instância como página inicial de /admin (item Painel), com saúde buscada à parte; botão Entrar na lista de workspaces da administração e faixa fixa de acesso de superadmin com Abrir e Sair; entrar ou sair grava o me devolvido e recarrega os dados do workspace"
     motivo: "contrato da F1.1 e primeiro acesso sem convite"
     alternativas: "checklist com itens concluídos marcados; período no painel da instância"
+    adr: null
+  - id: D16
+    data: 2026-10-12
+    por: agente
+    decisao: "F3.2: área Uso e custos (owner/admin) em features/usage com período (este mês, mês passado, 30 dias, personalizado) e agrupamento na query string, cartões de totais, tabela ordenável com linha de total, barras em CSS por dia e CSV pelo navegador; períodos em dias UTC como o backend; formatadores de número e moeda movidos para lib/numberFormat.ts (features/sources/format.ts reexporta; a F3.1 passou a importar de lib/ na integração)"
+    motivo: "consistência com o agrupamento do backend; uma área não importa a outra"
+    alternativas: "dias no fuso do navegador; biblioteca de gráficos"
     adr: null
 pendencias_usuario: []
 ---
@@ -459,6 +466,7 @@ Nenhuma.
 - 2026-10-12 — F3.1 iniciada (agente em worktree).
 - 2026-10-12 — F3.2 iniciada (agente em worktree).
 - 2026-10-12 — F3.1 concluída: configuração inicial com o nome do workspace, Início com painel e primeiros passos, painel da instância e acesso de superadmin com faixa; gates do agente: frontend 1283 testes, 98,55% de branches, build e check:api; orquestrador: lint e typecheck na integração
+- 2026-10-12 — F3.2 concluída: tela de Uso e custos com filtros, totais, tabela, gráfico por dia e CSV, integrada sobre a F3.1; frontend 1342 testes, 98,62% de branches, lint, formato, build e check:api
 
 ## 8. Encerramento
 

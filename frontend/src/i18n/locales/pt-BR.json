@@ -11,6 +11,7 @@
       "home": "Início",
       "chat": "Chat",
       "conversations": "Conversas",
+      "usage": "Uso e custos",
       "assistants": "Assistentes",
       "providers": "Provedores",
       "sources": "Fontes",
@@ -1665,6 +1666,86 @@
       "ratedDown": "👎 {{name}}"
     }
   },
+  "usage": {
+    "title": "Uso e custos",
+    "description": "Tokens e custo estimado em US$ de embeddings e do chat no período, calculados pelo KnoBridge com tabelas de preço (não é a fatura do provedor).",
+    "loading": "Carregando o uso…",
+    "loadFailed": "Não foi possível carregar o uso.",
+    "retry": "Tentar novamente",
+    "period": "De {{start}} a {{end}} (UTC)",
+    "filters": {
+      "label": "Período e agrupamento",
+      "period": "Período",
+      "from": "De",
+      "to": "Até",
+      "group": "Agrupar por"
+    },
+    "presets": {
+      "thisMonth": "Este mês",
+      "lastMonth": "Mês passado",
+      "last30": "Últimos 30 dias",
+      "custom": "Personalizado"
+    },
+    "groups": {
+      "day": "Dia",
+      "source": "Fonte",
+      "collection": "Coleção",
+      "assistant": "Assistente",
+      "channel": "Canal",
+      "api_key": "Chave de API",
+      "model": "Modelo"
+    },
+    "channels": {
+      "panel": "Painel",
+      "api": "API"
+    },
+    "export": "Exportar CSV",
+    "exporting": "Exportando…",
+    "exportFailed": "Não foi possível exportar o CSV: {{reason}}",
+    "totals": {
+      "label": "Totais do período",
+      "cost": "Custo estimado",
+      "embeddings": "Embeddings",
+      "chat": "Chat",
+      "embeddingTokens": "Tokens",
+      "embeddingCost": "Custo",
+      "runs": "Execuções",
+      "chatInputTokens": "Tokens de entrada",
+      "chatOutputTokens": "Tokens de saída",
+      "chatCost": "Custo",
+      "answers": "Respostas"
+    },
+    "partial": {
+      "title": "Custo parcial",
+      "description": "Alguns itens usam modelos sem preço cadastrado. Os tokens deles estão contados, mas o custo não entra nos valores em US$.",
+      "runs_one": "{{count}} execução de indexação sem preço",
+      "runs_other": "{{count}} execuções de indexação sem preço",
+      "answers_one": "{{count}} resposta do chat sem preço",
+      "answers_other": "{{count}} respostas do chat sem preço",
+      "row": "Custo parcial: há itens sem preço neste grupo"
+    },
+    "table": {
+      "label": "Uso por {{group}}",
+      "empty": "Nenhum uso no período.",
+      "total": "Total",
+      "columns": {
+        "embedding_tokens": "Tokens de embedding",
+        "embedding_cost_usd": "Custo de embedding",
+        "runs": "Execuções",
+        "chat_input_tokens": "Tokens de entrada",
+        "chat_output_tokens": "Tokens de saída",
+        "chat_cost_usd": "Custo do chat",
+        "answers": "Respostas",
+        "cost_usd": "Custo total"
+      }
+    },
+    "chart": {
+      "title": "Custo por dia",
+      "label": "Custo estimado por dia, de {{start}} a {{end}}; maior valor {{max}}",
+      "bar": "{{day}}: {{cost}}",
+      "empty": "Sem custo no período."
+    }
+  },
   "audit": {
     "title": "Auditoria",
     "description": "Quem fez o quê neste workspace, do mais recente para o mais antigo.",
@@ -2002,6 +2083,7 @@
     "too_many_requests": "Muitas requisições. Aguarde um pouco e tente de novo.",
     "unauthenticated": "Sua sessão expirou. Entre novamente.",
     "validation_error": "Confira os dados informados.",
+    "usage_period_too_long": "O período pode ter no máximo 366 dias.",
     "weak_password": "A senha é fraca demais. Use uma senha mais longa e difícil de adivinhar.",
     "workspace_suspended": "Este workspace está suspenso.",
     "branch_not_found": "O branch configurado não existe no repositório.",

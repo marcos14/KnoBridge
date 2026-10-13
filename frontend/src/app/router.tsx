@@ -77,6 +77,7 @@ const RunnersPage = lazyPage(() =>
 const SourcesPage = lazyPage(() =>
   import("@/features/sources/SourcesPage").then((m) => m.SourcesPage),
 );
+const UsagePage = lazyPage(() => import("@/features/usage/UsagePage").then((m) => m.UsagePage));
 const WorkspaceSettingsPage = lazyPage(() =>
   import("@/features/settings/WorkspaceSettingsPage").then((m) => m.WorkspaceSettingsPage),
 );
@@ -166,6 +167,7 @@ export const routes: RouteObject[] = [
                           { index: true, element: <HomePage /> },
                           workspaceArea("chat", ChatPage, [":conversationId"]),
                           workspaceArea("conversations", ConversationsPage, [":conversationId"]),
+                          workspaceArea("usage", UsagePage),
                           workspaceArea("assistants", AssistantsPage),
                           workspaceArea("providers", ProvidersPage),
                           workspaceArea("sources", SourcesPage, [":sourceId"]),

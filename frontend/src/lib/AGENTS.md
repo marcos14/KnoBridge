@@ -25,7 +25,9 @@
 - `userAgent.ts`: `summarizeUserAgent` (navegador e sistema de um `User-Agent`, ou `null`).
 - `runnerStatus.ts`: presença de um runner (`runnerStatus(runner, now)`: `revoked`, `online` com `last_seen_at` até `ONLINE_WINDOW_MS` (90 s, a janela do servidor) antes de `now`, senão `offline`), `isHarnessExecutor` e `executorState` (`ready`, `notAuthenticated`, `unavailable`). Usado pela tela de runners e pelo formulário da fonte runner.
 - `runnerSetup.ts`: `runnerSetupCommands(serverUrl, repository)`, as linhas que instalam e configuram o runner (sem o token), usadas pelo cadastro de runner e pelo estado vazio da fonte runner.
-- `download.ts`: `attachmentFilename(header)` (nome do arquivo de um `Content-Disposition`: `filename*` UTF-8 quando decodifica, senão `filename`; sem pastas nem caracteres que o sistema de arquivos recusa) e `saveBlob(blob, nome)` (download pelo navegador com uma URL de objeto temporária), usados pela exportação do conhecimento.
+- `numberFormat.ts`: `formatUsd` (US$ com 4 a 6 casas abaixo de um centavo, "—" para preço desconhecido) e `formatCount`, usados pelas fontes e por uso e custos.
+- `usagePeriod.ts`: período e agrupamento da tela de uso na query string (`parseUsageSearch`, `usageSearchParams`: `period`, `from`, `to`, `group`), `presetDays` (este mês, mês passado, últimos 30 dias, em dias UTC), `searchDays` e `usagePeriod` (dias inclusivos → `[meia-noite UTC, meia-noite UTC do dia seguinte)`).
+- `download.ts`: `attachmentFilename(header)` (nome do arquivo de um `Content-Disposition`: `filename*` UTF-8 quando decodifica, senão `filename`; sem pastas nem caracteres que o sistema de arquivos recusa) e `saveBlob(blob, nome)` (download pelo navegador com uma URL de objeto temporária), usados pela exportação do conhecimento e do CSV de uso.
 - `api/`: cliente gerado do OpenAPI e hooks TanStack Query (ver [api/AGENTS.md](api/AGENTS.md)).
 - Futuramente: funções puras de domínio usadas por várias features (formatação, validação, transformação do grafo do canvas).
 

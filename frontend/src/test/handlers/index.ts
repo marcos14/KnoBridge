@@ -17,6 +17,7 @@ import { runnersHandlers } from "./runners";
 import { setupHandlers } from "./setup";
 import { sourcesHandlers } from "./sources";
 import { ticketsHandlers } from "./tickets";
+import { usageHandlers } from "./usage";
 import { workspaceConversationsHandlers } from "./workspaceConversations";
 
 export * from "./account";
@@ -41,6 +42,7 @@ export * from "./runners";
 export * from "./setup";
 export * from "./sources";
 export * from "./tickets";
+export * from "./usage";
 export * from "./workspaceConversations";
 
 /**
@@ -68,4 +70,5 @@ export const handlers = [
   ...conversationsHandlers,
   ...workspaceConversationsHandlers,
   ...dashboardHandlers,
+  ...usageHandlers,
 ];
