@@ -245,6 +245,13 @@ decisoes:
     motivo: "provar o fluxo inteiro e não deixar teste instável nem promessa de spec sem implementação"
     alternativas: "registrar como pendência para outro plano"
     adr: null
+  - id: D20
+    data: 2026-10-12
+    por: agente
+    decisao: "F4.1 (correções): request_sync repete o início com esperas de 50 ms a 1,6 s (sleeper injetável) quando o workflow anterior ainda fecha, antes de deixar o pendente; a visão administrativa de Conversas inclui as conversas da API (outer join com users e api_keys lida por table() leve, item com api_key_id/api_key_name, filtros channel e api_key_id, detalhe legível) e o painel mostra API · nome da chave e o filtro Canal; Vitest limitado a 50% dos núcleos (maxWorkers) porque os timeouts aleatórios de findBy vinham da CPU saturada por um worker jsdom por núcleo"
+    motivo: "o E2E e a suíte mostraram a corrida, a promessa da spec sem implementação e testes instáveis por sobrecarga"
+    alternativas: "deixar como pendência; aumentar timeouts"
+    adr: null
 pendencias_usuario: []
 ---
 

@@ -2,7 +2,7 @@
 
 > Rascunho v0.3 · 2026-10-12 · Em uso (planos 0003, 0004 e 0008)
 >
-> **Mudanças da v0.3** (plano 0008, F1.1; implementação na F2.5): [reindexar uma fonte](#reindexar-uma-fonte), [sincronizar todas as fontes de uma coleção](#sincronizar-todas-as-fontes-de-uma-coleção) e [busca, filtros e ordenação](#listagens-de-coleções-e-fontes) nas listas de coleções e fontes.
+> **Mudanças da v0.3** (plano 0008, F1.1; implementação na F2.5): [reindexar uma fonte](#reindexar-uma-fonte), [sincronizar todas as fontes de uma coleção](#sincronizar-todas-as-fontes-de-uma-coleção) e [busca, filtros e ordenação](#listagens-de-coleções-e-fontes) nas listas de coleções e fontes. Na F4.1, a [sincronização pendente](#sincronização-pendente) tenta iniciar de novo com esperas crescentes enquanto o workflow anterior fecha.
 >
 > **Mudanças da v0.2** (plano 0004, F2.4): conhecimento do harness indexado pelo conector interno `knowledge` ([Conhecimento do harness](#conhecimento-do-harness)), gatilho `harness` e [sincronização pendente](#sincronização-pendente), citação `knowledge` no chat.
 
@@ -160,7 +160,10 @@ O harness pede sincronizações que não podem se perder: depois de cada resulta
 
 1. tenta `start_sync`; se começou, pronto;
 2. se já há execução da fonte (`sync_already_running`), trava a linha da fonte (`FOR UPDATE`) e procura uma execução `queued` ou `running`: havendo, grava `sources.sync_pending = true` e devolve "pendente" (sem execução);
-3. não havendo (o workflow anterior já fechou a execução e está terminando), tenta `start_sync` mais uma vez; se ainda for recusado, grava a marca do mesmo jeito.
+3. não havendo (o workflow anterior já fechou a execução, mas o Temporal ainda o vê aberto enquanto ele termina), espera e volta ao passo 1, com esperas crescentes de 50 ms, 100 ms, 200 ms, 400 ms, 800 ms e 1,6 s (`CLOSING_RETRY_DELAYS`, cerca de 3 s no total; a espera é injetável e os testes não esperam de verdade);
+4. se o início for recusado em todas as tentativas sem execução ativa, grava a marca do mesmo jeito (log `ingestion_sync_left_pending`): nenhuma execução a consome agora, e ela fica para a próxima execução da fonte (manual, agendada ou outro pedido), que a limpa ao abrir.
+
+Antes da F4.1 do plano 0008 eram só duas tentativas imediatas: um envio de chamados que chegava logo depois do fim da execução anterior ficava com a marca gravada e sem execução, e os chamados ficavam "Aguardando processamento" até o envio seguinte.
 
 A marca é consumida pelo próprio workflow:
 

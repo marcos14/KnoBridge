@@ -6,7 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { type ConversationFilters, hasConversationFilters } from "@/lib/conversationFilters";
+import {
+  CONVERSATION_CHANNELS,
+  type ConversationFilters,
+  hasConversationFilters,
+  parseChannel,
+} from "@/lib/conversationFilters";
 
 /** Value of the "no filter" item: Radix Select items cannot have an empty value. */
 const ALL = "all";
@@ -31,7 +36,10 @@ function withChosen(choices: readonly FilterChoice[], chosen: string | undefined
     : [...choices, { id: chosen, name }];
 }
 
-/** Assistant, user, creation period and "only 👎" of the conversations; each change applies now. */
+/**
+ * Assistant, user, channel, creation period and "only 👎" of the conversations; each change
+ * applies now.
+ */
 export function ConversationFilterBar({
   filters,
   assistants,
@@ -41,6 +49,7 @@ export function ConversationFilterBar({
   const { t } = useTranslation();
   const assistantId = useId();
   const userId = useId();
+  const channelId = useId();
   const fromId = useId();
   const toId = useId();
   const negativeId = useId();
@@ -89,6 +98,24 @@ export function ConversationFilterBar({
           ]}
           onValueChange={(value) => {
             change({ user: value === ALL ? undefined : value });
+          }}
+        />
+      </div>
+      <div className="flex flex-col gap-2">
+        <Label htmlFor={channelId}>{t("conversations.filters.channel")}</Label>
+        <FilterSelect
+          id={channelId}
+          className="w-full sm:w-40"
+          value={filters.channel ?? ALL}
+          options={[
+            { value: ALL, label: t("conversations.filters.allChannels") },
+            ...CONVERSATION_CHANNELS.map((channel) => ({
+              value: channel,
+              label: t(`conversations.filters.channels.${channel}`),
+            })),
+          ]}
+          onValueChange={(value) => {
+            change({ channel: parseChannel(value) });
           }}
         />
       </div>

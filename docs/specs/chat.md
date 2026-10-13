@@ -156,7 +156,9 @@ Owner e admin do workspace têm rotas próprias em `/v1/workspaces/{workspace_id
 
 - `GET ""`: conversas de todos os membros e das chaves de API, da mais recente para a mais antiga, com nome do usuário (ou, desde a v0.3, `channel`, `api_key_id` e `api_key_name` nas conversas da API, com usuário nulo) e do assistente, contagem de mensagens, de 👍 e de 👎 e data da última mensagem. Filtros: `assistant_id`, `user_id`, `channel` (v0.3), `api_key_id` (v0.3), período de criação semiaberto `[created_from, created_to)` (UTC; início maior ou igual ao fim dá 422) e `negative_feedback=true` (só conversas com ao menos um 👎). Paginada (`limit`/`offset`, `total`).
 - `GET /stats`: totais do período (padrão: os 30 dias anteriores ao relógio do servidor): conversas (pela data de criação), mensagens, 👍, 👎 e respostas `no_source`, `failed` e `interrupted` (pela data da mensagem).
-- `GET /{conversation_id}`: a conversa com as mensagens paginadas e o feedback de todos, com quem deu.
+- `GET /{conversation_id}`: a conversa com as mensagens paginadas e o feedback de todos, com quem deu. Vale também para a conversa da API, com os mesmos campos da lista (usuário nulo, `api_key_id` e `api_key_name`); a chave revogada continua com o nome.
+
+Na lista e no detalhe, `user_id`, `user_name` e `user_email` são nulos na conversa da API, e `api_key_id` e `api_key_name` são nulos na do painel. `channel` aceita `panel` ou `api` (outro valor: 422). O painel mostra a conversa da API como "API · <nome da chave>" no lugar do usuário e tem o filtro **Canal** (Painel, API).
 
 As consultas usam número constante de statements, independente do tamanho da página (há teste que conta). A visão é só leitura: o admin não envia mensagens nem exclui conversas de outros.
 

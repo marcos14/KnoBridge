@@ -27,6 +27,7 @@ import { server } from "@/test/server";
 
 const PATH = `/w/${WORKSPACE_ID}/conversations`;
 const TABLE = "Conversas do workspace";
+const API_KEY_ID = "00000000-0000-4000-8000-0000000000a1";
 
 function asRole(role: Role) {
   server.use(meAs(makeMe({ workspaces: [makeWorkspace({ role })] })));
@@ -111,6 +112,57 @@ describe("ConversationsPage list", () => {
     );
     expect(within(rowAt(1)).getByRole("link", { name: "Conversa sem título" })).toBeVisible();
     expect(within(rowAt(1)).getByText("Sem mensagens")).toBeVisible();
+  });
+
+  it("test_conversations_shows_the_key_of_an_api_conversation", async () => {
+    record([
+      makeWorkspaceConversation({
+        channel: "api",
+        user_id: null,
+        user_name: null,
+        user_email: null,
+        api_key_id: API_KEY_ID,
+        api_key_name: "Integração ERP",
+      }),
+    ]);
+    await renderConversations();
+
+    const row = rowAt(0);
+    expect(within(row).getByText("API · Integração ERP")).toBeVisible();
+    expect(within(row).getByText("Chave de API")).toBeVisible();
+    expect(within(row).getByRole("link", { name: "Como fecho o caixa?" })).toHaveAttribute(
+      "href",
+      `${PATH}/${CONVERSATION_ID}`,
+    );
+  });
+
+  it("test_conversations_channel_filter_goes_to_the_url_and_the_api", async () => {
+    const recorder = record();
+    const { user, router } = await renderConversations();
+
+    await pick(user, "Canal", "API");
+
+    await waitFor(() => {
+      expect(last(recorder.listQueries)).toEqual({ channel: "api", limit: "20", offset: "0" });
+    });
+    expect(router.state.location.search).toBe("?channel=api");
+    await pick(user, "Canal", "Painel");
+    await waitFor(() => {
+      expect(last(recorder.listQueries)).toMatchObject({ channel: "panel" });
+    });
+    await pick(user, "Canal", "Todos os canais");
+
+    expect(router.state.location.search).toBe("");
+    expect(screen.getByRole("combobox", { name: "Canal" })).toHaveTextContent("Todos os canais");
+  });
+
+  it("test_conversations_shared_link_with_a_channel", async () => {
+    const recorder = record();
+    await renderConversations(`${PATH}?channel=api`);
+
+    expect(last(recorder.listQueries)).toEqual({ channel: "api", limit: "20", offset: "0" });
+    expect(screen.getByRole("combobox", { name: "Canal" })).toHaveTextContent("API");
+    expect(last(recorder.statsQueries)).toEqual({});
   });
 
   it("test_conversations_first_requests_have_no_filters", async () => {

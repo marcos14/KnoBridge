@@ -18,6 +18,7 @@ import {
 import { formatDateTime } from "@/lib/intl";
 
 import { ConversationFilterBar } from "./ConversationFilterBar";
+import { conversationOwner } from "./conversationOwner";
 import { ConversationStatsCards } from "./ConversationStatsCards";
 import { useConversationSearch } from "./useConversationSearch";
 
@@ -54,12 +55,15 @@ export function ConversationsOverview({ workspaceId }: { workspaceId: string }) 
     {
       key: "user",
       header: t("conversations.columns.user"),
-      cell: (row) => (
-        <div className="flex flex-col">
-          <span>{row.user_name}</span>
-          <span className="text-muted-foreground text-xs">{row.user_email}</span>
-        </div>
-      ),
+      cell: (row) => {
+        const owner = conversationOwner(row, t);
+        return (
+          <div className="flex flex-col">
+            <span>{owner.name}</span>
+            <span className="text-muted-foreground text-xs">{owner.detail}</span>
+          </div>
+        );
+      },
     },
     {
       key: "assistant",

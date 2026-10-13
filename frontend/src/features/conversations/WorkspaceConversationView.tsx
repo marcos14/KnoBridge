@@ -11,6 +11,7 @@ import type { Citation } from "@/lib/api/conversations";
 import { useWorkspaceConversation, type WorkspaceMessage } from "@/lib/api/workspaceConversations";
 import { formatDateTime } from "@/lib/intl";
 
+import { conversationOwner } from "./conversationOwner";
 import { FeedbackList } from "./FeedbackList";
 
 interface WorkspaceConversationViewProps {
@@ -19,7 +20,7 @@ interface WorkspaceConversationViewProps {
 }
 
 /**
- * Any member's conversation, read only: the questions, the answers rendered as in the chat (safe
+ * Any conversation of the workspace (a member's or an API key's), read only: the questions, the answers rendered as in the chat (safe
  * Markdown, sources, status) and the ratings each answer received. The way back keeps the filters
  * of the list, which travel in the query string.
  */
@@ -67,12 +68,19 @@ export function WorkspaceConversationView({
       ) : (
         <ConversationThread
           title={conversation.data.title}
-          who={t("conversations.detail.who", {
-            user: conversation.data.user_name,
-            email: conversation.data.user_email,
-            assistant: conversation.data.assistant_name,
-          })}
-          userName={conversation.data.user_name}
+          who={
+            conversation.data.channel === "api"
+              ? t("conversations.detail.whoApi", {
+                  owner: conversationOwner(conversation.data, t).name,
+                  assistant: conversation.data.assistant_name,
+                })
+              : t("conversations.detail.who", {
+                  user: conversation.data.user_name,
+                  email: conversation.data.user_email,
+                  assistant: conversation.data.assistant_name,
+                })
+          }
+          userName={conversationOwner(conversation.data, t).name}
           createdAt={conversation.data.created_at}
           messages={conversation.data.messages.items}
           onCitation={setCitation}

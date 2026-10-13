@@ -8,7 +8,9 @@ Temporal itself; the queued run of the refused start is then deleted, since it n
 
 from __future__ import annotations
 
+import asyncio
 import uuid
+from collections.abc import Awaitable, Callable
 from typing import Protocol
 
 from sqlalchemy import delete, select, update
@@ -22,6 +24,13 @@ from knobridge.ingestion.errors import SourceInactiveError, SyncAlreadyRunningEr
 from knobridge.ingestion.models import Run, RunStatus, RunTrigger, Source
 
 START_FAILED_MESSAGE = "the ingestion workflow could not be started"
+
+# Waits (seconds) before starting again when Temporal still has the source's workflow open
+# but no run of it is active: the workflow already closed its run and is completing, which
+# takes milliseconds, sometimes more under load. About 3 s in all before giving up.
+CLOSING_RETRY_DELAYS: tuple[float, ...] = (0.05, 0.1, 0.2, 0.4, 0.8, 1.6)
+
+type Sleeper = Callable[[float], Awaitable[None]]
 
 _log = get_logger(__name__)
 
@@ -92,14 +101,19 @@ async def request_sync(
     workspace_id: uuid.UUID,
     source_id: uuid.UUID,
     trigger: RunTrigger,
+    sleeper: Sleeper = asyncio.sleep,
 ) -> Run | None:
     """Like ``start_sync``, but a sync already running does not refuse the request: it is
     recorded in ``sources.sync_pending`` and the running workflow continues with a new run when
     it succeeds (``RunLifecycle.finish``). Returns the started run, or ``None`` when pending.
 
+    A refusal with no active run means the previous workflow is closing: the start is retried
+    after each of ``CLOSING_RETRY_DELAYS`` (waited with ``sleeper``) before the flag is left
+    for the next run of the source, which consumes it when it opens.
+
     Raises what ``start_sync`` raises, except ``SyncAlreadyRunningError``.
     """
-    for _ in range(2):
+    for delay in (*CLOSING_RETRY_DELAYS, None):
         try:
             return await start_sync(
                 factory,
@@ -112,9 +126,13 @@ async def request_sync(
         except SyncAlreadyRunningError:
             if await _mark_pending(factory, workspace_id, source_id):
                 return None
-    # The running workflow had already finished its run but was still closing, twice: leave
-    # the request for the next successful run of the source.
+        if delay is not None:
+            await sleeper(delay)
+    # Still closing after every retry: leave the request for the next run of the source.
     await _set_pending(factory, workspace_id, source_id)
+    _log.warning(
+        "ingestion_sync_left_pending", workspace_id=str(workspace_id), source_id=str(source_id)
+    )
     return None
 
 

@@ -1,5 +1,6 @@
 """Conversations owned by an API key against real Postgres: exactly one owner, the key of the
-same workspace, channel and cost on each message, and the panel reads that skip them."""
+same workspace, channel and cost on each message, the panel detail that skips them and the admin
+list that shows them with their key."""
 
 from __future__ import annotations
 
@@ -183,8 +184,10 @@ def test_panel_reader_does_not_see_api_conversation(app_database_url: str) -> No
         run_db(app_database_url, scenario)
 
 
-def test_admin_list_skips_api_conversations_in_items_and_total(app_database_url: str) -> None:
-    async def scenario(factory: SessionFactory) -> tuple[list[uuid.UUID], int, uuid.UUID]:
+def test_admin_list_counts_api_conversations_with_their_key(app_database_url: str) -> None:
+    async def scenario(
+        factory: SessionFactory,
+    ) -> tuple[list[tuple[uuid.UUID, uuid.UUID | None, uuid.UUID | None]], int, Seeded, uuid.UUID]:
         seeded = await seed(factory)
         async with system_session(factory) as db:
             panel = Conversation(
@@ -206,9 +209,13 @@ def test_admin_list_skips_api_conversations_in_items_and_total(app_database_url:
                 limit=50,
                 offset=0,
             )
-        return [item.id for item in page.items], page.total, panel_id
+        rows = [(item.id, item.user_id, item.api_key_id) for item in page.items]
+        return rows, page.total, seeded, panel_id
 
-    ids, total, panel_id = run_db(app_database_url, scenario)
+    rows, total, seeded, panel_id = run_db(app_database_url, scenario)
 
-    assert ids == [panel_id]
-    assert total == 1
+    assert sorted(rows, key=lambda row: row[0] == panel_id) == [
+        (seeded.conversation_id, None, seeded.key_id),
+        (panel_id, seeded.user_id, None),
+    ]
+    assert total == 2

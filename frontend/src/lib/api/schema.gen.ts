@@ -865,10 +865,11 @@ export interface paths {
         };
         /**
          * List Workspace Conversations
-         * @description Every member's conversations, most recently active first.
+         * @description The conversations of every member and API key, most recently active first.
          *
-         *     Filters: assistant, user, creation period ``[created_from, created_to)`` and
-         *     ``negative_feedback`` (only conversations with at least one thumbs down).
+         *     Filters: assistant, user, channel (``panel`` or ``api``), API key, creation period
+         *     ``[created_from, created_to)`` and ``negative_feedback`` (only conversations with at least
+         *     one thumbs down).
          */
         get: operations["list_workspace_conversations_v1_workspaces__workspace_id__admin_conversations_get"];
         put?: never;
@@ -912,7 +913,8 @@ export interface paths {
         };
         /**
          * Get Workspace Conversation
-         * @description Any member's conversation with its messages in order and everyone's feedback.
+         * @description Any conversation of the workspace (a member's or an API key's) with its messages in order
+         *     and everyone's feedback.
          */
         get: operations["get_workspace_conversation_v1_workspaces__workspace_id__admin_conversations__conversation_id__get"];
         put?: never;
@@ -2091,6 +2093,10 @@ export interface components {
         };
         /** AdminConversationDetailOut */
         AdminConversationDetailOut: {
+            /** Api Key Id */
+            api_key_id: string | null;
+            /** Api Key Name */
+            api_key_name: string | null;
             /**
              * Assistant Id
              * Format: uuid
@@ -2126,17 +2132,18 @@ export interface components {
              */
             updated_at: string;
             /** User Email */
-            user_email: string;
-            /**
-             * User Id
-             * Format: uuid
-             */
-            user_id: string;
+            user_email: string | null;
+            /** User Id */
+            user_id: string | null;
             /** User Name */
-            user_name: string;
+            user_name: string | null;
         };
         /** AdminConversationOut */
         AdminConversationOut: {
+            /** Api Key Id */
+            api_key_id: string | null;
+            /** Api Key Name */
+            api_key_name: string | null;
             /**
              * Assistant Id
              * Format: uuid
@@ -2171,14 +2178,11 @@ export interface components {
              */
             updated_at: string;
             /** User Email */
-            user_email: string;
-            /**
-             * User Id
-             * Format: uuid
-             */
-            user_id: string;
+            user_email: string | null;
+            /** User Id */
+            user_id: string | null;
             /** User Name */
-            user_name: string;
+            user_name: string | null;
         };
         /** AdminConversationPageOut */
         AdminConversationPageOut: {
@@ -8141,6 +8145,8 @@ export interface operations {
             query?: {
                 assistant_id?: string | null;
                 user_id?: string | null;
+                channel?: components["schemas"]["ConversationChannel"] | null;
+                api_key_id?: string | null;
                 created_from?: string | null;
                 created_to?: string | null;
                 negative_feedback?: boolean;

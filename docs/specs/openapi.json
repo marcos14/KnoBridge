@@ -44,6 +44,29 @@
       },
       "AdminConversationDetailOut": {
         "properties": {
+          "api_key_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key Id"
+          },
+          "api_key_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key Name"
+          },
           "assistant_id": {
             "format": "uuid",
             "title": "Assistant Id",
@@ -110,17 +133,38 @@
             "type": "string"
           },
           "user_email": {
-            "title": "User Email",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Email"
           },
           "user_id": {
-            "format": "uuid",
-            "title": "User Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
           },
           "user_name": {
-            "title": "User Name",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Name"
           }
         },
         "required": [
@@ -132,6 +176,8 @@
           "user_id",
           "user_name",
           "user_email",
+          "api_key_id",
+          "api_key_name",
           "message_count",
           "thumbs_up",
           "thumbs_down",
@@ -145,6 +191,29 @@
       },
       "AdminConversationOut": {
         "properties": {
+          "api_key_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key Id"
+          },
+          "api_key_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key Name"
+          },
           "assistant_id": {
             "format": "uuid",
             "title": "Assistant Id",
@@ -208,17 +277,38 @@
             "type": "string"
           },
           "user_email": {
-            "title": "User Email",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Email"
           },
           "user_id": {
-            "format": "uuid",
-            "title": "User Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
           },
           "user_name": {
-            "title": "User Name",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Name"
           }
         },
         "required": [
@@ -230,6 +320,8 @@
           "user_id",
           "user_name",
           "user_email",
+          "api_key_id",
+          "api_key_name",
           "message_count",
           "thumbs_up",
           "thumbs_down",
@@ -12990,7 +13082,7 @@
     },
     "/v1/workspaces/{workspace_id}/admin/conversations": {
       "get": {
-        "description": "Every member's conversations, most recently active first.\n\nFilters: assistant, user, creation period ``[created_from, created_to)`` and\n``negative_feedback`` (only conversations with at least one thumbs down).",
+        "description": "The conversations of every member and API key, most recently active first.\n\nFilters: assistant, user, channel (``panel`` or ``api``), API key, creation period\n``[created_from, created_to)`` and ``negative_feedback`` (only conversations with at least\none thumbs down).",
         "operationId": "list_workspace_conversations_v1_workspaces__workspace_id__admin_conversations_get",
         "parameters": [
           {
@@ -13035,6 +13127,39 @@
                 }
               ],
               "title": "User Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "channel",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ConversationChannel"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Channel"
+            }
+          },
+          {
+            "in": "query",
+            "name": "api_key_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Api Key Id"
             }
           },
           {
@@ -13217,7 +13342,7 @@
     },
     "/v1/workspaces/{workspace_id}/admin/conversations/{conversation_id}": {
       "get": {
-        "description": "Any member's conversation with its messages in order and everyone's feedback.",
+        "description": "Any conversation of the workspace (a member's or an API key's) with its messages in order\nand everyone's feedback.",
         "operationId": "get_workspace_conversation_v1_workspaces__workspace_id__admin_conversations__conversation_id__get",
         "parameters": [
           {

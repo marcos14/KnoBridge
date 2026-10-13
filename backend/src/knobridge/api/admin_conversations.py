@@ -54,9 +54,13 @@ class AdminConversationOut(BaseModel):
     channel: ConversationChannel
     assistant_id: uuid.UUID
     assistant_name: str
-    user_id: uuid.UUID
-    user_name: str
-    user_email: str
+    # The member who owns it; null in the ``api`` channel, owned by a key.
+    user_id: uuid.UUID | None
+    user_name: str | None
+    user_email: str | None
+    # The API key that owns it (``api`` channel); null for a member's conversation.
+    api_key_id: uuid.UUID | None
+    api_key_name: str | None
     message_count: int
     thumbs_up: int
     thumbs_down: int
@@ -131,6 +135,8 @@ def _conversation_fields(item: AdminConversation) -> dict[str, object]:
         "user_id": item.user_id,
         "user_name": item.user_name,
         "user_email": item.user_email,
+        "api_key_id": item.api_key_id,
+        "api_key_name": item.api_key_name,
         "message_count": item.message_count,
         "thumbs_up": item.thumbs_up,
         "thumbs_down": item.thumbs_down,
@@ -178,16 +184,19 @@ async def list_workspace_conversations(
     context: AdminContext,
     assistant_id: uuid.UUID | None = None,
     user_id: uuid.UUID | None = None,
+    channel: ConversationChannel | None = None,
+    api_key_id: uuid.UUID | None = None,
     created_from: datetime | None = None,
     created_to: datetime | None = None,
     negative_feedback: bool = False,
     limit: Annotated[int, Query(ge=1, le=MAX_LIMIT)] = DEFAULT_LIMIT,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> AdminConversationPageOut:
-    """Every member's conversations, most recently active first.
+    """The conversations of every member and API key, most recently active first.
 
-    Filters: assistant, user, creation period ``[created_from, created_to)`` and
-    ``negative_feedback`` (only conversations with at least one thumbs down).
+    Filters: assistant, user, channel (``panel`` or ``api``), API key, creation period
+    ``[created_from, created_to)`` and ``negative_feedback`` (only conversations with at least
+    one thumbs down).
     """
     page = await list_admin_conversations(
         context.db,
@@ -195,6 +204,8 @@ async def list_workspace_conversations(
         filters=AdminConversationFilter(
             assistant_id=assistant_id,
             user_id=user_id,
+            channel=channel,
+            api_key_id=api_key_id,
             created_from=created_from,
             created_to=created_to,
             negative_feedback=negative_feedback,
@@ -258,7 +269,8 @@ async def get_workspace_conversation(
     limit: Annotated[int, Query(ge=1, le=MAX_MESSAGE_LIMIT)] = DEFAULT_MESSAGE_LIMIT,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> AdminConversationDetailOut:
-    """Any member's conversation with its messages in order and everyone's feedback."""
+    """Any conversation of the workspace (a member's or an API key's) with its messages in order
+    and everyone's feedback."""
     detail = await get_admin_conversation(
         context.db,
         workspace_id=context.workspace_id,

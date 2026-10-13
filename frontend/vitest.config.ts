@@ -10,6 +10,10 @@ export default mergeConfig(
       setupFiles: ["./src/test/setup.ts"],
       // Unit and component tests live next to the code; e2e/ belongs to Playwright.
       include: ["src/**/*.test.{ts,tsx}"],
+      // Half the cores, not one worker per core: every worker runs jsdom with coverage, and with
+      // all cores busy the CPU starvation made unrelated findBy waits time out at random (seen in
+      // plans 0005 and 0008). Fewer workers keep the suite deterministic at a similar wall time.
+      maxWorkers: "50%",
       coverage: {
         // Always on, like --cov in the backend: "pnpm test -- --coverage" forwards a literal "--" that
         // vitest ignores, so the gate cannot depend on the flag. test:watch turns it off.

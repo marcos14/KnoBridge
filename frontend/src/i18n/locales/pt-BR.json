@@ -1778,7 +1778,7 @@
   },
   "conversations": {
     "title": "Conversas",
-    "description": "Uso do chat por todos os membros do workspace: totais do período, conversas e avaliações.",
+    "description": "Uso do chat por todos os membros e pela API do workspace: totais do período, conversas e avaliações.",
     "stats": {
       "label": "Totais do período",
       "period": "De {{start}} a {{end}}",
@@ -1798,6 +1798,12 @@
       "allAssistants": "Todos os assistentes",
       "user": "Usuário",
       "allUsers": "Todos os usuários",
+      "channel": "Canal",
+      "allChannels": "Todos os canais",
+      "channels": {
+        "panel": "Painel",
+        "api": "API"
+      },
       "from": "De",
       "to": "Até",
       "negative": "Só com 👎",
@@ -1817,6 +1823,9 @@
     "feedbackLabel": "{{up}} positivas, {{down}} negativas",
     "noActivity": "Sem mensagens",
     "unknownUser": "Usuário {{id}}",
+    "apiOwner": "API · {{key}}",
+    "apiOwnerUnnamed": "API",
+    "apiOwnerHint": "Chave de API",
     "unknownAssistant": "Assistente {{id}}",
     "empty": "Nenhuma conversa ainda.",
     "emptyFiltered": "Nenhuma conversa corresponde aos filtros.",
@@ -1829,6 +1838,7 @@
       "loadFailed": "Não foi possível carregar a conversa.",
       "notFound": "Conversa não encontrada",
       "who": "{{user}} ({{email}}) com {{assistant}}",
+      "whoApi": "{{owner}} com {{assistant}}",
       "startedAt": "Iniciada em {{when}}",
       "readOnly": "Somente leitura. As avaliações são dos membros.",
       "threadLabel": "Mensagens da conversa",

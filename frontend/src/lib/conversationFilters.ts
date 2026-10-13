@@ -1,9 +1,14 @@
 /**
  * Filters of the conversations screen, kept in the URL query string so a filtered view can be
- * shared: `?assistant=<id>&user=<id>&from=YYYY-MM-DD&to=YYYY-MM-DD&negative=1&offset=<n>`.
+ * shared: `?assistant=<id>&user=<id>&channel=panel|api&from=YYYY-MM-DD&to=YYYY-MM-DD&negative=1
+ * &offset=<n>`.
  */
 
-import type { CreationPeriod, WorkspaceConversationsQuery } from "@/lib/api/workspaceConversations";
+import type {
+  ConversationChannel,
+  CreationPeriod,
+  WorkspaceConversationsQuery,
+} from "@/lib/api/workspaceConversations";
 import { dayPeriod, validDay } from "@/lib/days";
 import { parseOffset } from "@/lib/pagination";
 import { isUuid } from "@/lib/uuid";
@@ -11,12 +16,22 @@ import { isUuid } from "@/lib/uuid";
 export interface ConversationFilters {
   assistant?: string;
   user?: string;
+  /** Where the conversation happened: the panel or the public API (owned by a key). */
+  channel?: ConversationChannel;
   /** First day of the creation period, inclusive (`YYYY-MM-DD`, local calendar). */
   from?: string;
   /** Last day of the creation period, inclusive. */
   to?: string;
   /** Only conversations with a thumbs down. */
   negative?: true;
+}
+
+/** The channels a conversation can come from, in the order the filter lists them. */
+export const CONVERSATION_CHANNELS: readonly ConversationChannel[] = ["panel", "api"];
+
+/** The channel named by `value`, or `undefined` when it names none. */
+export function parseChannel(value: string | null): ConversationChannel | undefined {
+  return CONVERSATION_CHANNELS.find((channel) => channel === value);
 }
 
 export interface ConversationSearch {
@@ -35,6 +50,7 @@ export function parseConversationSearch(params: URLSearchParams): ConversationSe
     filters: {
       assistant: isUuid(assistant) ? assistant : undefined,
       user: isUuid(user) ? user : undefined,
+      channel: parseChannel(params.get("channel")),
       from: validDay(params.get("from")),
       to: validDay(params.get("to")),
       negative: params.get("negative") === "1" ? true : undefined,
@@ -49,6 +65,7 @@ export function conversationSearchParams({ filters, offset }: ConversationSearch
   const entries: [string, string | undefined][] = [
     ["assistant", filters.assistant],
     ["user", filters.user],
+    ["channel", filters.channel],
     ["from", filters.from],
     ["to", filters.to],
     ["negative", filters.negative === true ? "1" : undefined],
@@ -78,6 +95,7 @@ export function toConversationsQuery(
   return {
     assistantId: filters.assistant,
     userId: filters.user,
+    channel: filters.channel,
     ...toCreationPeriod(filters),
     negativeFeedback: filters.negative,
     limit,

@@ -99,6 +99,8 @@ def test_admin_conversations_filters(api: ApiEnv) -> None:
         "user_id": str(owner.id),
         "user_name": "Test User",
         "user_email": owner.email,
+        "api_key_id": None,
+        "api_key_name": None,
         "message_count": 2,
         "thumbs_up": 0,
         "thumbs_down": 1,

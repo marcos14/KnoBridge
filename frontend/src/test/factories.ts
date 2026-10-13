@@ -500,6 +500,8 @@ export function makeWorkspaceConversation(
     user_id: USER_ID,
     user_name: "Ana Teste",
     user_email: "ana@example.test",
+    api_key_id: null,
+    api_key_name: null,
     channel: "panel",
     title: "Como fecho o caixa?",
     message_count: 4,

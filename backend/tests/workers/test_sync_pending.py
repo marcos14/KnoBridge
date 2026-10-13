@@ -16,7 +16,7 @@ from knobridge.core.errors import NotFoundError
 from knobridge.ingestion.errors import SyncAlreadyRunningError
 from knobridge.ingestion.models import Run, RunStatus, RunTrigger, Source
 from knobridge.ingestion.source_config import SourceKind
-from knobridge.ingestion.sync import request_sync
+from knobridge.ingestion.sync import CLOSING_RETRY_DELAYS, request_sync
 
 pytestmark = pytest.mark.integration
 
@@ -52,6 +52,16 @@ class ScriptedStarter:
         raise AssertionError("not used by these tests")
 
 
+class RecordingSleeper:
+    """Stands in for ``asyncio.sleep``: records the delays and returns at once."""
+
+    def __init__(self) -> None:
+        self.delays: list[float] = []
+
+    async def __call__(self, delay: float) -> None:
+        self.delays.append(delay)
+
+
 def _with_database(database_url: str, body: Body) -> None:
     async def main() -> None:
         async with database(database_url, FILES) as h:
@@ -60,7 +70,9 @@ def _with_database(database_url: str, body: Body) -> None:
     asyncio.run(main())
 
 
-async def _request(h: Harness, starter: ScriptedStarter) -> Run | None:
+async def _request(
+    h: Harness, starter: ScriptedStarter, sleeper: RecordingSleeper | None = None
+) -> Run | None:
     return await request_sync(
         h.factory,
         starter,
@@ -68,6 +80,7 @@ async def _request(h: Harness, starter: ScriptedStarter) -> Run | None:
         workspace_id=h.seeded.workspace_id,
         source_id=h.seeded.source_id,
         trigger=RunTrigger.HARNESS,
+        sleeper=sleeper or RecordingSleeper(),
     )
 
 
@@ -128,25 +141,62 @@ def test_request_sync_marks_pending_behind_an_active_run(app_database_url: str) 
 def test_request_sync_starts_again_when_the_workflow_was_closing(app_database_url: str) -> None:
     async def body(h: Harness) -> None:
         starter = ScriptedStarter(refusals=1)
+        sleeper = RecordingSleeper()
 
-        run = await _request(h, starter)
+        run = await _request(h, starter, sleeper)
 
         assert run is not None
         assert starter.started == [run.id]
+        assert sleeper.delays == [CLOSING_RETRY_DELAYS[0]]
         assert (await h.source()).sync_pending is False
 
     _with_database(app_database_url, body)
 
 
-def test_request_sync_refused_twice_without_active_run_leaves_it_pending(
+def test_request_sync_keeps_retrying_while_the_workflow_closes(app_database_url: str) -> None:
+    # E2E of plan 0008 (F4.1): the previous workflow had closed its run but was still closing
+    # 30 ms later; two refused starts left the upload pending with no run to take it.
+    async def body(h: Harness) -> None:
+        starter = ScriptedStarter(refusals=3)
+        sleeper = RecordingSleeper()
+
+        run = await _request(h, starter, sleeper)
+
+        assert run is not None
+        assert starter.started == [run.id]
+        assert sleeper.delays == list(CLOSING_RETRY_DELAYS[:3])
+        assert (await h.source()).sync_pending is False
+        # The refused runs were discarded; only the started one is left.
+        assert [row.id for row in await _runs(h)] == [run.id]
+
+    _with_database(app_database_url, body)
+
+
+def test_request_sync_refused_through_every_retry_leaves_it_pending(
     app_database_url: str,
 ) -> None:
     async def body(h: Harness) -> None:
-        run = await _request(h, ScriptedStarter(refusals=2))
+        sleeper = RecordingSleeper()
+
+        run = await _request(h, ScriptedStarter(refusals=len(CLOSING_RETRY_DELAYS) + 1), sleeper)
 
         assert run is None
+        assert sleeper.delays == list(CLOSING_RETRY_DELAYS)
         assert (await h.source()).sync_pending is True
         assert await _runs(h) == []
+
+    _with_database(app_database_url, body)
+
+
+def test_next_started_run_consumes_a_pending_flag_left_behind(app_database_url: str) -> None:
+    async def body(h: Harness) -> None:
+        await _request(h, ScriptedStarter(refusals=len(CLOSING_RETRY_DELAYS) + 1))
+        run = await _request(h, ScriptedStarter(refusals=0))
+        assert run is not None
+
+        await h.lifecycle.open(h.scope(run.id))
+
+        assert (await h.source()).sync_pending is False
 
     _with_database(app_database_url, body)
 

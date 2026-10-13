@@ -74,6 +74,27 @@ describe("WorkspaceConversationView", () => {
     expect(screen.getByText("300 ms")).toBeVisible();
   });
 
+  it("test_conversation_detail_of_the_api_shows_the_key", async () => {
+    server.use(
+      workspaceConversationAs(
+        makeWorkspaceConversationDetail(
+          makeWorkspaceConversation({
+            channel: "api",
+            user_id: null,
+            user_name: null,
+            user_email: null,
+            api_key_id: "00000000-0000-4000-8000-0000000000a1",
+            api_key_name: "Integração ERP",
+          }),
+        ),
+      ),
+    );
+    await openDetail();
+
+    expect(await screen.findByText("API · Integração ERP com Suporte ERP")).toBeVisible();
+    expect(within(thread()).getAllByText("Pergunta de API · Integração ERP:")).toHaveLength(2);
+  });
+
   it("test_conversation_detail_shows_everyone_feedback", async () => {
     await openDetail();
 

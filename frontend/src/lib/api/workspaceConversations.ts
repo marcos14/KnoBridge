@@ -4,12 +4,16 @@ import { apiClient, unwrap } from "./client";
 import { MESSAGES_PAGE_SIZE } from "./conversations";
 import type { components } from "./schema.gen";
 
-/** Every member's conversations, as owners and admins see them (`/admin/conversations`). */
+/**
+ * The conversations of every member and API key, as owners and admins see them
+ * (`/admin/conversations`). A conversation of the API has no user: `api_key_*` names its key.
+ */
 export type WorkspaceConversation = components["schemas"]["AdminConversationOut"];
 export type WorkspaceConversationDetail = components["schemas"]["AdminConversationDetailOut"];
 export type WorkspaceMessage = components["schemas"]["AdminMessageOut"];
 export type WorkspaceFeedback = components["schemas"]["AdminFeedbackOut"];
 export type ConversationStats = components["schemas"]["ConversationStatsOut"];
+export type ConversationChannel = components["schemas"]["ConversationChannel"];
 
 /** A creation period as the API takes it: `[createdFrom, createdTo)`, ISO 8601 instants. */
 export interface CreationPeriod {
@@ -21,6 +25,7 @@ export interface CreationPeriod {
 export interface WorkspaceConversationsQuery extends CreationPeriod {
   assistantId?: string;
   userId?: string;
+  channel?: ConversationChannel;
   /** Only conversations with at least one thumbs down. */
   negativeFeedback?: boolean;
   limit: number;
@@ -31,7 +36,7 @@ export function workspaceConversationsQueryKey(workspaceId: string) {
   return ["api", "workspaces", workspaceId, "admin", "conversations"] as const;
 }
 
-/** One page of every member's conversations, most recently active first (owner or admin). */
+/** One page of the workspace's conversations, most recently active first (owner or admin). */
 export function useWorkspaceConversations(workspaceId: string, query: WorkspaceConversationsQuery) {
   return useQuery({
     queryKey: [...workspaceConversationsQueryKey(workspaceId), "list", query],
@@ -43,6 +48,7 @@ export function useWorkspaceConversations(workspaceId: string, query: WorkspaceC
             query: {
               assistant_id: query.assistantId,
               user_id: query.userId,
+              channel: query.channel,
               created_from: query.createdFrom,
               created_to: query.createdTo,
               // `false` is the API default: leaving it out keeps the request as short as the filter.
@@ -77,7 +83,7 @@ export function useConversationStats(workspaceId: string, period: CreationPeriod
 }
 
 /**
- * Any member's conversation with all its messages and everyone's feedback. Long conversations are
+ * Any conversation of the workspace with all its messages and everyone's feedback. Long conversations are
  * read in pages of `MESSAGES_PAGE_SIZE` and joined.
  */
 export function useWorkspaceConversation(workspaceId: string, conversationId: string) {
