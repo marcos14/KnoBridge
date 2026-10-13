@@ -348,6 +348,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/chat/completions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Chat Completion
+         * @description Ask an assistant in a new conversation of the key, as OpenAI's Chat Completions.
+         */
+        post: operations["create_chat_completion_v1_chat_completions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/conversations": {
         parameters: {
             query?: never;
@@ -591,6 +611,46 @@ export interface paths {
          * @description End one session of the user (e.g. a lost device); ending this one logs out here.
          */
         delete: operations["revoke_session_v1_me_sessions__session_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Models
+         * @description The active assistants of the key's scope, by name.
+         */
+        get: operations["list_models_v1_models_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/models/{model}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Model
+         * @description One model, by the assistant's exact name or id.
+         */
+        get: operations["get_model_v1_models__model__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -3389,6 +3449,15 @@ export interface components {
             email: string;
             role: components["schemas"]["Role"];
         };
+        JsonValue: unknown;
+        /** KnoBridgeOptions */
+        KnoBridgeOptions: {
+            /**
+             * Append Sources
+             * @default true
+             */
+            append_sources: boolean;
+        };
         /**
          * KnowledgeConfidence
          * @description Trust seal shown with the item; values in pt-BR because they reach the exported
@@ -3677,6 +3746,179 @@ export interface components {
             embedding_cost_usd: number;
             /** Partial */
             partial: boolean;
+        };
+        /** OpenAIAnswerMessage */
+        OpenAIAnswerMessage: {
+            /** Content */
+            content: string;
+            /** Refusal */
+            refusal?: null;
+            /**
+             * Role
+             * @default assistant
+             * @constant
+             */
+            role: "assistant";
+        };
+        /** OpenAIChatCompletion */
+        OpenAIChatCompletion: {
+            /** Choices */
+            choices: components["schemas"]["OpenAIChoice"][];
+            /** Created */
+            created: number;
+            /** Id */
+            id: string;
+            knobridge: components["schemas"]["OpenAICompletionExtra"];
+            /** Model */
+            model: string;
+            /**
+             * Object
+             * @default chat.completion
+             * @constant
+             */
+            object: "chat.completion";
+            /** System Fingerprint */
+            system_fingerprint?: null;
+            usage: components["schemas"]["OpenAIUsage"] | null;
+        };
+        /**
+         * OpenAIChatCompletionRequest
+         * @description The parameters used or refused; every other one is accepted and ignored.
+         */
+        OpenAIChatCompletionRequest: {
+            audio?: components["schemas"]["JsonValue"];
+            knobridge?: components["schemas"]["KnoBridgeOptions"] | null;
+            /** Messages */
+            messages: components["schemas"]["OpenAIMessageIn"][];
+            /** Modalities */
+            modalities?: string[] | null;
+            /** Model */
+            model: string;
+            /** N */
+            n?: number | null;
+            response_format?: components["schemas"]["OpenAIResponseFormat"] | null;
+            /**
+             * Stream
+             * @default false
+             */
+            stream: boolean;
+            stream_options?: components["schemas"]["OpenAIStreamOptions"] | null;
+            /** Tool Choice */
+            tool_choice?: string | {
+                [key: string]: components["schemas"]["JsonValue"];
+            } | null;
+        };
+        /** OpenAIChoice */
+        OpenAIChoice: {
+            /**
+             * Finish Reason
+             * @default stop
+             * @constant
+             */
+            finish_reason: "stop";
+            /**
+             * Index
+             * @default 0
+             */
+            index: number;
+            /** Logprobs */
+            logprobs?: null;
+            message: components["schemas"]["OpenAIAnswerMessage"];
+        };
+        /** OpenAICompletionExtra */
+        OpenAICompletionExtra: {
+            /** Citations */
+            citations: components["schemas"]["CitationOut"][];
+            /**
+             * Conversation Id
+             * Format: uuid
+             */
+            conversation_id: string;
+            /** Cost Usd */
+            cost_usd: number | null;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+            status: components["schemas"]["MessageStatus"];
+        };
+        /** OpenAIContentPart */
+        OpenAIContentPart: {
+            /** Text */
+            text?: string | null;
+            /** Type */
+            type: string;
+        };
+        /** OpenAIMessageIn */
+        OpenAIMessageIn: {
+            /** Content */
+            content?: string | components["schemas"]["OpenAIContentPart"][] | null;
+            /** Role */
+            role: string;
+        };
+        /** OpenAIModel */
+        OpenAIModel: {
+            /** Created */
+            created: number;
+            /** Id */
+            id: string;
+            knobridge: components["schemas"]["OpenAIModelExtra"];
+            /**
+             * Object
+             * @default model
+             * @constant
+             */
+            object: "model";
+            /**
+             * Owned By
+             * @default knobridge
+             * @constant
+             */
+            owned_by: "knobridge";
+        };
+        /** OpenAIModelExtra */
+        OpenAIModelExtra: {
+            /**
+             * Assistant Id
+             * Format: uuid
+             */
+            assistant_id: string;
+            /** Description */
+            description: string;
+        };
+        /** OpenAIModelList */
+        OpenAIModelList: {
+            /** Data */
+            data: components["schemas"]["OpenAIModel"][];
+            /**
+             * Object
+             * @default list
+             * @constant
+             */
+            object: "list";
+        };
+        /** OpenAIResponseFormat */
+        OpenAIResponseFormat: {
+            /** Type */
+            type: string;
+        };
+        /** OpenAIStreamOptions */
+        OpenAIStreamOptions: {
+            /**
+             * Include Usage
+             * @default false
+             */
+            include_usage: boolean;
+        };
+        /** OpenAIUsage */
+        OpenAIUsage: {
+            /** Completion Tokens */
+            completion_tokens: number;
+            /** Prompt Tokens */
+            prompt_tokens: number;
+            /** Total Tokens */
+            total_tokens: number;
         };
         /** OpenQuestion */
         OpenQuestion: {
@@ -6496,6 +6738,96 @@ export interface operations {
             };
         };
     };
+    create_chat_completion_v1_chat_completions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenAIChatCompletionRequest"];
+            };
+        };
+        responses: {
+            /** @description With `stream: true`, `chat.completion.chunk` lines (`data: {...}`) ending in `data: [DONE]`. With `stream: false`, the completion as JSON. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpenAIChatCompletion"];
+                    "text/event-stream": string;
+                };
+            };
+            /** @description Invalid body, refused parameter or messages (OpenAI error shape). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Missing, malformed, unknown or revoked key (`invalid_api_key`). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace of the key suspended (`workspace_suspended`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Assistant missing, inactive or outside the key's scope (`model_not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Body above 1 MiB (`payload_too_large`). */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Provider rate limit (`provider_rate_limited`). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The provider failed (`provider_*`, `embedding_*`). */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The provider is unavailable (`provider_unavailable`). */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     create_public_conversation_v1_conversations_post: {
         parameters: {
             query?: never;
@@ -7082,6 +7414,99 @@ export interface operations {
                 content?: never;
             };
             /** @description No such live session of the user. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_models_v1_models_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpenAIModelList"];
+                };
+            };
+            /** @description Missing, malformed, unknown or revoked key (`invalid_api_key`). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace of the key suspended (`workspace_suspended`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Assistant missing, inactive or outside the key's scope (`model_not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_model_v1_models__model__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                model: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpenAIModel"];
+                };
+            };
+            /** @description Missing, malformed, unknown or revoked key (`invalid_api_key`). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace of the key suspended (`workspace_suspended`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Assistant missing, inactive or outside the key's scope (`model_not_found`). */
             404: {
                 headers: {
                     [name: string]: unknown;

@@ -18,6 +18,8 @@ from starlette.types import Receive, Scope, Send
 from knobridge.conversations.turn import ChatEvent, CitationsEvent, DeltaEvent, DoneEvent
 
 SSE_MEDIA_TYPE = "text/event-stream"
+# Turns the events into the body's bytes (default: the SSE frames of chat-sse.md).
+type FrameEncoder = Callable[[AsyncIterator[ChatEvent]], AsyncGenerator[bytes]]
 
 
 def sse_frame(event: ChatEvent) -> bytes:
@@ -63,17 +65,21 @@ class ChatEventStream(StreamingResponse):
     Starlette does not close the body iterator when the client disconnects (the send fails
     or the task is cancelled), so the generator's cleanup could wait for garbage collection.
     Closing it here, shielded from cancellation, runs that cleanup right away; ``on_close``
-    then settles an answer whose stream never started.
+    then settles an answer whose stream never started. ``frames`` encodes the events (the
+    OpenAI-compatible API sends its own chunks, ``openai_wire.py``).
     """
 
     media_type = SSE_MEDIA_TYPE
 
     def __init__(
-        self, events: AsyncGenerator[ChatEvent], on_close: Callable[[], Awaitable[None]]
+        self,
+        events: AsyncGenerator[ChatEvent],
+        on_close: Callable[[], Awaitable[None]],
+        frames: FrameEncoder | None = None,
     ) -> None:
         self._events = events
         self._on_close = on_close
-        self._frames = _frames(events)
+        self._frames = (frames or _frames)(events)
         super().__init__(
             self._frames, headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
         )

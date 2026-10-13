@@ -46,7 +46,7 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
         concluida_em: 2026-10-12
-        commit: null
+        commit: cf439d3
       - id: F2.3
         titulo: Chaves de API e a API REST de conversa autenticada por chave
         status: concluida
@@ -56,10 +56,10 @@ fases:
         commit: 2ce2afa
       - id: F2.4
         titulo: API compatível com OpenAI (/v1/models e /v1/chat/completions)
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-12
+        concluida_em: 2026-10-12
         commit: null
       - id: F2.5
         titulo: Ações e listagens que faltam no backend (reindexar fonte, sincronizar a coleção, duplicar assistente, busca e ordenação)
@@ -202,6 +202,13 @@ decisoes:
     decisao: "F2.2: preços de chat do catálogo do OpenRouter em 2026-10-12 (Claude 4.x/5.x e GPT-4.1/4o, com e sem prefixo) em llm/chat_pricing.py; código de uso em usage/ (lê runs, messages, chaves, workspaces e sessões; nenhum módulo de domínio o importa); relatório em dois statements (totais e linhas, com união embeddings + chat); soma sem item com preço é 0 e o aviso de custo parcial vem de unpriced_runs/unpriced_answers e partial; group_by channel sempre lista panel e api; saúde com Temporal fora marca o worker como unknown; descrições do OpenAPI sem acento (o teste exige ASCII)"
     motivo: "contrato da F1.1"
     alternativas: "custo nulo quando nada tem preço; métricas materializadas"
+    adr: null
+  - id: D14
+    data: 2026-10-12
+    por: agente
+    decisao: "F2.4: API compatível com OpenAI em api/openai_compat.py, openai_wire.py e openai_errors.py (OpenAIRoute converte qualquer erro da rota, 422 vira 400 invalid_request; 413 no formato OpenAI); histórico do cliente entra no LLMCall logo antes da pergunta (with_history), sem mexer em chat.py; usage e cost_usd lidos da mensagem gravada; recusas: papel desconhecido, conteúdo que não é texto, response_format diferente de text, tool_choice fora de none/auto e n<1; mensagens vazias do histórico descartadas; se model casa com nome de um e id de outro, o id vence; texto do provedor nunca vaza no erro do stream"
+    motivo: "contrato da F1.1 e compatibilidade com o SDK oficial"
+    alternativas: "duplicar a rodada de chat para o protocolo OpenAI"
     adr: null
 pendencias_usuario: []
 ---
@@ -441,6 +448,7 @@ Nenhuma.
 - 2026-10-12 — F2.3 iniciada (agente em worktree).
 - 2026-10-12 — F2.3 concluída: chaves de API (CRUD, revogação, escopo por assistente) e a API REST de conversa com channel api; gates do agente: backend 2258 passed com 99,88%, frontend 1240; orquestrador: ruff, pyright e AGENTS na integração
 - 2026-10-12 — F2.2 concluída: custo estimado por resposta, uso e custos com CSV, painel do workspace com checklist e painel e saúde da instância, integrados sobre a F2.3; backend 2350 passed na rodada completa (a única falha, descrição do OpenAPI com acento, foi corrigida e o teste passa), frontend 1240
+- 2026-10-12 — F2.4 concluída: API compatível com OpenAI (/v1/models e /v1/chat/completions com e sem streaming, citações em knobridge, erros no formato OpenAI) testada com o SDK oficial, integrada sobre a F2.2; backend 2420 passed com 99% de cobertura, frontend 1240
 
 ## 8. Encerramento
 

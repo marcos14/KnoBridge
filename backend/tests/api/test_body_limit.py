@@ -45,6 +45,8 @@ def _client() -> TestClient:
         ("/v1/conversations", 4 * KIB),
         ("/v1/conversations/abc/messages", 64 * KIB),
         ("/v1/conversations/abc", None),
+        ("/v1/chat/completions", MIB),
+        ("/v1/models", None),
         ("/v1/workspaces/abc/conversations/def/messages", None),
     ],
 )

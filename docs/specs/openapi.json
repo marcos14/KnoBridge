@@ -3835,6 +3835,18 @@
         "title": "InviteRequest",
         "type": "object"
       },
+      "JsonValue": {},
+      "KnoBridgeOptions": {
+        "properties": {
+          "append_sources": {
+            "default": true,
+            "title": "Append Sources",
+            "type": "boolean"
+          }
+        },
+        "title": "KnoBridgeOptions",
+        "type": "object"
+      },
       "KnowledgeConfidence": {
         "description": "Trust seal shown with the item; values in pt-BR because they reach the exported\nfrontmatter and the chat citation as written.",
         "enum": [
@@ -4620,6 +4632,438 @@
           "partial"
         ],
         "title": "MonthCostOut",
+        "type": "object"
+      },
+      "OpenAIAnswerMessage": {
+        "properties": {
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "refusal": {
+            "title": "Refusal",
+            "type": "null"
+          },
+          "role": {
+            "const": "assistant",
+            "default": "assistant",
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "title": "OpenAIAnswerMessage",
+        "type": "object"
+      },
+      "OpenAIChatCompletion": {
+        "properties": {
+          "choices": {
+            "items": {
+              "$ref": "#/components/schemas/OpenAIChoice"
+            },
+            "title": "Choices",
+            "type": "array"
+          },
+          "created": {
+            "title": "Created",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "knobridge": {
+            "$ref": "#/components/schemas/OpenAICompletionExtra"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "object": {
+            "const": "chat.completion",
+            "default": "chat.completion",
+            "title": "Object",
+            "type": "string"
+          },
+          "system_fingerprint": {
+            "title": "System Fingerprint",
+            "type": "null"
+          },
+          "usage": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OpenAIUsage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "created",
+          "model",
+          "choices",
+          "usage",
+          "knobridge"
+        ],
+        "title": "OpenAIChatCompletion",
+        "type": "object"
+      },
+      "OpenAIChatCompletionRequest": {
+        "description": "The parameters used or refused; every other one is accepted and ignored.",
+        "properties": {
+          "audio": {
+            "$ref": "#/components/schemas/JsonValue"
+          },
+          "knobridge": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/KnoBridgeOptions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/OpenAIMessageIn"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Messages",
+            "type": "array"
+          },
+          "modalities": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Modalities"
+          },
+          "model": {
+            "minLength": 1,
+            "title": "Model",
+            "type": "string"
+          },
+          "n": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N"
+          },
+          "response_format": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OpenAIResponseFormat"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "stream": {
+            "default": false,
+            "title": "Stream",
+            "type": "boolean"
+          },
+          "stream_options": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OpenAIStreamOptions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tool_choice": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/JsonValue"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Choice"
+          }
+        },
+        "required": [
+          "model",
+          "messages"
+        ],
+        "title": "OpenAIChatCompletionRequest",
+        "type": "object"
+      },
+      "OpenAIChoice": {
+        "properties": {
+          "finish_reason": {
+            "const": "stop",
+            "default": "stop",
+            "title": "Finish Reason",
+            "type": "string"
+          },
+          "index": {
+            "default": 0,
+            "title": "Index",
+            "type": "integer"
+          },
+          "logprobs": {
+            "title": "Logprobs",
+            "type": "null"
+          },
+          "message": {
+            "$ref": "#/components/schemas/OpenAIAnswerMessage"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "title": "OpenAIChoice",
+        "type": "object"
+      },
+      "OpenAICompletionExtra": {
+        "properties": {
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/CitationOut"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "conversation_id": {
+            "format": "uuid",
+            "title": "Conversation Id",
+            "type": "string"
+          },
+          "cost_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Usd"
+          },
+          "message_id": {
+            "format": "uuid",
+            "title": "Message Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/MessageStatus"
+          }
+        },
+        "required": [
+          "conversation_id",
+          "message_id",
+          "status",
+          "citations",
+          "cost_usd"
+        ],
+        "title": "OpenAICompletionExtra",
+        "type": "object"
+      },
+      "OpenAIContentPart": {
+        "properties": {
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "title": "OpenAIContentPart",
+        "type": "object"
+      },
+      "OpenAIMessageIn": {
+        "properties": {
+          "content": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "$ref": "#/components/schemas/OpenAIContentPart"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role"
+        ],
+        "title": "OpenAIMessageIn",
+        "type": "object"
+      },
+      "OpenAIModel": {
+        "properties": {
+          "created": {
+            "title": "Created",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "knobridge": {
+            "$ref": "#/components/schemas/OpenAIModelExtra"
+          },
+          "object": {
+            "const": "model",
+            "default": "model",
+            "title": "Object",
+            "type": "string"
+          },
+          "owned_by": {
+            "const": "knobridge",
+            "default": "knobridge",
+            "title": "Owned By",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "created",
+          "knobridge"
+        ],
+        "title": "OpenAIModel",
+        "type": "object"
+      },
+      "OpenAIModelExtra": {
+        "properties": {
+          "assistant_id": {
+            "format": "uuid",
+            "title": "Assistant Id",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          }
+        },
+        "required": [
+          "assistant_id",
+          "description"
+        ],
+        "title": "OpenAIModelExtra",
+        "type": "object"
+      },
+      "OpenAIModelList": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/OpenAIModel"
+            },
+            "title": "Data",
+            "type": "array"
+          },
+          "object": {
+            "const": "list",
+            "default": "list",
+            "title": "Object",
+            "type": "string"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "OpenAIModelList",
+        "type": "object"
+      },
+      "OpenAIResponseFormat": {
+        "properties": {
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "title": "OpenAIResponseFormat",
+        "type": "object"
+      },
+      "OpenAIStreamOptions": {
+        "properties": {
+          "include_usage": {
+            "default": false,
+            "title": "Include Usage",
+            "type": "boolean"
+          }
+        },
+        "title": "OpenAIStreamOptions",
+        "type": "object"
+      },
+      "OpenAIUsage": {
+        "properties": {
+          "completion_tokens": {
+            "title": "Completion Tokens",
+            "type": "integer"
+          },
+          "prompt_tokens": {
+            "title": "Prompt Tokens",
+            "type": "integer"
+          },
+          "total_tokens": {
+            "title": "Total Tokens",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "prompt_tokens",
+          "completion_tokens",
+          "total_tokens"
+        ],
+        "title": "OpenAIUsage",
         "type": "object"
       },
       "OpenQuestion": {
@@ -11255,6 +11699,77 @@
         ]
       }
     },
+    "/v1/chat/completions": {
+      "post": {
+        "description": "Ask an assistant in a new conversation of the key, as OpenAI's Chat Completions.",
+        "operationId": "create_chat_completion_v1_chat_completions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OpenAIChatCompletionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAIChatCompletion"
+                }
+              },
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "With `stream: true`, `chat.completion.chunk` lines (`data: {...}`) ending in `data: [DONE]`. With `stream: false`, the completion as JSON."
+          },
+          "400": {
+            "description": "Invalid body, refused parameter or messages (OpenAI error shape)."
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked key (`invalid_api_key`)."
+          },
+          "403": {
+            "description": "Workspace of the key suspended (`workspace_suspended`)."
+          },
+          "404": {
+            "description": "Assistant missing, inactive or outside the key's scope (`model_not_found`)."
+          },
+          "413": {
+            "description": "Body above 1 MiB (`payload_too_large`)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "description": "Provider rate limit (`provider_rate_limited`)."
+          },
+          "502": {
+            "description": "The provider failed (`provider_*`, `embedding_*`)."
+          },
+          "503": {
+            "description": "The provider is unavailable (`provider_unavailable`)."
+          }
+        },
+        "summary": "Create Chat Completion",
+        "tags": [
+          "openai-compatible"
+        ]
+      }
+    },
     "/v1/conversations": {
       "post": {
         "description": "Start a conversation of the key with an active assistant of its scope.",
@@ -11849,6 +12364,89 @@
         "summary": "Revoke Session",
         "tags": [
           "account"
+        ]
+      }
+    },
+    "/v1/models": {
+      "get": {
+        "description": "The active assistants of the key's scope, by name.",
+        "operationId": "list_models_v1_models_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAIModelList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked key (`invalid_api_key`)."
+          },
+          "403": {
+            "description": "Workspace of the key suspended (`workspace_suspended`)."
+          },
+          "404": {
+            "description": "Assistant missing, inactive or outside the key's scope (`model_not_found`)."
+          }
+        },
+        "summary": "List Models",
+        "tags": [
+          "openai-compatible"
+        ]
+      }
+    },
+    "/v1/models/{model}": {
+      "get": {
+        "description": "One model, by the assistant's exact name or id.",
+        "operationId": "get_model_v1_models__model__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "model",
+            "required": true,
+            "schema": {
+              "title": "Model",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpenAIModel"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Missing, malformed, unknown or revoked key (`invalid_api_key`)."
+          },
+          "403": {
+            "description": "Workspace of the key suspended (`workspace_suspended`)."
+          },
+          "404": {
+            "description": "Assistant missing, inactive or outside the key's scope (`model_not_found`)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Model",
+        "tags": [
+          "openai-compatible"
         ]
       }
     },

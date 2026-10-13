@@ -33,6 +33,7 @@ from knobridge.api import (
     knowledge,
     me,
     members,
+    openai_compat,
     providers,
     public_conversations,
     recovery,
@@ -177,6 +178,8 @@ def create_app(
         usage,
         dashboard,
         admin_dashboard,
+        # OpenAI-compatible API (plan 0008 F2.4).
+        openai_compat,
     )
     for module in routers:
         v1.include_router(module.router)

@@ -4,7 +4,7 @@
 
 Contrato do acesso programático aos assistentes: chaves de API, a REST própria de conversa e a API compatível com OpenAI (`/v1/models` e `/v1/chat/completions`). A decisão de arquitetura está no [ADR 0007](../adr/0007-chaves-e-api-publica.md). O comportamento da rodada de chat (busca, regra de citações, histórico, estados) é o de [chat.md](chat.md); os eventos SSE da REST própria são os de [chat-sse.md](chat-sse.md). Os schemas JSON das rotas entram no [`openapi.json`](openapi.json) quando forem implementadas. Custos e uso, em [uso-e-custos.md](uso-e-custos.md).
 
-Código previsto: `backend/src/knobridge/apikeys/` (chaves e autenticação), `backend/src/knobridge/api/api_keys.py` (CRUD no painel), `api/public_conversations.py` (REST própria) e `api/openai_compat.py` (rotas compatíveis com OpenAI). Tela: `frontend/src/features/apikeys/`.
+Código previsto: `backend/src/knobridge/apikeys/` (chaves e autenticação), `backend/src/knobridge/api/api_keys.py` (CRUD no painel), `api/public_conversations.py` (REST própria) e `api/openai_compat.py` (rotas compatíveis com OpenAI, com o formato em `api/openai_wire.py` e os erros em `api/openai_errors.py`; modelos em `apikeys/assistants.py`). Tela: `frontend/src/features/apikeys/`.
 
 ## Visão geral
 

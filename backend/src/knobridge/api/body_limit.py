@@ -1,7 +1,8 @@
 """Body size limits of the bearer-token routes: the runner's (docs/specs/runner.md, "Limites de
 payload") and the ingest of tickets (docs/specs/chamados.md, ``POST /v1/ingest/tickets``), plus
 the preview of one ticket in the panel (``.../tickets/preview``) and the public REST API of
-conversations (docs/specs/api-publica.md, "Limites").
+conversations and the OpenAI-compatible ``/v1/chat/completions`` (docs/specs/api-publica.md,
+"Limites"), which answers the 413 in OpenAI's error shape.
 
 A pure ASGI middleware: for these routes it refuses a
 declared ``Content-Length`` above the route's limit and stops reading the body as soon as it
@@ -18,17 +19,20 @@ from http import HTTPStatus
 from fastapi.responses import JSONResponse
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
+from knobridge.api.openai_errors import openai_error_body
 from knobridge.core.errors import KnoBridgeError, error_body
 
 KIB = 1024
 MIB = 1024 * KIB
 RUNNER_PATH_PREFIX = "/v1/runner/"
+OPENAI_PATH = "/v1/chat/completions"
 # Most specific first; ``^/v1/runner/`` is the fallback of any other runner route.
 _LIMITS: tuple[tuple[re.Pattern[str], int], ...] = (
     (re.compile(r"^/v1/ingest/tickets$"), 5 * MIB),
     # Public REST API of conversations (api-publica.md, "Limites").
     (re.compile(r"^/v1/conversations$"), 4 * KIB),
     (re.compile(r"^/v1/conversations/[^/]+/messages$"), 64 * KIB),
+    (re.compile(r"^/v1/chat/completions$"), 1 * MIB),
     # One ticket (at most 1 MiB) and its envelope. The upload of a file streams instead: its
     # route enforces its own limit while reading (``ticket_uploads.py``).
     (re.compile(r"^/v1/workspaces/[^/]+/sources/[^/]+/tickets/preview$"), 2 * MIB),
@@ -117,8 +121,11 @@ def _replay(body: bytes, then: Receive | None) -> Receive:
 
 async def _too_large(scope: Scope, send: Send, limit: int) -> None:
     error = PayloadTooLargeError("Request body too large.", details={"max_bytes": limit})
-    response = JSONResponse(
-        status_code=error.status_code, content=error_body(error.code, error.message, error.details)
+    content = (
+        openai_error_body(f"The body exceeds {limit} bytes.", "invalid_request_error", error.code)
+        if scope["path"] == OPENAI_PATH
+        else error_body(error.code, error.message, error.details)
     )
+    response = JSONResponse(status_code=error.status_code, content=content)
     # The rest of the body is never read: the response goes out and the connection closes.
     await response(scope, _replay(b"", None), send)

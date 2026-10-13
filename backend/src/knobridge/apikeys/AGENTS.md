@@ -8,8 +8,9 @@
 - `auth.py`: `authenticate_api_key` (em modo de sistema; 401 único `InvalidApiKeyError` `invalid_api_key` para chave ausente do formato, desconhecida, com hash diferente ou revogada; 403 `workspace_suspended`), `ApiKeyIdentity` (chave, workspace, prefixo, escopo, `in_scope` e `reader`) e `touch_last_used` (`UPDATE` só com `last_used_at` nulo ou mais velho que 60 s, `LAST_USED_WINDOW`). Falha loga só o motivo e o prefixo.
 - `service.py`: `ApiKeyService` (listar por nome com `query`/`status` e `created_by_name`, criar devolvendo a chave uma vez, editar nome e escopo (`ScopeChange`), revogar idempotente; auditado com `key_prefix`, nunca a chave); erros `api_key_name_taken`, `api_key_revoked`, `api_key_assistant_invalid`.
 - `conversations.py`: conversas da chave (`channel = api`, `api_key_id`, sem `user_id`): `get_scoped_assistant` (inexistente, inativo ou fora do escopo = 404), `create_key_conversation`, `get_conversation`, `list_messages` e `get_message` (status efetivo de `conversations/stale.py`). A rodada é o `ChatService` de `conversations/` com `ApiKeyReader`.
+- `assistants.py`: os modelos da API compatível com OpenAI (F2.4): `list_key_assistants` (ativos do escopo, por nome) e `find_key_assistant` (nome exato, com diferença de maiúsculas, ou id; o id vence; senão 404 `model_not_found`).
 
-**Não entra aqui**: routers, schemas e dependências de autenticação (`api/api_keys.py`, `api/public_conversations.py`, `api/api_key_deps.py`), o motor do chat (`conversations/`), migrações (`backend/migrations/`).
+**Não entra aqui**: routers, schemas e dependências de autenticação (`api/api_keys.py`, `api/public_conversations.py`, `api/openai_compat.py`, `api/api_key_deps.py`), o motor do chat (`conversations/`), migrações (`backend/migrations/`).
 
 **Convenções locais**:
 - `conversations/` não importa este pacote: `conversations.api_key_id` aponta para `api_keys` pelo nome da tabela (FK composta `(workspace_id, api_key_id)`), e quem grava conversas carrega `ApiKey` (`api/conversations.py`, `REFERENCED_MODELS`).
