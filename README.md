@@ -2,7 +2,7 @@
 
 Plataforma open source (Apache 2.0) que conecta repositórios de código, sistemas de chamados e documentações, transforma tudo em índices para RAG e responde em linguagem natural, sempre citando a fonte. Sem fonte, o assistente diz que não sabe e oferece abrir um chamado.
 
-> **Status**: em desenvolvimento; Fase 0 do roadmap concluída. Já funcionam painel, workspaces, indexação de pastas, repositórios Git, código (via runner) e chamados, chat com citações, uso e custos e API pública (REST e compatível com OpenAI); ainda não há canvas de pipelines nem canais externos (Slack, Google Chat, widget). O que mudou está no [CHANGELOG.md](CHANGELOG.md).
+> **Status**: em desenvolvimento; Fase 0 do roadmap concluída. Já funcionam painel, workspaces, indexação de pastas, repositórios Git, código (via runner), chamados e cards de desenvolvimento, produtos com três níveis de resposta (usuário final, suporte, desenvolvimento e produto), chat com citações, uso e custos e API pública (REST e compatível com OpenAI); ainda não há canvas de pipelines nem canais externos (Slack, Google Chat, widget). O que mudou está no [CHANGELOG.md](CHANGELOG.md).
 
 ## Requisitos
 
@@ -39,9 +39,11 @@ Da instância vazia a uma resposta com citação sobre os seus próprios documen
 
 6. **Cadastre e sincronize a fonte.** Em **Fontes** > **Nova fonte**: **Nome**, **Coleção** a do passo 5, **Tipo** `Pasta` e **Caminho da pasta** `/sources/manual` (o caminho de dentro do contêiner, nunca o do host nem a raiz `/sources`). Deixe **Ativa** marcada e clique em **Salvar**. Clique no nome da fonte e use **Testar conexão** ("A fonte ... está acessível.") e **Sincronizar agora**. Em **Execuções**, a linha passa de **Na fila** a **Em execução** e termina **Concluída**, com documentos novos e trechos maiores que zero.
 
-7. **Crie o assistente.** Em **Assistentes** > **Novo assistente**: **Nome**, **Provedor** o do passo 4, **Modelo** `openai/gpt-4.1-mini` (qualquer modelo de chat do OpenRouter serve, com o prefixo do fornecedor) e, em **Coleções**, marque a coleção do passo 5. A **Similaridade mínima** padrão (0,35) é calibrada para o embedding da OpenAI; deixe como está. Clique em **Salvar**.
+7. **Configure os níveis de resposta.** Cada pergunta é respondida num nível (**Usuário final**, **Suporte** ou **Desenvolvimento e produto**), e é o nível que tem o modelo. Em **Configurações** > **Níveis de resposta**, em cada um dos três cartões, escolha a **Credencial** do passo 4, informe o **Modelo** `openai/gpt-4.1-mini` (qualquer modelo de chat do OpenRouter serve, com o prefixo do fornecedor) e clique em **Salvar nível**.
 
-8. **Pergunte.** Em **Chat**, escolha o **Assistente**, escreva uma pergunta sobre os seus documentos e clique em **Enviar**. A resposta chega em streaming com marcadores `[1]`, `[2]`... e, abaixo dela, as **Fontes**: clique numa para ver o trecho e o arquivo. Uma pergunta sem relação com os documentos volta com "Respondida sem fonte: o assistente ofereceu abrir chamado."
+8. **Crie o produto.** O produto é o sistema sobre o qual se pergunta. Em **Produtos** > **Novo produto**: **Nome** (ex.: `Meu sistema`) e, em **Coleções**, marque a coleção do passo 5. A **Similaridade mínima** padrão (0,35) é calibrada para o embedding da OpenAI; deixe como está. Clique em **Salvar**.
+
+9. **Pergunte.** Em **Chat**, escolha o **Produto** e o **Nível de resposta** (o seu máximo vem marcado), escreva uma pergunta sobre os seus documentos e clique em **Enviar**. A resposta chega em streaming com marcadores `[1]`, `[2]`... e, abaixo dela, as **Fontes**: clique numa para ver o trecho e o arquivo. Uma pergunta sem relação com os documentos volta com "Respondida sem fonte: o assistente ofereceu abrir chamado." Arquivos de código numa pasta só aparecem em **Desenvolvimento e produto**: o usuário final nunca recebe código.
 
 Se o chat responder "sem fonte" para uma pergunta que deveria ter resposta, abra a coleção e use **Testar busca** para ver o que a busca encontra; detalhes em [indexar-uma-fonte.md](docs/guias/indexar-uma-fonte.md#problemas-comuns).
 
@@ -49,9 +51,11 @@ Se o chat responder "sem fonte" para uma pergunta que deveria ter resposta, abra
 
 - **Indexar um repositório Git** (clone em `/sources` ou URL https pública): [indexar-uma-fonte.md](docs/guias/indexar-uma-fonte.md#4-cadastrar-a-fonte).
 - **Mapear código com o runner** (Claude Code ou Codex somente leitura na sua máquina, gerando regras de negócio com evidência): [mapear-codigo-com-runner.md](docs/guias/mapear-codigo-com-runner.md).
+- **Produtos e níveis de resposta** (o nível máximo de cada membro, o nível mínimo das fontes, um modelo por nível): [produtos-e-niveis.md](docs/guias/produtos-e-niveis.md).
 - **Receber chamados por API** (token de envio ou upload de JSON/JSONL, com anonimização): [receber-chamados-por-api.md](docs/guias/receber-chamados-por-api.md).
+- **Receber cards de desenvolvimento** (Jira, Azure DevOps, GitHub Issues…) pelo mesmo caminho, citados para desenvolvimento e produto: [receber-cards-por-api.md](docs/guias/receber-cards-por-api.md).
 - **"Abrir chamado" no seu sistema** a partir de uma resposta sem fonte, por webhook assinado: [receber-chamados-por-api.md](docs/guias/receber-chamados-por-api.md#9-receber-abrir-chamado-do-chat).
-- **Chamar os assistentes de outro sistema** com uma chave de API, pela REST ou pelo SDK oficial da OpenAI, com as citações na resposta: [usar-a-api.md](docs/guias/usar-a-api.md).
+- **Chamar os produtos de outro sistema** com uma chave de API (com nível máximo), pela REST ou pelo SDK oficial da OpenAI (`model` = `produto:nível`), com as citações na resposta: [usar-a-api.md](docs/guias/usar-a-api.md).
 - Convidar pessoas, papéis, painel da instância, uso e custos e outros fluxos de conta: [primeiro-acesso.md](docs/guias/primeiro-acesso.md).
 
 ## Parar e limpar
@@ -89,7 +93,7 @@ A CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) roda tudo isso, mais
 
 - [docs/01-visao-do-projeto.md](docs/01-visao-do-projeto.md): visão, arquitetura, stack, decisões e roadmap.
 - [docs/guias/](docs/guias/): guias de uso e operação.
-- [docs/specs/](docs/specs/): contratos (autenticação, chat, API pública, uso e custos, conectores, indexação, runner, harness, chamados, modelo de dados, OpenAPI).
+- [docs/specs/](docs/specs/): contratos (autenticação, chat, produtos e níveis, API pública, uso e custos, conectores, indexação, runner, harness, chamados, cards, modelo de dados, OpenAPI).
 - [docs/adr/](docs/adr/): decisões de arquitetura.
 - [docs/planos/](docs/planos/): planos de execução, com andamento e decisões.
 - [CHANGELOG.md](CHANGELOG.md): o que mudou.

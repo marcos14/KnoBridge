@@ -3,12 +3,16 @@ import { expect, type Page, test } from "@playwright/test";
 import {
   acceptInvitation,
   adminLogin,
-  ask as askAssistant,
+  ask as askProduct,
+  configureLevels,
   createCollection,
   createFakeProvider,
   createFolderSource,
+  createProduct,
   createWorkspace,
+  editProduct,
   KNOWLEDGE,
+  LEVELS,
   login,
   logout,
   NO_SOURCE_ANSWER,
@@ -20,12 +24,13 @@ import { emailedLink } from "./mailpit";
 
 // The navigable platform end to end, against the real stack (API, Postgres, Mailpit, nginx): the
 // first superadmin sets the instance up, creates a workspace for an owner, who joins by the
-// e-mailed invitation and invites a viewer; the viewer recovers the password, chats with an
-// assistant on the `fake` provider (no source, so the "no source" answer) and rates it; the owner
-// finds the conversation; the chosen theme follows the account. Then the owner indexes the
-// synthetic folder mounted at /sources (collection, folder source, connection test, sync, search),
-// links the collection to the assistant and gets an answer citing the file, while an unrelated
-// question still gets the "no source" answer.
+// e-mailed invitation and invites a viewer; the owner configures the response levels on the
+// `fake` provider and creates a product; the viewer recovers the password, chats with the product
+// at the end user level (no source, so the "no source" answer) and rates it; the owner finds the
+// conversation; the chosen theme follows the account. Then the owner indexes the synthetic folder
+// mounted at /sources (collection, folder source, connection test, sync, search), links the
+// collection to the product and gets an answer citing the file, while an unrelated question still
+// gets the "no source" answer.
 //
 // Every address is synthetic (@example.test). The superadmin is fixed: on a fresh database the
 // test runs the setup, on a used one it logs in with the same credentials. Everyone else gets a
@@ -44,7 +49,7 @@ const VIEWER = {
 };
 const WORKSPACE = `Acme E2E ${RUN}`;
 const PROVIDER = "Fake E2E";
-const ASSISTANT = "Suporte E2E";
+const PRODUCT = "Suporte E2E";
 const QUESTION = `Como emito a nota de devolução ${RUN}?`;
 
 // Knowledge: docker-compose.e2e.yml mounts e2e/stack/fixtures/ at /sources, so the
@@ -63,9 +68,9 @@ const UNRELATED_QUESTION = `Previsão meteorológica para Júpiter ${RUN}`;
 
 const RESET_SUBJECT = "Redefinição de senha do KnoBridge";
 
-/** Starts a new conversation with the only assistant and sends `question`. */
+/** Starts a new conversation with the only product, at the maximum level, and sends `question`. */
 async function ask(page: Page, workspaceId: string, question: string): Promise<void> {
-  await askAssistant(page, workspaceId, ASSISTANT, question);
+  await askProduct(page, workspaceId, PRODUCT, question);
 }
 
 test("test_platform_flows_from_setup_to_conversation_review", async ({ browser, request }) => {
@@ -119,25 +124,30 @@ test("test_platform_flows_from_setup_to_conversation_review", async ({ browser, 
     await login(viewer, VIEWER.email, VIEWER.newPassword);
   });
 
-  await test.step("owner registers the fake provider and an assistant", async () => {
+  await test.step("owner registers the fake provider, the levels and a product", async () => {
     await createFakeProvider(owner, workspaceId, PROVIDER);
-
-    await owner.goto(`/w/${workspaceId}/assistants`);
-    await owner.getByRole("button", { name: "Novo assistente" }).click();
-    const assistantDialog = owner.getByRole("dialog", { name: "Novo assistente" });
-    await assistantDialog.getByLabel("Nome").fill(ASSISTANT);
-    await pickOption(owner, "Provedor", PROVIDER);
-    await assistantDialog.getByLabel("Modelo").fill("fake-chat");
-    await assistantDialog.getByRole("button", { name: "Salvar" }).click();
-    await expect(owner.getByText(`Assistente ${ASSISTANT} criado.`)).toBeVisible();
+    await configureLevels(owner, workspaceId, PROVIDER);
+    await createProduct(owner, workspaceId, PRODUCT);
   });
 
-  await test.step("viewer asks, gets the no-source answer and rates it", async () => {
-    await ask(viewer, workspaceId, QUESTION);
+  await test.step("viewer asks at the end user level, the only one allowed", async () => {
+    // A viewer's maximum in a product defaults to the end user level (D11).
+    await viewer.goto(`/w/${workspaceId}/chat`);
+    await expect(viewer.getByRole("radio", { name: LEVELS.end_user })).toBeChecked();
+    await expect(viewer.getByRole("radio", { name: LEVELS.support })).toBeDisabled();
+    await expect(viewer.getByRole("radio", { name: LEVELS.product_dev })).toBeDisabled();
+    await expect(
+      viewer.getByText(`Indisponível: o seu nível máximo neste produto é ${LEVELS.end_user}.`),
+    ).toHaveCount(2);
 
+    await ask(viewer, workspaceId, QUESTION);
+    await expect(viewer.getByText(`Nível: ${LEVELS.end_user}`)).toBeVisible();
+  });
+
+  await test.step("viewer gets the no-source answer and rates it", async () => {
     await expect(viewer.getByText(NO_SOURCE_ANSWER)).toBeVisible();
-    // Rule 8: without a source the assistant says so. The "Abrir chamado" button only appears
-    // when the assistant has a ticket webhook (covered by tickets.spec.ts); this one has none.
+    // Rule 8: without a source the product says so. The "Abrir chamado" button only appears
+    // when the product has a ticket webhook (covered by tickets.spec.ts); this one has none.
     await expect(viewer.getByRole("button", { name: "Abrir chamado", exact: true })).toHaveCount(0);
     await viewer.getByRole("button", { name: "Resposta não ajudou" }).click();
     await expect(viewer.getByText("Obrigado pela avaliação.")).toBeVisible();
@@ -201,13 +211,11 @@ test("test_platform_flows_from_setup_to_conversation_review", async ({ browser, 
     await expect(results.getByText(KNOWN_FILE, { exact: false }).first()).toBeVisible();
   });
 
-  await test.step("owner links the collection to the assistant", async () => {
-    await owner.goto(`/w/${workspaceId}/assistants`);
-    await owner.getByRole("button", { name: `Editar ${ASSISTANT}` }).click();
-    const dialog = owner.getByRole("dialog", { name: "Editar assistente" });
+  await test.step("owner links the collection to the product", async () => {
+    const dialog = await editProduct(owner, workspaceId, PRODUCT);
     await dialog.getByRole("checkbox", { name: COLLECTION }).check();
     await dialog.getByRole("button", { name: "Salvar" }).click();
-    await expect(owner.getByText(`Assistente ${ASSISTANT} atualizado.`)).toBeVisible();
+    await expect(owner.getByText(`Produto ${PRODUCT} atualizado.`)).toBeVisible();
   });
 
   await test.step("owner asks about the fixture and opens the cited file", async () => {

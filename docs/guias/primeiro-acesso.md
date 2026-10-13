@@ -1,14 +1,16 @@
 # Primeiro acesso: da instância vazia ao primeiro chat
 
-> Rascunho v0.3 · 2026-10-12 · Em uso (planos 0002, 0003 e 0008)
+> Rascunho v0.4 · 2026-10-13 · Em uso (planos 0002, 0003, 0008 e 0009)
+>
+> **Mudanças da v0.4** (plano 0009, F4.1): os assistentes viram **produtos**; o modelo sai do produto e vai para os **níveis de resposta** do workspace, configurados antes do chat; o checklist ganha o passo dos níveis; o chat escolhe produto e nível; convites com nível por produto; Uso e custos agrupado por produto e nível. Detalhes em [produtos-e-niveis.md](produtos-e-niveis.md).
 >
 > **Mudanças da v0.3** (plano 0008, F4.1): a configuração inicial cria o primeiro workspace, sem convite; o Início com o checklist de primeiros passos; o painel da instância e o "Entrar" do superadmin em qualquer workspace; Uso e custos; acesso pela API em [usar-a-api.md](usar-a-api.md).
 >
 > **Mudanças da v0.2** (plano 0003, F6.2): o chat responde com citações quando o assistente tem coleção indexada; o passo a passo da indexação está em [indexar-uma-fonte.md](indexar-uma-fonte.md).
 
-Passo a passo para quem acabou de subir o KnoBridge: criar o superadmin e o primeiro workspace, seguir os primeiros passos do Início, criar outros workspaces, convidar pessoas, cadastrar um provedor de LLM e um assistente, conversar com ele e acompanhar o uso. Em desenvolvimento, tudo funciona sem chave de API real, com o provedor `fake`, e os e-mails (convites, redefinição de senha) são lidos no Mailpit.
+Passo a passo para quem acabou de subir o KnoBridge: criar o superadmin e o primeiro workspace, seguir os primeiros passos do Início, criar outros workspaces, convidar pessoas, cadastrar um provedor de LLM, configurar os níveis de resposta, criar um produto, conversar com ele e acompanhar o uso. Em desenvolvimento, tudo funciona sem chave de API real, com o provedor `fake`, e os e-mails (convites, redefinição de senha) são lidos no Mailpit.
 
-Regras de acesso, sessões e convites em [autenticacao.md](../specs/autenticacao.md); funcionamento do chat em [chat.md](../specs/chat.md).
+Regras de acesso, sessões e convites em [autenticacao.md](../specs/autenticacao.md); funcionamento do chat em [chat.md](../specs/chat.md); produtos e níveis em [produtos-e-niveis.md](../specs/produtos-e-niveis.md).
 
 ## Pré-requisitos
 
@@ -39,10 +41,11 @@ O **Início** de cada workspace mostra os números do mês (documentos indexados
 1. Cadastre um provedor de LLM (passo 6 deste guia);
 2. Crie uma coleção;
 3. Adicione uma fonte e sincronize até concluir uma execução;
-4. Crie um assistente ativo ligado a uma coleção;
-5. Faça uma pergunta no chat e receba uma resposta com fonte.
+4. Configure a credencial e o modelo do nível Usuário final (passo 7 deste guia);
+5. Crie um produto ativo ligado a uma coleção (passo 8);
+6. Faça uma pergunta no chat e receba uma resposta com fonte.
 
-Cada item pendente leva à tela dele (os passos 2 a 4 estão em [indexar-uma-fonte.md](indexar-uma-fonte.md)). Os feitos somem da lista, e a lista some quando tudo está feito. Quem não tem papel para um passo vê "Peça a um administrador do workspace para fazer este passo."
+Cada item pendente leva à tela dele (os passos 2 e 3 estão em [indexar-uma-fonte.md](indexar-uma-fonte.md)). Os feitos somem da lista, e a lista some quando tudo está feito. Quem não tem papel para um passo vê "Peça a um administrador do workspace para fazer este passo."
 
 ### 3. Painel da instância e outros workspaces
 
@@ -75,10 +78,10 @@ O acesso vale só para a sessão atual (outro navegador não o herda) e fica reg
 ### 5. Convidar outras pessoas (opcional)
 
 1. No workspace, vá em **Membros** e clique em **Convidar**.
-2. Informe o e-mail e o **Papel** (`Leitor`, `Editor`, `Administrador` ou `Proprietário`, até o seu) e clique em **Enviar convite**.
+2. Informe o e-mail e o **Papel** (`Leitor`, `Editor`, `Administrador` ou `Proprietário`, até o seu). Se já houver produtos, **Nível por produto (opcional)** define o nível máximo da pessoa em cada um; em branco, vale o padrão do papel (owner e admin: Desenvolvimento e produto; editor e leitor: Usuário final). Clique em **Enviar convite**.
 3. Abra o link do e-mail no Mailpit numa janela anônima e crie a conta da pessoa convidada.
 
-O que cada papel pode fazer está na [matriz de permissões](../specs/autenticacao.md#matriz-de-permissões). Em resumo: leitor conversa com assistentes ativos; editor também gerencia provedores e assistentes; administrador também gerencia membros, convites, configurações e vê auditoria e conversas de todos; proprietário é administrador que pode conceder o papel de proprietário. Convites pendentes ficam na mesma tela, com **Reenviar** e **Revogar**; o link vale 7 dias.
+O que cada papel pode fazer está na [matriz de permissões](../specs/autenticacao.md#matriz-de-permissões). Em resumo: leitor conversa com produtos ativos, até o próprio nível máximo; editor também gerencia provedores, coleções, fontes e produtos; administrador também gerencia membros (e o nível de cada um por produto), convites, configurações (inclusive os níveis de resposta), chaves de API e o nível mínimo das fontes, e vê auditoria e conversas de todos; proprietário é administrador que pode conceder o papel de proprietário. Convites pendentes ficam na mesma tela, com **Reenviar** e **Revogar**; o link vale 7 dias.
 
 ### 6. Cadastrar um provedor de LLM
 
@@ -93,47 +96,57 @@ Precisa de papel editor ou acima.
 
 O tipo `fake` não faz nenhuma chamada de rede e só é aceito quando `KNOBRIDGE_ENV` é diferente de `production` (o compose de dev usa `local`). A chave é guardada cifrada e nunca volta para a tela; só os 4 últimos caracteres aparecem ([ADR 0003](../adr/0003-segredos-cifrados.md)).
 
-### 7. Criar um assistente
+### 7. Configurar os níveis de resposta
 
-Precisa de papel editor ou acima.
+Precisa de papel administrador ou acima. Cada pergunta é respondida num de três níveis (**Usuário final**, **Suporte** e **Desenvolvimento e produto**), e é o nível que tem a credencial, o modelo, a temperatura e as instruções. Um workspace novo nasce com os três sem modelo, e o chat recusa perguntas num nível sem modelo.
 
-1. Vá em **Assistentes** e clique em **Novo assistente**.
-2. Preencha **Nome** (ex.: `Assistente de suporte`), escolha o **Provedor** cadastrado e informe o **Modelo**: com o provedor `fake`, use `fake-chat`.
-3. Os demais campos têm padrão: temperatura 0,2, idioma `pt-BR`, tom neutro, ativo. Deixe **Mensagem quando não há fonte** em branco para usar a mensagem padrão.
+1. Vá em **Configurações** e desça até **Níveis de resposta**.
+2. Em cada um dos três cartões, escolha a **Credencial** cadastrada e informe o **Modelo**: com o provedor `fake`, use `fake-chat`.
+3. Deixe a temperatura (0,2) e as instruções padrão do KnoBridge, ou ajuste. Clique em **Salvar nível** em cada cartão.
+
+O passo a passo completo, com o custo estimado por resposta e as instruções de cada nível, está em [produtos-e-niveis.md](produtos-e-niveis.md#1-configurar-os-níveis-de-resposta).
+
+### 8. Criar um produto
+
+Precisa de papel editor ou acima. O produto é o sistema sobre o qual as pessoas perguntam (ex.: `ERP`).
+
+1. Vá em **Produtos** e clique em **Novo produto**.
+2. Preencha **Nome** (ex.: `ERP`) e marque as **Coleções** em que ele busca, se já houver (sem coleção, ele responde sempre "sem fonte").
+3. Os demais campos têm padrão: idioma `pt-BR`, tom neutro, similaridade mínima 0,35, ativo. **Texto extra** acrescenta instruções do produto às do nível; deixe **Mensagem quando não há fonte** em branco para usar a mensagem padrão.
 4. Clique em **Salvar**.
 
-### 8. Conversar
+### 9. Conversar
 
-1. Vá em **Chat**, escolha o assistente, escreva a pergunta e clique em **Enviar** (Enter envia; Shift+Enter quebra a linha).
-2. A resposta chega em streaming. **Enquanto o assistente não tiver coleção indexada, ela é sempre a mensagem de "sem fonte"**, marcada como "Respondida sem fonte: o assistente ofereceu abrir chamado.": a regra do produto é não responder sem fonte ([chat.md](../specs/chat.md#regra-de-citações-regra-8-do-agentsmd)). Nesse caso o LLM nem é chamado. Para o assistente responder com citações, indexe uma fonte e ligue a coleção a ele, conforme [indexar-uma-fonte.md](indexar-uma-fonte.md). Para o botão **Abrir chamado** dessas respostas enviar o pedido ao seu sistema de chamados, configure o webhook do assistente ([receber-chamados-por-api.md](receber-chamados-por-api.md#9-receber-abrir-chamado-do-chat)).
+1. Vá em **Chat**, escolha o **Produto** e o **Nível de resposta** (o padrão é o seu máximo no produto; os níveis acima dele ficam desabilitados), escreva a pergunta e clique em **Enviar** (Enter envia; Shift+Enter quebra a linha). O nível fica fixo na conversa: para outro nível, abra uma nova conversa.
+2. A resposta chega em streaming. **Enquanto o produto não tiver coleção indexada, ela é sempre a mensagem de "sem fonte"**, marcada como "Respondida sem fonte: o assistente ofereceu abrir chamado.": a regra do produto é não responder sem fonte ([chat.md](../specs/chat.md#regra-de-citações-regra-8-do-agentsmd)). Nesse caso o LLM nem é chamado. Para o produto responder com citações, indexe uma fonte e ligue a coleção a ele, conforme [indexar-uma-fonte.md](indexar-uma-fonte.md). Cada nível só usa as fontes com nível mínimo igual ou abaixo dele: em Usuário final, nunca código ([produtos-e-niveis.md](produtos-e-niveis.md#4-ajustar-o-nível-mínimo-das-fontes)). Para o botão **Abrir chamado** dessas respostas enviar o pedido ao seu sistema de chamados, configure o webhook do produto ([receber-chamados-por-api.md](receber-chamados-por-api.md#9-receber-abrir-chamado-do-chat)).
 3. Avalie a resposta com **Resposta útil** ou **Resposta não ajudou** e, se quiser, um comentário.
-4. As suas conversas ficam na lista à esquerda do chat. Owner e administrador veem as conversas de todos os membros, com filtros e totais, em **Conversas**.
+4. As suas conversas ficam na lista à esquerda do chat, com filtros por produto e nível. Owner e administrador veem as conversas de todos os membros, com filtros e totais, em **Conversas**.
 
-### 9. Acompanhar o uso e os custos
+### 10. Acompanhar o uso e os custos
 
 Precisa de papel administrador ou acima.
 
-1. Vá em **Uso e custos**. Escolha o **Período** (**Este mês**, **Mês passado**, **Últimos 30 dias** ou **Personalizado**, em UTC) e **Agrupar por** (dia, fonte, coleção, assistente, canal, chave de API ou modelo).
+1. Vá em **Uso e custos**. Escolha o **Período** (**Este mês**, **Mês passado**, **Últimos 30 dias** ou **Personalizado**, em UTC) e **Agrupar por** (dia, fonte, coleção, produto, nível, canal, chave de API ou modelo); os filtros de produto e nível valem para as respostas do chat.
 2. Os totais mostram tokens e custo de embeddings (execuções de indexação) e do chat (respostas que chamaram o LLM); a tabela, um grupo por linha, ordenável por coluna; o gráfico, o custo por dia. **Exportar CSV** baixa a mesma visão.
 
 Os valores em US$ são **estimativas** do KnoBridge, calculadas com tabelas de preço, não a fatura do provedor. Modelo sem preço conhecido (como o `fake`) tem os tokens contados, mas o custo fica de fora, com o aviso **Custo parcial**. Para acrescentar ou corrigir preços de chat, defina `KNOBRIDGE_CHAT_PRICES` no `.env` (exemplo no `.env.example`) e recrie a stack com `docker compose up -d --wait`; mudar a tabela não recalcula o passado ([uso-e-custos.md](../specs/uso-e-custos.md#preços-do-chat)).
 
-Para chamar os assistentes de outro sistema, com uma chave de API, pela REST ou pelo SDK da OpenAI, siga [usar-a-api.md](usar-a-api.md).
+Para chamar os produtos de outro sistema, com uma chave de API (com nível máximo), pela REST ou pelo SDK da OpenAI, siga [usar-a-api.md](usar-a-api.md).
 
-### 10. Usar um provedor real (OpenAI, Anthropic ou OpenRouter)
+### 11. Usar um provedor real (OpenAI, Anthropic ou OpenRouter)
 
 1. Em **Provedores > Novo provedor**, escolha o **Tipo** (`OpenAI`, `Anthropic` ou `OpenRouter`), dê um nome e cole a sua chave de API. **URL base** fica em branco, a menos que use um servidor compatível (ex.: Ollama, vLLM) ou um gateway.
 2. Clique em **Testar conexão**: o KnoBridge faz a chamada autenticada mais barata do provedor (listar modelos) e mostra o resultado. Erros comuns: chave recusada, limite de uso, provedor fora do ar.
-3. No assistente, troque o **Provedor** e informe o **Modelo** com o identificador exato usado pelo provedor (por exemplo, `gpt-4.1-mini` na OpenAI; para Anthropic e OpenRouter, o identificador da documentação deles).
+3. Em **Configurações > Níveis de resposta**, troque a **Credencial** de cada nível e informe o **Modelo** com o identificador exato usado pelo provedor (por exemplo, `gpt-4.1-mini` na OpenAI; para Anthropic e OpenRouter, o identificador da documentação deles). Cada nível pode ter o seu modelo: um mais barato em Usuário final, um mais capaz em Desenvolvimento e produto.
 
-Enquanto o assistente não tiver coleção com trechos relevantes, o chat continua respondendo "sem fonte" sem chamar o provedor. Para embeddings (coleções), use OpenAI ou OpenRouter: a Anthropic não oferece embeddings ([indexar-uma-fonte.md](indexar-uma-fonte.md)). Use chaves reais só na sua máquina ou num ambiente protegido, e nunca as commite. Lembre que as chaves gravadas dependem de `KNOBRIDGE_SECRET_KEY`: trocar esse segredo exige recadastrar as chaves dos provedores ([ADR 0003](../adr/0003-segredos-cifrados.md)).
+Enquanto o produto não tiver coleção com trechos relevantes, o chat continua respondendo "sem fonte" sem chamar o provedor. Para embeddings (coleções), use OpenAI ou OpenRouter: a Anthropic não oferece embeddings ([indexar-uma-fonte.md](indexar-uma-fonte.md)). Use chaves reais só na sua máquina ou num ambiente protegido, e nunca as commite. Lembre que as chaves gravadas dependem de `KNOBRIDGE_SECRET_KEY`: trocar esse segredo exige recadastrar as chaves dos provedores ([ADR 0003](../adr/0003-segredos-cifrados.md)).
 
 ## Como verificar
 
 - O **Início** mostra os primeiros passos que faltam; com tudo feito, a lista some.
-- **Administração da instância > Auditoria da instância** mostra `setup.completed`, os logins, a criação dos workspaces e as entradas de superadmin; **Auditoria** do workspace (owner/admin) mostra o convite aceito, o provedor, o teste de conexão e o assistente.
-- **Conversas** (owner/admin) lista a conversa do passo 8, com a avaliação dada.
-- Pela API, com o mesmo navegador logado: `http://localhost:5173/v1/me` devolve o seu usuário e os workspaces com o papel em cada um.
+- **Administração da instância > Auditoria da instância** mostra `setup.completed`, os logins, a criação dos workspaces e as entradas de superadmin; **Auditoria** do workspace (owner/admin) mostra o convite aceito, o provedor, o teste de conexão, os níveis (`workspace_level.updated`) e o produto.
+- **Conversas** (owner/admin) lista a conversa do passo 9, com o produto, o nível e a avaliação dada.
+- Pela API, com o mesmo navegador logado: `http://localhost:5173/v1/me` devolve o seu usuário e os workspaces com o papel em cada um e o seu nível máximo em cada produto (`product_levels`).
 
 ## Outros fluxos de conta
 
@@ -150,7 +163,7 @@ docker compose down -v
 docker compose up -d --build --wait
 ```
 
-Sem apagar tudo: o superadmin pode suspender workspaces e usuários em **Administração da instância**, e o workspace pode excluir assistentes e provedores (um provedor em uso por assistente não pode ser excluído).
+Sem apagar tudo: o superadmin pode suspender workspaces e usuários em **Administração da instância**, e o workspace pode excluir produtos e provedores (um provedor em uso por um nível de resposta ou por uma coleção não pode ser excluído).
 
 ## Problemas comuns
 
@@ -159,6 +172,9 @@ Sem apagar tudo: o superadmin pode suspender workspaces e usuários em **Adminis
 - **O link do convite diz que é inválido**: o link vale 7 dias, deixa de valer quando o convite é reenviado (vale só o mais novo) ou revogado, e não funciona com o workspace suspenso. Peça um novo em **Membros > Reenviar**.
 - **Aceitar convite recusa o meu login**: você está logado com outro e-mail. Saia (menu do usuário > **Sair**) ou use uma janela anônima.
 - **O tipo `Fake` é recusado ao salvar o provedor**: a API está com `KNOBRIDGE_ENV=production`. Use um provedor real ou um ambiente de desenvolvimento.
-- **Não vejo Provedores, Assistentes, Conversas ou Uso e custos no menu**: o menu mostra só o que o seu papel permite (editor para provedores e assistentes; administrador para conversas, uso e custos, chaves de API, configurações e auditoria). O superadmin que não é membro precisa **Entrar** no workspace (passo 4).
-- **O custo aparece como "Custo parcial"**: há respostas ou execuções com modelo sem preço na tabela. Para modelos de chat, acrescente o preço em `KNOBRIDGE_CHAT_PRICES` (passo 9).
-- **O chat diz que não há assistente disponível**: não há assistente ativo no workspace. Crie um ou reative-o em **Assistentes**.
+- **Não vejo Provedores, Produtos, Conversas ou Uso e custos no menu**: o menu mostra só o que o seu papel permite (editor para provedores e produtos; administrador para conversas, uso e custos, chaves de API, configurações e auditoria). O superadmin que não é membro precisa **Entrar** no workspace (passo 4).
+- **O custo aparece como "Custo parcial"**: há respostas ou execuções com modelo sem preço na tabela. Para modelos de chat, acrescente o preço em `KNOBRIDGE_CHAT_PRICES` (passo 10).
+- **O chat diz que não há produto disponível**: não há produto ativo no workspace. Crie um ou reative-o em **Produtos**.
+- **O chat diz que o nível ainda não foi configurado**: o nível da conversa não tem credencial e modelo. Configure em **Configurações > Níveis de resposta** (passo 7).
+- **O botão Novo produto não aparece**: não há provedor de LLM no workspace (passo 6).
+- **Não consigo escolher Suporte ou Desenvolvimento e produto no chat**: o seu nível máximo no produto é menor. Um admin muda em **Membros > Níveis por produto** ([produtos-e-niveis.md](produtos-e-niveis.md#3-definir-o-nível-máximo-de-cada-membro)).

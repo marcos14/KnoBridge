@@ -1,6 +1,8 @@
 # Receber chamados por API: do sistema de chamados às respostas citando chamados
 
-> Rascunho v0.1 · 2026-10-12 · Em uso (plano 0005)
+> Rascunho v0.2 · 2026-10-13 · Em uso (planos 0005 e 0009)
+>
+> **Mudanças da v0.2** (plano 0009, F4.1): os assistentes viram **produtos**, e o webhook de "Abrir chamado" fica no produto, com `product` e `level` no evento; a fonte de chamados tem **nível mínimo** Suporte por padrão (o usuário final não recebe chamados); cards de desenvolvimento seguem o mesmo caminho, em [receber-cards-por-api.md](receber-cards-por-api.md).
 
 Passo a passo para quem vai integrar um sistema de chamados ao KnoBridge: criar a fonte e o token, converter os chamados para o formato do KnoBridge, enviar por API (com `curl`, Python ou n8n), fazer a carga histórica por upload, conferir a anonimização na prévia e, no sentido contrário, receber os pedidos de "Abrir chamado" que o chat envia quando não sabe responder.
 
@@ -9,7 +11,7 @@ O KnoBridge não busca chamados em nenhum sistema. Quem integra **empurra** os c
 ## Pré-requisitos
 
 - Um servidor do KnoBridge no ar ([subir-ambiente.md](subir-ambiente.md)) e um workspace onde você é **owner ou admin** (para gerar o token de envio e o segredo do webhook). Editores criam a fonte, fazem upload e usam a prévia.
-- Uma coleção com credencial de embedding e um assistente ([indexar-uma-fonte.md](indexar-uma-fonte.md), passos 2 e 3; [primeiro-acesso.md](primeiro-acesso.md) para o assistente).
+- Uma coleção com credencial de embedding e um produto, com os níveis de resposta configurados ([indexar-uma-fonte.md](indexar-uma-fonte.md), passos 2 e 3; [produtos-e-niveis.md](produtos-e-niveis.md) para os níveis e o produto).
 - Do lado do sistema de chamados: um lugar para rodar a conversão (script agendado, automação do próprio sistema, n8n ou outro iPaaS) com acesso HTTPS de saída até o KnoBridge.
 
 Sem dados reais para testar? Gere chamados sintéticos em pt-BR com o gerador do repositório, fora da pasta do repositório:
@@ -30,6 +32,7 @@ O `tickets.jsonl` gerado tem um chamado por linha e serve para o upload do passo
    - **Anonimizar** (ligado por padrão): troca dados pessoais por marcadores antes de indexar (passo 7).
    - **Incluir notas internas** (desligado por padrão): mensagens com `public: false` entram no índice.
    - **Status indexados**: por padrão os quatro (`open`, `pending`, `resolved`, `closed`). Chamados fora da lista ficam fora do índice.
+   - **Nível mínimo** (padrão **Suporte**; só owner e admin mudam): só as respostas nesse nível ou acima usam os chamados. Chamados trazem casos de clientes e detalhes internos, por isso o usuário final não os recebe por padrão ([produtos-e-niveis.md](produtos-e-niveis.md#4-ajustar-o-nível-mínimo-das-fontes)).
 3. Salve. A fonte abre com as abas **Integração**, **Upload**, **Prévia** e **Indexação**.
 
 ### 2. Gerar o token de envio
@@ -247,15 +250,15 @@ Com a anonimização ligada (padrão), sem LLM e de forma determinística:
 
 `requester` e `assignees` nunca aparecem no índice. Notas internas ficam fora, a não ser que a fonte as inclua. Depois de indexado, o JSON bruto do chamado é apagado: sobram o Markdown anonimizado e os hashes. Por isso, **mudar a configuração da fonte vale só para os chamados processados depois**; para reaplicar, reenvie os chamados com conteúdo ou `updated_at` novos.
 
-### 8. Ligar a coleção ao assistente e conversar
+### 8. Ligar a coleção ao produto e conversar
 
-Ligue a coleção da fonte ao assistente (**Assistentes > Editar > Coleções**). Quando a resposta usa um chamado, a citação mostra o título, o número, o status (Aberto, Pendente, Resolvido ou Fechado) e a data; ao abri-la, o painel da citação traz o link **Abrir o chamado no sistema de origem** quando você envia `url`. O assistente prefere a solução de chamados resolvidos ou fechados e trata abertos e pendentes como problema em andamento.
+Ligue a coleção da fonte ao produto (**Produtos > Editar > Coleções**) e pergunte no nível **Suporte** ou **Desenvolvimento e produto** (o nível mínimo da fonte). Quando a resposta usa um chamado, a citação mostra o título, o número, o status (Aberto, Pendente, Resolvido ou Fechado) e a data; ao abri-la, o painel da citação traz o link **Abrir o chamado no sistema de origem** quando você envia `url`. A resposta prefere a solução de chamados resolvidos ou fechados e trata abertos e pendentes como problema em andamento.
 
 ### 9. Receber "Abrir chamado" do chat
 
-Quando o assistente não sabe responder, o chat pode abrir um chamado no seu sistema. O KnoBridge envia um `POST` assinado para uma URL sua; você abre o chamado e devolve o número.
+Quando o produto não sabe responder, o chat pode abrir um chamado no seu sistema. O KnoBridge envia um `POST` assinado para uma URL sua; você abre o chamado e devolve o número.
 
-1. Em **Assistentes > Editar**, ligue **Oferecer "Abrir chamado" no chat**, informe a **URL do webhook** (`https`, num endereço público: endereços internos e reservados são recusados) e salve.
+1. Em **Produtos > Editar**, ligue **Oferecer "Abrir chamado" no chat**, informe a **URL do webhook** (`https`, num endereço público: endereços internos e reservados são recusados) e salve.
 2. Abra a edição de novo e clique em **Gerar segredo**. Copie o `kbw_...`: ele aparece **uma única vez** e o destino precisa dele para conferir as assinaturas.
 3. Clique em **Testar entrega**. O destino recebe um evento `ticket.test` e deve responder 2xx sem abrir chamado.
 
@@ -269,10 +272,10 @@ KnoBridge-Event: ticket.requested
 KnoBridge-Delivery: 0e8b...
 KnoBridge-Signature: t=1760274000,v1=5f2c...
 
-{"event":"ticket.requested","version":1,"id":"0e8b...","created_at":"2026-10-12T13:00:00Z","workspace":{...},"assistant":{...},"conversation":{"id":"...","url":"https://kb.exemplo.com.br/w/.../conversations/..."},"requester":{"name":"...","email":"..."},"question":"...","summary":"...","messages":[...]}
+{"event":"ticket.requested","version":1,"id":"0e8b...","created_at":"2026-10-12T13:00:00Z","workspace":{...},"product":{...},"level":"end_user","assistant":{...},"conversation":{"id":"...","url":"https://kb.exemplo.com.br/w/.../conversations/..."},"requester":{"name":"...","email":"..."},"question":"...","summary":"...","messages":[...]}
 ```
 
-O payload completo está em [chamados.md, Payload](../specs/chamados.md#payload). Para conferir a assinatura: separe `t` e `v1` do cabeçalho, recuse se `t` estiver a mais de 300 s do seu relógio, calcule o HMAC-SHA256 de `"<t>.<corpo bruto>"` com o segredo `kbw_...` inteiro como chave e compare com `v1` em tempo constante. Use o corpo **bruto**, antes de qualquer parse.
+O payload completo está em [chamados.md, Payload](../specs/chamados.md#payload). `product` é o produto da conversa e `level`, o nível dela (útil para encaminhar o chamado à fila certa); `assistant` repete `product` e é obsoleto, mantido para quem já integrava. Para conferir a assinatura: separe `t` e `v1` do cabeçalho, recuse se `t` estiver a mais de 300 s do seu relógio, calcule o HMAC-SHA256 de `"<t>.<corpo bruto>"` com o segredo `kbw_...` inteiro como chave e compare com `v1` em tempo constante. Use o corpo **bruto**, antes de qualquer parse.
 
 Em Python:
 
@@ -333,13 +336,13 @@ Responda **2xx** com `{"ticket_id": "...", "url": "https://..."}`: o chat mostra
 - A aba **Integração** mostra o prefixo do token atual, os chamados por estado (aguardando processamento, indexados, fora dos status indexados, remoções aguardando, removidos), quantos falharam no último processamento e a data do último recebimento.
 - A aba **Indexação** mostra as execuções disparadas pelos envios e os documentos dos chamados.
 - No chat, uma pergunta sobre um chamado resolvido traz a citação com número e status.
-- Em **Assistentes > Editar**, **Testar entrega** responde "O destino aceitou a entrega de teste." quando o destino confere a assinatura e devolve 2xx.
+- Em **Produtos > Editar**, **Testar entrega** responde "O destino aceitou a entrega de teste." quando o destino confere a assinatura e devolve 2xx.
 
 ## Como desfazer
 
 - **Parar de receber**: gere um novo token e não o entregue a ninguém (o anterior para na hora), ou desative a fonte (os envios voltam 409 `source_inactive`).
 - **Tirar chamados do índice**: envie `delete` para cada `external_id`, ou exclua a fonte, o que apaga a caixa de entrada, o índice da fonte e invalida o token.
-- **Desligar "Abrir chamado"**: desmarque **Oferecer "Abrir chamado" no chat** no assistente.
+- **Desligar "Abrir chamado"**: desmarque **Oferecer "Abrir chamado" no chat** no produto.
 
 ## Limites
 
@@ -366,7 +369,7 @@ Responda **2xx** com `{"ticket_id": "...", "url": "https://..."}`: o chat mostra
 | Item `rejected` com `duplicate_in_batch` | O mesmo `external_id` duas vezes no lote. Mande só a versão mais nova. |
 | Item `stale` | O KnoBridge já tem uma versão mais nova (ou uma remoção posterior). Confira o `updated_at` que você envia. |
 | `sync: deferred` | O serviço de sincronização estava fora do ar. Os chamados ficaram guardados e entram na próxima sincronização (outro envio ou **Sincronizar** na fonte). |
-| Chamado não aparece no chat | Confira se ele foi indexado (aba **Integração**), se o status está entre os indexados e se a coleção está ligada ao assistente. |
+| Chamado não aparece no chat | Confira se ele foi indexado (aba **Integração**), se o status está entre os indexados se a coleção está ligada ao produto e se a pergunta está no nível Suporte ou acima (o usuário final não recebe chamados, salvo se um admin baixar o nível mínimo da fonte). |
 | Mudei a anonimização e nada mudou | A configuração vale para os chamados processados depois. Reenviar o mesmo conteúdo volta `unchanged` e não reprocessa: reenvie com `updated_at` mais novo (o conteúdo pode ser o mesmo). |
 | Webhook recusado ao salvar (`webhook_destination_blocked`) | A URL resolve para endereço interno, privado ou reservado. Use um endereço público com `https`. |
 | "A entrega de teste falhou" com HTTP 401 | O destino não aceitou a assinatura: confira o segredo (gere outro se perdeu) e se a verificação usa o corpo bruto. |
@@ -376,3 +379,4 @@ Responda **2xx** com `{"ticket_id": "...", "url": "https://..."}`: o chat mostra
 - Contrato: [chamados.md](../specs/chamados.md); citação no chat: [chat-sse.md](../specs/chat-sse.md#citations).
 - Decisão de arquitetura: [ADR 0006](../adr/0006-chamados-por-push.md).
 - Gerador de dados sintéticos: [scripts/synthetic_tickets/AGENTS.md](../../scripts/synthetic_tickets/AGENTS.md).
+- Cards de desenvolvimento pelo mesmo caminho: [receber-cards-por-api.md](receber-cards-por-api.md).

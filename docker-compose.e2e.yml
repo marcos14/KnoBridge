@@ -19,8 +19,10 @@ x-e2e-env: &e2e-env
   # name, over http (development and E2E only; empty in production).
   KNOBRIDGE_WEBHOOK_ALLOWED_HOSTS: webhook-sink
 
-# Synthetic knowledge (two Markdown files and one TypeScript file) in place of deploy/sources/:
-# the tests index /sources/knowledge. Volumes merge by container path, so this replaces the mount.
+# Synthetic knowledge (knowledge/: two Markdown files and one TypeScript file; levels/: the folders
+# of the response levels E2E) in place of deploy/sources/:
+# the tests index /sources/knowledge and /sources/levels/*. Volumes merge by container path, so
+# this replaces the mount.
 x-e2e-sources: &e2e-sources ./frontend/e2e/stack/fixtures:/sources:ro
 
 services:

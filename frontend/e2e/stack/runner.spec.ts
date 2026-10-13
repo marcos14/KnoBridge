@@ -4,8 +4,10 @@ import {
   acceptInvitation,
   adminLogin,
   ask,
+  configureLevels,
   createCollection,
   createFakeProvider,
+  createProduct,
   createWorkspace,
   NO_SOURCE_ANSWER,
   personPage,
@@ -30,7 +32,7 @@ const OWNER = {
 const WORKSPACE = `Harness E2E ${RUN}`;
 const PROVIDER = "Fake Harness E2E";
 const COLLECTION = `Conhecimento E2E ${RUN}`;
-const ASSISTANT = "Suporte Harness E2E";
+const PRODUCT = "Suporte Harness E2E";
 const RUNNER = `notebook-e2e-${RUN}`;
 const REPOSITORY = "erp-e2e";
 const SOURCE = `ERP E2E ${RUN}`;
@@ -72,22 +74,14 @@ test("test_runner_maps_code_into_cited_knowledge", async ({ browser, request, ba
   let sourceId = "";
   let token = "";
 
-  await test.step("an owner gets a workspace with the fake provider and an assistant", async () => {
+  await test.step("an owner gets a workspace with the fake provider and a product", async () => {
     await adminLogin(admin, request);
     await createWorkspace(admin, WORKSPACE, OWNER.email);
     workspaceId = await acceptInvitation(owner, OWNER);
     await createFakeProvider(owner, workspaceId, PROVIDER);
+    await configureLevels(owner, workspaceId, PROVIDER);
     await createCollection(owner, workspaceId, COLLECTION, PROVIDER);
-
-    await owner.goto(`/w/${workspaceId}/assistants`);
-    await owner.getByRole("button", { name: "Novo assistente" }).click();
-    const dialog = owner.getByRole("dialog", { name: "Novo assistente" });
-    await dialog.getByLabel("Nome").fill(ASSISTANT);
-    await pickOption(owner, "Provedor", PROVIDER);
-    await dialog.getByLabel("Modelo").fill("fake-chat");
-    await dialog.getByRole("checkbox", { name: COLLECTION }).check();
-    await dialog.getByRole("button", { name: "Salvar" }).click();
-    await expect(owner.getByText(`Assistente ${ASSISTANT} criado.`)).toBeVisible();
+    await createProduct(owner, workspaceId, PRODUCT, [COLLECTION]);
   });
 
   await test.step("owner creates a runner and copies its token, shown once", async () => {
@@ -203,7 +197,7 @@ test("test_runner_maps_code_into_cited_knowledge", async ({ browser, request, ba
   });
 
   await test.step("the chat answers citing the reviewed knowledge item", async () => {
-    await ask(owner, workspaceId, ASSISTANT, QUESTION);
+    await ask(owner, workspaceId, PRODUCT, QUESTION);
 
     // "[n] <title>", then the first evidence and the seal.
     const cited = owner.getByRole("button", {

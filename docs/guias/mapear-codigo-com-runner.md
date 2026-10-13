@@ -145,7 +145,7 @@ Todo item nasce com o selo **Inferido**. Revise e use:
 
 Cada revisão pede uma sincronização da fonte (gatilho **Harness**, visível na aba **Indexação**), que indexa o conhecimento na coleção. A marca **Evidência mudou** aparece quando um arquivo citado mudou depois da revisão: confira e aprove de novo.
 
-Com a coleção ligada a um assistente ([indexar-uma-fonte.md](indexar-uma-fonte.md#8-ligar-a-coleção-ao-assistente)), o chat cita o item com o selo e as evidências no código.
+Com a coleção ligada a um produto ([indexar-uma-fonte.md](indexar-uma-fonte.md#8-ligar-a-coleção-ao-produto)), o chat cita o item com o selo e as evidências no código. Os níveis contam ([produtos-e-niveis.md](produtos-e-niveis.md#4-ajustar-o-nível-mínimo-das-fontes)): item **inferido** só chega a Suporte e acima; item **revisado** chega também ao Usuário final, mas sem as evidências (caminhos e excertos de código), que ficam para Suporte e acima.
 
 ### 11. Exportar
 

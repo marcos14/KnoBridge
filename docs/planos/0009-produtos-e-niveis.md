@@ -92,10 +92,10 @@ fases:
     subfases:
       - id: F4.1
         titulo: E2E da stack, guias, README, CHANGELOG e AGENTS raiz
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-13
-        concluida_em: null
+        concluida_em: 2026-10-13
         commit: null
       - id: F4.2
         titulo: Ensaio dos três níveis no índice do Minski
@@ -258,6 +258,13 @@ decisoes:
     decisao: "F3.3: chat com seletor de produto (só ativos) e nível (acima do máximo desabilitado com motivo; padrão = máximo), selo do nível e filtros na lista; citação de card própria; Conversas admin com ?product=&level=; Uso e custos com filtros de produto e nível desligados ao agrupar por fonte ou coleção; chaves com produtos e nível máximo, padrão end_user no painel conforme a spec (chaves existentes mantêm o nível); LevelBadge compartilhado e rótulos em lib/responseLevels.ts"
     motivo: "spec api-publica: painel pré-seleciona end_user"
     alternativas: "manter product_dev como padrão do painel"
+    adr: null
+  - id: D23
+    data: 2026-10-13
+    por: agente
+    decisao: "F4.1: E2E da stack refeito para produtos e níveis (configurar níveis, criar produto, perguntar no nível) com o novo levels.spec.ts (mesma pergunta nos três níveis: manual em todos, pasta Suporte a partir de Suporte, código .ts e card só em Desenvolvimento e produto) e a chave end_user recusando :support e :product_dev pelo SDK openai; o cenário 'produto migrado do assistente' fica coberto por test_migration_0018 (o compose de E2E sempre parte de banco limpo); guia de cards próprio (receber-cards-por-api.md), linkado com o de chamados"
+    motivo: "E2E verde duas vezes (6/6) sem bug de produto"
+    alternativas: "migrar banco antigo no E2E; cards como seção do guia de chamados"
     adr: null
 pendencias_usuario: []
 ---
@@ -524,6 +531,7 @@ Nenhuma.
 - 2026-10-13 — F3.3 iniciada (agente em worktree).
 - 2026-10-13 — F3.3 concluída: chat com seletor de produto e nível, citação de card, filtros por produto e nível em Conversas e Uso e custos, chaves com produtos e nível máximo; frontend 1579 passed, 98,72% branches
 - 2026-10-13 — F4.1 iniciada (agente em worktree).
+- 2026-10-13 — F4.1 concluída: E2E da stack verde duas vezes seguidas (6 de 6, banco limpo e banco usado), guias produtos-e-niveis e receber-cards-por-api, primeiro-acesso, usar-a-api e demais guias atualizados, README, CHANGELOG e seções 1 e 12 do AGENTS.md raiz; orquestrador conferiu lint, format, typecheck, AGENTS e os valores do guia com o código
 
 ## 8. Encerramento
 

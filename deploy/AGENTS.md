@@ -9,7 +9,7 @@
 
 **Arquivos do compose, na raiz** (seguem as convenções abaixo):
 - `docker-compose.yml`: o ambiente de desenvolvimento completo (Postgres + pgvector, Temporal, MinIO, Mailpit como SMTP de desenvolvimento, migrações, API, worker e painel); `docker compose up --build`.
-- `docker-compose.e2e.yml`: camada por cima do anterior para o E2E contra a stack (`frontend/e2e/stack/`): projeto próprio (`knobridge-e2e`) e ambiente não produtivo fixado, que aceita o provedor `fake`; monta `frontend/e2e/stack/fixtures/` em `/sources` no lugar de `deploy/sources/`; sobe o `webhook-sink` (sistema de chamados falso, `scripts/webhook_sink.py` montado em `python:3.12.13-alpine3.22`, porta `WEBHOOK_SINK_PORT`) e libera esse host para o webhook dos assistentes com `KNOBRIDGE_WEBHOOK_ALLOWED_HOSTS=webhook-sink`; sempre com `down -v` ao fim.
+- `docker-compose.e2e.yml`: camada por cima do anterior para o E2E contra a stack (`frontend/e2e/stack/`): projeto próprio (`knobridge-e2e`) e ambiente não produtivo fixado, que aceita o provedor `fake`; monta `frontend/e2e/stack/fixtures/` em `/sources` no lugar de `deploy/sources/`; sobe o `webhook-sink` (sistema de chamados falso, `scripts/webhook_sink.py` montado em `python:3.12.13-alpine3.22`, porta `WEBHOOK_SINK_PORT`) e libera esse host para o webhook dos produtos com `KNOBRIDGE_WEBHOOK_ALLOWED_HOSTS=webhook-sink`; sempre com `down -v` ao fim.
 - `.env.example`: todas as variáveis que o compose interpola, com defaults de desenvolvimento; a cópia local é o `.env` da raiz, ignorado pelo Git.
 
 **Não entra aqui**:

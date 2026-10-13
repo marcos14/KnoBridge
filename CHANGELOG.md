@@ -8,6 +8,19 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ### Added
 
+Produtos e níveis de resposta (plano [0009](docs/planos/0009-produtos-e-niveis.md)): os assistentes viram produtos, e cada pergunta é respondida num de três níveis (Usuário final, Suporte, Desenvolvimento e produto), com as próprias fontes, instruções e modelo; cards de desenvolvimento entram pelo mesmo caminho dos chamados.
+
+- Arquitetura ([ADR 0008](docs/adr/0008-produtos-e-niveis.md)): o produto é o sistema sobre o qual se pergunta; o nível decide as fontes (filtro de nível mínimo no SQL dos dois braços da busca, antes da fusão), as instruções e o modelo; teto por membro e produto no painel e por chave na API; canal público limitado a Usuário final; contratos em [produtos-e-niveis.md](docs/specs/produtos-e-niveis.md) e [cards.md](docs/specs/cards.md).
+- Dados: `assistants` vira `products` com os mesmos ids; tabelas `workspace_levels` e `member_product_levels`; nível em conversas, mensagens e chaves; nível mínimo em fontes, documentos e trechos; níveis no convite; fonte `cards`; migrações `0018` e `0019` ([modelo de dados](docs/specs/modelo-de-dados.md)).
+- Níveis de resposta: credencial, modelo, temperatura e instruções por nível em **Configurações**, com textos padrão em pt-BR, "Restaurar padrão" e custo estimado por resposta; o checklist do Início pede a configuração.
+- Níveis por membro: padrão pelo papel (owner e admin em Desenvolvimento e produto; editor e leitor em Usuário final), valor explícito por produto em **Membros > Níveis por produto** e no convite; `product_levels` em `/v1/me` e `my_max_level` nos produtos.
+- Nível mínimo das fontes: padrão pelo tipo (pasta e runner em Usuário final, chamados em Suporte, cards e Git em Desenvolvimento e produto), refinado sem configuração (código numa pasta e conhecimento inferido sobem; evidências de código em Suporte), alterado só por owner e admin, na hora e sem reindexar.
+- Chat com produto e nível: seletor de produto e de nível (acima do máximo desabilitado, com o motivo), nível fixo na conversa, selo do nível, filtros por produto e nível nas conversas e em Uso e custos (agrupamento por produto e por nível); citação de conhecimento sem evidências em Usuário final.
+- API pública: chaves com escopo por produto e nível máximo (o painel pré-seleciona Usuário final), `product_id` e `level` na REST, `model` = `produto` ou `produto:nível` na API compatível com OpenAI, `/v1/models` com as combinações permitidas e 403 `level_not_allowed` acima do máximo.
+- Cards de desenvolvimento: fonte `cards` com token `kbi_...`, `POST /v1/ingest/cards`, upload, prévia, anonimização de relator, responsáveis e autores, Markdown por seções e citação `kind: card` com número, tipo, status, sprint e link ([SSE v0.9](docs/specs/chat-sse.md)).
+- E2E: a mesma pergunta em três níveis com fontes diferentes (manual para todos, consulta só a partir de Suporte, código e card só em Desenvolvimento e produto); chave Usuário final recusando `produto:support` pelo SDK oficial `openai` e aceitando `produto` e `produto:end_user`; os fluxos existentes refeitos com níveis e produtos.
+- Docs: guias [produtos e níveis](docs/guias/produtos-e-niveis.md) e [receber cards por API](docs/guias/receber-cards-por-api.md); [primeiro acesso](docs/guias/primeiro-acesso.md), [usar a API](docs/guias/usar-a-api.md) e [receber chamados por API](docs/guias/receber-chamados-por-api.md) atualizados.
+
 Telas de uso e administração (plano [0008](docs/planos/0008-telas-de-uso-e-administracao.md)): primeiro acesso com workspace, painéis do workspace e da instância, uso e custos, API pública com chaves e melhorias nas telas existentes.
 
 - Arquitetura ([ADR 0007](docs/adr/0007-chaves-e-api-publica.md)): chaves de API por workspace, só com hash, que abrem só a API pública; API compatível com OpenAI em que cada assistente é um modelo e as citações vão no texto e no campo extra `knobridge`; contratos em [api-publica.md](docs/specs/api-publica.md) e [uso-e-custos.md](docs/specs/uso-e-custos.md).
@@ -79,6 +92,13 @@ Bootstrap do monorepo (plano [0001](docs/planos/0001-bootstrap.md)), sem funcion
 - CI (`.github/workflows/ci.yml`): gates de `scripts/`, `backend/` (incluindo contrato OpenAPI em dia) e `frontend/` (incluindo `check:api`, build e Playwright), varredura de segredos com gitleaks sobre todo o histórico e validação do compose.
 
 ### Changed
+
+- Assistentes viram produtos (plano [0009](docs/planos/0009-produtos-e-niveis.md)): a migração `0018` transforma cada assistente num produto com o mesmo id e nome (o prompt vira o texto extra), copia o modelo do assistente mais usado para os três níveis do workspace e deixa conversas e chaves existentes em Desenvolvimento e produto, para as integrações continuarem recebendo as mesmas fontes. O produto não tem mais modelo nem temperatura: vêm do nível. As rotas `/v1/workspaces/{id}/assistants` do painel foram removidas (404) em favor de `/products`, e `assistant_id`/`group_by=assistant` deram lugar a `product_id`, `level`, `group_by=product` e `group_by=level`. Revise o nível máximo das chaves existentes em **Chaves de API**.
+- "Testar busca" das coleções passou a exigir papel editor e aceita `level`.
+
+### Deprecated
+
+- API pública: `assistant_id` em `POST /v1/conversations` (sinônimo de `product_id`) e o campo `assistant_id` da resposta; `assistant` no evento do webhook de chamado (repete `product`). O `model` com o nome ou o id do antigo assistente continua valendo, sem prazo. Os campos obsoletos saem numa versão futura, anunciada aqui.
 
 - Configuração inicial (plano [0008](docs/planos/0008-telas-de-uso-e-administracao.md)): `POST /v1/setup` passou a exigir `workspace_name` e cria o primeiro workspace com o superadmin como owner ([autenticação v0.2](docs/specs/autenticacao.md#configuração-inicial-e-superadmin)). O `docker-compose.yml` repassa `KNOBRIDGE_CHAT_PRICES` (padrão `{}`) aos serviços do backend.
 - Deploy (plano [0006](docs/planos/0006-compose-na-raiz.md)): `docker-compose.yml`, `docker-compose.e2e.yml` e `.env.example` saíram de `deploy/` para a raiz do repositório; a stack sobe da raiz com `docker compose up -d --build --wait` e lê o `.env` da raiz. `deploy/postgres/` e `deploy/sources/` continuam em `deploy/`, e o padrão de `KNOBRIDGE_SOURCES_DIR` passou a `./deploy/sources`. Os nomes de projeto (`knobridge`, `knobridge-e2e`) não mudaram, então volumes existentes continuam valendo. Quem tinha `deploy/.env` deve movê-lo para a raiz e, se definia `KNOBRIDGE_SOURCES_DIR` relativo, ajustar o caminho à raiz.

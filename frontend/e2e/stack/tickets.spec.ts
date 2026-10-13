@@ -5,10 +5,14 @@ import {
   acceptInvitation,
   adminLogin,
   ask,
-  createAssistant,
+  configureLevels,
   createCollection,
   createFakeProvider,
+  createProduct,
   createWorkspace,
+  editProduct,
+  issueIngestToken,
+  LEVELS,
   NO_SOURCE_ANSWER,
   personPage,
 } from "./flows";
@@ -17,7 +21,7 @@ import { setSinkSecret, SINK_HOOK_URL, sinkDeliveries } from "./webhookSink";
 // Tickets by API end to end (plan 0005), against the real stack: the owner creates a tickets
 // source and its send token in the panel; the test sends a batch with the token (Node's fetch,
 // as an integration would), sends it again (nothing changes) and uploads a small JSONL export;
-// the `ingest` syncs index everything; the chat cites the ticket. Then the assistant's webhook
+// the `ingest` syncs index everything; the chat cites the ticket. Then the product's webhook
 // points at the fake ticket system of the compose (webhook-sink), which checks the signature
 // with the secret shown once: an answer without a source opens a ticket and shows its number.
 //
@@ -31,7 +35,7 @@ const OWNER = {
 };
 const WORKSPACE = `Chamados E2E ${RUN}`;
 const PROVIDER = "Fake E2E";
-const ASSISTANT = "Suporte Chamados E2E";
+const PRODUCT = "Suporte Chamados E2E";
 const COLLECTION = `Chamados E2E ${RUN}`;
 const SOURCE = `Suporte E2E ${RUN}`;
 const BASE_URL = process.env.E2E_BASE_URL ?? "http://localhost:5173";
@@ -155,10 +159,11 @@ test("test_tickets_from_api_and_upload_to_chat_and_open_ticket_by_webhook", asyn
     workspaceId = await acceptInvitation(owner, OWNER);
   });
 
-  await test.step("owner sets up the fake provider, a collection and an assistant", async () => {
+  await test.step("owner sets up the fake provider, the levels, a collection and a product", async () => {
     await createFakeProvider(owner, workspaceId, PROVIDER);
+    await configureLevels(owner, workspaceId, PROVIDER);
     await createCollection(owner, workspaceId, COLLECTION, PROVIDER);
-    await createAssistant(owner, workspaceId, ASSISTANT, PROVIDER);
+    await createProduct(owner, workspaceId, PRODUCT);
   });
 
   await test.step("owner creates the tickets source and its send token", async () => {
@@ -169,20 +174,16 @@ test("test_tickets_from_api_and_upload_to_chat_and_open_ticket_by_webhook", asyn
     await dialog.getByLabel("Nome").fill(SOURCE);
     await expect(dialog.getByRole("combobox", { name: "Coleção" })).toHaveText(COLLECTION);
     await expect(dialog.getByRole("checkbox", { name: "Anonimizar" })).toBeChecked();
+    // Tickets are for the support team and up by default.
+    await expect(dialog.getByRole("combobox", { name: "Nível mínimo" })).toHaveText(
+      `${LEVELS.support} (padrão)`,
+    );
     await dialog.getByRole("button", { name: "Salvar" }).click();
     await expect(owner.getByText(`Fonte ${SOURCE} criada.`)).toBeVisible();
 
     await owner.getByRole("link", { name: SOURCE }).click();
     await expect(owner.getByRole("heading", { level: 1, name: SOURCE })).toBeVisible();
-    await owner.getByRole("button", { name: "Gerar token" }).click();
-    const confirm = owner.getByRole("dialog", { name: `Gerar o token de envio de ${SOURCE}?` });
-    await confirm.getByRole("button", { name: "Gerar" }).click();
-    const issued = owner.getByRole("dialog", { name: "Token de envio gerado" });
-    const shown = issued.getByText(/^kbi_[a-z0-9]{8}_[A-Za-z0-9_-]{43}$/);
-    await expect(shown).toBeVisible();
-    token = (await shown.textContent()) ?? "";
-    await issued.getByRole("button", { name: "Concluir" }).click();
-    await expect(owner.getByText(/^Token atual: kbi_[a-z0-9]{8}_…/)).toBeVisible();
+    token = await issueIngestToken(owner, SOURCE);
   });
 
   await test.step("the preview shows what anonymization replaces, saving nothing", async () => {
@@ -238,20 +239,18 @@ test("test_tickets_from_api_and_upload_to_chat_and_open_ticket_by_webhook", asyn
     await expect(owner.getByText(/falh(ou|aram) no último processamento/)).toHaveCount(0);
   });
 
-  await test.step("owner links the collection and the ticket webhook to the assistant", async () => {
-    await owner.goto(`/w/${workspaceId}/assistants`);
-    await owner.getByRole("button", { name: `Editar ${ASSISTANT}` }).click();
-    const dialog = owner.getByRole("dialog", { name: "Editar assistente" });
+  await test.step("owner links the collection and the ticket webhook to the product", async () => {
+    const dialog = await editProduct(owner, workspaceId, PRODUCT);
     await dialog.getByRole("checkbox", { name: COLLECTION }).check();
     await dialog.getByRole("checkbox", { name: 'Oferecer "Abrir chamado" no chat' }).check();
     await dialog.getByLabel("URL do webhook").fill(SINK_HOOK_URL);
     await dialog.getByRole("button", { name: "Salvar" }).click();
-    await expect(owner.getByText(`Assistente ${ASSISTANT} atualizado.`)).toBeVisible();
+    await expect(owner.getByText(`Produto ${PRODUCT} atualizado.`)).toBeVisible();
   });
 
   await test.step("owner generates the webhook secret and the test delivery passes", async () => {
-    await owner.getByRole("button", { name: `Editar ${ASSISTANT}` }).click();
-    const dialog = owner.getByRole("dialog", { name: "Editar assistente" });
+    await owner.getByRole("button", { name: `Editar ${PRODUCT}` }).click();
+    const dialog = owner.getByRole("dialog", { name: "Editar produto" });
     const panel = dialog.getByRole("region", { name: "Segredo e teste do webhook" });
     await panel.getByRole("button", { name: "Gerar segredo" }).click();
     const secret = dialog.getByLabel("Segredo do webhook");
@@ -265,7 +264,7 @@ test("test_tickets_from_api_and_upload_to_chat_and_open_ticket_by_webhook", asyn
   });
 
   await test.step("owner asks about the ticket and opens the citation", async () => {
-    await ask(owner, workspaceId, ASSISTANT, QUESTION);
+    await ask(owner, workspaceId, PRODUCT, QUESTION);
 
     // The list of sources: "[n] <title>" followed by the ticket number and its status.
     const cited = owner.getByRole("button", {
@@ -284,7 +283,7 @@ test("test_tickets_from_api_and_upload_to_chat_and_open_ticket_by_webhook", asyn
   });
 
   await test.step("an answer without a source opens a ticket through the webhook", async () => {
-    await ask(owner, workspaceId, ASSISTANT, UNRELATED_QUESTION);
+    await ask(owner, workspaceId, PRODUCT, UNRELATED_QUESTION);
     await expect(owner.getByText(NO_SOURCE_ANSWER)).toBeVisible();
 
     await owner.getByRole("button", { name: "Abrir chamado", exact: true }).click();

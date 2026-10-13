@@ -4,24 +4,28 @@ import type { ChatCompletionCreateParamsStreaming } from "openai/resources/chat/
 
 import {
   adminLogin,
-  createAssistant,
+  configureLevels,
   createCollection,
   createFakeProvider,
   createFolderSource,
+  createProduct,
   createWorkspace,
   enterWorkspace,
   KNOWLEDGE,
+  LEVELS,
   personPage,
   pickOption,
   syncSource,
 } from "./flows";
 
-// The public API end to end (plan 0008): the superadmin creates a workspace, enters it from the
-// instance administration, indexes the synthetic folder and creates an assistant on the `fake`
-// provider (no network) that answers from it. An API key created on the panel then drives the
-// official `openai` SDK for Node against the OpenAI-compatible API: the assistant is a model, and
-// the answers, with and without streaming, carry the citations in the `knobridge` extension
-// field. Finally, Usage and costs counts both answers in the `api` channel.
+// The public API end to end (plans 0008 and 0009): the superadmin creates a workspace, enters it
+// from the instance administration, configures the response levels on the `fake` provider (no
+// network), indexes the synthetic folder and creates a product that answers from it. An API key
+// created on the panel (maximum level end user, the panel's default) then drives the official
+// `openai` SDK for Node against the OpenAI-compatible API: the product and `product:end_user` are
+// models, and the answers, with and without streaming, carry the citations in the `knobridge`
+// extension field; `product:support`, above the key's maximum, gets the 403 level_not_allowed.
+// Finally, Usage and costs counts both answers in the `api` channel.
 //
 // Everything gets a per-run suffix, so a rerun never collides with what an earlier run left.
 const RUN = Date.now().toString(36);
@@ -30,7 +34,7 @@ const OWNER_EMAIL = `api-owner-${RUN}@example.test`;
 const PROVIDER = "Fake API E2E";
 const COLLECTION = `Base API ${RUN}`;
 const SOURCE = `Manual API ${RUN}`;
-const ASSISTANT = `Suporte API ${RUN}`;
+const PRODUCT = `Suporte API ${RUN}`;
 const API_KEY_NAME = `Portal E2E ${RUN}`;
 
 /** The KnoBridge extension field of a completion or chunk (docs/specs/api-publica.md). */
@@ -68,19 +72,22 @@ test("test_api_key_drives_the_openai_sdk_and_counts_in_usage", async ({
     workspaceId = await enterWorkspace(admin, WORKSPACE);
   });
 
-  await test.step("an assistant on the fake provider answers from the indexed folder", async () => {
+  await test.step("a product on the fake provider answers from the indexed folder", async () => {
     await createFakeProvider(admin, workspaceId, PROVIDER);
+    await configureLevels(admin, workspaceId, PROVIDER);
     await createCollection(admin, workspaceId, COLLECTION, PROVIDER);
     await createFolderSource(admin, workspaceId, SOURCE, COLLECTION, KNOWLEDGE.path);
     await syncSource(admin, SOURCE, KNOWLEDGE.documents);
-    await createAssistant(admin, workspaceId, ASSISTANT, PROVIDER, [COLLECTION]);
+    await createProduct(admin, workspaceId, PRODUCT, [COLLECTION]);
   });
 
-  await test.step("an API key is created on the panel and shown once", async () => {
+  await test.step("an API key is created on the panel, at the end user level, shown once", async () => {
     await admin.goto(`/w/${workspaceId}/api-keys`);
     await admin.getByRole("button", { name: "Nova chave" }).click();
     const dialog = admin.getByRole("dialog", { name: "Nova chave de API" });
     await dialog.getByLabel("Nome").fill(API_KEY_NAME);
+    // The panel preselects the lowest level: the key's owner raises it on purpose.
+    await expect(dialog.getByRole("radio", { name: LEVELS.end_user })).toBeChecked();
     await dialog.getByRole("button", { name: "Salvar" }).click();
 
     const secret = admin.getByRole("dialog", { name: `Chave ${API_KEY_NAME} criada` });
@@ -91,7 +98,8 @@ test("test_api_key_drives_the_openai_sdk_and_counts_in_usage", async ({
     await secret.getByRole("button", { name: "Concluído" }).click();
 
     const row = admin.getByRole("row").filter({ hasText: API_KEY_NAME });
-    await expect(row.getByText("Todos os assistentes")).toBeVisible();
+    await expect(row.getByText("Todos os produtos")).toBeVisible();
+    await expect(row.getByText(LEVELS.end_user, { exact: true })).toBeVisible();
     await expect(row.getByText("Nunca usada")).toBeVisible();
   });
 
@@ -99,21 +107,37 @@ test("test_api_key_drives_the_openai_sdk_and_counts_in_usage", async ({
     // No retries: each repeated request would be a new conversation.
     new OpenAI({ baseURL: `${String(baseURL)}/v1`, apiKey, maxRetries: 0 });
 
-  await test.step("the SDK lists the assistant as a model", async () => {
+  await test.step("the SDK lists the product, alone and with the levels up to the key's", async () => {
     const models = await client().models.list();
-    expect(models.data.map(({ id }) => id)).toContain(ASSISTANT);
+    const ids = models.data.map(({ id }) => id);
+    expect(ids).toContain(PRODUCT);
+    expect(ids).toContain(`${PRODUCT}:end_user`);
+    expect(ids).not.toContain(`${PRODUCT}:support`);
+    expect(ids).not.toContain(`${PRODUCT}:product_dev`);
+  });
+
+  await test.step("a level above the key's maximum gets the 403 level_not_allowed", async () => {
+    for (const model of [`${PRODUCT}:support`, `${PRODUCT}:product_dev`]) {
+      await expect(
+        client().chat.completions.create({
+          model,
+          messages: [{ role: "user", content: KNOWLEDGE.question }],
+        }),
+      ).rejects.toMatchObject({ status: 403, code: "level_not_allowed", param: "model" });
+    }
   });
 
   await test.step("without streaming, the answer cites the file in text and in knobridge", async () => {
+    // No level in `model`: the key's maximum, end user (a Markdown file is for everyone).
     const answer = await client().chat.completions.create({
-      model: ASSISTANT,
+      model: PRODUCT,
       messages: [{ role: "user", content: KNOWLEDGE.question }],
     });
 
     const extra = knobridgeOf(answer);
     expect(extra?.status).toBe("completed");
     expect(citedTitles(extra)).toContain(KNOWLEDGE.file);
-    expect(answer.model).toBe(ASSISTANT);
+    expect(answer.model).toBe(PRODUCT);
     expect(answer.choices[0]?.finish_reason).toBe("stop");
     // The sources footer is on by default.
     const content = answer.choices[0]?.message.content ?? "";
@@ -125,7 +149,8 @@ test("test_api_key_drives_the_openai_sdk_and_counts_in_usage", async ({
     const params: ChatCompletionCreateParamsStreaming & {
       knobridge: { append_sources: boolean };
     } = {
-      model: ASSISTANT,
+      // The level spelled out, as the panel's examples do.
+      model: `${PRODUCT}:end_user`,
       messages: [{ role: "user", content: KNOWLEDGE.question }],
       stream: true,
       stream_options: { include_usage: true },
@@ -171,7 +196,7 @@ test("test_api_key_drives_the_openai_sdk_and_counts_in_usage", async ({
   await test.step("the key shows its last use", async () => {
     await admin.goto(`/w/${workspaceId}/api-keys`);
     const row = admin.getByRole("row").filter({ hasText: API_KEY_NAME });
-    await expect(row.getByText("Todos os assistentes")).toBeVisible();
+    await expect(row.getByText("Todos os produtos")).toBeVisible();
     await expect(row.getByText("Nunca usada")).toHaveCount(0);
   });
 

@@ -7,12 +7,13 @@ import { ADMIN, login, needsSetup, personPage, setupInstance, workspaceIdByName 
 // workspace home with the first-steps checklist. This file runs first (file order), so on a fresh
 // database it is the one that runs the setup; on a used one (a rerun without `down -v`) it logs
 // in and checks the same home. No other spec touches the setup workspace, so its checklist is
-// still all pending.
+// still all pending: a new workspace also has the response levels to configure (plan 0009).
 const CHECKLIST_LINKS = [
   "Ir para Provedores",
   "Ir para Coleções",
   "Ir para Fontes",
-  "Ir para Assistentes",
+  "Ir para Níveis de resposta",
+  "Ir para Produtos",
   "Ir para o Chat",
 ];
 
@@ -37,7 +38,9 @@ test("test_first_access_setup_creates_the_workspace_and_lands_on_home", async ({
     await expect(admin.getByRole("heading", { level: 1, name: "Início" })).toBeVisible();
     await expect(admin.getByText(`Resumo de ${ADMIN.workspace}.`)).toBeVisible();
     const checklist = admin.getByRole("region", { name: "Primeiros passos" });
-    await expect(checklist.getByText("0 de 5 concluídos")).toBeVisible();
+    await expect(
+      checklist.getByText(`0 de ${String(CHECKLIST_LINKS.length)} concluídos`),
+    ).toBeVisible();
     for (const link of CHECKLIST_LINKS) {
       await expect(checklist.getByRole("link", { name: link })).toBeVisible();
     }

@@ -2,9 +2,9 @@
 
 > Rascunho v0.1 · 2026-10-11 · Em uso (plano 0003)
 
-Passo a passo pelo painel para pôr conhecimento no KnoBridge: montar a pasta de fontes, cadastrar um provedor com embeddings (OpenRouter), criar uma coleção, cadastrar uma fonte Git ou de pasta, sincronizar, acompanhar as execuções, testar a busca e ligar a coleção a um assistente, até ver as citações no chat.
+Passo a passo pelo painel para pôr conhecimento no KnoBridge: montar a pasta de fontes, cadastrar um provedor com embeddings (OpenRouter), criar uma coleção, cadastrar uma fonte Git ou de pasta, sincronizar, acompanhar as execuções, testar a busca e ligar a coleção a um produto, até ver as citações no chat.
 
-Para gerar conhecimento a partir do código com o Claude Code ou o Codex, rodando na máquina que tem o checkout (fonte do tipo **Runner local**), siga [mapear-codigo-com-runner.md](mapear-codigo-com-runner.md). Para trazer chamados de um sistema de chamados (fonte do tipo **Chamados**, por API ou upload), siga [receber-chamados-por-api.md](receber-chamados-por-api.md). A coleção e o assistente são os mesmos deste guia.
+Para gerar conhecimento a partir do código com o Claude Code ou o Codex, rodando na máquina que tem o checkout (fonte do tipo **Runner local**), siga [mapear-codigo-com-runner.md](mapear-codigo-com-runner.md). Para trazer chamados de um sistema de chamados (fonte do tipo **Chamados**, por API ou upload), siga [receber-chamados-por-api.md](receber-chamados-por-api.md); para cards de desenvolvimento, [receber-cards-por-api.md](receber-cards-por-api.md). A coleção e o produto são os mesmos deste guia. O nível mínimo de cada fonte (quem recebe os trechos dela no chat) está em [produtos-e-niveis.md](produtos-e-niveis.md#4-ajustar-o-nível-mínimo-das-fontes).
 
 Como funciona por dentro: leitura das fontes em [conectores.md](../specs/conectores.md), indexação e busca em [indexacao.md](../specs/indexacao.md), chat em [chat.md](../specs/chat.md).
 
@@ -55,7 +55,7 @@ No painel, o caminho é sempre o de **dentro** do contêiner: `/sources/manual`,
    - **Chave de API**: a sua chave do OpenRouter.
 3. Clique em **Salvar** e depois em **Testar conexão**.
 
-A chave é cifrada ao salvar e nunca volta para a tela; só os 4 últimos caracteres aparecem ([ADR 0003](../adr/0003-segredos-cifrados.md)). A mesma credencial serve para os embeddings da coleção e para o modelo de chat do assistente.
+A chave é cifrada ao salvar e nunca volta para a tela; só os 4 últimos caracteres aparecem ([ADR 0003](../adr/0003-segredos-cifrados.md)). A mesma credencial serve para os embeddings da coleção e para o modelo de chat dos níveis de resposta.
 
 Alternativas:
 
@@ -139,20 +139,20 @@ O histórico do workflow `ingestion-<id da fonte>` fica na Temporal UI (<http://
    - as pontuações: fusão, vetorial e texto;
    - o trecho.
 
-Um trecho entra quando a similaridade vetorial alcança o limiar (padrão 0,35, calibrado pelo [ensaio com dados reais](../pesquisa/0001-ensaio-minski.md)) **ou** quando ele contém todos os termos da busca. Nada é gravado. Use esta tela para calibrar a **Similaridade mínima** antes de ligar a coleção ao assistente: se perguntas relacionadas voltam vazias, baixe o limiar; se aparecem trechos sem relação, suba.
+Um trecho entra quando a similaridade vetorial alcança o limiar (padrão 0,35, calibrado pelo [ensaio com dados reais](../pesquisa/0001-ensaio-minski.md)) **ou** quando ele contém todos os termos da busca. Nada é gravado. Use esta tela para calibrar a **Similaridade mínima** antes de ligar a coleção ao produto: se perguntas relacionadas voltam vazias, baixe o limiar; se aparecem trechos sem relação, suba.
 
-### 8. Ligar a coleção ao assistente
+### 8. Ligar a coleção ao produto
 
-1. Vá em **Assistentes** e edite (ou crie) o assistente. Para usar o OpenRouter também no chat, escolha a credencial do passo 2 em **Provedor** e informe em **Modelo** o identificador do OpenRouter (com o prefixo do fornecedor, ex.: `openai/gpt-4.1-mini`).
-2. Em **Coleções**, marque a coleção do passo 3. Um assistente pode consultar várias coleções.
+1. Para usar o OpenRouter também no chat, em **Configurações > Níveis de resposta** escolha a credencial do passo 2 em **Credencial** de cada nível e informe em **Modelo** o identificador do OpenRouter (com o prefixo do fornecedor, ex.: `openai/gpt-4.1-mini`); detalhes em [produtos-e-niveis.md](produtos-e-niveis.md#1-configurar-os-níveis-de-resposta).
+2. Vá em **Produtos** e edite (ou crie) o produto. Em **Coleções**, marque a coleção do passo 3. Um produto pode consultar várias coleções.
 3. Ajuste **Similaridade mínima** (padrão 0,35) com o que você viu no passo 7.
 4. Clique em **Salvar**.
 
-Sem nenhuma coleção marcada, o assistente responde sempre "sem fonte".
+Sem nenhuma coleção marcada, o produto responde sempre "sem fonte".
 
 ### 9. Conversar e ler as citações
 
-1. Vá em **Chat**, escolha o assistente e faça uma pergunta sobre o conteúdo indexado.
+1. Vá em **Chat**, escolha o produto e o nível e faça uma pergunta sobre o conteúdo indexado. Numa pasta, arquivos de código só aparecem no nível **Desenvolvimento e produto**.
 2. A resposta chega em streaming, com marcadores `[1]`, `[2]`... que apontam para as **Fontes** listadas abaixo dela.
 3. Clique numa fonte para ver:
    - o trecho usado;
@@ -171,7 +171,7 @@ Sem nenhuma coleção marcada, o assistente responde sempre "sem fonte".
 
 - **Excluir a fonte** (em **Fontes**) apaga, sem volta, os documentos e trechos dela e cancela a sincronização em andamento. Os arquivos em `/sources` nunca são tocados: a montagem é somente leitura.
 - **Excluir a coleção** só funciona depois de excluir as fontes dela.
-- **Excluir a credencial** só funciona quando nenhuma coleção nem assistente a usa.
+- **Excluir a credencial** só funciona quando nenhuma coleção nem nível de resposta a usa.
 - **Pausar sem excluir**: desmarque **Sincronizar automaticamente** ou **Ativa** na fonte.
 
 ## Problemas comuns
@@ -188,14 +188,14 @@ Sem nenhuma coleção marcada, o assistente responde sempre "sem fonte".
   ```
 
 - **"O branch configurado não existe no repositório"** (`branch_not_found`): confira o nome. Num clone local, a branch pode existir só como `origin/<branch>`, o que também serve; se nem isso existir, rode `git fetch` no clone do host.
-- **Não aparece credencial para a coleção, ou "Este provedor não oferece embeddings"**: a credencial é da Anthropic, que não tem embeddings. Cadastre uma do OpenRouter ou da OpenAI para a coleção; o assistente pode continuar usando a Anthropic no chat.
-- **"A coleção já tem documentos: o provedor e o modelo de embedding não podem mudar"** (`collection_embedding_locked`): a troca de modelo é travada para o índice não misturar vetores de modelos diferentes. Crie outra coleção com o modelo novo, cadastre as fontes nela, sincronize e troque a coleção no assistente. Depois, exclua as fontes antigas e a coleção antiga.
+- **Não aparece credencial para a coleção, ou "Este provedor não oferece embeddings"**: a credencial é da Anthropic, que não tem embeddings. Cadastre uma do OpenRouter ou da OpenAI para a coleção; os níveis de resposta podem continuar usando a Anthropic no chat.
+- **"A coleção já tem documentos: o provedor e o modelo de embedding não podem mudar"** (`collection_embedding_locked`): a troca de modelo é travada para o índice não misturar vetores de modelos diferentes. Crie outra coleção com o modelo novo, cadastre as fontes nela, sincronize e troque a coleção no produto. Depois, exclua as fontes antigas e a coleção antiga.
 - **"O modelo de embedding devolveu vetores de tamanho diferente do índice"** (`embedding_dimension_mismatch`): o modelo não gera 1536 dimensões. Use `openai/text-embedding-3-small` (OpenRouter) ou `text-embedding-3-small` (OpenAI).
 - **A execução falhou com `provider_auth_failed` ou `provider_request_failed`**: chave recusada ou modelo inexistente no provedor. Teste a credencial em **Provedores** e confira o nome do modelo, com o prefixo do fornecedor no OpenRouter. Indisponibilidade e limite de uso do provedor são repetidos automaticamente (até 5 tentativas) antes de falhar.
 - **"O serviço de sincronização está indisponível"** (`sync_unavailable`): o Temporal não respondeu. Confira `docker compose ps temporal worker`. Fontes salvas nesse meio tempo têm o agendamento acertado quando o worker sobe de novo.
 - **"Esta fonte já está sincronizando"**: só uma execução por fonte roda de cada vez. Espere terminar ou cancele. Disparos agendados nesse meio tempo são pulados sem erro.
 - **Um arquivo não foi indexado**: veja se ele é ignorado pelo `.gitignore`, pelos globs, pelo tamanho (2 MiB para texto, 20 MiB para PDF/Office) ou por ser binário. No Git, só entra o que está commitado na branch: mudanças locais não commitadas não aparecem.
-- **O chat responde "sem fonte" para uma pergunta que deveria ter resposta**: confira se a coleção está marcada no assistente, se a execução concluiu e se **Testar busca** encontra trechos. Se só aparecerem trechos com pontuação vetorial abaixo do limiar, baixe a **Similaridade mínima** do assistente.
+- **O chat responde "sem fonte" para uma pergunta que deveria ter resposta**: confira se a coleção está marcada no produto, se a execução concluiu, se **Testar busca** encontra trechos e se o nível da conversa alcança o nível mínimo da fonte (código e chamados não chegam ao Usuário final). Se só aparecerem trechos com pontuação vetorial abaixo do limiar, baixe a **Similaridade mínima** do produto.
 
 ## Referências
 

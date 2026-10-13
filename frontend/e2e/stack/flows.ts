@@ -1,4 +1,10 @@
-import { type APIRequestContext, type Browser, expect, type Page } from "@playwright/test";
+import {
+  type APIRequestContext,
+  type Browser,
+  expect,
+  type Locator,
+  type Page,
+} from "@playwright/test";
 
 import { emailedLink } from "./mailpit";
 
@@ -179,25 +185,65 @@ export async function createFakeProvider(
   await expect(page.getByText(`Provedor ${name} cadastrado.`)).toBeVisible();
 }
 
-/** An assistant on `provider` with the fake chat model, answering from `collections`. */
-export async function createAssistant(
+/** The three response levels, by their name on the panel (`docs/specs/produtos-e-niveis.md`). */
+export const LEVELS = {
+  end_user: "Usuário final",
+  support: "Suporte",
+  product_dev: "Desenvolvimento e produto",
+} as const;
+
+export type Level = keyof typeof LEVELS;
+
+/**
+ * Configures every response level of the workspace (Configurações > Níveis de resposta) with
+ * `provider` and the fake chat model: without it, no product answers (409 level_not_configured).
+ */
+export async function configureLevels(
+  page: Page,
+  workspaceId: string,
+  provider: string,
+): Promise<void> {
+  await page.goto(`/w/${workspaceId}/settings`);
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Configurações do workspace" }),
+  ).toBeVisible();
+  for (const name of Object.values(LEVELS)) {
+    const form = page.getByRole("form", { name, exact: true });
+    await form.getByRole("combobox", { name: "Credencial" }).click();
+    await page.getByRole("option", { name: provider }).click();
+    await form.getByLabel("Modelo").fill("fake-chat");
+    await form.getByRole("button", { name: "Salvar nível" }).click();
+    await expect(form.getByText(`Nível ${name} atualizado.`)).toBeVisible();
+  }
+}
+
+/** A product answering from `collections` (the model comes from the workspace's levels). */
+export async function createProduct(
   page: Page,
   workspaceId: string,
   name: string,
-  provider: string,
   collections: readonly string[] = [],
 ): Promise<void> {
-  await page.goto(`/w/${workspaceId}/assistants`);
-  await page.getByRole("button", { name: "Novo assistente" }).click();
-  const dialog = page.getByRole("dialog", { name: "Novo assistente" });
-  await dialog.getByLabel("Nome").fill(name);
-  await pickOption(page, "Provedor", provider);
-  await dialog.getByLabel("Modelo").fill("fake-chat");
+  await page.goto(`/w/${workspaceId}/products`);
+  await page.getByRole("button", { name: "Novo produto" }).click();
+  const dialog = page.getByRole("dialog", { name: "Novo produto" });
+  await dialog.getByLabel("Nome", { exact: true }).fill(name);
   for (const collection of collections) {
     await dialog.getByRole("checkbox", { name: collection }).check();
   }
   await dialog.getByRole("button", { name: "Salvar" }).click();
-  await expect(page.getByText(`Assistente ${name} criado.`)).toBeVisible();
+  await expect(page.getByText(`Produto ${name} criado.`)).toBeVisible();
+}
+
+/** Opens the edit dialog of `product` on the products screen. */
+export async function editProduct(
+  page: Page,
+  workspaceId: string,
+  product: string,
+): Promise<Locator> {
+  await page.goto(`/w/${workspaceId}/products`);
+  await page.getByRole("button", { name: `Editar ${product}` }).click();
+  return page.getByRole("dialog", { name: "Editar produto" });
 }
 
 /** A collection embedded by the only credential (preselected), with the suggested model. */
@@ -228,6 +274,7 @@ export async function createFolderSource(
   name: string,
   collection: string,
   path: string,
+  minLevel?: Level,
 ): Promise<void> {
   await page.goto(`/w/${workspaceId}/sources`);
   await page.getByRole("button", { name: "Nova fonte" }).click();
@@ -236,6 +283,14 @@ export async function createFolderSource(
   await expect(dialog.getByRole("combobox", { name: "Coleção" })).toHaveText(collection);
   await dialog.getByRole("radio", { name: "Pasta" }).click();
   await dialog.getByLabel("Caminho da pasta").fill(path);
+  // A folder defaults to the end user level; only owners and admins pick another one.
+  const level = dialog.getByRole("combobox", { name: "Nível mínimo" });
+  await expect(level).toHaveText(`${LEVELS.end_user} (padrão)`);
+  if (minLevel !== undefined) {
+    await level.click();
+    await page.getByRole("option", { name: LEVELS[minLevel], exact: true }).click();
+    await expect(level).toHaveText(LEVELS[minLevel]);
+  }
   await dialog.getByRole("button", { name: "Salvar" }).click();
   await expect(page.getByText(`Fonte ${name} criada.`)).toBeVisible();
 
@@ -243,6 +298,23 @@ export async function createFolderSource(
   await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
   await page.getByRole("button", { name: "Testar conexão" }).click();
   await expect(page.getByText(`A fonte ${name} está acessível.`)).toBeVisible();
+}
+
+/**
+ * On the detail page of a tickets or cards source: generates its send token (`kbi_…`), shown
+ * once, and returns it.
+ */
+export async function issueIngestToken(page: Page, source: string): Promise<string> {
+  await page.getByRole("button", { name: "Gerar token" }).click();
+  const confirm = page.getByRole("dialog", { name: `Gerar o token de envio de ${source}?` });
+  await confirm.getByRole("button", { name: "Gerar" }).click();
+  const issued = page.getByRole("dialog", { name: "Token de envio gerado" });
+  const shown = issued.getByText(/^kbi_[a-z0-9]{8}_[A-Za-z0-9_-]{43}$/);
+  await expect(shown).toBeVisible();
+  const token = (await shown.textContent()) ?? "";
+  await issued.getByRole("button", { name: "Concluir" }).click();
+  await expect(page.getByText(/^Token atual: kbi_[a-z0-9]{8}_…/)).toBeVisible();
+  return token;
 }
 
 /** Indexing runs in the worker (Temporal): generous, but bounded. */
@@ -261,15 +333,25 @@ export async function syncSource(page: Page, name: string, documents: number): P
   await expect(page.getByText(`Documentos indexados: ${String(documents)}`)).toBeVisible();
 }
 
-/** Starts a new conversation with the only assistant and sends `question`. */
+/**
+ * Starts a new conversation with `product` (the only one of the workspace) at `level` (default:
+ * the person's maximum in the product, preselected) and sends `question`. Once it starts, the
+ * conversation shows its level.
+ */
 export async function ask(
   page: Page,
   workspaceId: string,
-  assistant: string,
+  product: string,
   question: string,
+  level?: Level,
 ): Promise<void> {
   await page.goto(`/w/${workspaceId}/chat`);
-  await expect(page.getByRole("combobox", { name: "Assistente" })).toHaveText(assistant);
+  await expect(page.getByRole("combobox", { name: "Produto", exact: true })).toHaveText(product);
+  if (level !== undefined) {
+    const choice = page.getByRole("radio", { name: LEVELS[level], exact: true });
+    await choice.click();
+    await expect(choice).toBeChecked();
+  }
   const box = page.getByRole("textbox", { name: "Sua pergunta" });
   await box.fill(question);
   await box.press("Enter");
