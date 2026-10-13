@@ -1488,6 +1488,31 @@
         "title": "ChangePasswordRequest",
         "type": "object"
       },
+      "ChecklistItemOut": {
+        "properties": {
+          "done": {
+            "title": "Done",
+            "type": "boolean"
+          },
+          "key": {
+            "enum": [
+              "provider",
+              "collection",
+              "source",
+              "assistant",
+              "chat"
+            ],
+            "title": "Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "done"
+        ],
+        "title": "ChecklistItemOut",
+        "type": "object"
+      },
       "CitationEvidenceOut": {
         "description": "Where in the code a knowledge item was verified (chat-sse v0.5).",
         "properties": {
@@ -2431,6 +2456,24 @@
           "evidencias"
         ],
         "title": "FaqEntry",
+        "type": "object"
+      },
+      "FeedbackCounts": {
+        "properties": {
+          "down": {
+            "title": "Down",
+            "type": "integer"
+          },
+          "up": {
+            "title": "Up",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "up",
+          "down"
+        ],
+        "title": "FeedbackCounts",
         "type": "object"
       },
       "FeedbackIn": {
@@ -3478,6 +3521,151 @@
         "title": "IngestTokenOut",
         "type": "object"
       },
+      "InstanceDashboardOut": {
+        "properties": {
+          "failed_answers_7d": {
+            "title": "Failed Answers 7D",
+            "type": "integer"
+          },
+          "failed_runs_7d": {
+            "title": "Failed Runs 7D",
+            "type": "integer"
+          },
+          "recent_failures": {
+            "items": {
+              "$ref": "#/components/schemas/RecentFailureOut"
+            },
+            "title": "Recent Failures",
+            "type": "array"
+          },
+          "usage": {
+            "$ref": "#/components/schemas/InstanceUsageOut"
+          },
+          "users": {
+            "$ref": "#/components/schemas/UserCounts"
+          },
+          "workspaces": {
+            "$ref": "#/components/schemas/WorkspaceCounts"
+          }
+        },
+        "required": [
+          "workspaces",
+          "users",
+          "failed_runs_7d",
+          "failed_answers_7d",
+          "recent_failures",
+          "usage"
+        ],
+        "title": "InstanceDashboardOut",
+        "type": "object"
+      },
+      "InstanceHealthOut": {
+        "properties": {
+          "api": {
+            "$ref": "#/components/schemas/ServiceCheckOut"
+          },
+          "database": {
+            "$ref": "#/components/schemas/ServiceCheckOut"
+          },
+          "temporal": {
+            "$ref": "#/components/schemas/ServiceCheckOut"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          },
+          "worker": {
+            "$ref": "#/components/schemas/ServiceCheckOut"
+          }
+        },
+        "required": [
+          "version",
+          "api",
+          "database",
+          "temporal",
+          "worker"
+        ],
+        "title": "InstanceHealthOut",
+        "type": "object"
+      },
+      "InstanceUsageOut": {
+        "properties": {
+          "answers": {
+            "title": "Answers",
+            "type": "integer"
+          },
+          "by_workspace": {
+            "items": {
+              "$ref": "#/components/schemas/WorkspaceUsageOut"
+            },
+            "title": "By Workspace",
+            "type": "array"
+          },
+          "chat_cost_usd": {
+            "title": "Chat Cost Usd",
+            "type": "number"
+          },
+          "chat_input_tokens": {
+            "title": "Chat Input Tokens",
+            "type": "integer"
+          },
+          "chat_output_tokens": {
+            "title": "Chat Output Tokens",
+            "type": "integer"
+          },
+          "cost_usd": {
+            "title": "Cost Usd",
+            "type": "number"
+          },
+          "embedding_cost_usd": {
+            "title": "Embedding Cost Usd",
+            "type": "number"
+          },
+          "embedding_tokens": {
+            "title": "Embedding Tokens",
+            "type": "integer"
+          },
+          "period_end": {
+            "format": "date-time",
+            "title": "Period End",
+            "type": "string"
+          },
+          "period_start": {
+            "format": "date-time",
+            "title": "Period Start",
+            "type": "string"
+          },
+          "runs": {
+            "title": "Runs",
+            "type": "integer"
+          },
+          "unpriced_answers": {
+            "title": "Unpriced Answers",
+            "type": "integer"
+          },
+          "unpriced_runs": {
+            "title": "Unpriced Runs",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "embedding_tokens",
+          "embedding_cost_usd",
+          "runs",
+          "unpriced_runs",
+          "chat_input_tokens",
+          "chat_output_tokens",
+          "chat_cost_usd",
+          "answers",
+          "unpriced_answers",
+          "cost_usd",
+          "period_start",
+          "period_end",
+          "by_workspace"
+        ],
+        "title": "InstanceUsageOut",
+        "type": "object"
+      },
       "InvitationOut": {
         "properties": {
           "created_at": {
@@ -4098,6 +4286,10 @@
       },
       "MessageOut": {
         "properties": {
+          "channel": {
+            "$ref": "#/components/schemas/ConversationChannel",
+            "default": "panel"
+          },
           "citations": {
             "items": {
               "$ref": "#/components/schemas/CitationOut"
@@ -4108,6 +4300,17 @@
           "content": {
             "title": "Content",
             "type": "string"
+          },
+          "cost_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Usd"
           },
           "created_at": {
             "format": "date-time",
@@ -4389,6 +4592,34 @@
           "evidencias"
         ],
         "title": "ModuleMessage",
+        "type": "object"
+      },
+      "MonthCostOut": {
+        "properties": {
+          "chat_cost_usd": {
+            "title": "Chat Cost Usd",
+            "type": "number"
+          },
+          "cost_usd": {
+            "title": "Cost Usd",
+            "type": "number"
+          },
+          "embedding_cost_usd": {
+            "title": "Embedding Cost Usd",
+            "type": "number"
+          },
+          "partial": {
+            "title": "Partial",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "embedding_cost_usd",
+          "chat_cost_usd",
+          "cost_usd",
+          "partial"
+        ],
+        "title": "MonthCostOut",
         "type": "object"
       },
       "OpenQuestion": {
@@ -5038,6 +5269,67 @@
           "checks"
         ],
         "title": "ReadyResponse",
+        "type": "object"
+      },
+      "RecentFailureOut": {
+        "properties": {
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "run_id": {
+            "format": "uuid",
+            "title": "Run Id",
+            "type": "string"
+          },
+          "source_id": {
+            "format": "uuid",
+            "title": "Source Id",
+            "type": "string"
+          },
+          "source_name": {
+            "title": "Source Name",
+            "type": "string"
+          },
+          "workspace_id": {
+            "format": "uuid",
+            "title": "Workspace Id",
+            "type": "string"
+          },
+          "workspace_name": {
+            "title": "Workspace Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "workspace_id",
+          "workspace_name",
+          "source_id",
+          "source_name",
+          "error",
+          "finished_at"
+        ],
+        "title": "RecentFailureOut",
         "type": "object"
       },
       "RejectionBlock": {
@@ -7508,6 +7800,45 @@
         "title": "SearchScores",
         "type": "object"
       },
+      "ServiceCheckOut": {
+        "properties": {
+          "checked_at": {
+            "format": "date-time",
+            "title": "Checked At",
+            "type": "string"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ServiceStatus"
+          }
+        },
+        "required": [
+          "status",
+          "checked_at",
+          "detail"
+        ],
+        "title": "ServiceCheckOut",
+        "type": "object"
+      },
+      "ServiceStatus": {
+        "enum": [
+          "ok",
+          "error",
+          "unknown"
+        ],
+        "title": "ServiceStatus",
+        "type": "string"
+      },
       "SessionOut": {
         "properties": {
           "created_at": {
@@ -7673,6 +8004,24 @@
           "reason"
         ],
         "title": "SkippedSync",
+        "type": "object"
+      },
+      "SourceCounts": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "active"
+        ],
+        "title": "SourceCounts",
         "type": "object"
       },
       "SourceCreate": {
@@ -9419,6 +9768,272 @@
         "title": "UpdateWorkspaceRequest",
         "type": "object"
       },
+      "UsageGroup": {
+        "enum": [
+          "source",
+          "collection",
+          "assistant",
+          "channel",
+          "api_key",
+          "model",
+          "day"
+        ],
+        "title": "UsageGroup",
+        "type": "string"
+      },
+      "UsageReportOut": {
+        "properties": {
+          "group_by": {
+            "$ref": "#/components/schemas/UsageGroup"
+          },
+          "period_end": {
+            "format": "date-time",
+            "title": "Period End",
+            "type": "string"
+          },
+          "period_start": {
+            "format": "date-time",
+            "title": "Period Start",
+            "type": "string"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/UsageRowOut"
+            },
+            "title": "Rows",
+            "type": "array"
+          },
+          "totals": {
+            "$ref": "#/components/schemas/UsageTotalsOut"
+          }
+        },
+        "required": [
+          "period_start",
+          "period_end",
+          "group_by",
+          "totals",
+          "rows"
+        ],
+        "title": "UsageReportOut",
+        "type": "object"
+      },
+      "UsageRowOut": {
+        "properties": {
+          "answers": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answers"
+          },
+          "chat_cost_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Cost Usd"
+          },
+          "chat_input_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Input Tokens"
+          },
+          "chat_output_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Output Tokens"
+          },
+          "cost_usd": {
+            "title": "Cost Usd",
+            "type": "number"
+          },
+          "embedding_cost_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Embedding Cost Usd"
+          },
+          "embedding_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Embedding Tokens"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "runs": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runs"
+          },
+          "unpriced_answers": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unpriced Answers"
+          },
+          "unpriced_runs": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unpriced Runs"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "embedding_tokens",
+          "embedding_cost_usd",
+          "runs",
+          "unpriced_runs",
+          "chat_input_tokens",
+          "chat_output_tokens",
+          "chat_cost_usd",
+          "answers",
+          "unpriced_answers",
+          "cost_usd"
+        ],
+        "title": "UsageRowOut",
+        "type": "object"
+      },
+      "UsageTotalsOut": {
+        "properties": {
+          "answers": {
+            "title": "Answers",
+            "type": "integer"
+          },
+          "chat_cost_usd": {
+            "title": "Chat Cost Usd",
+            "type": "number"
+          },
+          "chat_input_tokens": {
+            "title": "Chat Input Tokens",
+            "type": "integer"
+          },
+          "chat_output_tokens": {
+            "title": "Chat Output Tokens",
+            "type": "integer"
+          },
+          "cost_usd": {
+            "title": "Cost Usd",
+            "type": "number"
+          },
+          "embedding_cost_usd": {
+            "title": "Embedding Cost Usd",
+            "type": "number"
+          },
+          "embedding_tokens": {
+            "title": "Embedding Tokens",
+            "type": "integer"
+          },
+          "runs": {
+            "title": "Runs",
+            "type": "integer"
+          },
+          "unpriced_answers": {
+            "title": "Unpriced Answers",
+            "type": "integer"
+          },
+          "unpriced_runs": {
+            "title": "Unpriced Runs",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "embedding_tokens",
+          "embedding_cost_usd",
+          "runs",
+          "unpriced_runs",
+          "chat_input_tokens",
+          "chat_output_tokens",
+          "chat_cost_usd",
+          "answers",
+          "unpriced_answers",
+          "cost_usd"
+        ],
+        "title": "UsageTotalsOut",
+        "type": "object"
+      },
+      "UserCounts": {
+        "properties": {
+          "active_30d": {
+            "title": "Active 30D",
+            "type": "integer"
+          },
+          "superadmins": {
+            "title": "Superadmins",
+            "type": "integer"
+          },
+          "suspended": {
+            "title": "Suspended",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "suspended",
+          "superadmins",
+          "active_30d"
+        ],
+        "title": "UserCounts",
+        "type": "object"
+      },
       "UserOut": {
         "properties": {
           "email": {
@@ -9572,6 +10187,85 @@
         "title": "WorkspaceAccessKind",
         "type": "string"
       },
+      "WorkspaceCounts": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "integer"
+          },
+          "suspended": {
+            "title": "Suspended",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "active",
+          "suspended"
+        ],
+        "title": "WorkspaceCounts",
+        "type": "object"
+      },
+      "WorkspaceDashboardOut": {
+        "properties": {
+          "checklist": {
+            "items": {
+              "$ref": "#/components/schemas/ChecklistItemOut"
+            },
+            "title": "Checklist",
+            "type": "array"
+          },
+          "conversations_month": {
+            "title": "Conversations Month",
+            "type": "integer"
+          },
+          "cost_month": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MonthCostOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "documents": {
+            "title": "Documents",
+            "type": "integer"
+          },
+          "failed_runs": {
+            "title": "Failed Runs",
+            "type": "integer"
+          },
+          "feedback_month": {
+            "$ref": "#/components/schemas/FeedbackCounts"
+          },
+          "month_start": {
+            "format": "date-time",
+            "title": "Month Start",
+            "type": "string"
+          },
+          "sources": {
+            "$ref": "#/components/schemas/SourceCounts"
+          }
+        },
+        "required": [
+          "month_start",
+          "documents",
+          "sources",
+          "failed_runs",
+          "conversations_month",
+          "feedback_month",
+          "cost_month",
+          "checklist"
+        ],
+        "title": "WorkspaceDashboardOut",
+        "type": "object"
+      },
       "WorkspaceOut": {
         "properties": {
           "id": {
@@ -9621,6 +10315,45 @@
           "name"
         ],
         "title": "WorkspaceUpdate",
+        "type": "object"
+      },
+      "WorkspaceUsageOut": {
+        "properties": {
+          "chat_input_tokens": {
+            "title": "Chat Input Tokens",
+            "type": "integer"
+          },
+          "chat_output_tokens": {
+            "title": "Chat Output Tokens",
+            "type": "integer"
+          },
+          "cost_usd": {
+            "title": "Cost Usd",
+            "type": "number"
+          },
+          "embedding_tokens": {
+            "title": "Embedding Tokens",
+            "type": "integer"
+          },
+          "workspace_id": {
+            "format": "uuid",
+            "title": "Workspace Id",
+            "type": "string"
+          },
+          "workspace_name": {
+            "title": "Workspace Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "workspace_id",
+          "workspace_name",
+          "cost_usd",
+          "embedding_tokens",
+          "chat_input_tokens",
+          "chat_output_tokens"
+        ],
+        "title": "WorkspaceUsageOut",
         "type": "object"
       }
     }
@@ -9756,6 +10489,101 @@
           }
         },
         "summary": "List Instance Audit",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/dashboard": {
+      "get": {
+        "description": "Counts, recent failures and the usage of ``[from, to)`` across every workspace.",
+        "operationId": "get_instance_dashboard_v1_admin_dashboard_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstanceDashboardOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Caller is not a superadmin."
+          },
+          "422": {
+            "description": "Invalid period, or longer than 366 days."
+          }
+        },
+        "summary": "Get Instance Dashboard",
+        "tags": [
+          "admin"
+        ]
+      }
+    },
+    "/v1/admin/health": {
+      "get": {
+        "description": "API, database, Temporal and worker, checked in parallel (2 s each); always 200.",
+        "operationId": "get_instance_health_v1_admin_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstanceHealthOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Caller is not a superadmin."
+          }
+        },
+        "summary": "Get Instance Health",
         "tags": [
           "admin"
         ]
@@ -14083,6 +14911,59 @@
         ]
       }
     },
+    "/v1/workspaces/{workspace_id}/dashboard": {
+      "get": {
+        "description": "Cards of the home screen (Inicio) and the first steps checklist.",
+        "operationId": "get_dashboard_v1_workspaces__workspace_id__dashboard_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceDashboardOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Workspace suspended."
+          },
+          "404": {
+            "description": "Workspace not found or caller is not a member."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Dashboard",
+        "tags": [
+          "dashboard"
+        ]
+      }
+    },
     "/v1/workspaces/{workspace_id}/harness-jobs/{job_id}": {
       "get": {
         "description": "One job with a page of the items the runner's verification rejected.",
@@ -17472,6 +18353,178 @@
         "summary": "Upload Ticket File",
         "tags": [
           "sources"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/usage": {
+      "get": {
+        "description": "Usage of ``[from, to)`` (default: the 30 days before now), grouped by ``group_by``.",
+        "operationId": "get_usage_v1_workspaces__workspace_id__usage_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "group_by",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/UsageGroup"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsageReportOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below admin, or workspace suspended."
+          },
+          "404": {
+            "description": "Workspace not found or caller is not a member."
+          },
+          "422": {
+            "description": "Invalid query, a period whose start is not before its end (validation_error) or longer than 366 days (usage_period_too_long)."
+          }
+        },
+        "summary": "Get Usage",
+        "tags": [
+          "usage"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/usage.csv": {
+      "get": {
+        "description": "The same report as CSV, with a last ``total`` line.",
+        "operationId": "get_usage_csv_v1_workspaces__workspace_id__usage_csv_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "group_by",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/UsageGroup"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/csv": {}
+            },
+            "description": "The report."
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below admin, or workspace suspended."
+          },
+          "404": {
+            "description": "Workspace not found or caller is not a member."
+          },
+          "422": {
+            "description": "Invalid query, a period whose start is not before its end (validation_error) or longer than 366 days (usage_period_too_long)."
+          }
+        },
+        "summary": "Get Usage Csv",
+        "tags": [
+          "usage"
         ]
       }
     }

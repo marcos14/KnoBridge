@@ -446,6 +446,8 @@ export function makeMessage(overrides: Partial<Message> = {}): Message {
     input_tokens: 100,
     output_tokens: 20,
     latency_ms: 1200,
+    cost_usd: null,
+    channel: "panel",
     created_at: "2026-10-09T10:05:00Z",
     ...overrides,
   };

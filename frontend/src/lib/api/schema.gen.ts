@@ -24,6 +24,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/admin/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Instance Dashboard
+         * @description Counts, recent failures and the usage of ``[from, to)`` across every workspace.
+         */
+        get: operations["get_instance_dashboard_v1_admin_dashboard_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/admin/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Instance Health
+         * @description API, database, Temporal and worker, checked in parallel (2 s each); always 200.
+         */
+        get: operations["get_instance_health_v1_admin_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/admin/users": {
         parameters: {
             query?: never;
@@ -1253,6 +1293,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/workspaces/{workspace_id}/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Dashboard
+         * @description Cards of the home screen (Inicio) and the first steps checklist.
+         */
+        get: operations["get_dashboard_v1_workspaces__workspace_id__dashboard_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/workspaces/{workspace_id}/harness-jobs/{job_id}": {
         parameters: {
             query?: never;
@@ -1913,6 +1973,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/workspaces/{workspace_id}/usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Usage
+         * @description Usage of ``[from, to)`` (default: the 30 days before now), grouped by ``group_by``.
+         */
+        get: operations["get_usage_v1_workspaces__workspace_id__usage_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/usage.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Usage Csv
+         * @description The same report as CSV, with a last ``total`` line.
+         */
+        get: operations["get_usage_csv_v1_workspaces__workspace_id__usage_csv_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2427,6 +2527,16 @@ export interface components {
             /** New Password */
             new_password: string;
         };
+        /** ChecklistItemOut */
+        ChecklistItemOut: {
+            /** Done */
+            done: boolean;
+            /**
+             * Key
+             * @enum {string}
+             */
+            key: "provider" | "collection" | "source" | "assistant" | "chat";
+        };
         /**
          * CitationEvidenceOut
          * @description Where in the code a knowledge item was verified (chat-sse v0.5).
@@ -2772,6 +2882,13 @@ export interface components {
             pergunta: string;
             /** Resposta */
             resposta: string;
+        };
+        /** FeedbackCounts */
+        FeedbackCounts: {
+            /** Down */
+            down: number;
+            /** Up */
+            up: number;
         };
         /** FeedbackIn */
         FeedbackIn: {
@@ -3147,6 +3264,62 @@ export interface components {
             /** Token Prefix */
             token_prefix: string;
         };
+        /** InstanceDashboardOut */
+        InstanceDashboardOut: {
+            /** Failed Answers 7D */
+            failed_answers_7d: number;
+            /** Failed Runs 7D */
+            failed_runs_7d: number;
+            /** Recent Failures */
+            recent_failures: components["schemas"]["RecentFailureOut"][];
+            usage: components["schemas"]["InstanceUsageOut"];
+            users: components["schemas"]["UserCounts"];
+            workspaces: components["schemas"]["WorkspaceCounts"];
+        };
+        /** InstanceHealthOut */
+        InstanceHealthOut: {
+            api: components["schemas"]["ServiceCheckOut"];
+            database: components["schemas"]["ServiceCheckOut"];
+            temporal: components["schemas"]["ServiceCheckOut"];
+            /** Version */
+            version: string;
+            worker: components["schemas"]["ServiceCheckOut"];
+        };
+        /** InstanceUsageOut */
+        InstanceUsageOut: {
+            /** Answers */
+            answers: number;
+            /** By Workspace */
+            by_workspace: components["schemas"]["WorkspaceUsageOut"][];
+            /** Chat Cost Usd */
+            chat_cost_usd: number;
+            /** Chat Input Tokens */
+            chat_input_tokens: number;
+            /** Chat Output Tokens */
+            chat_output_tokens: number;
+            /** Cost Usd */
+            cost_usd: number;
+            /** Embedding Cost Usd */
+            embedding_cost_usd: number;
+            /** Embedding Tokens */
+            embedding_tokens: number;
+            /**
+             * Period End
+             * Format: date-time
+             */
+            period_end: string;
+            /**
+             * Period Start
+             * Format: date-time
+             */
+            period_start: string;
+            /** Runs */
+            runs: number;
+            /** Unpriced Answers */
+            unpriced_answers: number;
+            /** Unpriced Runs */
+            unpriced_runs: number;
+        };
         /** InvitationOut */
         InvitationOut: {
             /**
@@ -3397,10 +3570,14 @@ export interface components {
         };
         /** MessageOut */
         MessageOut: {
+            /** @default panel */
+            channel: components["schemas"]["ConversationChannel"];
             /** Citations */
             citations: components["schemas"]["CitationOut"][];
             /** Content */
             content: string;
+            /** Cost Usd */
+            cost_usd?: number | null;
             /**
              * Created At
              * Format: date-time
@@ -3489,6 +3666,17 @@ export interface components {
             evidencias: number[];
             /** Mensagem */
             mensagem: string;
+        };
+        /** MonthCostOut */
+        MonthCostOut: {
+            /** Chat Cost Usd */
+            chat_cost_usd: number;
+            /** Cost Usd */
+            cost_usd: number;
+            /** Embedding Cost Usd */
+            embedding_cost_usd: number;
+            /** Partial */
+            partial: boolean;
         };
         /** OpenQuestion */
         OpenQuestion: {
@@ -3738,6 +3926,32 @@ export interface components {
              * @constant
              */
             status: "ok";
+        };
+        /** RecentFailureOut */
+        RecentFailureOut: {
+            /** Error */
+            error: string | null;
+            /** Finished At */
+            finished_at: string | null;
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Source Id
+             * Format: uuid
+             */
+            source_id: string;
+            /** Source Name */
+            source_name: string;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /** Workspace Name */
+            workspace_name: string;
         };
         /**
          * RejectionBlock
@@ -4601,6 +4815,22 @@ export interface components {
             /** Vector */
             vector: number | null;
         };
+        /** ServiceCheckOut */
+        ServiceCheckOut: {
+            /**
+             * Checked At
+             * Format: date-time
+             */
+            checked_at: string;
+            /** Detail */
+            detail: string | null;
+            status: components["schemas"]["ServiceStatus"];
+        };
+        /**
+         * ServiceStatus
+         * @enum {string}
+         */
+        ServiceStatus: "ok" | "error" | "unknown";
         /** SessionOut */
         SessionOut: {
             /**
@@ -4670,6 +4900,13 @@ export interface components {
              * Format: uuid
              */
             source_id: string;
+        };
+        /** SourceCounts */
+        SourceCounts: {
+            /** Active */
+            active: number;
+            /** Total */
+            total: number;
         };
         /** SourceCreate */
         SourceCreate: {
@@ -5273,6 +5510,89 @@ export interface components {
             name?: string | null;
             status?: components["schemas"]["WorkspaceStatus"] | null;
         };
+        /**
+         * UsageGroup
+         * @enum {string}
+         */
+        UsageGroup: "source" | "collection" | "assistant" | "channel" | "api_key" | "model" | "day";
+        /** UsageReportOut */
+        UsageReportOut: {
+            group_by: components["schemas"]["UsageGroup"];
+            /**
+             * Period End
+             * Format: date-time
+             */
+            period_end: string;
+            /**
+             * Period Start
+             * Format: date-time
+             */
+            period_start: string;
+            /** Rows */
+            rows: components["schemas"]["UsageRowOut"][];
+            totals: components["schemas"]["UsageTotalsOut"];
+        };
+        /** UsageRowOut */
+        UsageRowOut: {
+            /** Answers */
+            answers: number | null;
+            /** Chat Cost Usd */
+            chat_cost_usd: number | null;
+            /** Chat Input Tokens */
+            chat_input_tokens: number | null;
+            /** Chat Output Tokens */
+            chat_output_tokens: number | null;
+            /** Cost Usd */
+            cost_usd: number;
+            /** Embedding Cost Usd */
+            embedding_cost_usd: number | null;
+            /** Embedding Tokens */
+            embedding_tokens: number | null;
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Runs */
+            runs: number | null;
+            /** Unpriced Answers */
+            unpriced_answers: number | null;
+            /** Unpriced Runs */
+            unpriced_runs: number | null;
+        };
+        /** UsageTotalsOut */
+        UsageTotalsOut: {
+            /** Answers */
+            answers: number;
+            /** Chat Cost Usd */
+            chat_cost_usd: number;
+            /** Chat Input Tokens */
+            chat_input_tokens: number;
+            /** Chat Output Tokens */
+            chat_output_tokens: number;
+            /** Cost Usd */
+            cost_usd: number;
+            /** Embedding Cost Usd */
+            embedding_cost_usd: number;
+            /** Embedding Tokens */
+            embedding_tokens: number;
+            /** Runs */
+            runs: number;
+            /** Unpriced Answers */
+            unpriced_answers: number;
+            /** Unpriced Runs */
+            unpriced_runs: number;
+        };
+        /** UserCounts */
+        UserCounts: {
+            /** Active 30D */
+            active_30d: number;
+            /** Superadmins */
+            superadmins: number;
+            /** Suspended */
+            suspended: number;
+            /** Total */
+            total: number;
+        };
         /** UserOut */
         UserOut: {
             /** Email */
@@ -5333,6 +5653,34 @@ export interface components {
          * @enum {string}
          */
         WorkspaceAccessKind: "member" | "superadmin";
+        /** WorkspaceCounts */
+        WorkspaceCounts: {
+            /** Active */
+            active: number;
+            /** Suspended */
+            suspended: number;
+            /** Total */
+            total: number;
+        };
+        /** WorkspaceDashboardOut */
+        WorkspaceDashboardOut: {
+            /** Checklist */
+            checklist: components["schemas"]["ChecklistItemOut"][];
+            /** Conversations Month */
+            conversations_month: number;
+            cost_month: components["schemas"]["MonthCostOut"] | null;
+            /** Documents */
+            documents: number;
+            /** Failed Runs */
+            failed_runs: number;
+            feedback_month: components["schemas"]["FeedbackCounts"];
+            /**
+             * Month Start
+             * Format: date-time
+             */
+            month_start: string;
+            sources: components["schemas"]["SourceCounts"];
+        };
         /** WorkspaceOut */
         WorkspaceOut: {
             /**
@@ -5355,6 +5703,24 @@ export interface components {
         WorkspaceUpdate: {
             /** Name */
             name: string;
+        };
+        /** WorkspaceUsageOut */
+        WorkspaceUsageOut: {
+            /** Chat Input Tokens */
+            chat_input_tokens: number;
+            /** Chat Output Tokens */
+            chat_output_tokens: number;
+            /** Cost Usd */
+            cost_usd: number;
+            /** Embedding Tokens */
+            embedding_tokens: number;
+            /**
+             * Workspace Id
+             * Format: uuid
+             */
+            workspace_id: string;
+            /** Workspace Name */
+            workspace_name: string;
         };
     };
     responses: never;
@@ -5412,6 +5778,84 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
                 };
+            };
+        };
+    };
+    get_instance_dashboard_v1_admin_dashboard_get: {
+        parameters: {
+            query?: {
+                from?: string | null;
+                to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstanceDashboardOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Caller is not a superadmin. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid period, or longer than 366 days. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_instance_health_v1_admin_health_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InstanceHealthOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Caller is not a superadmin. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -9142,6 +9586,58 @@ export interface operations {
             };
         };
     };
+    get_dashboard_v1_workspaces__workspace_id__dashboard_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceDashboardOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace suspended. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace not found or caller is not a member. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_harness_job_v1_workspaces__workspace_id__harness_jobs__job_id__get: {
         parameters: {
             query?: {
@@ -11667,6 +12163,114 @@ export interface operations {
                 content?: never;
             };
             /** @description Not a .json/.jsonl file (`upload_format_unsupported`), malformed JSON (`upload_invalid_json`), empty file (`upload_empty`) or no file field (`validation_error`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_usage_v1_workspaces__workspace_id__usage_get: {
+        parameters: {
+            query: {
+                group_by: components["schemas"]["UsageGroup"];
+                from?: string | null;
+                to?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsageReportOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below admin, or workspace suspended. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace not found or caller is not a member. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid query, a period whose start is not before its end (validation_error) or longer than 366 days (usage_period_too_long). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_usage_csv_v1_workspaces__workspace_id__usage_csv_get: {
+        parameters: {
+            query: {
+                group_by: components["schemas"]["UsageGroup"];
+                from?: string | null;
+                to?: string | null;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The report. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/csv": unknown;
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below admin, or workspace suspended. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace not found or caller is not a member. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid query, a period whose start is not before its end (validation_error) or longer than 366 days (usage_period_too_long). */
             422: {
                 headers: {
                     [name: string]: unknown;

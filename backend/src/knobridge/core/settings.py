@@ -8,7 +8,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Annotated, Literal, Self
 
-from pydantic import Field, SecretStr, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 # Development-only default; production refuses to start with it (see _check_secret_key).
@@ -16,6 +16,15 @@ DEV_SECRET_KEY = "dev-only-insecure-secret-key-change-me"  # noqa: S105 - docume
 
 Environment = Literal["local", "test", "production"]
 LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+
+
+class ChatPrice(BaseModel):
+    """USD per million tokens of a chat model, input and output (``KNOBRIDGE_CHAT_PRICES``)."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    input: Decimal = Field(ge=0)
+    output: Decimal = Field(ge=0)
 
 
 class Settings(BaseSettings):
@@ -84,6 +93,9 @@ class Settings(BaseSettings):
     # Embedding prices in USD per million tokens by model id, as JSON; merged over the
     # defaults of llm/pricing.py (a model listed here replaces the default price).
     embedding_prices: dict[str, Annotated[Decimal, Field(ge=0)]] = Field(default_factory=dict)
+    # Chat prices in USD per million tokens by model id, as JSON with both prices per model
+    # ({"gpt-4.1-mini": {"input": 0.4, "output": 1.6}}); merged over llm/chat_pricing.py.
+    chat_prices: dict[str, ChatPrice] = Field(default_factory=dict)
     # Folder and local Git sources must live under this directory (checked after resolving
     # symlinks). Docker Compose mounts the host's sources folder here, read-only.
     local_sources_root: Path = Path("/sources")

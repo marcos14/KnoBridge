@@ -23,6 +23,7 @@ import uuid
 from collections.abc import AsyncGenerator, Callable
 from dataclasses import dataclass
 from datetime import datetime
+from decimal import Decimal
 
 import anyio
 from sqlalchemy import func, select, update
@@ -63,6 +64,7 @@ from knobridge.core.clock import Clock
 from knobridge.core.db import scoped_session
 from knobridge.core.errors import KnoBridgeError
 from knobridge.core.logging import get_logger, log_context
+from knobridge.llm.chat_pricing import ChatPriceTable
 from knobridge.llm.credentials import ProviderCredentialService
 from knobridge.llm.errors import LLMProviderError
 from knobridge.llm.factory import ProviderFactory
@@ -83,6 +85,8 @@ class _Outcome:
     usage: ChatUsage
     latency_ms: int
     error: KnoBridgeError | None
+    # Estimated USD of the answer (chat price table); ``None`` when unknown.
+    cost_usd: Decimal | None = None
 
 
 class ChatService:
@@ -95,6 +99,7 @@ class ChatService:
         credentials: ProviderCredentialService,
         session_factory: async_sessionmaker[AsyncSession],
         history_window: int = DEFAULT_HISTORY_WINDOW,
+        prices: ChatPriceTable | None = None,
     ) -> None:
         self._clock = clock
         self._retriever = retriever
@@ -102,6 +107,7 @@ class ChatService:
         self._credentials = credentials
         self._session_factory = session_factory
         self._history_window = history_window
+        self._prices = prices if prices is not None else ChatPriceTable()
 
     async def prepare(
         self,
@@ -149,6 +155,7 @@ class ChatService:
                 updated_at=func.now(),
             )
         )
+        # Question and answer carry the conversation's channel (usage sums by it).
         user_message = self._message(
             workspace_id, conversation_id, position, MessageRole.USER, question, channel=channel
         )
@@ -258,6 +265,7 @@ class ChatService:
         status = MessageStatus.INTERRUPTED
         error: KnoBridgeError | None = None
         latency_ms = 0
+        cost_usd: Decimal | None = None
         provider = call.open_provider()
         try:
             try:
@@ -284,12 +292,14 @@ class ChatService:
             with anyio.CancelScope(shield=True):
                 await provider.aclose()
                 latency_ms = self._elapsed_ms(turn.started_at)
+                cost_usd = self._prices.cost(call.model, usage.input_tokens, usage.output_tokens)
                 outcome = _Outcome(
                     status=status,
                     content="".join(parts),
                     usage=usage,
                     latency_ms=latency_ms,
                     error=error,
+                    cost_usd=cost_usd,
                 )
                 await self._save(turn, outcome)
         if error is not None:
@@ -309,6 +319,7 @@ class ChatService:
             output_tokens=usage.output_tokens,
             latency_ms=latency_ms,
             ticket_requests_enabled=turn.ticket_requests_enabled,
+            cost_usd=cost_usd,
         )
 
     async def _save(self, turn: PreparedTurn, outcome: _Outcome) -> None:
@@ -331,6 +342,7 @@ class ChatService:
                     input_tokens=outcome.usage.input_tokens,
                     output_tokens=outcome.usage.output_tokens,
                     latency_ms=outcome.latency_ms,
+                    cost_usd=outcome.cost_usd,
                     updated_at=func.now(),
                 )
             )

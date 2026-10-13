@@ -16,12 +16,14 @@ from knobridge.api import (
     admin,
     admin_access,
     admin_conversations,
+    admin_dashboard,
     api_keys,
     assistants,
     audit,
     auth,
     collections,
     conversations,
+    dashboard,
     harness_jobs,
     harness_modules,
     health,
@@ -47,6 +49,7 @@ from knobridge.api import (
     ticket_requests,
     ticket_uploads,
     ticket_webhook,
+    usage,
 )
 from knobridge.api.body_limit import BodyLimitMiddleware
 from knobridge.core.clock import Clock, SystemClock
@@ -58,6 +61,7 @@ from knobridge.email.rendering import EmailComposer
 from knobridge.email.sender import EmailSender, SmtpEmailSender
 from knobridge.security.passwords import PasswordHasher
 from knobridge.workers.sync_client import (
+    LazyTemporalHealthProbe,
     LazyTemporalScheduleManager,
     LazyTemporalSyncStarter,
     LazyTemporalTicketWebhookStarter,
@@ -95,6 +99,7 @@ def create_app(
         app.state.sync_starter = LazyTemporalSyncStarter(resolved)
         app.state.schedule_manager = LazyTemporalScheduleManager(resolved)
         app.state.ticket_webhook_starter = LazyTemporalTicketWebhookStarter(resolved)
+        app.state.temporal_probe = LazyTemporalHealthProbe(resolved)
         try:
             yield
         finally:
@@ -168,6 +173,10 @@ def create_app(
         # API keys and the public REST API of conversations (plan 0008 F2.3).
         api_keys,
         public_conversations,
+        # Usage and costs, workspace and instance dashboards (plan 0008 F2.2).
+        usage,
+        dashboard,
+        admin_dashboard,
     )
     for module in routers:
         v1.include_router(module.router)

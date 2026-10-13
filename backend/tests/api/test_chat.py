@@ -94,6 +94,7 @@ def test_no_source_returns_fallback_without_llm_call(api: ApiEnv, chat: ChatOver
         "model": None,
         "input_tokens": None,
         "output_tokens": None,
+        "cost_usd": None,
         "latency_ms": 0,
         "ticket_requests_enabled": False,
     }
@@ -134,6 +135,7 @@ def test_with_sources_streams_and_saves_citations(api: ApiEnv, chat: ChatOverrid
             "model": "fake-model",
             "input_tokens": 42,
             "output_tokens": 7,
+            "cost_usd": None,
             "latency_ms": 300,
             "ticket_requests_enabled": False,
         },

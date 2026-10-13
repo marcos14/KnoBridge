@@ -38,6 +38,7 @@ from knobridge.ingestion.schedule import ScheduleManager
 from knobridge.ingestion.source_config import SourceKind
 from knobridge.ingestion.sources import SourceService
 from knobridge.ingestion.sync import SyncStarter
+from knobridge.llm.chat_pricing import ChatPriceTable
 from knobridge.llm.credentials import CREDENTIALS_KEY_INFO, ProviderCredentialService
 from knobridge.llm.factory import (
     EmbeddingProviderFactory,
@@ -241,6 +242,7 @@ def get_chat_service(
         provider_factory=provider_factory,
         credentials=credentials,
         session_factory=session_factory,
+        prices=ChatPriceTable.from_settings(get_settings_from_app(request)),
     )
 
 

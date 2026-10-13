@@ -42,10 +42,10 @@ fases:
         commit: e4280c3
       - id: F2.2
         titulo: Preços de modelos de chat, custo por resposta e as consultas de uso e custos e dos painéis
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
-        concluida_em: null
+        concluida_em: 2026-10-12
         commit: null
       - id: F2.3
         titulo: Chaves de API e a API REST de conversa autenticada por chave
@@ -53,7 +53,7 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
         concluida_em: 2026-10-12
-        commit: null
+        commit: 2ce2afa
       - id: F2.4
         titulo: API compatível com OpenAI (/v1/models e /v1/chat/completions)
         status: pendente
@@ -195,6 +195,13 @@ decisoes:
     decisao: "F2.3: chaves kbk_ em apikeys/ (tokens, auth, service, conversations) e rotas em api/api_keys.py e api/public_conversations.py; POST .../messages abre a própria transação para o prepare e confirma antes de consumir o stream (senão o placeholder não estaria confirmado no modo stream false); last_used_at na transação curta da autenticação; escopo validado no Pydantic e id fora do workspace dá 422 api_key_assistant_invalid; PATCH sem mudança não audita; assistente fora do escopo dá 404 também no GET; a API compatível com OpenAI fica em api/openai_compat.py como na spec (o AGENTS de api citava channels/)"
     motivo: "contrato da F1.1 e consistência transacional"
     alternativas: "segunda transação para last_used_at; compat em channels/"
+    adr: null
+  - id: D13
+    data: 2026-10-12
+    por: agente
+    decisao: "F2.2: preços de chat do catálogo do OpenRouter em 2026-10-12 (Claude 4.x/5.x e GPT-4.1/4o, com e sem prefixo) em llm/chat_pricing.py; código de uso em usage/ (lê runs, messages, chaves, workspaces e sessões; nenhum módulo de domínio o importa); relatório em dois statements (totais e linhas, com união embeddings + chat); soma sem item com preço é 0 e o aviso de custo parcial vem de unpriced_runs/unpriced_answers e partial; group_by channel sempre lista panel e api; saúde com Temporal fora marca o worker como unknown; descrições do OpenAPI sem acento (o teste exige ASCII)"
+    motivo: "contrato da F1.1"
+    alternativas: "custo nulo quando nada tem preço; métricas materializadas"
     adr: null
 pendencias_usuario: []
 ---
@@ -433,6 +440,7 @@ Nenhuma.
 - 2026-10-12 — F2.2 iniciada (agente em worktree).
 - 2026-10-12 — F2.3 iniciada (agente em worktree).
 - 2026-10-12 — F2.3 concluída: chaves de API (CRUD, revogação, escopo por assistente) e a API REST de conversa com channel api; gates do agente: backend 2258 passed com 99,88%, frontend 1240; orquestrador: ruff, pyright e AGENTS na integração
+- 2026-10-12 — F2.2 concluída: custo estimado por resposta, uso e custos com CSV, painel do workspace com checklist e painel e saúde da instância, integrados sobre a F2.3; backend 2350 passed na rodada completa (a única falha, descrição do OpenAPI com acento, foi corrigida e o teste passa), frontend 1240
 
 ## 8. Encerramento
 

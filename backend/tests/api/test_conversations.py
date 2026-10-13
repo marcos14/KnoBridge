@@ -125,6 +125,8 @@ def test_get_conversation_paginates_messages(api: ApiEnv) -> None:
         "input_tokens",
         "output_tokens",
         "latency_ms",
+        "cost_usd",
+        "channel",
         "created_at",
         "feedback",
         "ticket_request",

@@ -162,6 +162,10 @@ class MessageOut(BaseModel):
     input_tokens: int | None
     output_tokens: int | None
     latency_ms: int | None
+    # Estimated USD of an answer (6 places); null for questions, ``no_source`` and unknown
+    # prices. Always sent; the defaults keep both fields additive in the schema (plan 0008).
+    cost_usd: float | None = None
+    channel: ConversationChannel = ConversationChannel.PANEL
     created_at: datetime
     # The caller's own feedback on this message.
     feedback: FeedbackOut | None
@@ -230,6 +234,8 @@ def _message_out(view: MessageView, request: TicketRequest | None) -> MessageOut
         input_tokens=message.input_tokens,
         output_tokens=message.output_tokens,
         latency_ms=message.latency_ms,
+        cost_usd=None if message.cost_usd is None else float(message.cost_usd),
+        channel=message.channel,
         created_at=message.created_at,
         feedback=None if view.feedback is None else _feedback_out(view.feedback),
         ticket_request=None if request is None else ticket_request_out(request),

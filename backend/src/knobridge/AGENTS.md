@@ -1,6 +1,6 @@
 # backend/src/knobridge/
 
-**Função**: pacote Python do KnoBridge. Cada subpasta é um módulo do produto (layout previsto em [backend/AGENTS.md](../../AGENTS.md)); hoje existem `core/`, `api/`, `tenancy/`, `security/`, `audit/`, `email/`, `llm/`, `assistants/`, `conversations/`, `ingestion/`, `harness/`, `tickets/`, `apikeys/`, `connectors/`, `retrieval/` e `workers/`.
+**Função**: pacote Python do KnoBridge. Cada subpasta é um módulo do produto (layout previsto em [backend/AGENTS.md](../../AGENTS.md)); hoje existem `core/`, `api/`, `tenancy/`, `security/`, `audit/`, `email/`, `llm/`, `assistants/`, `conversations/`, `ingestion/`, `harness/`, `tickets/`, `apikeys/`, `usage/`, `connectors/`, `retrieval/` e `workers/`.
 
 **Entra aqui**:
 - `__init__.py` com `__version__`, a única fonte da versão (o `pyproject.toml` lê daqui via hatch).
@@ -16,8 +16,9 @@
 - `apikeys/`: chaves `kbk_` da API pública (modelo, geração, autenticação por prefixo em modo de sistema, gestão no painel e as conversas da chave com `channel = api`); rotas em `api/api_keys.py` e `api/public_conversations.py`.
 - `conversations/` não importa `apikeys/`: `conversations.api_key_id` aponta para `api_keys` pelo nome da tabela, e `api/conversations.py` carrega `ApiKey` (`REFERENCED_MODELS`) para o metadata estar completo onde se gravam conversas.
 - Listas paginadas usam `core/listing.py` (busca `ILIKE` com curingas literais e `sort` com nulos por último); a lógica de reindexar fonte e sincronizar coleção fica em `ingestion/reindex.py`, a listagem e a duplicação de assistentes em `assistants/listing.py` e `assistants/duplicate.py`.
+- `usage/` só lê modelos de `ingestion/`, `conversations/`, `assistants/`, `apikeys/`, `llm/`, `tenancy/` e `security/`; nenhum módulo de domínio importa `usage/` (só `api/` e `workers/sync_client.py`, este pelo `TemporalProbe`).
 - Vocabulário do domínio da seção 6.1 do [AGENTS.md da raiz](../../../AGENTS.md) nos nomes.
 
 **Como testar**: de `backend/`, `uv run pytest` (gate de 95% de linhas e branches) e `uv run pyright`.
 
-**Leia também**: [core/AGENTS.md](core/AGENTS.md), [tenancy/AGENTS.md](tenancy/AGENTS.md), [security/AGENTS.md](security/AGENTS.md), [audit/AGENTS.md](audit/AGENTS.md), [email/AGENTS.md](email/AGENTS.md), [llm/AGENTS.md](llm/AGENTS.md), [assistants/AGENTS.md](assistants/AGENTS.md), [conversations/AGENTS.md](conversations/AGENTS.md), [ingestion/AGENTS.md](ingestion/AGENTS.md), [harness/AGENTS.md](harness/AGENTS.md), [tickets/AGENTS.md](tickets/AGENTS.md), [apikeys/AGENTS.md](apikeys/AGENTS.md), [connectors/AGENTS.md](connectors/AGENTS.md) (com [connectors/folder/](connectors/folder/AGENTS.md) e [connectors/git/](connectors/git/AGENTS.md)), [retrieval/AGENTS.md](retrieval/AGENTS.md), [api/AGENTS.md](api/AGENTS.md), [workers/AGENTS.md](workers/AGENTS.md).
+**Leia também**: [core/AGENTS.md](core/AGENTS.md), [tenancy/AGENTS.md](tenancy/AGENTS.md), [security/AGENTS.md](security/AGENTS.md), [audit/AGENTS.md](audit/AGENTS.md), [email/AGENTS.md](email/AGENTS.md), [llm/AGENTS.md](llm/AGENTS.md), [assistants/AGENTS.md](assistants/AGENTS.md), [conversations/AGENTS.md](conversations/AGENTS.md), [ingestion/AGENTS.md](ingestion/AGENTS.md), [harness/AGENTS.md](harness/AGENTS.md), [tickets/AGENTS.md](tickets/AGENTS.md), [apikeys/AGENTS.md](apikeys/AGENTS.md), [usage/AGENTS.md](usage/AGENTS.md), [connectors/AGENTS.md](connectors/AGENTS.md) (com [connectors/folder/](connectors/folder/AGENTS.md) e [connectors/git/](connectors/git/AGENTS.md)), [retrieval/AGENTS.md](retrieval/AGENTS.md), [api/AGENTS.md](api/AGENTS.md), [workers/AGENTS.md](workers/AGENTS.md).

@@ -8,6 +8,7 @@ import uuid
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
+from decimal import Decimal
 
 from knobridge.audit.models import JSONValue
 from knobridge.conversations.models import MessageStatus
@@ -46,6 +47,8 @@ class DoneEvent:
     latency_ms: int | None
     # The assistant offers to open a ticket (its webhook has a URL and a secret).
     ticket_requests_enabled: bool = False
+    # Estimated USD of the answer; ``None`` for ``no_source``, without tokens or price.
+    cost_usd: Decimal | None = None
 
 
 @dataclass(frozen=True)

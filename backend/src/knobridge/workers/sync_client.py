@@ -1,12 +1,14 @@
-"""What the API uses to talk to Temporal: a ``SyncStarter``, a ``ScheduleManager`` and a
-``TicketWebhookStarter`` whose client is opened lazily.
+"""What the API uses to talk to Temporal: a ``SyncStarter``, a ``ScheduleManager``, a
+``TicketWebhookStarter`` and the ``TemporalProbe`` of the health checks, whose client is opened
+lazily.
 
 The API must start (and answer everything else) while Temporal is down, so the client is not
 opened at startup: the first call connects, and the client is kept for the next ones. An
 unreachable server, at connect time or on a call, becomes the given "unavailable" error
 (``SyncUnavailableError``, 503 ``sync_unavailable``, for syncs; ``ScheduleUnavailableError``
 for schedules, which the source service tolerates; ``TicketDeliveryUnavailableError`` for
-ticket deliveries, which the API tolerates); the next call tries again.
+ticket deliveries, which the API tolerates; ``TemporalUnreachableError`` for the health probe,
+whose checks report it as an ``error``); the next call tries again.
 """
 
 from __future__ import annotations
@@ -14,7 +16,7 @@ from __future__ import annotations
 import asyncio
 import uuid
 from collections.abc import Awaitable, Callable
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from temporalio.client import Client
 from temporalio.service import RPCError, RPCStatusCode
@@ -26,8 +28,10 @@ from knobridge.ingestion.errors import ScheduleUnavailableError, SyncUnavailable
 from knobridge.ingestion.schedule import ScheduleChange, ScheduleManager, SourceSchedule
 from knobridge.ingestion.sync import SyncStarter
 from knobridge.tickets.delivery import TicketDeliveryUnavailableError, TicketWebhookStarter
+from knobridge.usage.health import TemporalProbe, TemporalUnreachableError
 from knobridge.workers.ingestion_activities import TemporalSyncStarter
 from knobridge.workers.schedules import TemporalScheduleManager
+from knobridge.workers.temporal_health import TemporalHealthProbe
 from knobridge.workers.ticket_webhook_activities import TemporalTicketWebhookStarter
 from knobridge.workers.worker import connect
 
@@ -40,6 +44,7 @@ type Connect = Callable[[Settings], Awaitable[Client]]
 type StarterFactory = Callable[[Client], SyncStarter]
 type ManagerFactory = Callable[[Client], ScheduleManager]
 type TicketStarterFactory = Callable[[Client], TicketWebhookStarter]
+type ProbeFactory = Callable[[Client], TemporalProbe]
 
 
 class _Lazy[T]:
@@ -170,3 +175,29 @@ class LazyTemporalTicketWebhookStarter:
             )
         except RPCError as error:
             raise self._lazy.translate(error) from error
+
+
+class LazyTemporalHealthProbe:
+    """The ``TemporalProbe`` of the API: ``TemporalUnreachableError`` while Temporal is down."""
+
+    def __init__(
+        self,
+        settings: Settings,
+        *,
+        connect_client: Connect = connect,
+        probe_factory: ProbeFactory | None = None,
+    ) -> None:
+        factory: ProbeFactory = probe_factory or (
+            lambda client: TemporalHealthProbe(
+                client, settings.temporal_namespace, settings.temporal_task_queue
+            )
+        )
+        self._lazy = _Lazy(settings, connect_client, factory, TemporalUnreachableError)
+
+    async def check_namespace(self) -> None:
+        probe = await self._lazy.ready()
+        await probe.check_namespace()
+
+    async def last_poller_seen(self) -> datetime | None:
+        probe = await self._lazy.ready()
+        return await probe.last_poller_seen()

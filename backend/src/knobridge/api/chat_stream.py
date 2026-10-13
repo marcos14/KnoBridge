@@ -42,6 +42,7 @@ def sse_frame(event: ChatEvent) -> bytes:
                 "model": event.model,
                 "input_tokens": event.input_tokens,
                 "output_tokens": event.output_tokens,
+                "cost_usd": None if event.cost_usd is None else float(event.cost_usd),
                 "latency_ms": event.latency_ms,
                 "ticket_requests_enabled": event.ticket_requests_enabled,
             }

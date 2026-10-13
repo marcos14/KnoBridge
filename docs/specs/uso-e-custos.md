@@ -1,6 +1,8 @@
 # Uso e custos, painel do workspace e painel da instância
 
-> Rascunho v0.1 · 2026-10-12 · Plano 0008 (F1.1; implementação na F2.2)
+> Rascunho v0.2 · 2026-10-12 · Plano 0008 (F1.1; implementado na F2.2)
+
+> **Mudanças da v0.2** (F2.2): preços conferidos no catálogo do OpenRouter, com os ids `anthropic/...` acrescentados; somas sem item com preço valem zero e o aviso vem de `unpriced_*`; `channel` lista sempre os dois canais; `InstanceHealth` com `version` no topo e os textos de `detail`.
 
 Contrato dos números do painel: o custo estimado de cada resposta do chat, as rotas de **Uso e custos** (tokens e US$ de embeddings e de chat no período, agrupados, com CSV), o **painel do workspace** da tela Início (cartões e checklist de primeiros passos) e o **painel da instância** do superadmin (contagens, falhas recentes, uso total e saúde dos serviços). Tudo é consulta agregada sobre `runs` e `messages`, sem tabela de métricas (D7 do [plano 0008](../planos/0008-telas-de-uso-e-administracao.md)).
 
@@ -23,20 +25,20 @@ Código previsto: `backend/src/knobridge/llm/chat_pricing.py` (preços), `backen
 
 Preços padrão (USD por 1M tokens):
 
-| Modelo | Entrada | Saída | Fonte |
-|---|---|---|---|
-| `claude-opus-5-5` | 4,00 | 20,00 | Anthropic, tabela de modelos (2026-09-25) |
-| `claude-opus-5` | 5,00 | 25,00 | idem |
-| `claude-sonnet-5-5` | 2,00 | 10,00 | idem |
-| `claude-sonnet-5` | 2,00 | 10,00 | idem |
-| `claude-haiku-4-5` | 1,00 | 5,00 | idem |
-| `gpt-4.1` e `openai/gpt-4.1` | 2,00 | 8,00 | OpenAI, página de preços (conferir na F2.2) |
-| `gpt-4.1-mini` e `openai/gpt-4.1-mini` | 0,40 | 1,60 | idem |
-| `gpt-4.1-nano` e `openai/gpt-4.1-nano` | 0,10 | 0,40 | idem |
-| `gpt-4o` e `openai/gpt-4o` | 2,50 | 10,00 | idem |
-| `gpt-4o-mini` e `openai/gpt-4o-mini` | 0,15 | 0,60 | idem |
+| Modelo | Entrada | Saída |
+|---|---|---|
+| `claude-opus-5-5` e `anthropic/claude-opus-5.5` | 4,00 | 20,00 |
+| `claude-opus-5` e `anthropic/claude-opus-5` | 5,00 | 25,00 |
+| `claude-sonnet-5-5` e `anthropic/claude-sonnet-5.5` | 2,00 | 10,00 |
+| `claude-sonnet-5` e `anthropic/claude-sonnet-5` | 2,00 | 10,00 |
+| `claude-haiku-4-5` e `anthropic/claude-haiku-4.5` | 1,00 | 5,00 |
+| `gpt-4.1` e `openai/gpt-4.1` | 2,00 | 8,00 |
+| `gpt-4.1-mini` e `openai/gpt-4.1-mini` | 0,40 | 1,60 |
+| `gpt-4.1-nano` e `openai/gpt-4.1-nano` | 0,10 | 0,40 |
+| `gpt-4o` e `openai/gpt-4o` | 2,50 | 10,00 |
+| `gpt-4o-mini` e `openai/gpt-4o-mini` | 0,15 | 0,60 |
 
-A F2.2 confere cada valor na página de preços do provedor antes de gravar e registra a data no comentário do código, como em `llm/pricing.py`. O provedor `fake` não tem preço (custo `null`).
+Fonte: catálogo público do OpenRouter (`GET https://openrouter.ai/api/v1/models`, `pricing.prompt` e `pricing.completion` × 1 000 000), consultado em 2026-10-12 e registrado no comentário do código; os ids diretos de cada provedor usam o preço do mesmo modelo lá. O provedor `fake` não tem preço (custo `null`).
 
 **`KNOBRIDGE_CHAT_PRICES`** sobrescreve ou acrescenta preços, em JSON, no mesmo espírito de `KNOBRIDGE_EMBEDDING_PRICES` (mapa modelo → preço), com os dois preços por modelo:
 
@@ -89,7 +91,8 @@ Parâmetros: `from`, `to` (período), `group_by` (obrigatório, abaixo). Respost
 | `model` | Uma por modelo (de embedding ou de chat) | modelo / modelo | as do tipo do modelo |
 | `day` | Um dia UTC por linha, do primeiro ao último do período, inclusive dias vazios (com zeros) | `2026-10-01` / a mesma data | todas |
 
-- Colunas que não se aplicam ao agrupamento vêm `null` (não zero). `cost_usd` da linha é a soma dos custos conhecidos que se aplicam. `totals` é sempre do período inteiro, com todas as colunas.
+- Colunas que não se aplicam ao agrupamento vêm `null` (não zero). `cost_usd` da linha é a soma dos custos conhecidos que se aplicam; sem nenhum custo conhecido, a soma é `0` e `unpriced_runs`/`unpriced_answers` dizem quantos itens ficaram de fora. `totals` é sempre do período inteiro, com todas as colunas.
+- `channel` traz sempre as duas linhas (`panel` e `api`), com zeros quando o canal não teve resposta; em `model`, um modelo usado nos dois papéis vem numa linha só, com os dois lados.
 - Linhas ordenadas por `cost_usd` decrescente (nulos por último) e depois por `label`; em `day`, pela data. Sem paginação: o número de linhas é limitado pelo agrupamento (fontes, assistentes, chaves) ou pelo período (até 367 dias).
 - Fonte, coleção, assistente ou chave excluídos: as execuções e conversas vão junto (cascata), então somem do relatório. Assistente renomeado aparece com o nome atual.
 - Número constante de statements: um para os totais e um para as linhas.
@@ -165,7 +168,7 @@ Separado do painel para a tela carregar os números sem esperar as checagens. Re
 | `temporal` | Descrição do namespace pelo cliente Temporal. | `ok`, `error` |
 | `worker` | Descrição da fila de tarefas do worker (`DescribeTaskQueue`): `ok` se algum poller foi visto nos últimos 60 s, `error` se não há poller recente, `unknown` se o Temporal está fora. | `ok`, `error`, `unknown` |
 
-Cada item: `{"status", "checked_at", "detail"}`, com `detail` curto e nosso (ex.: `no worker polling the task queue`), nunca a mensagem do driver. As checagens rodam em paralelo, cada uma com timeout de 2 s (timeout = `error`). Falhas são logadas só pelo tipo da exceção.
+Corpo: `{"version", "api", "database", "temporal", "worker"}`. Cada item: `{"status", "checked_at", "detail"}`, com `detail` curto e nosso, nunca a mensagem do driver: `null` em `ok`; `database unreachable`, `temporal unreachable`, `task queue unreadable`, `no worker polling the task queue`, `check timed out` em `error`; `temporal down` no worker `unknown`. As checagens rodam em paralelo, cada uma com timeout de 2 s (timeout = `error`). Falhas são logadas só pelo tipo da exceção.
 
 ## Papéis e auditoria
 
