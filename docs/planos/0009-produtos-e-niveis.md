@@ -56,9 +56,9 @@ fases:
         commit: 6773c35
       - id: F2.4
         titulo: API pública e webhook por produto e nível (chaves com produtos e nível máximo, model produto:nível, canal público só usuário final)
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-13
         concluida_em: null
         commit: null
   - id: F3
@@ -71,12 +71,12 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-13
         concluida_em: 2026-10-13
-        commit: null
+        commit: f53a473
       - id: F3.2
         titulo: Nível por produto em Membros e convites, e nível mínimo nas fontes
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-13
         concluida_em: null
         commit: null
       - id: F3.3
@@ -496,6 +496,8 @@ Nenhuma.
 - 2026-10-13 — F2.2 iniciada (agente em worktree).
 - 2026-10-13 — F2.2 concluída: chat por produto e nível com filtro de nível mínimo no SQL da busca (teste prova que trecho acima do nível nunca chega ao LLM), modelo, temperatura e instruções do nível, ingestão gravando o nível, nível mínimo da fonte editável, uso por produto e nível e migração 0019; gates do agente: backend 2676 passed com 99,88%, frontend 1440; orquestrador: ruff, pyright e AGENTS na integração
 - 2026-10-13 — F3.1 concluída: telas de Produtos e Níveis de resposta, checklist com níveis; integrada sobre a F2.2; frontend 1466 passed, 98,62% branches
+- 2026-10-13 — F2.4 iniciada (agente em worktree).
+- 2026-10-13 — F3.2 iniciada (agente em worktree).
 
 ## 8. Encerramento
 
