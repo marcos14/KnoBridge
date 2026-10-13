@@ -5,6 +5,7 @@ import { auditHandlers } from "./audit";
 import { authHandlers } from "./auth";
 import { collectionsHandlers } from "./collections";
 import { conversationsHandlers } from "./conversations";
+import { dashboardHandlers } from "./dashboard";
 import { harnessHandlers } from "./harness";
 import { healthReadyOk } from "./health";
 import { invitesHandlers } from "./invites";
@@ -25,6 +26,7 @@ export * from "./audit";
 export * from "./auth";
 export * from "./collections";
 export * from "./conversations";
+export * from "./dashboard";
 export * from "./errors";
 export * from "./harness";
 export * from "./health";
@@ -65,4 +67,5 @@ export const handlers = [
   ...knowledgeHandlers,
   ...conversationsHandlers,
   ...workspaceConversationsHandlers,
+  ...dashboardHandlers,
 ];

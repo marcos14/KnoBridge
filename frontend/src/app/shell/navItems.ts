@@ -4,6 +4,7 @@ import {
   Cable,
   Cpu,
   Database,
+  Gauge,
   House,
   Library,
   MessageSquare,
@@ -36,7 +37,7 @@ export type WorkspaceArea =
   | "settings"
   | "audit";
 
-export type AdminArea = "workspaces" | "users" | "audit";
+export type AdminArea = "dashboard" | "workspaces" | "users" | "audit";
 
 interface AreaDefinition<Key extends string> {
   key: Key;
@@ -71,6 +72,7 @@ export const WORKSPACE_AREAS: readonly WorkspaceAreaDefinition[] = [
 ];
 
 export const ADMIN_AREAS: readonly AreaDefinition<AdminArea>[] = [
+  { key: "dashboard", path: "", icon: Gauge },
   { key: "workspaces", path: "workspaces", icon: Building2 },
   { key: "users", path: "users", icon: UserCog },
   { key: "audit", path: "audit", icon: ShieldCheck },
@@ -110,7 +112,7 @@ export function adminNavItems(): NavItem<AdminArea>[] {
   return ADMIN_AREAS.map(({ key, path, icon }) => ({
     key,
     to: joinPath("/admin", path),
-    end: false,
+    end: path === "",
     icon,
   }));
 }

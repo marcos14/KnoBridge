@@ -50,6 +50,11 @@ export function WorkspaceSwitcher() {
               {workspaces.map((workspace) => (
                 <DropdownMenuRadioItem key={workspace.id} value={workspace.id}>
                   {workspace.name}
+                  {workspace.access === "superadmin" && (
+                    <span className="text-muted-foreground ml-auto text-xs">
+                      {t("workspaceSwitcher.superadmin")}
+                    </span>
+                  )}
                   {workspace.status === "suspended" && (
                     <span className="text-muted-foreground ml-auto text-xs">
                       {t("workspaceSwitcher.suspended")}

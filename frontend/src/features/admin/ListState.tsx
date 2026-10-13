@@ -8,11 +8,13 @@ interface ListStateProps<Data> {
   query: UseQueryResult<Data>;
   /** Text shown while the first page loads. */
   loading: string;
+  /** Text of the load error (default: the list one). */
+  failed?: string;
   children: (data: Data) => ReactNode;
 }
 
 /** Loading text, load error with "try again", or the list itself once the data is there. */
-export function ListState<Data>({ query, loading, children }: ListStateProps<Data>) {
+export function ListState<Data>({ query, loading, failed, children }: ListStateProps<Data>) {
   const { t } = useTranslation();
 
   if (query.isPending) {
@@ -26,7 +28,7 @@ export function ListState<Data>({ query, loading, children }: ListStateProps<Dat
     return (
       <div className="flex flex-col items-start gap-3">
         <p role="alert" className="text-sm">
-          {t("admin.loadFailed")}
+          {failed ?? t("admin.loadFailed")}
         </p>
         <Button
           type="button"

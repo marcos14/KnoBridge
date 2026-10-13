@@ -4,9 +4,10 @@
 
 **Entra aqui**:
 
-- `AppShell.tsx`: `SidebarProvider` + link "pular para o conteúdo" + `AppSidebar` + `header` (alternar menu, `ApiStatus`, `UserMenu`) + `main` com o `<Outlet />`. 403 e 404 das rotas autenticadas aparecem dentro dele.
+- `AppShell.tsx`: `SidebarProvider` + link "pular para o conteúdo" + `AppSidebar` + `SuperadminAccessBanner` + `header` (alternar menu, `ApiStatus`, `UserMenu`) + `main` com o `<Outlet />`. 403 e 404 das rotas autenticadas aparecem dentro dele.
 - `AppSidebar.tsx`: `nav` "Navegação principal" com os itens do workspace ativo filtrados pelo papel e o grupo "Administração da instância" (só superadmin). No celular vira um `Sheet` (diálogo) que fecha ao navegar.
-- `navItems.ts`: `WORKSPACE_AREAS` (chave, caminho, papel mínimo, ícone) e `ADMIN_AREAS`; `workspaceNavItems`, `adminNavItems`, `areaMinRole`. **Fonte única**: o router guarda cada rota de área com o mesmo `minRole` do menu.
+- `SuperadminAccessBanner.tsx`: faixa fixa "Acesso de superadmin a <workspace>" enquanto `me.superadmin_access` não é nulo, com "Abrir" (fora do workspace acessado) e "Sair" (`DELETE /v1/admin/workspace-access`); saindo de dentro do workspace sem ser membro, volta para `/admin/workspaces`. O seletor marca o workspace acessado com "superadmin" (`access` do item em `me.workspaces`).
+- `navItems.ts`: `WORKSPACE_AREAS` (chave, caminho, papel mínimo, ícone) e `ADMIN_AREAS` (o primeiro, "Painel", é o índice `/admin` e só fica ativo nele); `workspaceNavItems`, `adminNavItems`, `areaMinRole`. **Fonte única**: o router guarda cada rota de área com o mesmo `minRole` do menu.
 - `WorkspaceSwitcher.tsx` (lista de `me.workspaces`, troca a rota para `/w/:id`), `UserMenu.tsx` (perfil, segurança, tema claro/escuro/sistema, sair: vai para `/login` sem `?next=`, porque outra pessoa pode entrar em seguida no mesmo navegador; quem navega é o `RequireAuth`, que vê o marcador de logout explícito gravado pelo `useLogout`; uma navegação própria aqui correria com ele).
 - `useTheme.ts`: aplica o tema do perfil no `<html>` (classe `dark`), espelha em `localStorage` para o primeiro paint e grava mudanças com `PATCH /v1/me` (otimista, via `useUpdateProfile`); em "sistema" acompanha a preferência do SO.
 - `useActiveWorkspace.ts`: workspace da URL ou, fora de `/w/...`, o último usado.

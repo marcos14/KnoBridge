@@ -47,10 +47,11 @@ export async function adminLogin(page: Page, request: APIRequestContext): Promis
   const { needs_setup: needsSetup } = (await status.json()) as { needs_setup: boolean };
   if (needsSetup) {
     await page.goto("/setup");
-    await page.getByLabel("Nome").fill(ADMIN.name);
+    await page.getByLabel("Nome", { exact: true }).fill(ADMIN.name);
     await page.getByLabel("E-mail").fill(ADMIN.email);
     await page.getByLabel("Senha", { exact: true }).fill(ADMIN.password);
     await page.getByLabel("Confirme a senha").fill(ADMIN.password);
+    await page.getByLabel("Nome do workspace").fill("Workspace da administração");
     await page.getByRole("button", { name: "Criar conta e entrar" }).click();
     await expect(page.getByRole("button", { name: "Menu do usuário" })).toBeVisible();
     await logout(page);

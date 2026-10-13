@@ -18,10 +18,14 @@ import {
   newPasswordFields,
   PASSWORD_MIN_LENGTH,
   withMatchingPasswords,
+  workspaceNameField,
 } from "@/lib/schemas";
 import { TextField } from "@/components/TextField";
 
-/** `/setup`: creates the first superadmin of a fresh instance and enters the panel. */
+/**
+ * `/setup`: creates the first superadmin of a fresh instance, with the first workspace (owned by
+ * them), and opens that workspace's home.
+ */
 export function SetupPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -29,23 +33,28 @@ export function SetupPage() {
   const schema = useMemo(
     () =>
       withMatchingPasswords(
-        z.object({ name: nameField(t), email: emailField(t), ...newPasswordFields(t) }),
+        z.object({
+          name: nameField(t),
+          email: emailField(t),
+          ...newPasswordFields(t),
+          workspaceName: workspaceNameField(t),
+        }),
         t,
       ),
     [t],
   );
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
-    defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
+    defaultValues: { name: "", email: "", password: "", confirmPassword: "", workspaceName: "" },
   });
 
-  function onSubmit({ name, email, password }: z.infer<typeof schema>) {
-    // The first workspace gets a default name until the form asks for it (plan 0008 F3.1).
+  function onSubmit({ name, email, password, workspaceName }: z.infer<typeof schema>) {
     setup.mutate(
-      { name, email, password, workspace_name: t("auth.setup.defaultWorkspaceName") },
+      { name, email, password, workspace_name: workspaceName },
       {
-        onSuccess: () => {
-          void navigate("/", { replace: true });
+        onSuccess: (me) => {
+          const workspace = me.workspaces[0];
+          void navigate(workspace === undefined ? "/" : `/w/${workspace.id}`, { replace: true });
         },
       },
     );
@@ -87,6 +96,13 @@ export function SetupPage() {
             type="password"
             label={t("auth.fields.confirmPassword")}
             autoComplete="new-password"
+          />
+          <TextField
+            control={form.control}
+            name="workspaceName"
+            label={t("auth.setup.workspaceName")}
+            autoComplete="organization"
+            description={t("auth.setup.workspaceNameHint")}
           />
           <Button type="submit" disabled={setup.isPending}>
             {setup.isPending ? t("auth.submitting") : t("auth.setup.submit")}

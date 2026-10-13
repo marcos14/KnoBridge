@@ -64,8 +64,16 @@ describe("workspaceNavItems", () => {
 });
 
 describe("adminNavItems", () => {
+  it("test_admin_nav_items_dashboard_is_exact_match", () => {
+    const [dashboard, workspaces] = adminNavItems();
+
+    expect(dashboard).toMatchObject({ key: "dashboard", to: "/admin", end: true });
+    expect(workspaces).toMatchObject({ to: "/admin/workspaces", end: false });
+  });
+
   it("test_admin_nav_items_point_to_admin_pages", () => {
     expect(adminNavItems().map(({ to }) => to)).toEqual([
+      "/admin",
       "/admin/workspaces",
       "/admin/users",
       "/admin/audit",

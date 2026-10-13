@@ -5,6 +5,7 @@ import { ApiStatus } from "@/components/ApiStatus";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 
 import { AppSidebar } from "./AppSidebar";
+import { SuperadminAccessBanner } from "./SuperadminAccessBanner";
 import { UserMenu } from "./UserMenu";
 
 const MAIN_ID = "main-content";
@@ -26,6 +27,7 @@ export function AppShell() {
       </a>
       <AppSidebar />
       <div className="flex min-w-0 flex-1 flex-col">
+        <SuperadminAccessBanner />
         <header className="flex h-14 items-center gap-2 border-b px-4">
           <SidebarTrigger aria-label={t("shell.toggleSidebar")} />
           <p className="font-semibold">{t("app.title")}</p>

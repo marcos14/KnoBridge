@@ -29,6 +29,9 @@ const SecurityPage = lazyPage(() =>
 const AdminUsersPage = lazyPage(() =>
   import("@/features/admin/AdminUsersPage").then((m) => m.AdminUsersPage),
 );
+const InstanceDashboardPage = lazyPage(() =>
+  import("@/features/admin/InstanceDashboardPage").then((m) => m.InstanceDashboardPage),
+);
 const AdminWorkspacesPage = lazyPage(() =>
   import("@/features/admin/AdminWorkspacesPage").then((m) => m.AdminWorkspacesPage),
 );
@@ -147,7 +150,7 @@ export const routes: RouteObject[] = [
                     path: "admin",
                     element: <RequireSuperadmin />,
                     children: [
-                      { index: true, element: <Navigate to="workspaces" replace /> },
+                      { index: true, element: InstanceDashboardPage },
                       { path: "workspaces", element: AdminWorkspacesPage },
                       { path: "users", element: AdminUsersPage },
                       { path: "audit", element: InstanceAuditPage },

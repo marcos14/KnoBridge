@@ -74,10 +74,10 @@ fases:
     subfases:
       - id: F3.1
         titulo: Primeiro acesso com workspace, Início com painel e primeiros passos, painel da instância e entrar no workspace
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
-        concluida_em: null
+        concluida_em: 2026-10-12
         commit: null
       - id: F3.2
         titulo: Tela de uso e custos
@@ -209,6 +209,13 @@ decisoes:
     decisao: "F2.4: API compatível com OpenAI em api/openai_compat.py, openai_wire.py e openai_errors.py (OpenAIRoute converte qualquer erro da rota, 422 vira 400 invalid_request; 413 no formato OpenAI); histórico do cliente entra no LLMCall logo antes da pergunta (with_history), sem mexer em chat.py; usage e cost_usd lidos da mensagem gravada; recusas: papel desconhecido, conteúdo que não é texto, response_format diferente de text, tool_choice fora de none/auto e n<1; mensagens vazias do histórico descartadas; se model casa com nome de um e id de outro, o id vence; texto do provedor nunca vaza no erro do stream"
     motivo: "contrato da F1.1 e compatibilidade com o SDK oficial"
     alternativas: "duplicar a rodada de chat para o protocolo OpenAI"
+    adr: null
+  - id: D15
+    data: 2026-10-12
+    por: agente
+    decisao: "F3.1: campo Nome do workspace na configuração inicial, que leva ao Início do workspace criado; Início com os cartões do painel (custo do mês só quando a API envia, owner/admin) e o checklist de 5 itens só com os pendentes, com links pelo papel da spec; painel da instância como página inicial de /admin (item Painel), com saúde buscada à parte; botão Entrar na lista de workspaces da administração e faixa fixa de acesso de superadmin com Abrir e Sair; entrar ou sair grava o me devolvido e recarrega os dados do workspace"
+    motivo: "contrato da F1.1 e primeiro acesso sem convite"
+    alternativas: "checklist com itens concluídos marcados; período no painel da instância"
     adr: null
 pendencias_usuario: []
 ---
@@ -451,6 +458,7 @@ Nenhuma.
 - 2026-10-12 — F2.4 concluída: API compatível com OpenAI (/v1/models e /v1/chat/completions com e sem streaming, citações em knobridge, erros no formato OpenAI) testada com o SDK oficial, integrada sobre a F2.2; backend 2420 passed com 99% de cobertura, frontend 1240
 - 2026-10-12 — F3.1 iniciada (agente em worktree).
 - 2026-10-12 — F3.2 iniciada (agente em worktree).
+- 2026-10-12 — F3.1 concluída: configuração inicial com o nome do workspace, Início com painel e primeiros passos, painel da instância e acesso de superadmin com faixa; gates do agente: frontend 1283 testes, 98,55% de branches, build e check:api; orquestrador: lint e typecheck na integração
 
 ## 8. Encerramento
 

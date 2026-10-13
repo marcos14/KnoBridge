@@ -16,8 +16,10 @@ import {
   adminWorkspacesServerError,
   adminWorkspaceStore,
   createWorkspaceFails,
+  enterWorkspaceFails,
   meAs,
   updateWorkspaceFails,
+  workspaceAccessStore,
 } from "@/test/handlers";
 import { renderWithProviders } from "@/test/renderWithProviders";
 import { server } from "@/test/server";
@@ -322,6 +324,51 @@ describe("AdminWorkspacesPage rename and status", () => {
       { workspaceId: OTHER_WORKSPACE_ID, change: { status: "active" } },
     ]);
     expect(meCalls).toEqual([]);
+  });
+
+  it("test_admin_workspaces_enter_opens_workspace_with_superadmin_access", async () => {
+    const gamma = makeAdminWorkspace({ id: adminId(7), name: "Gamma Labs", slug: "gamma" });
+    setup([...makeAdminWorkspaces(), gamma]);
+    const access = workspaceAccessStore(makeMe({ is_superadmin: true }), {
+      [gamma.id]: "Gamma Labs",
+    });
+    server.use(...access.handlers);
+    const user = userEvent.setup();
+    const { router } = await renderPage();
+
+    await user.click(screen.getByRole("button", { name: "Entrar em Gamma Labs" }));
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Início" })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe(`/w/${gamma.id}`);
+    expect(access.entered).toEqual([gamma.id]);
+    expect(screen.getByRole("region", { name: "Acesso de superadmin" })).toHaveTextContent(
+      "Acesso de superadmin a Gamma Labs",
+    );
+    expect(screen.getByRole("button", { name: "Trocar de workspace" })).toHaveTextContent(
+      "Gamma Labs",
+    );
+  });
+
+  it("test_admin_workspaces_enter_is_disabled_for_suspended_workspace", async () => {
+    setup();
+    await renderPage();
+
+    const button = screen.getByRole("button", { name: "Entrar em Beta Help" });
+    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute("title", "Reative o workspace antes de entrar.");
+    expect(screen.getByRole("button", { name: "Entrar em Acme Suporte" })).toBeEnabled();
+  });
+
+  it("test_admin_workspaces_enter_error_is_shown", async () => {
+    setup();
+    server.use(enterWorkspaceFails(403, "workspace_suspended"));
+    const user = userEvent.setup();
+    const { router } = await renderPage();
+
+    await user.click(screen.getByRole("button", { name: "Entrar em Acme Suporte" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Este workspace está suspenso.");
+    expect(router.state.location.pathname).toBe("/admin/workspaces");
   });
 
   it("test_admin_workspaces_update_error_is_shown", async () => {

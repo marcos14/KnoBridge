@@ -23,6 +23,7 @@
       "audit": "Auditoria"
     },
     "adminItems": {
+      "dashboard": "Painel",
       "workspaces": "Workspaces",
       "users": "Usuários",
       "audit": "Auditoria da instância"
@@ -38,7 +39,8 @@
     "label": "Trocar de workspace",
     "placeholder": "Selecionar workspace",
     "listLabel": "Seus workspaces",
-    "suspended": "suspenso"
+    "suspended": "suspenso",
+    "superadmin": "superadmin"
   },
   "userMenu": {
     "label": "Menu do usuário",
@@ -79,7 +81,52 @@
   },
   "home": {
     "title": "Início",
-    "description": "Bem-vindo ao painel do KnoBridge."
+    "description": "Resumo de {{name}}.",
+    "loading": "Carregando o painel…",
+    "loadFailed": "Não foi possível carregar o painel.",
+    "retry": "Tentar novamente",
+    "cards": {
+      "label": "Números do workspace",
+      "monthSince": "Números do mês contados desde {{date}}.",
+      "documents": "Documentos indexados",
+      "sources": "Fontes ativas",
+      "sourcesValue": "{{active}} de {{total}}",
+      "failedRuns": "Execuções com falha (7 dias)",
+      "conversations": "Conversas no mês",
+      "feedbackUp": "Avaliações positivas no mês",
+      "feedbackDown": "Avaliações negativas no mês",
+      "cost": "Custo estimado no mês",
+      "costDetail": "Embeddings {{embedding}}, chat {{chat}}",
+      "costPartial": "Custo parcial: há execuções ou respostas com modelo sem preço conhecido."
+    },
+    "checklist": {
+      "title": "Primeiros passos",
+      "description": "Siga estes passos para ter um assistente respondendo com fontes.",
+      "progress": "{{done}} de {{total}} concluídos",
+      "askAdmin": "Peça a um administrador do workspace para fazer este passo.",
+      "items": {
+        "provider": {
+          "title": "Cadastre um provedor de LLM",
+          "link": "Ir para Provedores"
+        },
+        "collection": {
+          "title": "Crie uma coleção",
+          "link": "Ir para Coleções"
+        },
+        "source": {
+          "title": "Adicione uma fonte e sincronize até concluir uma execução",
+          "link": "Ir para Fontes"
+        },
+        "assistant": {
+          "title": "Crie um assistente ativo ligado a uma coleção",
+          "link": "Ir para Assistentes"
+        },
+        "chat": {
+          "title": "Faça uma pergunta no chat e receba uma resposta com fonte",
+          "link": "Ir para o Chat"
+        }
+      }
+    }
   },
   "notFound": {
     "title": "Página não encontrada",
@@ -118,9 +165,10 @@
     "backToLogin": "Voltar para o login",
     "setup": {
       "title": "Configuração inicial",
-      "description": "Crie a conta do primeiro superadministrador desta instância do KnoBridge.",
+      "description": "Crie a conta do primeiro superadministrador e o primeiro workspace desta instância do KnoBridge.",
       "submit": "Criar conta e entrar",
-      "defaultWorkspaceName": "Meu workspace"
+      "workspaceName": "Nome do workspace",
+      "workspaceNameHint": "O primeiro workspace da instância, do qual você será proprietário. Dá para renomear depois."
     },
     "login": {
       "title": "Entrar",
@@ -1785,7 +1833,10 @@
       "reactivateLabel": "Reativar {{name}}",
       "reactivateTitle": "Reativar {{name}}?",
       "reactivateDescription": "Os membros voltam a ter acesso ao workspace.",
-      "reactivated": "Workspace {{name}} reativado."
+      "reactivated": "Workspace {{name}} reativado.",
+      "enter": "Entrar",
+      "enterLabel": "Entrar em {{name}}",
+      "enterSuspendedHint": "Reative o workspace antes de entrar."
     },
     "users": {
       "title": "Usuários da instância",
@@ -1825,7 +1876,86 @@
       "revokeTitle": "Remover {{name}} dos superadministradores?",
       "revokeDescription": "{{name}} deixa de administrar a instância. Os workspaces de que participa continuam iguais.",
       "revoked": "{{name}} não é mais superadministrador."
+    },
+    "dashboard": {
+      "title": "Painel da instância",
+      "description": "Visão geral de todos os workspaces: contagens, falhas recentes, uso e saúde dos serviços.",
+      "loading": "Carregando o painel…",
+      "loadFailed": "Não foi possível carregar o painel.",
+      "countsLabel": "Contagens da instância",
+      "workspaces": "Workspaces",
+      "workspacesDetail": "{{active}} ativos, {{suspended}} suspensos",
+      "users": "Usuários",
+      "usersDetail": "{{active}} ativos em 30 dias, {{suspended}} suspensos, {{superadmins}} superadmins",
+      "failedRuns": "Execuções com falha (7 dias)",
+      "failedAnswers": "Respostas com falha (7 dias)",
+      "health": {
+        "title": "Saúde dos serviços",
+        "version": "Versão {{version}}",
+        "loading": "Verificando os serviços…",
+        "loadFailed": "Não foi possível verificar os serviços.",
+        "checkedAt": "Verificado {{when}}",
+        "services": {
+          "api": "API",
+          "database": "Banco de dados",
+          "temporal": "Temporal",
+          "worker": "Worker"
+        },
+        "status": {
+          "ok": "Funcionando",
+          "error": "Com erro",
+          "unknown": "Desconhecido"
+        },
+        "details": {
+          "databaseUnreachable": "O banco de dados não respondeu.",
+          "temporalUnreachable": "O Temporal não respondeu.",
+          "taskQueueUnreadable": "Não foi possível ler a fila de tarefas do worker.",
+          "noWorkerPolling": "Nenhum worker consultou a fila de tarefas no último minuto.",
+          "checkTimedOut": "A verificação passou do tempo limite.",
+          "temporalDown": "Sem o Temporal, não dá para saber se o worker está no ar."
+        }
+      },
+      "failures": {
+        "title": "Falhas recentes",
+        "tableLabel": "Execuções com falha mais recentes",
+        "empty": "Nenhuma execução falhou recentemente.",
+        "columns": {
+          "workspace": "Workspace",
+          "source": "Fonte",
+          "error": "Erro",
+          "finishedAt": "Terminou"
+        },
+        "noError": "Sem mensagem de erro"
+      },
+      "usage": {
+        "title": "Uso",
+        "period": "De {{start}} a {{end}}",
+        "cost": "Custo estimado",
+        "embeddingTokens": "Tokens de embeddings",
+        "chatTokens": "Tokens do chat (entrada + saída)",
+        "answers": "Respostas do chat",
+        "partial": "Custo parcial: {{runs}} execuções e {{answers}} respostas usaram modelos sem preço conhecido.",
+        "byWorkspace": "Workspaces de maior custo",
+        "byWorkspaceLabel": "Custo por workspace",
+        "byWorkspaceEmpty": "Nenhum uso no período.",
+        "columns": {
+          "workspace": "Workspace",
+          "cost": "Custo",
+          "embeddingTokens": "Tokens de embeddings",
+          "chatTokens": "Tokens do chat"
+        }
+      }
     }
+  },
+  "superadminAccess": {
+    "label": "Acesso de superadmin",
+    "banner": "Acesso de superadmin a {{name}}",
+    "description": "Você tem papel de administrador neste workspace só nesta sessão, sem ser membro.",
+    "open": "Abrir",
+    "openLabel": "Abrir {{name}}",
+    "leave": "Sair",
+    "leaveLabel": "Sair do acesso de superadmin a {{name}}",
+    "leaving": "Saindo…"
   },
   "apiErrors": {
     "unknown": "Algo deu errado. Tente novamente.",

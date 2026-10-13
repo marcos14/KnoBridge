@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
 
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { DataTable, type DataTableColumn } from "@/components/DataTable";
@@ -7,6 +8,7 @@ import { FormAlert } from "@/components/FormAlert";
 import { Button } from "@/components/ui/button";
 import { translateApiError } from "@/i18n/apiErrors";
 import { type AdminWorkspace, useAdminWorkspaces, useUpdateWorkspace } from "@/lib/api/admin";
+import { useEnterWorkspace } from "@/lib/api/workspaceAccess";
 import { formatDateTime } from "@/lib/intl";
 
 import { CreateWorkspaceDialog } from "./CreateWorkspaceDialog";
@@ -18,7 +20,10 @@ import { StatusBadge } from "./StatusBadge";
 /** Rows per page of the admin tables (paged by the API). */
 export const ADMIN_PAGE_SIZE = 20;
 
-/** `/admin/workspaces` (superadmin): every workspace; create, rename, suspend and reactivate. */
+/**
+ * `/admin/workspaces` (superadmin): every workspace; create, rename, suspend, reactivate and enter
+ * (effective admin role in this session only).
+ */
 export function AdminWorkspacesPage() {
   const { t, i18n } = useTranslation();
   const [q, setQ] = useState("");
@@ -26,10 +31,13 @@ export function AdminWorkspacesPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const workspaces = useAdminWorkspaces({ q, limit: ADMIN_PAGE_SIZE, offset });
   const update = useUpdateWorkspace();
+  const enter = useEnterWorkspace();
+  const navigate = useNavigate();
 
   function startAction() {
     setNotice(null);
     update.reset();
+    enter.reset();
   }
 
   function onRename(workspace: AdminWorkspace, name: string) {
@@ -57,6 +65,17 @@ export function AdminWorkspacesPage() {
       },
     );
   }
+
+  function onEnter(workspace: AdminWorkspace) {
+    startAction();
+    enter.mutate(workspace.id, {
+      onSuccess: () => {
+        void navigate(`/w/${workspace.id}`);
+      },
+    });
+  }
+
+  const busy = update.isPending || enter.isPending;
 
   const columns: DataTableColumn<AdminWorkspace>[] = [
     {
@@ -94,16 +113,24 @@ export function AdminWorkspacesPage() {
       header: t("admin.workspaces.columns.actions"),
       cell: (workspace) => (
         <div className="flex flex-wrap gap-2">
-          <RenameWorkspaceDialog
-            workspace={workspace}
-            disabled={update.isPending}
-            onRename={onRename}
-          />
-          <StatusAction
-            workspace={workspace}
-            disabled={update.isPending}
-            onConfirm={onToggleStatus}
-          />
+          <Button
+            type="button"
+            size="sm"
+            disabled={busy || workspace.status === "suspended"}
+            title={
+              workspace.status === "suspended"
+                ? t("admin.workspaces.enterSuspendedHint")
+                : undefined
+            }
+            aria-label={t("admin.workspaces.enterLabel", { name: workspace.name })}
+            onClick={() => {
+              onEnter(workspace);
+            }}
+          >
+            {t("admin.workspaces.enter")}
+          </Button>
+          <RenameWorkspaceDialog workspace={workspace} disabled={busy} onRename={onRename} />
+          <StatusAction workspace={workspace} disabled={busy} onConfirm={onToggleStatus} />
         </div>
       ),
     },
@@ -136,6 +163,7 @@ export function AdminWorkspacesPage() {
         }}
       />
       {update.isError && <FormAlert message={translateApiError(update.error, t)} />}
+      {enter.isError && <FormAlert message={translateApiError(enter.error, t)} />}
       {notice !== null && (
         <p role="status" className="text-sm">
           {notice}

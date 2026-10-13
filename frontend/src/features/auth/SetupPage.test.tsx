@@ -3,8 +3,9 @@ import userEvent from "@testing-library/user-event";
 import { HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
-import { makeMe } from "@/test/factories";
+import { makeMe, makeWorkspace, OTHER_WORKSPACE_ID } from "@/test/factories";
 import {
+  meAs,
   meUnauthenticated,
   pendingPost,
   recordingPost,
@@ -34,6 +35,7 @@ async function fillForm(
   await user.type(screen.getByLabelText("E-mail"), "ana@example.test");
   await user.type(screen.getByLabelText("Senha"), password);
   await user.type(screen.getByLabelText("Confirme a senha"), confirmation);
+  await user.type(screen.getByLabelText("Nome do workspace"), "  Suporte Acme ");
 }
 
 describe("SetupPage", () => {
@@ -48,13 +50,39 @@ describe("SetupPage", () => {
     expect(await screen.findByRole("button", { name: "Enviando…" })).toBeDisabled();
   });
 
-  it("test_setup_page_creates_superadmin_and_enters_shell", async () => {
+  it("test_setup_page_creates_superadmin_and_workspace_and_opens_its_home", async () => {
     const user = userEvent.setup();
-    const setup = recordingPost("*/v1/setup", () =>
-      HttpResponse.json(makeMe({ is_superadmin: true, workspaces: [] }), { status: 201 }),
-    );
+    const me = makeMe({
+      is_superadmin: true,
+      workspaces: [makeWorkspace({ id: OTHER_WORKSPACE_ID, name: "Suporte Acme" })],
+    });
+    const setup = recordingPost("*/v1/setup", () => HttpResponse.json(me, { status: 201 }));
     const { router } = await renderSetup();
-    server.use(setup.handler);
+    server.use(setup.handler, meAs(me));
+
+    await fillForm(user);
+    await user.click(screen.getByRole("button", { name: "Criar conta e entrar" }));
+
+    expect(await screen.findByText("Resumo de Suporte Acme.")).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe(`/w/${OTHER_WORKSPACE_ID}`);
+    expect(setup.bodies).toEqual([
+      {
+        name: "Ana Teste",
+        email: "ana@example.test",
+        password: PASSWORD,
+        workspace_name: "Suporte Acme",
+      },
+    ]);
+  });
+
+  it("test_setup_page_without_workspace_in_answer_goes_to_root", async () => {
+    const user = userEvent.setup();
+    const me = makeMe({ is_superadmin: true, workspaces: [] });
+    const { router } = await renderSetup();
+    server.use(
+      recordingPost("*/v1/setup", () => HttpResponse.json(me, { status: 201 })).handler,
+      meAs(me),
+    );
 
     await fillForm(user);
     await user.click(screen.getByRole("button", { name: "Criar conta e entrar" }));
@@ -63,14 +91,35 @@ describe("SetupPage", () => {
       await screen.findByRole("heading", { name: "Você ainda não participa de nenhum workspace" }),
     ).toBeInTheDocument();
     expect(router.state.location.pathname).toBe("/");
-    expect(setup.bodies).toEqual([
-      {
-        name: "Ana Teste",
-        email: "ana@example.test",
-        password: PASSWORD,
-        workspace_name: "Meu workspace",
-      },
-    ]);
+  });
+
+  it("test_setup_page_requires_workspace_name", async () => {
+    const user = userEvent.setup();
+    const setup = recordingPost("*/v1/setup", () => HttpResponse.json(makeMe()));
+    await renderSetup();
+    server.use(setup.handler);
+
+    await user.type(screen.getByLabelText("Nome"), "Ana Teste");
+    await user.type(screen.getByLabelText("E-mail"), "ana@example.test");
+    await user.type(screen.getByLabelText("Senha"), PASSWORD);
+    await user.type(screen.getByLabelText("Confirme a senha"), PASSWORD);
+    await user.type(screen.getByLabelText("Nome do workspace"), "   ");
+    await user.click(screen.getByRole("button", { name: "Criar conta e entrar" }));
+
+    expect(await screen.findByText("Informe o nome do workspace.")).toBeInTheDocument();
+    expect(screen.getByLabelText("Nome do workspace")).toHaveFocus();
+    expect(setup.bodies).toEqual([]);
+  });
+
+  it("test_setup_page_limits_workspace_name_length", async () => {
+    const user = userEvent.setup();
+    await renderSetup();
+
+    await user.click(screen.getByLabelText("Nome do workspace"));
+    await user.paste("a".repeat(201));
+    await user.click(screen.getByRole("button", { name: "Criar conta e entrar" }));
+
+    expect(await screen.findByText("Use no máximo 200 caracteres.")).toBeInTheDocument();
   });
 
   it("test_setup_page_blocks_short_password", async () => {
