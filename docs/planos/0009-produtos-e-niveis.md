@@ -74,10 +74,10 @@ fases:
         commit: f53a473
       - id: F3.2
         titulo: Nível por produto em Membros e convites, e nível mínimo nas fontes
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-13
-        concluida_em: null
+        concluida_em: 2026-10-13
         commit: null
       - id: F3.3
         titulo: Chat com produto e nível, Conversas e Uso e custos por produto e nível, chaves de API por produto
@@ -237,6 +237,13 @@ decisoes:
     decisao: "F3.1: área Produtos no lugar de Assistentes (redireciona /assistants), seção Níveis de resposta nas Configurações salva por PATCH .../levels/{level} com todos os campos; instruções iguais ao texto padrão vão como nulo; sugestões de modelo fixas a partir dos preços conhecidos; checklist com levels e product sem o apelido assistant (a API já manda as chaves novas desde a F2.2); E2E da stack ainda vai a /assistants e é refeito na F4.1"
     motivo: "contrato gerado é PATCH por nível"
     alternativas: "PUT de todos os níveis; manter o apelido assistant"
+    adr: null
+  - id: D20
+    data: 2026-10-13
+    por: agente
+    decisao: "F3.2: Membros com a aba Níveis por produto (uma coluna por produto, padrão do papel ou nível explícito, PUT por par, quem tem papel maior fica só leitura); convite com nível opcional por produto; Fontes com nível mínimo na lista, filtro, detalhe e formulário (POST/PATCH só mandam min_level quando difere do padrão ou mudou, para o editor seguir salvando; aviso quando a fonte tem documentos); fonte de cards criada e editada no painel com Integração, Upload, Prévia e Indexação, generalizando features/sources/tickets em features/sources/push"
+    motivo: "telas sem duplicar as de chamados"
+    alternativas: "diálogo por membro; tela de cards separada"
     adr: null
 pendencias_usuario: []
 ---
@@ -498,6 +505,7 @@ Nenhuma.
 - 2026-10-13 — F3.1 concluída: telas de Produtos e Níveis de resposta, checklist com níveis; integrada sobre a F2.2; frontend 1466 passed, 98,62% branches
 - 2026-10-13 — F2.4 iniciada (agente em worktree).
 - 2026-10-13 — F3.2 iniciada (agente em worktree).
+- 2026-10-13 — F3.2 concluída: nível por produto em Membros e convites, nível mínimo nas Fontes e telas da fonte de cards; frontend 1527 passed, 98,7% branches
 
 ## 8. Encerramento
 

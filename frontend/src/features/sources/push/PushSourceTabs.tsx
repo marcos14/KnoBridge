@@ -3,33 +3,32 @@ import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { Source } from "@/lib/api/sources";
 
 import { DocumentsSection } from "../DocumentsSection";
 import { RunsSection } from "../RunsSection";
 import { IntegrationTab } from "./IntegrationTab";
 import { PreviewTab } from "./PreviewTab";
-import { parseTicketsSourceTab, TICKETS_SOURCE_TABS, type TicketsSourceTab } from "./tabs";
+import { parsePushSourceTab, PUSH_SOURCE_TABS, type PushSource, type PushSourceTab } from "./tabs";
 import { UploadTab } from "./UploadTab";
 
-interface TicketsSourceTabsProps {
+interface PushSourceTabsProps {
   workspaceId: string;
-  source: Source;
+  source: PushSource;
   /** Owners and admins issue the send token (a credential); editors only see the examples. */
   canManageToken: boolean;
 }
 
 /**
- * The body of a tickets source's detail for owners, admins and editors: how to send tickets by the
- * API (token and examples), the file upload, the anonymization preview and the indexing runs with
- * the documents. The open tab lives in the query string (`?tab=upload`).
+ * The body of a tickets or cards source's detail for owners, admins and editors: how to send items
+ * by the API (token and examples), the file upload, the anonymization preview and the indexing
+ * runs with the documents. The open tab lives in the query string (`?tab=upload`).
  */
-export function TicketsSourceTabs({ workspaceId, source, canManageToken }: TicketsSourceTabsProps) {
+export function PushSourceTabs({ workspaceId, source, canManageToken }: PushSourceTabsProps) {
   const { t } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const tab = parseTicketsSourceTab(searchParams.get("tab"));
+  const tab = parsePushSourceTab(searchParams.get("tab"));
 
-  function tabContent(id: TicketsSourceTab): ReactNode {
+  function tabContent(id: PushSourceTab): ReactNode {
     switch (id) {
       case "integration":
         return (
@@ -60,14 +59,14 @@ export function TicketsSourceTabs({ workspaceId, source, canManageToken }: Ticke
         setSearchParams({ tab: value }, { replace: true });
       }}
     >
-      <TabsList aria-label={t("tickets.tabs.label")}>
-        {TICKETS_SOURCE_TABS.map((id) => (
+      <TabsList aria-label={t(`${source.kind}.tabs.label`)}>
+        {PUSH_SOURCE_TABS.map((id) => (
           <TabsTrigger key={id} value={id}>
-            {t(`tickets.tabs.${id}`)}
+            {t(`ingest.tabs.${id}`)}
           </TabsTrigger>
         ))}
       </TabsList>
-      {TICKETS_SOURCE_TABS.map((id) => (
+      {PUSH_SOURCE_TABS.map((id) => (
         <TabsContent key={id} value={id}>
           {tabContent(id)}
         </TabsContent>

@@ -15,14 +15,14 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { translateApiError } from "@/i18n/apiErrors";
-import type { Source } from "@/lib/api/sources";
 import { type IngestToken, useRotateIngestToken } from "@/lib/api/tickets";
 
 import { INGEST_TOKEN_VARIABLE } from "./ingestExamples";
+import type { PushSource } from "./tabs";
 
 interface IngestTokenDialogProps {
   workspaceId: string;
-  source: Source;
+  source: PushSource;
 }
 
 /**
@@ -46,21 +46,21 @@ export function IngestTokenDialog({ workspaceId, source }: IngestTokenDialogProp
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button type="button" className="w-fit">
-          {t("tickets.token.generate")}
+          {t("ingest.token.generate")}
         </Button>
       </DialogTrigger>
       <DialogContent showCloseButton={false} className="sm:max-w-xl">
         {issued === null ? (
           <>
             <DialogHeader>
-              <DialogTitle>{t("tickets.token.confirmTitle", { name: source.name })}</DialogTitle>
-              <DialogDescription>{t("tickets.token.confirmDescription")}</DialogDescription>
+              <DialogTitle>{t("ingest.token.confirmTitle", { name: source.name })}</DialogTitle>
+              <DialogDescription>{t("ingest.token.confirmDescription")}</DialogDescription>
             </DialogHeader>
             {rotate.isError && <FormAlert message={translateApiError(rotate.error, t)} />}
             <DialogFooter>
               <DialogClose asChild>
                 <Button type="button" variant="outline">
-                  {t("tickets.token.cancel")}
+                  {t("ingest.token.cancel")}
                 </Button>
               </DialogClose>
               <Button
@@ -70,28 +70,28 @@ export function IngestTokenDialog({ workspaceId, source }: IngestTokenDialogProp
                   rotate.mutate(source.id, { onSuccess: setIssued });
                 }}
               >
-                {rotate.isPending ? t("tickets.token.generating") : t("tickets.token.confirm")}
+                {rotate.isPending ? t("ingest.token.generating") : t("ingest.token.confirm")}
               </Button>
             </DialogFooter>
           </>
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>{t("tickets.token.issuedTitle")}</DialogTitle>
+              <DialogTitle>{t("ingest.token.issuedTitle")}</DialogTitle>
               <DialogDescription>
-                {t("tickets.token.issuedDescription", { variable: INGEST_TOKEN_VARIABLE })}
+                {t("ingest.token.issuedDescription", { variable: INGEST_TOKEN_VARIABLE })}
               </DialogDescription>
             </DialogHeader>
             <section aria-labelledby="ingest-token-label" className="flex flex-col gap-2">
               <h3 id="ingest-token-label" className="text-sm font-medium">
-                {t("tickets.token.label")}
+                {t("ingest.token.label")}
               </h3>
               <code className="bg-muted rounded-md p-2 text-sm break-all">{issued.token}</code>
-              <CopyButton text={issued.token} label={t("tickets.token.copy")} />
+              <CopyButton text={issued.token} label={t("ingest.token.copy")} />
             </section>
             <DialogFooter>
               <DialogClose asChild>
-                <Button type="button">{t("tickets.token.done")}</Button>
+                <Button type="button">{t("ingest.token.done")}</Button>
               </DialogClose>
             </DialogFooter>
           </>

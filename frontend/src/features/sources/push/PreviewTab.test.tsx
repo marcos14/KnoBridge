@@ -56,7 +56,7 @@ describe("tickets preview", () => {
       "# Chamado 48213: Erro 4021 ao fechar o caixa",
     );
     expect(tickets.previews).toEqual([
-      { sourceId: TICKETS_SOURCE_ID, body: { ticket: SAMPLE_TICKET } },
+      { sourceId: TICKETS_SOURCE_ID, kind: "tickets", body: { ticket: SAMPLE_TICKET } },
     ]);
   });
 
@@ -100,7 +100,7 @@ describe("tickets preview", () => {
     const user = userEvent.setup();
     setup();
     server.use(
-      ticketActionFails("preview", 422, "validation_error", [
+      ...ticketActionFails("preview", 422, "validation_error", [
         { loc: ["title"], problem: "string_too_short" },
         { loc: [], problem: "model_type" },
       ]),
@@ -121,7 +121,7 @@ describe("tickets preview", () => {
   it("test_tickets_preview_shows_a_ticket_too_large_error", async () => {
     const user = userEvent.setup();
     setup();
-    server.use(ticketActionFails("preview", 422, "ticket_too_large", { max_bytes: 1048576 }));
+    server.use(...ticketActionFails("preview", 422, "ticket_too_large", { max_bytes: 1048576 }));
 
     await previewOf(user, JSON.stringify(SAMPLE_TICKET));
 

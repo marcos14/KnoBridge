@@ -859,6 +859,7 @@ export function makeFolderSource(overrides: Partial<Source> = {}): Source {
     collection_id: OTHER_COLLECTION_ID,
     name: "manuais",
     kind: "folder",
+    min_level: "end_user",
     config: { path: "/sources/manuais" },
     include_globs: ["**/*.md"],
     exclude_globs: ["rascunhos/**"],
@@ -944,6 +945,7 @@ export function makeRunnerSource(overrides: Partial<Source> = {}): Source {
     id: RUNNER_SOURCE_ID,
     name: "erp-local",
     kind: "runner",
+    min_level: "end_user",
     config: {
       runner_id: RUNNER_ID,
       repository: "erp-core",

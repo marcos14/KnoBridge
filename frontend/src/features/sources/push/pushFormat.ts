@@ -1,4 +1,10 @@
-import type { TicketIn, TicketUploadError } from "@/lib/api/tickets";
+import type {
+  CardIn,
+  PreviewItem,
+  PushSourceKind,
+  TicketIn,
+  TicketUploadError,
+} from "@/lib/api/tickets";
 
 /** Largest upload the API takes (`docs/specs/chamados.md`, "Upload no painel"): 50 MiB. */
 export const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
@@ -17,15 +23,32 @@ export function uploadFileProblem(file: { name: string; size: number }): UploadF
   return file.size > MAX_UPLOAD_BYTES ? "tooLarge" : null;
 }
 
+/** Item error codes of an upload the panel names, by kind; anything else shows the message. */
+export const KNOWN_UPLOAD_CODES = {
+  tickets: ["validation_error", "ticket_too_large", "duplicate_in_batch", "invalid_json"],
+  cards: ["validation_error", "card_too_large", "duplicate_in_batch", "invalid_json"],
+} as const satisfies Record<PushSourceKind, readonly string[]>;
+
+export type KnownUploadCode<K extends PushSourceKind> = (typeof KNOWN_UPLOAD_CODES)[K][number];
+
+/** `code` when the panel names it for `kind`; `undefined` otherwise. */
+export function knownUploadCode<K extends PushSourceKind>(
+  kind: K,
+  code: string,
+): KnownUploadCode<K> | undefined {
+  const known: readonly KnownUploadCode<K>[] = KNOWN_UPLOAD_CODES[kind];
+  return known.find((item) => item === code);
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 /**
- * The problems of a rejected ticket (`details` of `validation_error`: `[{loc, problem}]`) as
+ * The problems of a rejected item (`details` of `validation_error`: `[{loc, problem}]`) as
  * `field.0.sub: problem` lines; `problem` alone at the root. Anything else in `details` is skipped.
  */
-export function ticketProblems(details: unknown): string[] {
+export function itemProblems(details: unknown): string[] {
   if (!Array.isArray(details)) {
     return [];
   }
@@ -54,14 +77,14 @@ export function duplicateOf(details: unknown): number | null {
   return isRecord(details) && typeof details.first_index === "number" ? details.first_index : null;
 }
 
-export type PastedTicket =
-  { ok: true; ticket: TicketIn } | { ok: false; reason: "empty" | "invalidJson" | "notObject" };
+export type PastedItem =
+  { ok: true; item: PreviewItem } | { ok: false; reason: "empty" | "invalidJson" | "notObject" };
 
 /**
- * Reads the ticket pasted into the preview: a JSON object (the server validates its fields). An
- * empty text, JSON that does not parse or anything but an object is refused here.
+ * Reads the ticket or card pasted into the preview: a JSON object (the server validates its
+ * fields). An empty text, JSON that does not parse or anything but an object is refused here.
  */
-export function parsePastedTicket(text: string): PastedTicket {
+export function parsePastedItem(text: string, kind: PushSourceKind): PastedItem {
   if (text.trim() === "") {
     return { ok: false, reason: "empty" };
   }
@@ -71,8 +94,15 @@ export function parsePastedTicket(text: string): PastedTicket {
   } catch {
     return { ok: false, reason: "invalidJson" };
   }
-  // The server validates every field of the ticket; here it only has to be an object.
-  return isRecord(value)
-    ? { ok: true, ticket: value as TicketIn }
-    : { ok: false, reason: "notObject" };
+  if (!isRecord(value)) {
+    return { ok: false, reason: "notObject" };
+  }
+  // The server validates every field of the item; here it only has to be an object.
+  return {
+    ok: true,
+    item:
+      kind === "cards"
+        ? { kind, card: value as unknown as CardIn }
+        : { kind, ticket: value as unknown as TicketIn },
+  };
 }

@@ -1,0 +1,26 @@
+# frontend/src/features/sources/push/
+
+**Função**: o corpo do detalhe de uma fonte que recebe os itens por push, `tickets` (chamados) ou `cards` (cards de desenvolvimento), em `/w/:workspaceId/sources/:sourceId`, para owner, admin e editor: abas **Integração**, **Upload**, **Prévia** e **Indexação** (execuções e documentos de `../`). As duas fontes seguem o mesmo caminho (D5 e D17 do plano 0009): as telas são as mesmas, e o tipo da fonte escolhe as rotas (`.../tickets/*` ou `.../cards/*`, `/v1/ingest/<tipo>`) e os textos (`tickets.*` ou `cards.*`). Viewer vê só o cabeçalho e as execuções e documentos, sem abas.
+
+**Entra aqui**:
+
+- `PushSourceTabs.tsx` + `tabs.ts`: as abas, com a aberta em `?tab=` (`parsePushSourceTab`; desconhecida ou ausente abre a primeira) e o tipo `PushSource` (id, tipo, nome, ativa). Aba nova = um id em `PUSH_SOURCE_TABS`, o rótulo em `ingest.tabs.<id>` e o conteúdo no `switch`.
+- `PushSummary.tsx`: linhas do cabeçalho (origem, anonimização, notas internas ou comentários, status indexados), pelo tipo.
+- `InboxSummary.tsx` (topo da aba Integração, "Situação da integração"): resumo de `GET .../<tipo>/summary` (`useIngestSummary`): prefixo e data do token atual (`kbi_<prefixo>_…`, nunca o token) ou "nenhum token", contagens da caixa de entrada por estado (`formatCount`), os que falharam (só quando há) e o último recebimento (`formatDateTime`); erro com "Tentar novamente". Gerar token e upload recarregam o resumo (a chave fica sob a da fonte).
+- `IntegrationTab.tsx`: token de envio e exemplos de `POST /v1/ingest/<tipo>` (`curl` e Python só com a biblioteca padrão, de `ingestExamples.ts`, com um chamado ou um card sintético) com a origem do painel (`window.location.origin`) e o token lido da variável `KNOBRIDGE_INGEST_TOKEN`, nunca embutido; `CopyButton` em cada um. `IngestTokenDialog.tsx` (owner e admin; a rota do token é a mesma para os dois tipos): confirma que um token atual deixa de valer, gera e mostra o token uma única vez com "Copiar token"; fechar o diálogo descarta o token. Editor vê só os exemplos e o aviso de que owner ou admin gera o token.
+- `UploadTab.tsx`: arquivo `.json`/`.jsonl` (o cliente confere arquivo escolhido, extensão e 50 MiB; o servidor confere de novo), envio em `multipart/form-data` e `UploadReport.tsx` (total, formato, o que aconteceu com a sincronização, contagens por status e os itens recusados em `DataTable` paginada no navegador, 20 por página: linha (`.jsonl`) ou posição (`.json`), chamado ou card, erro conhecido do tipo traduzido (`KNOWN_UPLOAD_CODES`: `ticket_too_large` ou `card_too_large`) ou a mensagem do servidor, problemas `campo: problema` e a linha ou posição do primeiro em `duplicate_in_batch`; aviso de lista cortada em 1000).
+- `PreviewTab.tsx`: colar um chamado ou card em JSON (vazio, JSON inválido ou não objeto são recusados antes de enviar), ver o título, se anonimizou e se incluiu notas internas (chamado) ou comentários (card), os marcadores aplicados com a contagem e o Markdown; 422 com os problemas do item.
+- `pushFormat.ts` (limite e extensões do upload, `uploadFileProblem`, `KNOWN_UPLOAD_CODES`/`knownUploadCode`, `itemProblems`, `uploadErrorPosition`, `duplicateOf`, `parsePastedItem`) e `ingestExamples.ts` (`ingestCurl`, `ingestPython`), funções puras com teste.
+
+**Não entra aqui**: chamadas de API (`lib/api/tickets.ts`, que atende os dois tipos), campos da fonte no formulário (`../PushFields.tsx`, `../ticketsSourceForm.ts`, `../cardsSourceForm.ts`), citação de chamado ou card no chat (`components/`), textos (`i18n/locales/`: `ingest.*` para o que é comum, `tickets.*` e `cards.*` para o que muda por tipo).
+
+**Convenções locais**:
+
+- Texto que muda por tipo vive com o mesmo caminho em `tickets.*` e `cards.*` (ex.: `tickets.upload.title` e `cards.upload.title`) e é lido com ``t(`${kind}.upload.title`)``; o comum fica em `ingest.*`.
+- O resumo mostra só estados, datas e o prefixo do token; não há rota que liste payloads. "Testar conexão" continua dizendo se a fonte tem token (`ingest_token_missing`).
+- O token só existe no estado do diálogo; nada o guarda em cache, URL ou `localStorage`.
+- O upload recarrega a fonte, as execuções e o resumo (a sincronização pode ter começado); gerar token recarrega só o resumo; a prévia não muda nada em cache.
+
+**Como testar**: de `frontend/`, `pnpm test -- --coverage`. Pela árvore real (`renderWithProviders({ path: "/w/<id>/sources/<TICKETS_SOURCE_ID>?tab=upload" })`, ou `CARDS_SOURCE_ID`) com `sourceStore([makeTicketsSource()])` (ou `makeCardsSource()`) e `ticketStore({ token, report, preview, cardPreview, summary })` (atende os dois tipos; o resumo segue o token gerado; `summaryReads()`, `uploadKinds`, `previews` com o tipo; `ticketsSummaryServerError` e `ticketActionFails` são listas de handlers, use com `...`) de `@/test/handlers` (fábricas em `@/test/ticketFactories`); papéis com `meAs(makeMe({ workspaces: [makeWorkspace({ role })] }))`. Sob jsdom o `fetch` do Node não lê o `File` do jsdom (envia vazio): o handler confere só a parte `file` e o teste espia `FormData.prototype.append`.
+
+**Leia também**: [../AGENTS.md](../AGENTS.md); `docs/specs/chamados.md` ("Envio pela API", "Upload no painel", "Prévia do chamado", "Fonte do tipo tickets", "Resumo no painel"); `docs/specs/cards.md`.

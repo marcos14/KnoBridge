@@ -179,10 +179,47 @@ describe("source bodies", () => {
   });
 
   it("test_source_changes_leave_out_kind_and_collection_and_clear_empty_cron", () => {
-    const changes = sourceChanges(values({ active: false }));
+    const changes = sourceChanges(values({ active: false }), "product_dev");
     expect(changes).not.toHaveProperty("kind");
     expect(changes).not.toHaveProperty("collection_id");
+    expect(changes).not.toHaveProperty("min_level");
     expect(changes).toMatchObject({ schedule_cron: null, active: false, name: "erp-core" });
+  });
+
+  it("test_source_input_sends_the_min_level_only_when_it_is_not_the_kind_default", () => {
+    expect(sourceInput(values())).not.toHaveProperty("min_level");
+    expect(sourceInput(values({ minLevel: "product_dev" }))).not.toHaveProperty("min_level");
+    expect(sourceInput(values({ minLevel: "support" }))).toMatchObject({ min_level: "support" });
+    // The default follows the kind: a folder starts at the end user.
+    expect(sourceInput(values({ kind: "folder", minLevel: "end_user" }))).not.toHaveProperty(
+      "min_level",
+    );
+  });
+
+  it("test_source_changes_send_the_min_level_only_when_it_changed", () => {
+    const form = sourceFormDefaults(makeFolderSource({ min_level: "end_user" }), COLLECTION_ID);
+
+    expect(form.minLevel).toBe("end_user");
+    expect(sourceChanges(form, "end_user")).not.toHaveProperty("min_level");
+    expect(sourceChanges({ ...form, minLevel: "support" }, "end_user")).toMatchObject({
+      min_level: "support",
+    });
+  });
+
+  it("test_source_form_reads_and_sends_the_config_of_a_cards_source", () => {
+    const config = { anonymize: true, include_comments: false, statuses: ["done"] };
+    const form = sourceFormDefaults(makeSource({ kind: "cards", config }), COLLECTION_ID);
+
+    expect(form).toMatchObject({ anonymize: true, includeComments: false, cardStatuses: ["done"] });
+    expect(errorsOf({ ...form, path: "" })).toEqual({});
+    expect(errorsOf({ ...form, cardStatuses: [] })).toEqual({
+      cardStatuses: "Escolha ao menos um status.",
+    });
+    expect(sourceChanges(form, form.minLevel ?? "product_dev")).toMatchObject({
+      config,
+      include_globs: [],
+      exclude_globs: [],
+    });
   });
 
   it("test_source_form_reads_and_sends_the_config_of_a_tickets_source", () => {
@@ -198,7 +235,7 @@ describe("source bodies", () => {
       statuses: ["closed"],
     });
     expect(errorsOf({ ...form, path: "" })).toEqual({});
-    expect(sourceChanges({ ...form, name: "Chamados" })).toMatchObject({
+    expect(sourceChanges({ ...form, name: "Chamados" }, "product_dev")).toMatchObject({
       name: "Chamados",
       config,
       include_globs: [],

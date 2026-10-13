@@ -4,9 +4,9 @@ import { useTranslation } from "react-i18next";
 import { TextField } from "@/components/TextField";
 
 import { ChoiceField } from "./ChoiceField";
+import { PushFields } from "./PushFields";
 import { RunnerFields } from "./RunnerFields";
 import { MAX_INITIAL_COMMIT_LIMIT, type SourceFormValues } from "./sourceForm";
-import { TicketsFields } from "./TicketsFields";
 
 interface LocationFieldsProps {
   workspaceId: string;
@@ -18,8 +18,8 @@ interface LocationFieldsProps {
 /**
  * Kind and where the source is read from. Git: a clone on the server (path) or a public https
  * URL, an optional branch and how many commits the first run indexes. Folder: its path. Runner:
- * a repository on a user's machine and how the harness runs there (`RunnerFields`). Tickets:
- * sent by the API or uploaded, with the indexing settings (`TicketsFields`).
+ * a repository on a user's machine and how the harness runs there (`RunnerFields`). Tickets
+ * and cards: sent by the API or uploaded, with the indexing settings (`PushFields`).
  */
 export function LocationFields({ workspaceId, form, editing }: LocationFieldsProps) {
   const { t } = useTranslation();
@@ -39,12 +39,13 @@ export function LocationFields({ workspaceId, form, editing }: LocationFieldsPro
           { value: "folder", label: t("sources.kinds.folder") },
           { value: "runner", label: t("sources.kinds.runner") },
           { value: "tickets", label: t("sources.kinds.tickets") },
+          { value: "cards", label: t("sources.kinds.cards") },
         ]}
       />
       {kind === "runner" ? (
         <RunnerFields workspaceId={workspaceId} form={form} />
-      ) : kind === "tickets" ? (
-        <TicketsFields form={form} editing={editing} />
+      ) : kind === "tickets" || kind === "cards" ? (
+        <PushFields form={form} kind={kind} editing={editing} />
       ) : (
         <>
           {kind === "git" && (

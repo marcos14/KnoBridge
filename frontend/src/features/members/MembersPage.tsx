@@ -8,13 +8,14 @@ import { canManageWorkspace } from "@/lib/roles";
 
 import { InviteDialog } from "./InviteDialog";
 import { InvitesList } from "./InvitesList";
+import { MemberLevelsList } from "./MemberLevelsList";
 import { MembersList } from "./MembersList";
 
-type MembersTab = "members" | "invites";
+type MembersTab = "members" | "levels" | "invites";
 
 /**
- * `/w/:workspaceId/members`. Every member reads the list; owners and admins also manage roles,
- * remove members, invite and handle pending invitations.
+ * `/w/:workspaceId/members`. Every member reads the list; owners and admins also manage roles and
+ * each member's maximum level per product, remove members, invite and handle pending invitations.
  */
 export function MembersPage() {
   const { t } = useTranslation();
@@ -64,9 +65,13 @@ export function MembersPage() {
         >
           <TabsList>
             <TabsTrigger value="members">{t("members.tabs.members")}</TabsTrigger>
+            <TabsTrigger value="levels">{t("members.tabs.levels")}</TabsTrigger>
             <TabsTrigger value="invites">{t("members.tabs.invites")}</TabsTrigger>
           </TabsList>
           <TabsContent value="members">{members}</TabsContent>
+          <TabsContent value="levels">
+            <MemberLevelsList workspaceId={workspace.id} actorRole={workspace.role} />
+          </TabsContent>
           <TabsContent value="invites">
             <InvitesList workspaceId={workspace.id} actorRole={workspace.role} />
           </TabsContent>

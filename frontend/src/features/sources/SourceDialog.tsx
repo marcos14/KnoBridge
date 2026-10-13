@@ -38,6 +38,7 @@ import type { Collection } from "@/lib/api/collections";
 import { type Source, useCreateSource, useUpdateSource } from "@/lib/api/sources";
 
 import { LocationFields } from "./LocationFields";
+import { MinLevelField } from "./MinLevelField";
 import { ScheduleFields } from "./ScheduleFields";
 import {
   sourceChanges,
@@ -45,6 +46,7 @@ import {
   sourceFormSchema,
   type SourceFormValues,
   sourceInput,
+  usesGlobs,
 } from "./sourceForm";
 
 interface SourceDialogProps {
@@ -52,6 +54,8 @@ interface SourceDialogProps {
   /** The source to edit; absent, the dialog creates one. */
   source?: Source;
   collections: readonly Collection[];
+  /** Owners and admins: choose or change the minimum level (an access rule). */
+  canManageLevel: boolean;
   /** The element that opens the dialog (a `Button`). */
   trigger: ReactElement;
   onSaved: (source: Source) => void;
@@ -65,6 +69,7 @@ export function SourceDialog({
   workspaceId,
   source,
   collections,
+  canManageLevel,
   trigger,
   onSaved,
 }: SourceDialogProps) {
@@ -80,7 +85,7 @@ export function SourceDialog({
     resolver: zodResolver(schema),
     defaultValues: defaults(),
   });
-  // A tickets source has no files: globs do not apply (the API refuses them).
+  // Tickets and cards sources have no files: globs do not apply (the API refuses them).
   const kind = useWatch({ control: form.control, name: "kind" });
 
   function onOpenChange(next: boolean) {
@@ -99,7 +104,10 @@ export function SourceDialog({
       },
     };
     if (editing) {
-      update.mutate({ sourceId: source.id, changes: sourceChanges(values) }, done);
+      update.mutate(
+        { sourceId: source.id, changes: sourceChanges(values, source.min_level) },
+        done,
+      );
     } else {
       create.mutate(sourceInput(values), done);
     }
@@ -151,7 +159,7 @@ export function SourceDialog({
               )}
             />
             <LocationFields workspaceId={workspaceId} form={form} editing={editing} />
-            {kind !== "tickets" && (
+            {usesGlobs(kind) && (
               <>
                 <TextField
                   control={form.control}
@@ -169,6 +177,7 @@ export function SourceDialog({
                 />
               </>
             )}
+            <MinLevelField form={form} source={source} canChange={canManageLevel} />
             <ScheduleFields form={form} />
             <FormField
               control={form.control}

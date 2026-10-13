@@ -23,17 +23,24 @@ export function SourcesPage() {
     return <h1 className="text-xl font-semibold">{t("sources.title")}</h1>;
   }
   const canManage = hasRole(workspace.role, "editor");
+  // Owners and admins: send tokens and minimum levels are access rules.
+  const canManageAccess = canManageWorkspace(workspace.role);
   return (
     <div className="flex max-w-6xl flex-col gap-6">
       {sourceId === undefined ? (
-        <SourcesList key={workspace.id} workspaceId={workspace.id} canManage={canManage} />
+        <SourcesList
+          key={workspace.id}
+          workspaceId={workspace.id}
+          canManage={canManage}
+          canManageLevel={canManageAccess}
+        />
       ) : (
         <SourceDetail
           key={`${workspace.id}/${sourceId}`}
           workspaceId={workspace.id}
           sourceId={sourceId}
           canManage={canManage}
-          canManageTokens={canManageWorkspace(workspace.role)}
+          canManageAccess={canManageAccess}
         />
       )}
     </div>

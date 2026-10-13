@@ -330,7 +330,8 @@
     "description": "Pessoas com acesso a este workspace e o papel de cada uma.",
     "tabs": {
       "members": "Membros",
-      "invites": "Convites pendentes"
+      "invites": "Convites pendentes",
+      "levels": "Níveis por produto"
     },
     "search": "Buscar membros",
     "searchPlaceholder": "Nome ou e-mail",
@@ -394,7 +395,25 @@
       "roleHint": "Você pode convidar com papéis até o seu.",
       "submit": "Enviar convite",
       "cancel": "Cancelar",
-      "sent": "Convite enviado para {{email}}."
+      "sent": "Convite enviado para {{email}}.",
+      "levels": "Nível por produto (opcional)",
+      "levelsHint": "Em branco, vale o padrão do papel do convite. O nível vale a partir do aceite.",
+      "levelLabel": "Nível em {{product}}",
+      "levelDefault": "Padrão do papel ({{level}})",
+      "levelsLoading": "Carregando produtos…",
+      "levelsLoadFailed": "Não foi possível carregar os produtos."
+    },
+    "levels": {
+      "description": "O nível máximo de cada pessoa em cada produto: no chat ela responde nesse nível ou abaixo. Sem valor escolhido, vale o padrão do papel (owner e admin: Desenvolvimento e produto; editor e leitor: Usuário final).",
+      "tableLabel": "Níveis dos membros por produto",
+      "noProducts": "Nenhum produto cadastrado ainda. Os níveis aparecem aqui quando houver produtos.",
+      "inactive": "{{name}} (inativo)",
+      "cellLabel": "Nível de {{name}} em {{product}}",
+      "default": "Padrão do papel: {{level}}",
+      "changed": "{{name}} agora responde até {{level}} em {{product}}.",
+      "reset": "{{name}} voltou ao padrão do papel em {{product}}.",
+      "loading": "Carregando os níveis…",
+      "loadFailed": "Não foi possível carregar os níveis."
     }
   },
   "workspaceSettings": {
@@ -784,7 +803,8 @@
       "collection": "Coleção",
       "lastRun": "Última execução",
       "nextRun": "Próxima agendada",
-      "actions": "Ações"
+      "actions": "Ações",
+      "minLevel": "Nível mínimo"
     },
     "kinds": {
       "git": "Repositório Git",
@@ -976,8 +996,24 @@
         "budgetInvalid": "Informe um valor de {{min, number}} a {{max, number}}.",
         "timeoutInvalid": "Informe um número inteiro de {{min}} a {{max}}.",
         "excerptInvalid": "Informe um número inteiro de 0 a {{max}}.",
-        "statusesRequired": "Escolha ao menos um status."
-      }
+        "statusesRequired": "Escolha ao menos um status.",
+        "cardStatusesRequired": "Escolha ao menos um status."
+      },
+      "cardsHint": "Os cards chegam pela API (com o token da fonte) ou por upload de arquivo no detalhe da fonte. Cada envio já pede a sincronização.",
+      "cardsAnonymizeHint": "Troca e-mails, telefones, CPF, CNPJ, cartões, IPs e os nomes de relator, responsáveis e autores de comentários por marcadores antes de indexar.",
+      "includeComments": "Incluir comentários",
+      "includeCommentsHint": "Os comentários dos cards também entram no índice e podem aparecer nas respostas.",
+      "cardStatuses": "Status indexados",
+      "cardStatusesHint": "Cards com outros status ficam fora do índice.",
+      "cardsChangeHint": "Mudar estas opções vale para os cards processados depois. Os já indexados não são reprocessados: para reaplicar, reenvie os cards.",
+      "minLevel": "Nível mínimo",
+      "minLevelHint": "Só as respostas neste nível ou acima usam esta fonte. Padrão do tipo: {{level}}.",
+      "minLevelDefault": "{{level}} (padrão)",
+      "minLevelAdminsOnly": "Só owner e admin mudam o nível mínimo de uma fonte.",
+      "minLevelRaised_one": "Esta fonte tem {{formatted}} documento indexado: as respostas abaixo de {{level}} deixam de usá-lo assim que você salvar, sem reindexar.",
+      "minLevelRaised_other": "Esta fonte tem {{formatted}} documentos indexados: as respostas abaixo de {{level}} deixam de usá-los assim que você salvar, sem reindexar.",
+      "minLevelLowered_one": "Esta fonte tem {{formatted}} documento indexado: as respostas a partir de {{level}} passam a usá-lo assim que você salvar, sem reindexar.",
+      "minLevelLowered_other": "Esta fonte tem {{formatted}} documentos indexados: as respostas a partir de {{level}} passam a usá-los assim que você salvar, sem reindexar."
     },
     "detail": {
       "back": "Voltar para fontes",
@@ -987,13 +1023,14 @@
       "summary": "{{kind}} na coleção {{collection}}",
       "location": "Origem: {{location}}",
       "repository": "Repositório: {{repository}}",
-      "cardsByApi": "Cards chegam pela API de envio (/v1/ingest/cards); o painel ainda não edita esta fonte.",
       "branch": "Branch: {{branch}}",
       "include": "Incluir: {{globs}}",
       "exclude": "Excluir: {{globs}}",
       "schedule": "Agendamento: {{schedule}}",
       "nextRun": "Próxima execução: {{when}}",
-      "documentCount": "Documentos indexados: {{count}}"
+      "documentCount": "Documentos indexados: {{count}}",
+      "minLevel": "Nível mínimo: {{level}}",
+      "minLevelDefault": "{{level}} (padrão do tipo)"
     },
     "runs": {
       "title": "Execuções",
@@ -1062,25 +1099,11 @@
         "indexedAt": "Indexado em"
       },
       "notIndexed": "Ainda não indexado"
-    }
+    },
+    "allMinLevels": "Todos os níveis"
   },
-  "tickets": {
-    "status": {
-      "open": "Aberto",
-      "pending": "Pendente",
-      "resolved": "Resolvido",
-      "closed": "Fechado"
-    },
-    "summary": {
-      "origin": "Recebe chamados pela API e por upload de arquivo.",
-      "anonymized": "Anonimização ligada.",
-      "notAnonymized": "Anonimização desligada.",
-      "withInternalNotes": "Notas internas indexadas.",
-      "withoutInternalNotes": "Notas internas fora do índice.",
-      "statuses": "Status indexados: {{statuses}}"
-    },
+  "ingest": {
     "tabs": {
-      "label": "Seções da fonte de chamados",
       "integration": "Integração",
       "upload": "Upload",
       "preview": "Prévia",
@@ -1093,22 +1116,16 @@
       "retry": "Tentar novamente",
       "token": "Token atual: kbi_{{prefix}}_…, gerado em {{date}}.",
       "noToken": "Nenhum token de envio gerado ainda.",
-      "countsLabel": "Chamados recebidos por estado",
       "states": {
         "pending": "Aguardando processamento",
         "indexed": "Indexados",
         "filtered": "Fora dos status indexados",
         "pending_delete": "Remoções aguardando",
         "deleted": "Removidos"
-      },
-      "failed_one": "{{formatted}} chamado falhou no último processamento e será tentado de novo.",
-      "failed_other": "{{formatted}} chamados falharam no último processamento e serão tentados de novo.",
-      "lastReceived": "Último chamado recebido em {{date}}.",
-      "nothingReceived": "Nenhum chamado recebido ainda."
+      }
     },
     "token": {
       "title": "Token de envio",
-      "description": "O sistema de chamados se identifica com este token em POST /v1/ingest/tickets. O token aparece uma única vez ao ser gerado; gerar outro invalida o anterior na hora.",
       "managersOnly": "Um owner ou admin do workspace gera o token desta fonte.",
       "generate": "Gerar token",
       "confirmTitle": "Gerar o token de envio de {{name}}?",
@@ -1131,11 +1148,8 @@
       "copyPython": "Copiar exemplo Python"
     },
     "upload": {
-      "title": "Enviar arquivo de chamados",
-      "description": "Envie um export em .json (uma lista ou {\"items\": [...]}) ou .jsonl (um item por linha), com itens da API ou chamados puros. Itens inválidos são recusados linha a linha; os outros seguem.",
       "inactive": "A fonte está desativada: o envio será recusado até ela ser ativada.",
       "file": "Arquivo",
-      "fileHint": "Arquivo .json ou .jsonl de até {{max}} MiB. O arquivo não é guardado: só os chamados aceitos.",
       "submit": "Enviar arquivo",
       "sending": "Enviando…",
       "problems": {
@@ -1146,14 +1160,7 @@
       "columns": {
         "line": "Linha",
         "index": "Posição",
-        "ticket": "Chamado",
         "error": "Erro"
-      },
-      "codes": {
-        "validation_error": "Fora do formato do chamado",
-        "ticket_too_large": "Chamado acima de 1 MiB",
-        "duplicate_in_batch": "Chamado repetido no arquivo",
-        "invalid_json": "Linha que não é JSON válido"
       },
       "duplicateOfLine": "Já apareceu na linha {{first}}.",
       "duplicateOfIndex": "Já apareceu na posição {{first}}.",
@@ -1162,8 +1169,6 @@
         "summary": "{{total}} itens lidos do arquivo {{format}}.",
         "sync": {
           "started": "A indexação começou.",
-          "pending": "Já havia uma sincronização em andamento: os chamados entram na próxima.",
-          "deferred": "O serviço de sincronização está fora do ar: os chamados esperam a próxima sincronização.",
           "none": "Nada novo para indexar."
         },
         "counts": {
@@ -1178,27 +1183,129 @@
       }
     },
     "preview": {
-      "title": "Prévia de um chamado",
-      "description": "Cole um chamado no formato da API e veja o Markdown que vai para o índice, com a anonimização e as notas internas desta fonte. Nada é gravado.",
-      "ticket": "Chamado (JSON)",
-      "ticketHint": "Um objeto com external_id, title, status, created_at, updated_at e, se houver, mensagens e solução.",
       "submit": "Gerar prévia",
       "loading": "Gerando…",
-      "problems": {
-        "empty": "Cole um chamado em JSON.",
-        "invalidJson": "O texto não é um JSON válido.",
-        "notObject": "Cole um único chamado: um objeto JSON."
-      },
-      "problemsLabel": "Problemas do chamado",
+      "invalidJson": "O texto não é um JSON válido.",
       "resultTitle": "Prévia: {{title}}",
       "anonymized": "Com anonimização.",
       "notAnonymized": "Sem anonimização.",
-      "withInternalNotes": "Notas internas incluídas.",
-      "withoutInternalNotes": "Notas internas fora.",
       "markers": "Marcadores aplicados",
       "noMarkers": "Nenhum dado pessoal encontrado pelas regras.",
-      "marker": "{{marker}} × {{times}}",
+      "marker": "{{marker}} × {{times}}"
+    }
+  },
+  "tickets": {
+    "status": {
+      "open": "Aberto",
+      "pending": "Pendente",
+      "resolved": "Resolvido",
+      "closed": "Fechado"
+    },
+    "summary": {
+      "origin": "Recebe chamados pela API e por upload de arquivo.",
+      "anonymized": "Anonimização ligada.",
+      "notAnonymized": "Anonimização desligada.",
+      "withInternalNotes": "Notas internas indexadas.",
+      "withoutInternalNotes": "Notas internas fora do índice.",
+      "statuses": "Status indexados: {{statuses}}"
+    },
+    "tabs": {
+      "label": "Seções da fonte de chamados"
+    },
+    "inbox": {
+      "countsLabel": "Chamados recebidos por estado",
+      "failed_one": "{{formatted}} chamado falhou no último processamento e será tentado de novo.",
+      "failed_other": "{{formatted}} chamados falharam no último processamento e serão tentados de novo.",
+      "lastReceived": "Último chamado recebido em {{date}}.",
+      "nothingReceived": "Nenhum chamado recebido ainda."
+    },
+    "token": {
+      "description": "O sistema de chamados se identifica com este token em POST /v1/ingest/tickets. O token aparece uma única vez ao ser gerado; gerar outro invalida o anterior na hora."
+    },
+    "upload": {
+      "title": "Enviar arquivo de chamados",
+      "description": "Envie um export em .json (uma lista ou {\"items\": [...]}) ou .jsonl (um item por linha), com itens da API ou chamados puros. Itens inválidos são recusados linha a linha; os outros seguem.",
+      "fileHint": "Arquivo .json ou .jsonl de até {{max}} MiB. O arquivo não é guardado: só os chamados aceitos.",
+      "item": "Chamado",
+      "codes": {
+        "validation_error": "Fora do formato do chamado",
+        "ticket_too_large": "Chamado acima de 1 MiB",
+        "duplicate_in_batch": "Chamado repetido no arquivo",
+        "invalid_json": "Linha que não é JSON válido"
+      },
+      "sync": {
+        "pending": "Já havia uma sincronização em andamento: os chamados entram na próxima.",
+        "deferred": "O serviço de sincronização está fora do ar: os chamados esperam a próxima sincronização."
+      }
+    },
+    "preview": {
+      "title": "Prévia de um chamado",
+      "description": "Cole um chamado no formato da API e veja o Markdown que vai para o índice, com a anonimização e as notas internas desta fonte. Nada é gravado.",
+      "item": "Chamado (JSON)",
+      "itemHint": "Um objeto com external_id, title, status, created_at, updated_at e, se houver, mensagens e solução.",
+      "empty": "Cole um chamado em JSON.",
+      "notObject": "Cole um único chamado: um objeto JSON.",
+      "problemsLabel": "Problemas do chamado",
+      "withExtra": "Notas internas incluídas.",
+      "withoutExtra": "Notas internas fora.",
       "markdown": "Markdown do chamado"
+    }
+  },
+  "cards": {
+    "status": {
+      "backlog": "Backlog",
+      "in_progress": "Em andamento",
+      "done": "Concluído",
+      "cancelled": "Cancelado"
+    },
+    "summary": {
+      "origin": "Recebe cards de desenvolvimento pela API e por upload de arquivo.",
+      "anonymized": "Anonimização ligada.",
+      "notAnonymized": "Anonimização desligada.",
+      "withComments": "Comentários indexados.",
+      "withoutComments": "Comentários fora do índice.",
+      "statuses": "Status indexados: {{statuses}}"
+    },
+    "tabs": {
+      "label": "Seções da fonte de cards"
+    },
+    "inbox": {
+      "countsLabel": "Cards recebidos por estado",
+      "failed_one": "{{formatted}} card falhou no último processamento e será tentado de novo.",
+      "failed_other": "{{formatted}} cards falharam no último processamento e serão tentados de novo.",
+      "lastReceived": "Último card recebido em {{date}}.",
+      "nothingReceived": "Nenhum card recebido ainda."
+    },
+    "token": {
+      "description": "A ferramenta de cards (Jira, Azure DevOps, GitHub Issues…) se identifica com este token em POST /v1/ingest/cards. O token aparece uma única vez ao ser gerado; gerar outro invalida o anterior na hora."
+    },
+    "upload": {
+      "title": "Enviar arquivo de cards",
+      "description": "Envie um export em .json (uma lista ou {\"items\": [...]}) ou .jsonl (um item por linha), com itens da API ou cards puros. Itens inválidos são recusados linha a linha; os outros seguem.",
+      "fileHint": "Arquivo .json ou .jsonl de até {{max}} MiB. O arquivo não é guardado: só os cards aceitos.",
+      "item": "Card",
+      "codes": {
+        "validation_error": "Fora do formato do card",
+        "card_too_large": "Card acima de 1 MiB",
+        "duplicate_in_batch": "Card repetido no arquivo",
+        "invalid_json": "Linha que não é JSON válido"
+      },
+      "sync": {
+        "pending": "Já havia uma sincronização em andamento: os cards entram na próxima.",
+        "deferred": "O serviço de sincronização está fora do ar: os cards esperam a próxima sincronização."
+      }
+    },
+    "preview": {
+      "title": "Prévia de um card",
+      "description": "Cole um card no formato da API e veja o Markdown que vai para o índice, com a anonimização e os comentários desta fonte. Nada é gravado.",
+      "item": "Card (JSON)",
+      "itemHint": "Um objeto com external_id, title, type, status, created_at, updated_at e, se houver, descrição, critérios de aceite, ligações e comentários.",
+      "empty": "Cole um card em JSON.",
+      "notObject": "Cole um único card: um objeto JSON.",
+      "problemsLabel": "Problemas do card",
+      "withExtra": "Comentários incluídos.",
+      "withoutExtra": "Comentários fora.",
+      "markdown": "Markdown do card"
     }
   },
   "harness": {
@@ -2372,6 +2479,10 @@
     "webhook_expired": "O destino não aceitou o pedido em 24 horas.",
     "ticket_webhook_not_configured": "O webhook de chamados deste produto não está configurado.",
     "ticket_request_exists": "Já existe um pedido de chamado para esta resposta.",
-    "ticket_delivery_unavailable": "O serviço de entrega de chamados está indisponível. Tente de novo em instantes."
+    "ticket_delivery_unavailable": "O serviço de entrega de chamados está indisponível. Tente de novo em instantes.",
+    "member_level_product_invalid": "Um dos produtos não existe mais neste workspace. Recarregue a página.",
+    "invite_product_invalid": "Um dos produtos escolhidos não existe mais neste workspace.",
+    "card_too_large": "O card passa de 1 MiB.",
+    "source_kind_mismatch": "O token é de outro tipo de fonte."
   }
 }

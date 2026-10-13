@@ -19,21 +19,14 @@ import {
   useRemoveMember,
 } from "@/lib/api/members";
 import { formatDateTime } from "@/lib/intl";
-import { hasListCriteria, type ListSearchSpec, oneOf, sortLabelKey } from "@/lib/listSearch";
+import { hasListCriteria, sortLabelKey } from "@/lib/listSearch";
 import { canHandleRole, ROLES } from "@/lib/roles";
 
+import { MEMBER_LIST, MEMBER_SORTS } from "./memberListSearch";
 import { RoleSelect } from "./RoleSelect";
 
 /** Rows per page of the member table (paged by the API). */
 export const MEMBERS_PAGE_SIZE = 20;
-
-const MEMBER_SORTS = ["name", "-name", "email", "role", "-joined_at", "joined_at"] as const;
-
-/** Search, role filter and sort of the list, in the URL. */
-const MEMBER_LIST: ListSearchSpec<"role", (typeof MEMBER_SORTS)[number]> = {
-  filters: { role: oneOf(ROLES) },
-  sorts: MEMBER_SORTS,
-};
 
 interface MembersListProps {
   workspaceId: string;

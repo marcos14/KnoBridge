@@ -6,20 +6,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { translateApiError } from "@/i18n/apiErrors";
-import type { Source } from "@/lib/api/sources";
-import { useUploadTickets } from "@/lib/api/tickets";
+import { useUploadIngestFile } from "@/lib/api/tickets";
 
-import { MAX_UPLOAD_BYTES, UPLOAD_EXTENSIONS, uploadFileProblem } from "./ticketFormat";
+import { MAX_UPLOAD_BYTES, UPLOAD_EXTENSIONS, uploadFileProblem } from "./pushFormat";
+import type { PushSource } from "./tabs";
 import { UploadReport } from "./UploadReport";
 
 interface UploadTabProps {
   workspaceId: string;
-  source: Source;
+  source: PushSource;
 }
 
 /**
- * Sends a `.json` or `.jsonl` export of tickets (same items as the API, or bare tickets) and shows
- * the report: counts, what happened to the sync and the rejected items line by line.
+ * Sends a `.json` or `.jsonl` export of tickets or cards (same items as the API, or bare items)
+ * and shows the report: counts, what happened to the sync and the rejected items line by line.
  */
 export function UploadTab({ workspaceId, source }: UploadTabProps) {
   const { t } = useTranslation();
@@ -27,18 +27,18 @@ export function UploadTab({ workspaceId, source }: UploadTabProps) {
   const hintId = useId();
   const [file, setFile] = useState<File | null>(null);
   const [localProblem, setLocalProblem] = useState<string | null>(null);
-  const upload = useUploadTickets(workspaceId);
+  const upload = useUploadIngestFile(workspaceId);
 
   function onSubmit(event: SyntheticEvent) {
     event.preventDefault();
     if (file === null) {
-      setLocalProblem(t("tickets.upload.problems.missing"));
+      setLocalProblem(t("ingest.upload.problems.missing"));
       return;
     }
     const problem = uploadFileProblem(file);
     if (problem !== null) {
       setLocalProblem(
-        t(`tickets.upload.problems.${problem}`, {
+        t(`ingest.upload.problems.${problem}`, {
           extensions: UPLOAD_EXTENSIONS.join(", "),
           max: MAX_UPLOAD_BYTES / (1024 * 1024),
         }),
@@ -46,24 +46,24 @@ export function UploadTab({ workspaceId, source }: UploadTabProps) {
       return;
     }
     setLocalProblem(null);
-    upload.mutate({ sourceId: source.id, file });
+    upload.mutate({ source: { id: source.id, kind: source.kind }, file });
   }
 
   return (
     <div className="flex flex-col gap-6">
-      <section aria-labelledby="ticket-upload-title" className="flex flex-col gap-3">
-        <h2 id="ticket-upload-title" className="text-lg font-semibold">
-          {t("tickets.upload.title")}
+      <section aria-labelledby="ingest-upload-title" className="flex flex-col gap-3">
+        <h2 id="ingest-upload-title" className="text-lg font-semibold">
+          {t(`${source.kind}.upload.title`)}
         </h2>
-        <p className="text-muted-foreground text-sm">{t("tickets.upload.description")}</p>
-        {!source.active && <p className="text-sm">{t("tickets.upload.inactive")}</p>}
+        <p className="text-muted-foreground text-sm">{t(`${source.kind}.upload.description`)}</p>
+        {!source.active && <p className="text-sm">{t("ingest.upload.inactive")}</p>}
         <form noValidate className="flex flex-col gap-3" onSubmit={onSubmit}>
           {localProblem !== null && <FormAlert message={localProblem} />}
           {localProblem === null && upload.isError && (
             <FormAlert message={translateApiError(upload.error, t)} />
           )}
           <div className="flex flex-col gap-2">
-            <Label htmlFor={inputId}>{t("tickets.upload.file")}</Label>
+            <Label htmlFor={inputId}>{t("ingest.upload.file")}</Label>
             <Input
               id={inputId}
               type="file"
@@ -76,15 +76,15 @@ export function UploadTab({ workspaceId, source }: UploadTabProps) {
               }}
             />
             <p id={hintId} className="text-muted-foreground text-sm">
-              {t("tickets.upload.fileHint", { max: MAX_UPLOAD_BYTES / (1024 * 1024) })}
+              {t(`${source.kind}.upload.fileHint`, { max: MAX_UPLOAD_BYTES / (1024 * 1024) })}
             </p>
           </div>
           <Button type="submit" className="w-fit" disabled={upload.isPending}>
-            {upload.isPending ? t("tickets.upload.sending") : t("tickets.upload.submit")}
+            {upload.isPending ? t("ingest.upload.sending") : t("ingest.upload.submit")}
           </Button>
         </form>
       </section>
-      {upload.data !== undefined && <UploadReport report={upload.data} />}
+      {upload.data !== undefined && <UploadReport kind={source.kind} report={upload.data} />}
     </div>
   );
 }

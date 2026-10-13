@@ -8,20 +8,20 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { translateApiError } from "@/i18n/apiErrors";
 import { ApiError } from "@/lib/api/client";
-import type { Source } from "@/lib/api/sources";
-import { type TicketPreview, usePreviewTicket } from "@/lib/api/tickets";
+import { type IngestPreview, type PushSourceKind, usePreviewIngestItem } from "@/lib/api/tickets";
 
 import { formatCount } from "../format";
-import { parsePastedTicket, ticketProblems } from "./ticketFormat";
+import { itemProblems, parsePastedItem } from "./pushFormat";
+import type { PushSource } from "./tabs";
 
 interface PreviewTabProps {
   workspaceId: string;
-  source: Source;
+  source: PushSource;
 }
 
 /**
- * Paste one ticket and see the Markdown the index would get with the source's current settings,
- * with the anonymization markers applied. Nothing is written.
+ * Paste one ticket or card and see the Markdown the index would get with the source's current
+ * settings, with the anonymization markers applied. Nothing is written.
  */
 export function PreviewTab({ workspaceId, source }: PreviewTabProps) {
   const { t } = useTranslation();
@@ -29,28 +29,33 @@ export function PreviewTab({ workspaceId, source }: PreviewTabProps) {
   const hintId = useId();
   const [text, setText] = useState("");
   const [localProblem, setLocalProblem] = useState<string | null>(null);
-  const preview = usePreviewTicket(workspaceId);
-  const problems = preview.error instanceof ApiError ? ticketProblems(preview.error.details) : [];
+  const preview = usePreviewIngestItem(workspaceId);
+  const kind = source.kind;
+  const problems = preview.error instanceof ApiError ? itemProblems(preview.error.details) : [];
 
   function onSubmit(event: SyntheticEvent) {
     event.preventDefault();
-    const pasted = parsePastedTicket(text);
+    const pasted = parsePastedItem(text, kind);
     if (!pasted.ok) {
-      setLocalProblem(t(`tickets.preview.problems.${pasted.reason}`));
+      setLocalProblem(
+        pasted.reason === "invalidJson"
+          ? t("ingest.preview.invalidJson")
+          : t(`${kind}.preview.${pasted.reason}`),
+      );
       preview.reset();
       return;
     }
     setLocalProblem(null);
-    preview.mutate({ sourceId: source.id, ticket: pasted.ticket });
+    preview.mutate({ sourceId: source.id, item: pasted.item });
   }
 
   return (
     <div className="flex flex-col gap-6">
-      <section aria-labelledby="ticket-preview-title" className="flex flex-col gap-3">
-        <h2 id="ticket-preview-title" className="text-lg font-semibold">
-          {t("tickets.preview.title")}
+      <section aria-labelledby="ingest-preview-title" className="flex flex-col gap-3">
+        <h2 id="ingest-preview-title" className="text-lg font-semibold">
+          {t(`${kind}.preview.title`)}
         </h2>
-        <p className="text-muted-foreground text-sm">{t("tickets.preview.description")}</p>
+        <p className="text-muted-foreground text-sm">{t(`${kind}.preview.description`)}</p>
         <form noValidate className="flex flex-col gap-3" onSubmit={onSubmit}>
           {localProblem !== null && <FormAlert message={localProblem} />}
           {preview.isError && (
@@ -58,7 +63,7 @@ export function PreviewTab({ workspaceId, source }: PreviewTabProps) {
               <FormAlert message={translateApiError(preview.error, t)} />
               {problems.length > 0 && (
                 <ul
-                  aria-label={t("tickets.preview.problemsLabel")}
+                  aria-label={t(`${kind}.preview.problemsLabel`)}
                   className="text-muted-foreground font-mono text-xs"
                 >
                   {problems.map((problem) => (
@@ -69,7 +74,7 @@ export function PreviewTab({ workspaceId, source }: PreviewTabProps) {
             </div>
           )}
           <div className="flex flex-col gap-2">
-            <Label htmlFor={fieldId}>{t("tickets.preview.ticket")}</Label>
+            <Label htmlFor={fieldId}>{t(`${kind}.preview.item`)}</Label>
             <Textarea
               id={fieldId}
               rows={10}
@@ -81,45 +86,46 @@ export function PreviewTab({ workspaceId, source }: PreviewTabProps) {
               }}
             />
             <p id={hintId} className="text-muted-foreground text-sm">
-              {t("tickets.preview.ticketHint")}
+              {t(`${kind}.preview.itemHint`)}
             </p>
           </div>
           <Button type="submit" className="w-fit" disabled={preview.isPending}>
-            {preview.isPending ? t("tickets.preview.loading") : t("tickets.preview.submit")}
+            {preview.isPending ? t("ingest.preview.loading") : t("ingest.preview.submit")}
           </Button>
         </form>
       </section>
-      {preview.data !== undefined && <PreviewResult result={preview.data} />}
+      {preview.data !== undefined && <PreviewResult kind={kind} result={preview.data} />}
     </div>
   );
 }
 
-function PreviewResult({ result }: { result: TicketPreview }) {
+/** Whether the preview kept the kind's extra text: internal notes of a ticket, comments of a card. */
+function includesExtra(result: IngestPreview): boolean {
+  return "include_comments" in result ? result.include_comments : result.include_internal_notes;
+}
+
+function PreviewResult({ kind, result }: { kind: PushSourceKind; result: IngestPreview }) {
   const { t, i18n } = useTranslation();
   return (
-    <section aria-labelledby="ticket-preview-result" className="flex flex-col gap-3">
-      <h2 id="ticket-preview-result" className="text-lg font-semibold">
-        {t("tickets.preview.resultTitle", { title: result.title })}
+    <section aria-labelledby="ingest-preview-result" className="flex flex-col gap-3">
+      <h2 id="ingest-preview-result" className="text-lg font-semibold">
+        {t("ingest.preview.resultTitle", { title: result.title })}
       </h2>
       <p className="text-sm">
-        {t(result.anonymize ? "tickets.preview.anonymized" : "tickets.preview.notAnonymized")}{" "}
-        {t(
-          result.include_internal_notes
-            ? "tickets.preview.withInternalNotes"
-            : "tickets.preview.withoutInternalNotes",
-        )}
+        {t(result.anonymize ? "ingest.preview.anonymized" : "ingest.preview.notAnonymized")}{" "}
+        {t(includesExtra(result) ? `${kind}.preview.withExtra` : `${kind}.preview.withoutExtra`)}
       </p>
       {result.anonymize && (
         <div className="flex flex-col gap-2">
-          <h3 className="text-sm font-semibold">{t("tickets.preview.markers")}</h3>
+          <h3 className="text-sm font-semibold">{t("ingest.preview.markers")}</h3>
           {result.markers.length === 0 ? (
-            <p className="text-muted-foreground text-sm">{t("tickets.preview.noMarkers")}</p>
+            <p className="text-muted-foreground text-sm">{t("ingest.preview.noMarkers")}</p>
           ) : (
-            <ul aria-label={t("tickets.preview.markers")} className="flex flex-wrap gap-2">
+            <ul aria-label={t("ingest.preview.markers")} className="flex flex-wrap gap-2">
               {result.markers.map((item) => (
                 <li key={item.marker}>
                   <Badge variant="outline">
-                    {t("tickets.preview.marker", {
+                    {t("ingest.preview.marker", {
                       marker: item.marker,
                       times: formatCount(item.count, i18n.language),
                     })}
@@ -131,7 +137,7 @@ function PreviewResult({ result }: { result: TicketPreview }) {
         </div>
       )}
       <pre
-        aria-label={t("tickets.preview.markdown")}
+        aria-label={t(`${kind}.preview.markdown`)}
         className="bg-muted overflow-x-auto rounded-md p-3 font-mono text-xs whitespace-pre-wrap"
       >
         {result.markdown}

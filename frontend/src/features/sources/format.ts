@@ -1,7 +1,7 @@
 import type { TFunction } from "i18next";
 
 import { translateApiErrorCode } from "@/i18n/apiErrors";
-import type { Run } from "@/lib/api/sources";
+import type { Run, Source } from "@/lib/api/sources";
 
 import { type CronDescription, describeCron, formatCronTime } from "./cron";
 
@@ -118,4 +118,13 @@ export function testFailureReason(
   return reason === undefined
     ? translateApiErrorCode(error.code, t)
     : t(`sources.testReasons.${reason}`);
+}
+
+/** The minimum level of a source by name, saying when it is the default of its kind. */
+export function minLevelText(
+  source: Pick<Source, "min_level" | "min_level_is_default">,
+  t: TFunction,
+): string {
+  const level = t(`workspaceSettings.levels.names.${source.min_level}`);
+  return source.min_level_is_default ? t("sources.detail.minLevelDefault", { level }) : level;
 }

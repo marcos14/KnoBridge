@@ -137,7 +137,7 @@ describe("runner source form", () => {
 
   it("test_runner_source_changes_never_send_head_commit", () => {
     const source = makeRunnerSource();
-    const changes = sourceChanges(sourceFormDefaults(source, COLLECTION_ID));
+    const changes = sourceChanges(sourceFormDefaults(source, COLLECTION_ID), source.min_level);
 
     expect(changes.config).not.toHaveProperty("head_commit");
     expect(changes.config).toMatchObject({ runner_id: RUNNER_ID, budget_usd: 2.5 });

@@ -139,7 +139,7 @@ describe("tickets source detail", () => {
   it("test_tickets_source_token_failure_is_shown_in_the_dialog", async () => {
     const user = userEvent.setup();
     setup();
-    server.use(ticketActionFails("token", 403, "forbidden"));
+    server.use(...ticketActionFails("token", 403, "forbidden"));
     await renderSource();
 
     await user.click(screen.getByRole("button", { name: "Gerar token" }));
@@ -282,7 +282,7 @@ describe("tickets upload", () => {
   it("test_tickets_upload_shows_a_whole_file_error", async () => {
     const user = userEvent.setup();
     setup("editor");
-    server.use(ticketActionFails("upload", 422, "upload_empty"));
+    server.use(...ticketActionFails("upload", 422, "upload_empty"));
     await renderSource("upload");
 
     await user.upload(screen.getByLabelText("Arquivo"), new File([""], "vazio.jsonl"));

@@ -2,6 +2,7 @@ import type { Citation } from "@/lib/api/conversations";
 import type { Source } from "@/lib/api/sources";
 import type { TicketRequest, TicketRequestPreview } from "@/lib/api/ticketRequests";
 import type {
+  CardPreview,
   IngestToken,
   TicketPreview,
   TicketsSummary,
@@ -30,10 +31,67 @@ export function makeTicketsSource(overrides: Partial<Source> = {}): Source {
     },
     include_globs: [],
     exclude_globs: [],
+    min_level: "support",
     document_count: 0,
     last_run: null,
     ...overrides,
   });
+}
+
+/** Synthetic cards source "cards-dev" (plan 0009, F3.2). */
+export const CARDS_SOURCE_ID = "00000000-0000-4000-8000-0000000001b5";
+
+/** "cards-dev": a cards source in Código ERP, anonymizing, with comments, all statuses. */
+export function makeCardsSource(overrides: Partial<Source> = {}): Source {
+  return makeSource({
+    id: CARDS_SOURCE_ID,
+    name: "cards-dev",
+    kind: "cards",
+    config: {
+      anonymize: true,
+      include_comments: true,
+      statuses: ["backlog", "in_progress", "done", "cancelled"],
+    },
+    include_globs: [],
+    exclude_globs: [],
+    min_level: "product_dev",
+    document_count: 0,
+    last_run: null,
+    ...overrides,
+  });
+}
+
+/** A synthetic card in the API format, as pasted into the preview. */
+export const SAMPLE_CARD = {
+  external_id: "10482",
+  number: "PROJ-123",
+  title: "Permitir nota fiscal de exportação",
+  type: "feature",
+  status: "done",
+  created_at: "2026-09-01T10:00:00-03:00",
+  updated_at: "2026-10-01T18:30:00-03:00",
+  comments: [
+    {
+      author_name: "Bruno Lima",
+      body: "Validado com o cliente pelo telefone (11) 98765-4321.",
+      created_at: "2026-09-20T10:00:00-03:00",
+    },
+  ],
+};
+
+export function makeCardPreview(overrides: Partial<CardPreview> = {}): CardPreview {
+  return {
+    title: "Permitir nota fiscal de exportação",
+    markdown:
+      "# Card PROJ-123: Permitir nota fiscal de exportação\n\n- Tipo: Funcionalidade\n- Status: Concluído\n\n## Comentários\n\n**[RESPONSAVEL_1] · 2026-09-20**\n\nValidado com o cliente pelo telefone [TELEFONE].",
+    markers: [
+      { marker: "[TELEFONE]", count: 1 },
+      { marker: "[RESPONSAVEL_1]", count: 1 },
+    ],
+    anonymize: true,
+    include_comments: true,
+    ...overrides,
+  };
 }
 
 export function makeIngestToken(overrides: Partial<IngestToken> = {}): IngestToken {

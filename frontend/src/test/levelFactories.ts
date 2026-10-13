@@ -1,6 +1,34 @@
 import type { ResponseLevel, WorkspaceLevel } from "@/lib/api/levels";
+import type { MemberLevels, ProductRef } from "@/lib/api/memberLevels";
+import { defaultMaxLevel } from "@/lib/responseLevels";
 
-import { PROVIDER_ID } from "./factories";
+import { makeMembers, OTHER_PRODUCT_ID, PRODUCT_ID, PROVIDER_ID } from "./factories";
+
+/** The products of the levels table, by name: Rascunho (inactive) and Suporte ERP. */
+export function makeProductRefs(): ProductRef[] {
+  return [
+    { id: OTHER_PRODUCT_ID, name: "Rascunho", active: false },
+    { id: PRODUCT_ID, name: "Suporte ERP", active: true },
+  ];
+}
+
+/**
+ * The member × product table for the default members (Ana owner, Bruno admin, Carla editor, Davi
+ * viewer): everyone at the default of the role, except Carla, stored at `support` in Suporte ERP.
+ */
+export function makeMemberLevels(products: ProductRef[] = makeProductRefs()): MemberLevels[] {
+  return makeMembers().map((member) => ({
+    user_id: member.user_id,
+    name: member.name,
+    email: member.email,
+    role: member.role,
+    levels: products.map((product) =>
+      member.role === "editor" && product.id === PRODUCT_ID
+        ? { product_id: product.id, max_level: "support", explicit: true }
+        : { product_id: product.id, max_level: defaultMaxLevel(member.role), explicit: false },
+    ),
+  }));
+}
 
 /** Synthetic default instructions of each level (the real texts live in the backend). */
 export const DEFAULT_LEVEL_INSTRUCTIONS: Record<ResponseLevel, string> = {

@@ -121,7 +121,7 @@ describe("tickets inbox summary", () => {
 
   it("test_inbox_summary_failure_can_be_retried", async () => {
     setup();
-    server.use(ticketsSummaryServerError);
+    server.use(...ticketsSummaryServerError);
     const { user, section } = await renderIntegration();
 
     expect(await within(section).findByRole("alert")).toHaveTextContent(

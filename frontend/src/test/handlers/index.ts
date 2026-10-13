@@ -11,6 +11,7 @@ import { healthReadyOk } from "./health";
 import { invitesHandlers } from "./invites";
 import { knowledgeHandlers } from "./knowledge";
 import { levelsHandlers } from "./levels";
+import { memberLevelsHandlers } from "./memberLevels";
 import { membersHandlers } from "./members";
 import { productsHandlers } from "./products";
 import { providersHandlers } from "./providers";
@@ -36,6 +37,7 @@ export * from "./health";
 export * from "./invites";
 export * from "./knowledge";
 export * from "./levels";
+export * from "./memberLevels";
 export * from "./members";
 export * from "./page";
 export * from "./products";
@@ -61,6 +63,7 @@ export const handlers = [
   ...invitesHandlers,
   ...accountHandlers,
   ...membersHandlers,
+  ...memberLevelsHandlers,
   ...auditHandlers,
   ...adminHandlers,
   ...providersHandlers,

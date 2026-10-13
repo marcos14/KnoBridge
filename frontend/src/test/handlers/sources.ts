@@ -11,6 +11,7 @@ import type {
   SourceInput,
   SourceTestResult,
 } from "@/lib/api/sources";
+import { defaultSourceMinLevel } from "@/lib/responseLevels";
 
 import {
   makeRun,
@@ -146,11 +147,15 @@ interface SourceStoreOptions {
   documents?: Record<string, SourceDocument[]>;
   /** Connection test result of each source (default: success). */
   testResults?: Record<string, SourceTestResult>;
+  /** Answer a `PATCH` with `min_level` 403 `forbidden`, as for an editor (default: allowed). */
+  levelForbidden?: boolean;
 }
 
 /**
  * Sources that really change, with the backend's rules: `POST` adds one (409
- * `source_name_taken`), `PATCH` applies the given fields (`schedule_cron: null` clears it), `DELETE`
+ * `source_name_taken`; `min_level` omitted is the kind's default), `PATCH` applies the given
+ * fields (`schedule_cron: null` clears it; `min_level` recomputes `min_level_is_default`, or 403
+ * `forbidden` with `levelForbidden`), `DELETE`
  * removes it, `sync` queues a run (409 `source_inactive` or `sync_already_running`), `reindex`
  * too (and 409 `source_reindex_unsupported` for tickets; ids in `reindexed`), `cancel`
  * cancels the active one (409 `sync_not_running`). Runs, run errors and documents are served from
@@ -223,7 +228,9 @@ export function sourceStore(initial: Source[] = [makeSource()], options: SourceS
         schedule_cron: body.schedule_cron ?? null,
         next_run_at: null,
         document_count: 0,
-        min_level: body.min_level ?? undefined,
+        min_level: body.min_level ?? defaultSourceMinLevel(body.kind),
+        min_level_is_default:
+          (body.min_level ?? defaultSourceMinLevel(body.kind)) === defaultSourceMinLevel(body.kind),
         last_run: null,
       });
       sources = [...sources, source].sort((a, b) => a.name.localeCompare(b.name));
@@ -237,8 +244,14 @@ export function sourceStore(initial: Source[] = [makeSource()], options: SourceS
       if (source === undefined) {
         return apiErrorResponse(404, "source_not_found");
       }
+      if (body.min_level != null && options.levelForbidden === true) {
+        return apiErrorResponse(403, "forbidden", { required_role: "admin" });
+      }
+      const minLevel = body.min_level ?? source.min_level;
       const updated: Source = {
         ...source,
+        min_level: minLevel,
+        min_level_is_default: minLevel === defaultSourceMinLevel(source.kind),
         name: body.name ?? source.name,
         config: body.config ?? source.config,
         include_globs: body.include_globs ?? source.include_globs,
@@ -287,7 +300,7 @@ export function sourceStore(initial: Source[] = [makeSource()], options: SourceS
       if (source === undefined) {
         return apiErrorResponse(404, "source_not_found");
       }
-      if (source.kind === "tickets") {
+      if (source.kind === "tickets" || source.kind === "cards") {
         return apiErrorResponse(409, "source_reindex_unsupported");
       }
       if (!source.active) {

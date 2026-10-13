@@ -1,8 +1,17 @@
 import type { TFunction } from "i18next";
 import { z } from "zod";
 
+import type { ResponseLevel } from "@/lib/api/levels";
 import type { Source, SourceChanges, SourceInput, SourceKind } from "@/lib/api/sources";
+import { defaultSourceMinLevel } from "@/lib/responseLevels";
 
+import {
+  CARD_STATUSES,
+  CARDS_FORM_DEFAULTS,
+  cardsConfig,
+  cardsFieldsFromConfig,
+  type CardsFormFields,
+} from "./cardsSourceForm";
 import { CRON_MAX_LENGTH, isCronShape } from "./cron";
 import {
   HARNESS_EXECUTORS,
@@ -32,10 +41,12 @@ export const MAX_INITIAL_COMMIT_LIMIT = 5000;
 /** Where a Git source is read from: a clone on the server or a public https remote. */
 export type GitLocation = "path" | "url";
 
-export interface SourceFormValues extends RunnerFormFields, TicketsFormFields {
+export interface SourceFormValues extends RunnerFormFields, TicketsFormFields, CardsFormFields {
   name: string;
   collectionId: string;
   kind: SourceKind;
+  /** `null` follows the default of the kind (a new source); a stored source has its level. */
+  minLevel: ResponseLevel | null;
   location: GitLocation;
   path: string;
   url: string;
@@ -114,6 +125,9 @@ export function sourceFormSchema(t: TFunction) {
       includeInternalNotes: z.boolean(),
       anonymize: z.boolean(),
       statuses: z.array(z.enum(TICKET_STATUSES)),
+      includeComments: z.boolean(),
+      cardStatuses: z.array(z.enum(CARD_STATUSES)),
+      minLevel: z.enum(["end_user", "support", "product_dev"]).nullable(),
       location: z.enum(["path", "url"]),
       path: z.string().trim().max(PATH_MAX_LENGTH, tooLong(PATH_MAX_LENGTH)),
       url: z.string().trim(),
@@ -143,6 +157,10 @@ export function sourceFormSchema(t: TFunction) {
       } else if (values.kind === "tickets") {
         if (values.statuses.length === 0) {
           issue(ctx, "statuses", t("sources.form.validation.statusesRequired"));
+        }
+      } else if (values.kind === "cards") {
+        if (values.cardStatuses.length === 0) {
+          issue(ctx, "cardStatuses", t("sources.form.validation.cardStatusesRequired"));
         }
       } else if (!git || values.location === "path") {
         if (values.path === "") {
@@ -189,6 +207,7 @@ export function sourceFormDefaults(
       name: "",
       collectionId,
       kind: "git",
+      minLevel: null,
       location: "path",
       path: "",
       url: "",
@@ -201,6 +220,7 @@ export function sourceFormDefaults(
       active: true,
       ...RUNNER_FORM_DEFAULTS,
       ...TICKETS_FORM_DEFAULTS,
+      ...CARDS_FORM_DEFAULTS,
     };
   }
   const { config } = source;
@@ -209,6 +229,7 @@ export function sourceFormDefaults(
     name: source.name,
     collectionId: source.collection_id,
     kind: source.kind,
+    minLevel: source.min_level,
     location: typeof config.url === "string" ? "url" : "path",
     path: text(config.path),
     url: text(config.url),
@@ -221,12 +242,13 @@ export function sourceFormDefaults(
     active: source.active,
     ...runnerFieldsFromConfig(config),
     ...ticketsFieldsFromConfig(config),
+    ...cardsFieldsFromConfig(config),
   };
 }
 
 /**
  * Where a stored source is read from: its URL, its path or, for a runner, its repository. A
- * tickets source is not read from anywhere (tickets are sent to it): empty.
+ * tickets or cards source is not read from anywhere (items are sent to it): empty.
  */
 export function sourceLocation(source: Source): string {
   const { url, path, repository } = source.config;
@@ -238,7 +260,7 @@ export function sourceLocation(source: Source): string {
 
 /**
  * `config` for the kind: Git `{path | url, branch?, initial_commit_limit}`, folder `{path}`,
- * runner `runnerConfig`, tickets `ticketsConfig`.
+ * runner `runnerConfig`, tickets `ticketsConfig`, cards `cardsConfig`.
  */
 export function sourceConfig(values: SourceFormValues): Record<string, unknown> {
   if (values.kind === "runner") {
@@ -246,6 +268,9 @@ export function sourceConfig(values: SourceFormValues): Record<string, unknown> 
   }
   if (values.kind === "tickets") {
     return ticketsConfig(values);
+  }
+  if (values.kind === "cards") {
+    return cardsConfig(values);
   }
   if (values.kind === "folder") {
     return { path: values.path };
@@ -258,13 +283,28 @@ export function sourceConfig(values: SourceFormValues): Record<string, unknown> 
   };
 }
 
-/** Body of `POST`. A tickets source has no files, so no globs (the API refuses them). */
+/** Whether a source of `kind` reads files, so takes globs (tickets and cards are sent to it). */
+export function usesGlobs(kind: SourceKind): boolean {
+  return kind !== "tickets" && kind !== "cards";
+}
+
+/** The minimum level the form asks for: the chosen one or the default of the kind. */
+export function formMinLevel(values: Pick<SourceFormValues, "kind" | "minLevel">): ResponseLevel {
+  return values.minLevel ?? defaultSourceMinLevel(values.kind);
+}
+
+/**
+ * Body of `POST`. A source without files has no globs (the API refuses them). `min_level` goes
+ * only when it differs from the kind's default, which only owners and admins may ask for.
+ */
 export function sourceInput(values: SourceFormValues): SourceInput {
-  const globs = values.kind !== "tickets";
+  const globs = usesGlobs(values.kind);
+  const level = formMinLevel(values);
   return {
     collection_id: values.collectionId,
     kind: values.kind,
     name: values.name,
+    ...(level === defaultSourceMinLevel(values.kind) ? {} : { min_level: level }),
     config: sourceConfig(values),
     include_globs: globs ? globList(values.includeGlobs) : [],
     exclude_globs: globs ? globList(values.excludeGlobs) : [],
@@ -274,10 +314,16 @@ export function sourceInput(values: SourceFormValues): SourceInput {
   };
 }
 
-/** Body of `PATCH`: every editable field (kind and collection never change; empty cron clears). */
-export function sourceChanges(values: SourceFormValues): SourceChanges {
+/**
+ * Body of `PATCH`: every editable field (kind and collection never change; empty cron clears).
+ * `min_level` goes only when it changed from `storedLevel`: only owners and admins change it, and
+ * an editor still saves the other fields.
+ */
+export function sourceChanges(values: SourceFormValues, storedLevel: ResponseLevel): SourceChanges {
   const input = sourceInput(values);
+  const level = formMinLevel(values);
   return {
+    ...(level === storedLevel ? {} : { min_level: level }),
     name: input.name,
     config: input.config,
     include_globs: input.include_globs,

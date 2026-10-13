@@ -11,6 +11,7 @@ import { useListSearch } from "@/hooks/use-list-search";
 import { useOffsetClamp } from "@/hooks/use-offset-clamp";
 import { translateApiError } from "@/i18n/apiErrors";
 import { useCollections } from "@/lib/api/collections";
+import { RESPONSE_LEVELS } from "@/lib/api/levels";
 import { type Source, type SourceKind, useDeleteSource, useSourcePage } from "@/lib/api/sources";
 import {
   booleanFilter,
@@ -23,6 +24,7 @@ import {
 import { isUuid } from "@/lib/uuid";
 
 import { type Feedback, FeedbackMessage } from "./Feedback";
+import { minLevelText } from "./format";
 import { NextRun } from "./NextRun";
 import { RelativeTime } from "./RelativeTime";
 import { RunStatusBadge } from "./RunStatusBadge";
@@ -46,7 +48,7 @@ const SOURCE_SORTS = ["name", "-name", "-last_run_at", "-created_at", "-updated_
 
 /** Search, filters and sort of the list, in the URL. */
 const SOURCE_LIST: ListSearchSpec<
-  "kind" | "collection" | "active" | "lastRun",
+  "kind" | "collection" | "active" | "lastRun" | "minLevel",
   (typeof SOURCE_SORTS)[number]
 > = {
   filters: {
@@ -54,6 +56,7 @@ const SOURCE_LIST: ListSearchSpec<
     collection: isUuid,
     active: isBooleanFilter,
     lastRun: oneOf(LAST_RUN_FILTERS),
+    minLevel: oneOf(RESPONSE_LEVELS),
   },
   sorts: SOURCE_SORTS,
 };
@@ -62,9 +65,11 @@ interface SourcesListProps {
   workspaceId: string;
   /** Owner, admin or editor: create, edit, delete and sync (viewers only read). */
   canManage: boolean;
+  /** Owner or admin: choose or change the minimum level of a source. */
+  canManageLevel: boolean;
 }
 
-export function SourcesList({ workspaceId, canManage }: SourcesListProps) {
+export function SourcesList({ workspaceId, canManage, canManageLevel }: SourcesListProps) {
   const { t } = useTranslation();
   const [feedback, setFeedback] = useState<Feedback>(null);
   const { search, setQuery, setFilter, setSort, setOffset, clear } = useListSearch(SOURCE_LIST);
@@ -75,6 +80,7 @@ export function SourcesList({ workspaceId, canManage }: SourcesListProps) {
     collection_id: filters.collection,
     active: booleanFilter(filters.active),
     last_run_status: LAST_RUN_FILTERS.find((status) => status === filters.lastRun),
+    min_level: RESPONSE_LEVELS.find((level) => level === filters.minLevel),
     sort: search.sort,
     limit: SOURCES_PAGE_SIZE,
     offset: search.offset,
@@ -182,6 +188,11 @@ export function SourcesList({ workspaceId, canManage }: SourcesListProps) {
       cell: (item) => collectionNames.get(item.collection_id),
     },
     {
+      key: "minLevel",
+      header: t("sources.columns.minLevel"),
+      cell: (item) => minLevelText(item, t),
+    },
+    {
       key: "lastRun",
       header: t("sources.columns.lastRun"),
       cell: (item) =>
@@ -213,6 +224,7 @@ export function SourcesList({ workspaceId, canManage }: SourcesListProps) {
             workspaceId={workspaceId}
             source={item}
             collections={allCollections}
+            canManageLevel={canManageLevel}
             trigger={
               <Button
                 type="button"
@@ -258,6 +270,7 @@ export function SourcesList({ workspaceId, canManage }: SourcesListProps) {
           <SourceDialog
             workspaceId={workspaceId}
             collections={allCollections}
+            canManageLevel={canManageLevel}
             trigger={<Button type="button">{t("sources.create")}</Button>}
             onSaved={showSaved("sources.created")}
           />
@@ -310,6 +323,15 @@ export function SourcesList({ workspaceId, canManage }: SourcesListProps) {
               value: status,
               label:
                 status === "never" ? t("sources.neverSynced") : t(`sources.runStatus.${status}`),
+            })),
+          },
+          {
+            ...filter("minLevel"),
+            label: t("sources.columns.minLevel"),
+            allLabel: t("sources.allMinLevels"),
+            options: RESPONSE_LEVELS.map((level) => ({
+              value: level,
+              label: t(`workspaceSettings.levels.names.${level}`),
             })),
           },
         ]}

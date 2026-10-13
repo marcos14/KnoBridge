@@ -1,65 +1,65 @@
 import { useTranslation } from "react-i18next";
 
 import { CopyButton } from "@/components/CopyButton";
-import type { Source } from "@/lib/api/sources";
 
-import { InboxSummary } from "./InboxSummary";
-import { INGEST_TOKEN_VARIABLE, ticketIngestCurl, ticketIngestPython } from "./ingestExamples";
+import { INGEST_TOKEN_VARIABLE, ingestCurl, ingestPython } from "./ingestExamples";
 import { IngestTokenDialog } from "./IngestTokenDialog";
+import { InboxSummary } from "./InboxSummary";
+import type { PushSource } from "./tabs";
 
 interface IntegrationTabProps {
   workspaceId: string;
-  source: Source;
+  source: PushSource;
   canManageToken: boolean;
 }
 
 /**
- * How another system sends tickets: where the integration stands (current token and inbox
- * counts), the send token (issued or replaced by owners and admins, shown
- * once) and the `curl` and Python examples, with the panel's origin as the server and the token
- * read from an environment variable.
+ * How another system sends tickets or cards: where the integration stands (current token and inbox
+ * counts), the send token (issued or replaced by owners and admins, shown once) and the `curl` and
+ * Python examples of the kind's route, with the panel's origin as the server and the token read
+ * from an environment variable.
  */
 export function IntegrationTab({ workspaceId, source, canManageToken }: IntegrationTabProps) {
   const { t } = useTranslation();
   // The panel and the API share the origin (`/v1` is proxied), so this is the ingest server.
-  const curl = ticketIngestCurl(window.location.origin);
-  const python = ticketIngestPython(window.location.origin);
+  const curl = ingestCurl(window.location.origin, source.kind);
+  const python = ingestPython(window.location.origin, source.kind);
 
   return (
     <div className="flex flex-col gap-6">
       <section aria-labelledby="ingest-inbox-title" className="flex flex-col gap-2">
         <h2 id="ingest-inbox-title" className="text-lg font-semibold">
-          {t("tickets.inbox.title")}
+          {t("ingest.inbox.title")}
         </h2>
-        <InboxSummary workspaceId={workspaceId} sourceId={source.id} />
+        <InboxSummary workspaceId={workspaceId} source={source} />
       </section>
       <section aria-labelledby="ingest-token-title" className="flex flex-col gap-2">
         <h2 id="ingest-token-title" className="text-lg font-semibold">
-          {t("tickets.token.title")}
+          {t("ingest.token.title")}
         </h2>
-        <p className="text-muted-foreground text-sm">{t("tickets.token.description")}</p>
+        <p className="text-muted-foreground text-sm">{t(`${source.kind}.token.description`)}</p>
         {canManageToken ? (
           <IngestTokenDialog workspaceId={workspaceId} source={source} />
         ) : (
-          <p className="text-sm">{t("tickets.token.managersOnly")}</p>
+          <p className="text-sm">{t("ingest.token.managersOnly")}</p>
         )}
       </section>
       <section aria-labelledby="ingest-examples-title" className="flex flex-col gap-3">
         <h2 id="ingest-examples-title" className="text-lg font-semibold">
-          {t("tickets.examples.title")}
+          {t("ingest.examples.title")}
         </h2>
         <p className="text-muted-foreground text-sm">
-          {t("tickets.examples.description", { variable: INGEST_TOKEN_VARIABLE })}
+          {t("ingest.examples.description", { variable: INGEST_TOKEN_VARIABLE })}
         </p>
         <Example
-          label={t("tickets.examples.curl")}
+          label={t("ingest.examples.curl")}
           code={curl}
-          copy={t("tickets.examples.copyCurl")}
+          copy={t("ingest.examples.copyCurl")}
         />
         <Example
-          label={t("tickets.examples.python")}
+          label={t("ingest.examples.python")}
           code={python}
-          copy={t("tickets.examples.copyPython")}
+          copy={t("ingest.examples.copyPython")}
         />
       </section>
     </div>

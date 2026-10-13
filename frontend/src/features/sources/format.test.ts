@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { i18n } from "@/i18n";
 import { makeRun } from "@/test/factories";
 
-import { cronText, formatDuration, runDuration, testFailureReason } from "./format";
+import { cronText, formatDuration, minLevelText, runDuration, testFailureReason } from "./format";
 
 const t = i18n.t.bind(i18n);
 
@@ -80,5 +80,16 @@ describe("testFailureReason", () => {
     expect(
       testFailureReason({ code: "source_timeout", details: { reason: "runner_offline" } }, t),
     ).toBe(t("apiErrors.source_timeout"));
+  });
+});
+
+describe("minLevelText", () => {
+  it("test_min_level_text_names_the_level_and_marks_the_default", () => {
+    expect(minLevelText({ min_level: "support", min_level_is_default: true }, t)).toBe(
+      "Suporte (padrão do tipo)",
+    );
+    expect(minLevelText({ min_level: "end_user", min_level_is_default: false }, t)).toBe(
+      "Usuário final",
+    );
   });
 });
