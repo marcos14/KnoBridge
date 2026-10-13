@@ -13,7 +13,6 @@ import {
   OTHER_ASSISTANT_ID,
   OTHER_COLLECTION_ID,
   OTHER_WORKSPACE_ID,
-  PROVIDER_ID,
   WORKSPACE_ID,
 } from "@/test/factories";
 import {
@@ -79,16 +78,14 @@ async function pick(user: User, dialog: HTMLElement, field: string, option: stri
 }
 
 describe("AssistantsPage list", () => {
-  it("test_assistants_page_lists_assistants_with_status_and_provider", async () => {
+  it("test_assistants_page_lists_assistants_with_status", async () => {
     await renderAssistants();
 
     expect(screen.getByRole("heading", { level: 1, name: "Assistentes" })).toBeInTheDocument();
     const active = rowOf("Suporte ERP");
     expect(within(active).getByText("Dúvidas sobre o ERP.")).toBeInTheDocument();
-    expect(within(active).getByText("OpenAI Produção · gpt-4.1-mini")).toBeInTheDocument();
     expect(within(active).getByText("Ativo")).toBeInTheDocument();
     const draft = rowOf("Rascunho");
-    expect(within(draft).getByText("Anthropic · claude-sonnet")).toBeInTheDocument();
     expect(within(draft).getByText("Inativo")).toBeInTheDocument();
   });
 
@@ -107,12 +104,11 @@ describe("AssistantsPage list", () => {
     expect(screen.getByText("Nenhum assistente cadastrado.")).toBeInTheDocument();
   });
 
-  it("test_assistants_page_shows_model_alone_when_provider_is_not_listed", async () => {
+  it("test_assistants_page_edits_without_providers", async () => {
     const user = userEvent.setup();
     server.use(providersAs([]), assistantsAs([makeAssistant()]));
     await renderAssistants();
 
-    expect(within(rowOf("Suporte ERP")).getByText("gpt-4.1-mini")).toBeInTheDocument();
     const dialog = await openEdit(user, "Suporte ERP");
     expect(within(dialog).getByLabelText("Nome")).toHaveValue("Suporte ERP");
   });
@@ -150,7 +146,7 @@ describe("AssistantsPage list", () => {
 
   it("test_assistants_page_shows_loading_state", async () => {
     server.use(
-      http.get("*/v1/workspaces/:workspaceId/assistants", async () => {
+      http.get("*/v1/workspaces/:workspaceId/products", async () => {
         await delay("infinite");
         return HttpResponse.json(null);
       }),
@@ -208,7 +204,6 @@ describe("AssistantsPage search, filters and sort", () => {
 
     for (const [label, option] of [
       ["Status", "Ativos"],
-      ["Provedor", "OpenAI Produção"],
       ["Coleções", "Código ERP"],
       ["Ordenar por", "Atualizados recentemente"],
     ] as const) {
@@ -218,11 +213,11 @@ describe("AssistantsPage search, filters and sort", () => {
 
     await waitFor(() => {
       expect(recorder.last()).toBe(
-        `active=true&collection_id=${COLLECTION_ID}&provider_id=${PROVIDER_ID}&query=suporte&sort=-updated_at`,
+        `active=true&collection_id=${COLLECTION_ID}&query=suporte&sort=-updated_at`,
       );
     });
     expect(router.state.location.search).toBe(
-      `?q=suporte&active=true&provider=${PROVIDER_ID}&collection=${COLLECTION_ID}&sort=-updated_at`,
+      `?q=suporte&active=true&collection=${COLLECTION_ID}&sort=-updated_at`,
     );
   });
 
@@ -303,18 +298,12 @@ describe("AssistantsPage create", () => {
     await renderAssistants();
     const dialog = await openCreate(user);
 
-    expect(within(dialog).getByRole("combobox", { name: "Provedor" })).toHaveTextContent(
-      "Anthropic",
-    );
+    expect(within(dialog).queryByRole("combobox", { name: "Provedor" })).not.toBeInTheDocument();
+    expect(within(dialog).queryByLabelText("Modelo")).not.toBeInTheDocument();
     expect(within(dialog).getByRole("checkbox", { name: "Ativo" })).toBeChecked();
     await user.type(within(dialog).getByLabelText("Nome"), "Financeiro");
     await user.type(within(dialog).getByLabelText("Descrição"), "Dúvidas de cobrança.");
     await user.type(within(dialog).getByLabelText("Prompt de sistema"), "Seja breve.");
-    await pick(user, dialog, "Provedor", "OpenAI Produção");
-    await user.type(within(dialog).getByLabelText("Modelo"), "gpt-4.1");
-    const temperature = within(dialog).getByLabelText("Temperatura");
-    await user.clear(temperature);
-    await user.type(temperature, "0,5");
     const language = within(dialog).getByLabelText("Idioma");
     await user.clear(language);
     await user.type(language, "en");
@@ -343,10 +332,7 @@ describe("AssistantsPage create", () => {
       {
         name: "Financeiro",
         description: "Dúvidas de cobrança.",
-        system_prompt: "Seja breve.",
-        provider_id: PROVIDER_ID,
-        model: "gpt-4.1",
-        temperature: 0.5,
+        instructions: "Seja breve.",
         language: "en",
         tone: "formal",
         no_source_message: "",
@@ -368,27 +354,19 @@ describe("AssistantsPage create", () => {
     server.use(...store.handlers);
     await renderAssistants();
     const dialog = await openCreate(user);
-    const temperature = within(dialog).getByLabelText("Temperatura");
     const language = within(dialog).getByLabelText("Idioma");
+    const minSimilarity = within(dialog).getByLabelText("Similaridade mínima");
 
-    await user.clear(temperature);
-    await user.type(temperature, "3");
     await user.clear(language);
     await user.type(language, "português");
+    await user.clear(minSimilarity);
+    await user.type(minSimilarity, "3");
     await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
 
     expect(await within(dialog).findByText("Informe o nome do assistente.")).toBeInTheDocument();
-    expect(within(dialog).getByText("Informe o modelo.")).toBeInTheDocument();
-    expect(within(dialog).getByText("Informe um número de 0 a 2.")).toBeInTheDocument();
+    expect(within(dialog).getByText("Informe um número de 0 a 1.")).toBeInTheDocument();
     expect(
       within(dialog).getByText("Informe um código de idioma válido, como pt-BR."),
-    ).toBeInTheDocument();
-
-    await user.type(within(dialog).getByLabelText("Modelo"), "gpt 4");
-    await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
-
-    expect(
-      await within(dialog).findByText("O identificador do modelo não pode ter espaços."),
     ).toBeInTheDocument();
     expect(store.created).toEqual([]);
   });
@@ -401,26 +379,24 @@ describe("AssistantsPage create", () => {
     const dialog = await openCreate(user);
 
     await user.type(within(dialog).getByLabelText("Nome"), "Rascunho");
-    await user.type(within(dialog).getByLabelText("Modelo"), "gpt-4.1");
     await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
 
     expect(await within(dialog).findByRole("alert")).toHaveTextContent(
-      "Já existe um assistente com este nome no workspace.",
+      "Já existe um produto com este nome no workspace.",
     );
   });
 
-  it("test_assistants_page_shows_provider_invalid_error", async () => {
+  it("test_assistants_page_shows_level_not_configured_error", async () => {
     const user = userEvent.setup();
     await renderAssistants();
-    server.use(createAssistantFails(422, "assistant_provider_invalid"));
+    server.use(createAssistantFails(409, "level_not_configured"));
     const dialog = await openCreate(user);
 
     await user.type(within(dialog).getByLabelText("Nome"), "Novo");
-    await user.type(within(dialog).getByLabelText("Modelo"), "gpt-4.1");
     await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
 
     expect(await within(dialog).findByRole("alert")).toHaveTextContent(
-      "Escolha um provedor de LLM cadastrado neste workspace.",
+      "Configure o provedor e o modelo de um nível de resposta antes de continuar.",
     );
   });
 
@@ -428,7 +404,7 @@ describe("AssistantsPage create", () => {
     const user = userEvent.setup();
     await renderAssistants();
     server.use(
-      http.post("*/v1/workspaces/:workspaceId/assistants", async () => {
+      http.post("*/v1/workspaces/:workspaceId/products", async () => {
         await delay("infinite");
         return HttpResponse.json(null);
       }),
@@ -436,7 +412,6 @@ describe("AssistantsPage create", () => {
     const dialog = await openCreate(user);
 
     await user.type(within(dialog).getByLabelText("Nome"), "Novo");
-    await user.type(within(dialog).getByLabelText("Modelo"), "gpt-4.1");
     await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
 
     expect(await within(dialog).findByRole("button", { name: "Enviando…" })).toBeDisabled();
@@ -454,10 +429,6 @@ describe("AssistantsPage edit", () => {
     expect(within(dialog).getByLabelText("Prompt de sistema")).toHaveValue(
       "Responda com base nas fontes.",
     );
-    expect(within(dialog).getByRole("combobox", { name: "Provedor" })).toHaveTextContent(
-      "OpenAI Produção",
-    );
-    expect(within(dialog).getByLabelText("Temperatura")).toHaveValue("0.2");
     expect(within(dialog).getByRole("combobox", { name: "Tom" })).toHaveTextContent("Neutro");
     await user.clear(within(dialog).getByLabelText("Mensagem quando não há fonte"));
     await user.click(within(dialog).getByRole("checkbox", { name: "Ativo" }));
@@ -468,7 +439,7 @@ describe("AssistantsPage edit", () => {
       {
         assistantId: ASSISTANT_ID,
         body: expect.objectContaining({
-          provider_id: PROVIDER_ID,
+          instructions: "Responda com base nas fontes.",
           no_source_message: "",
           active: false,
         }) as unknown,

@@ -26,7 +26,6 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
 } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import {
@@ -38,7 +37,6 @@ import {
 } from "@/components/ui/select";
 import { type Assistant, useCreateAssistant, useUpdateAssistant } from "@/lib/api/assistants";
 import { useCollections } from "@/lib/api/collections";
-import type { Provider } from "@/lib/api/providers";
 
 import {
   ASSISTANT_TONES,
@@ -55,8 +53,6 @@ interface AssistantDialogProps {
   workspaceId: string;
   /** The assistant to edit; absent, the dialog creates one. */
   assistant?: Assistant;
-  /** Providers of the workspace, offered by the provider picker. */
-  providers: readonly Provider[];
   /** The element that opens the dialog (a `Button`); absent, the dialog opens on its own. */
   trigger?: ReactElement;
   /** Opens at once, without a trigger (editing the copy right after "Duplicar"). */
@@ -69,13 +65,13 @@ interface AssistantDialogProps {
 }
 
 /**
- * Create or edit an assistant: prompt, provider and model, behavior, the ticket webhook and
+ * Create or edit an assistant (a product of the API; the model is the workspace level's):
+ * instructions, behavior, the ticket webhook and
  * whether it is active. Editing also offers the webhook secret and the test delivery.
  */
 export function AssistantDialog({
   workspaceId,
   assistant,
-  providers,
   trigger,
   canManageSecret,
   onSaved,
@@ -89,7 +85,7 @@ export function AssistantDialog({
   const update = useUpdateAssistant(workspaceId);
   const save = editing ? update : create;
   const schema = useMemo(() => assistantFormSchema(t), [t]);
-  const defaults = () => assistantFormDefaults(assistant, providers[0]?.id ?? "");
+  const defaults = () => assistantFormDefaults(assistant);
   const form = useForm<AssistantFormValues>({
     resolver: zodResolver(schema),
     defaultValues: defaults(),
@@ -157,20 +153,6 @@ export function AssistantDialog({
               description={t("assistants.form.systemPromptHint")}
             />
             <div className="grid gap-4 sm:grid-cols-2">
-              <ProviderField control={form.control} providers={providers} />
-              <TextField
-                control={form.control}
-                name="model"
-                label={t("assistants.form.model")}
-                description={t("assistants.form.modelHint")}
-              />
-              <TextField
-                control={form.control}
-                name="temperature"
-                inputMode="decimal"
-                label={t("assistants.form.temperature")}
-                description={t("assistants.form.temperatureHint")}
-              />
               <TextField
                 control={form.control}
                 name="language"
@@ -241,36 +223,6 @@ export function AssistantDialog({
 
 interface FieldProps {
   control: Control<AssistantFormValues>;
-}
-
-function ProviderField({ control, providers }: FieldProps & { providers: readonly Provider[] }) {
-  const { t } = useTranslation();
-  return (
-    <FormField
-      control={control}
-      name="providerId"
-      render={({ field }) => (
-        <FormItem>
-          <FormLabel>{t("assistants.form.provider")}</FormLabel>
-          <Select value={field.value} onValueChange={field.onChange}>
-            <FormControl>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder={t("assistants.form.providerPlaceholder")} />
-              </SelectTrigger>
-            </FormControl>
-            <SelectContent>
-              {providers.map((provider) => (
-                <SelectItem key={provider.id} value={provider.id}>
-                  {provider.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <FormMessage />
-        </FormItem>
-      )}
-    />
-  );
 }
 
 /**

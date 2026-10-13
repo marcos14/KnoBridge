@@ -13,14 +13,13 @@ from datetime import UTC, datetime
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
-from knobridge.assistants.models import AssistantTone
-from knobridge.assistants.service import AssistantService, AssistantSettings
 from knobridge.conversations.service import ConversationService
 from knobridge.core.clock import FrozenClock
 from knobridge.core.crypto import SecretBox
 from knobridge.core.db import create_session_factory, scoped_session, system_session
 from knobridge.llm.credentials import CREDENTIALS_KEY_INFO, ProviderCredentialService
 from knobridge.llm.models import ProviderKind
+from knobridge.products.models import Product, ProductTone
 from knobridge.tenancy.models import Membership, Role, User, Workspace
 
 SessionFactory = async_sessionmaker[AsyncSession]
@@ -73,24 +72,22 @@ async def seed(factory: SessionFactory, clock: FrozenClock) -> Seeded:
             api_key=API_KEY,
             ip=None,
         )
-        assistant = await AssistantService(clock).create(
-            db,
+        # Written directly: the chat still reads the (transitional) model of the product.
+        assistant = Product(
             workspace_id=workspace_id,
-            actor_id=user_id,
-            settings=AssistantSettings(
-                name="Suporte",
-                description="",
-                system_prompt="",
-                credential_id=credential.id,
-                model="fake-model",
-                temperature=0.2,
-                language="pt-BR",
-                tone=AssistantTone.NEUTRAL,
-                no_source_message=NO_SOURCE,
-                active=True,
-            ),
-            ip=None,
+            name="Suporte",
+            description="",
+            instructions="",
+            credential_id=credential.id,
+            model="fake-model",
+            temperature=0.2,
+            language="pt-BR",
+            tone=ProductTone.NEUTRAL,
+            no_source_message=NO_SOURCE,
+            active=True,
         )
+        db.add(assistant)
+        await db.flush()
         conversation = await ConversationService(clock).create(
             db, workspace_id=workspace_id, user_id=user_id, assistant_id=assistant.id
         )

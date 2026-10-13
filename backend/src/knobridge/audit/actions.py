@@ -47,7 +47,8 @@ class AuditAction(StrEnum):
     PROVIDER_UPDATED = "provider.updated"
     PROVIDER_DELETED = "provider.deleted"
     PROVIDER_TESTED = "provider.tested"
-    # Assistants (prompts and messages stay out of metadata: names, models and fields only).
+    # Assistants, retired in plan 0009 (products replaced them); the recorded events stay.
+    # Prompts and messages stay out of metadata: names, models and fields only.
     ASSISTANT_CREATED = "assistant.created"
     ASSISTANT_UPDATED = "assistant.updated"
     ASSISTANT_DELETED = "assistant.deleted"
@@ -55,6 +56,17 @@ class AuditAction(StrEnum):
     # sent (outcome only: ok, HTTP status, error code).
     ASSISTANT_TICKET_WEBHOOK_SECRET_ROTATED = "assistant.ticket_webhook_secret_rotated"  # noqa: S105
     ASSISTANT_TICKET_WEBHOOK_TESTED = "assistant.ticket_webhook_tested"
+    # Products (names, collection ids and changed fields; never the instructions nor the
+    # webhook URL) and their ticket webhook (as the assistant's above).
+    PRODUCT_CREATED = "product.created"
+    PRODUCT_UPDATED = "product.updated"
+    PRODUCT_DELETED = "product.deleted"
+    PRODUCT_TICKET_WEBHOOK_SECRET_ROTATED = "product.ticket_webhook_secret_rotated"  # noqa: S105
+    PRODUCT_TICKET_WEBHOOK_TESTED = "product.ticket_webhook_tested"
+    # Response levels: configuration of a level of the workspace (level, fields, credential
+    # and model; never the instructions) and the maximum level of a member per product.
+    WORKSPACE_LEVEL_UPDATED = "workspace_level.updated"
+    MEMBER_LEVEL_UPDATED = "member_level.updated"
     # Conversations: only the deletion is audited (no content: ids and counts only).
     CONVERSATION_DELETED = "conversation.deleted"
     # Ticket request sent from an answer (conversation, message and assistant ids; never the

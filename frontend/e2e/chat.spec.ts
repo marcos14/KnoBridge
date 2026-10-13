@@ -31,16 +31,14 @@ const assistant = {
   id: ASSISTANT_ID,
   name: "Suporte ERP",
   description: "",
-  system_prompt: "",
-  provider_id: "00000000-0000-4000-8000-0000000000e1",
-  model: "gpt-4.1-mini",
-  temperature: 0.2,
+  instructions: "",
   language: "pt-BR",
   tone: "neutral",
   no_source_message: "",
   active: true,
   collection_ids: ["00000000-0000-4000-8000-0000000001a1"],
   min_similarity: 0.35,
+  my_max_level: "end_user",
   created_at: "2026-10-01T00:00:00Z",
   updated_at: "2026-10-01T00:00:00Z",
 };
@@ -107,7 +105,7 @@ function workspaceApi() {
     const request = route.request();
     const { pathname } = new URL(request.url());
     const base = `/v1/workspaces/${WORKSPACE_ID}`;
-    if (pathname === `${base}/assistants`) {
+    if (pathname === `${base}/products`) {
       return route.fulfill({ json: { items: [assistant], total: 1, limit: 200, offset: 0 } });
     }
     if (pathname === `${base}/conversations` && request.method() === "POST") {

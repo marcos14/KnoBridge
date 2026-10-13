@@ -20,7 +20,7 @@ from http import HTTPStatus
 from typing import Annotated
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Query, Request, Response
-from pydantic import BaseModel, Field, StringConstraints
+from pydantic import BaseModel, Field, StringConstraints, model_validator
 
 from knobridge.api.auth import EMAIL_MAX_LENGTH, start_browser_session
 from knobridge.api.deps import (
@@ -42,6 +42,8 @@ from knobridge.core.clock import Clock
 from knobridge.email.delivery import deliver_quietly
 from knobridge.email.rendering import EmailComposer, EmailTemplate
 from knobridge.email.sender import EmailSender
+from knobridge.levels.grants import LevelGrant
+from knobridge.levels.level import ResponseLevel
 from knobridge.security.csrf import require_csrf
 from knobridge.security.passwords import MAX_PASSWORD_LENGTH
 from knobridge.tenancy.invitations import InvitationDelivery
@@ -49,6 +51,7 @@ from knobridge.tenancy.models import Invitation, Role
 
 DEFAULT_LIMIT = 50
 MAX_LIMIT = 200
+MAX_PRODUCT_LEVELS = 200
 # Deliberately loose: one "@" with something on each side and a dot in the domain. The real
 # check is the e-mail reaching the mailbox.
 EMAIL_PATTERN = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
@@ -68,9 +71,27 @@ _INVALID_TOKEN: dict[int | str, dict[str, object]] = {
 }
 
 
+class InvitationProductLevel(BaseModel):
+    """The maximum level the invitee gets in a product when accepting."""
+
+    product_id: uuid.UUID
+    max_level: ResponseLevel
+
+
 class InviteRequest(BaseModel):
     email: str = Field(max_length=EMAIL_MAX_LENGTH, pattern=EMAIL_PATTERN)
     role: Role
+    # Omitted: the defaults of the role in every product.
+    product_levels: Annotated[
+        list[InvitationProductLevel], Field(max_length=MAX_PRODUCT_LEVELS)
+    ] = Field(default_factory=lambda: [])
+
+    @model_validator(mode="after")
+    def _distinct_products(self) -> InviteRequest:
+        ids = [item.product_id for item in self.product_levels]
+        if len(set(ids)) != len(ids):
+            raise ValueError("A product appears more than once.")
+        return self
 
 
 class InvitationOut(BaseModel):
@@ -82,6 +103,7 @@ class InvitationOut(BaseModel):
     expires_at: datetime
     # True once the link expired; the invitation stays pending and can be resent.
     expired: bool
+    product_levels: list[InvitationProductLevel]
 
 
 class InvitationPage(BaseModel):
@@ -126,6 +148,10 @@ def invitation_out(invitation: Invitation, clock: Clock) -> InvitationOut:
         created_at=invitation.created_at,
         expires_at=invitation.expires_at,
         expired=invitation.expires_at <= clock.now(),
+        product_levels=[
+            InvitationProductLevel(product_id=grant.product_id, max_level=grant.max_level)
+            for grant in map(LevelGrant.from_json, invitation.product_levels)
+        ],
     )
 
 
@@ -159,6 +185,10 @@ workspace_router = APIRouter(prefix="/workspaces/{workspace_id}/invites", tags=[
             "description": "The address belongs to a member (`already_member`) or a "
             "concurrent request invited it first (`invitation_pending`)."
         },
+        422: {
+            "description": "Invalid body (`validation_error`) or product not in the workspace "
+            "(`invite_product_invalid`)."
+        },
     },
 )
 async def create_invite(
@@ -180,6 +210,9 @@ async def create_invite(
         email=body.email,
         role=body.role,
         ip=ip,
+        product_levels=[
+            LevelGrant(item.product_id, item.max_level) for item in body.product_levels
+        ],
     )
     send_invitation(tasks, sender, composer, issued.delivery)
     return invitation_out(issued.invitation, clock)

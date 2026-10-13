@@ -61,13 +61,8 @@ def usage_path(world: UsageWorld, suffix: str = "usage") -> str:
 
 def add_assistant(api: ApiEnv, world: UsageWorld, name: str) -> uuid.UUID:
     response = api.client.post(
-        usage_path(world, "assistants"),
-        json={
-            "name": name,
-            "provider_id": str(world.provider_id),
-            "model": "gpt-4.1-mini",
-            "system_prompt": "Você ajuda.",
-        },
+        usage_path(world, "products"),
+        json={"name": name, "instructions": "Você ajuda."},
         headers=api.csrf_headers(),
     )
     assert response.status_code == 201, response.text

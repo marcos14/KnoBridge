@@ -58,7 +58,7 @@ def _rate(api: ApiEnv, world: UsageWorld, message_id: uuid.UUID, rating: Feedbac
 
 def _link_assistant(api: ApiEnv, world: UsageWorld, collection_id: uuid.UUID) -> None:
     response = api.client.patch(
-        usage_path(world, f"assistants/{world.assistant_id}"),
+        usage_path(world, f"products/{world.assistant_id}"),
         json={"collection_ids": [str(collection_id)]},
         headers=api.csrf_headers(),
     )
@@ -154,7 +154,7 @@ def test_dashboard_inactive_assistant_does_not_count(api: ApiEnv) -> None:
     world = usage_world(api, Role.OWNER)
     _link_assistant(api, world, add_collection(api, world, "Docs"))
     response = api.client.patch(
-        usage_path(world, f"assistants/{world.assistant_id}"),
+        usage_path(world, f"products/{world.assistant_id}"),
         json={"active": False},
         headers=api.csrf_headers(),
     )

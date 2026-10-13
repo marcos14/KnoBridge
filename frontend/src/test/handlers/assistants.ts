@@ -12,8 +12,8 @@ import { makeAssistant, makeAssistants } from "../factories";
 import { apiErrorResponse } from "./errors";
 import { listRecorder, page } from "./page";
 
-const ASSISTANTS = "*/v1/workspaces/:workspaceId/assistants";
-const ASSISTANT = "*/v1/workspaces/:workspaceId/assistants/:assistantId";
+const ASSISTANTS = "*/v1/workspaces/:workspaceId/products";
+const ASSISTANT = "*/v1/workspaces/:workspaceId/products/:assistantId";
 const SECRET = `${ASSISTANT}/ticket-webhook/secret`;
 const TEST = `${ASSISTANT}/ticket-webhook/test`;
 const DUPLICATE = `${ASSISTANT}/duplicate`;
@@ -58,7 +58,7 @@ function noContent() {
   return new HttpResponse(null, { status: 204 });
 }
 
-/** GET /v1/workspaces/{id}/assistants listing `assistants` (default: Rascunho and Suporte ERP). */
+/** GET /v1/workspaces/{id}/products listing `assistants` (default: Rascunho and Suporte ERP). */
 export function assistantsAs(assistants: Assistant[] = makeAssistants()) {
   return http.get(ASSISTANTS, ({ request }) => page(request, assistants));
 }
@@ -167,7 +167,7 @@ export function assistantStore(
     http.post(ASSISTANTS, async ({ request }) => {
       const body = (await request.json()) as AssistantInput;
       if (assistants.some((item) => item.name === body.name)) {
-        return apiErrorResponse(409, "assistant_name_taken");
+        return apiErrorResponse(409, "product_name_taken");
       }
       const assistant = makeAssistant({
         ...storedInput(body),
@@ -213,39 +213,39 @@ export function assistantStore(
   return { handlers, created, changes, deleted, secretRotations, webhookTests };
 }
 
-/** GET /v1/workspaces/{id}/assistants with the default list. */
+/** GET /v1/workspaces/{id}/products with the default list. */
 export const assistantsOk = assistantsAs();
 
-/** GET /v1/workspaces/{id}/assistants failing on the server (500). */
+/** GET /v1/workspaces/{id}/products failing on the server (500). */
 export const assistantsServerError = http.get(ASSISTANTS, () =>
   apiErrorResponse(500, "internal_error"),
 );
 
-/** POST /v1/workspaces/{id}/assistants creating the assistant (201). */
+/** POST /v1/workspaces/{id}/products creating the assistant (201). */
 export const createAssistantOk = http.post(ASSISTANTS, async ({ request }) => {
   const body = (await request.json()) as AssistantInput;
   return HttpResponse.json<Assistant>(makeAssistant(storedInput(body)), { status: 201 });
 });
 
-/** POST /v1/workspaces/{id}/assistants refused with `status` and `code`. */
+/** POST /v1/workspaces/{id}/products refused with `status` and `code`. */
 export function createAssistantFails(status: number, code: string) {
   return http.post(ASSISTANTS, () => apiErrorResponse(status, code));
 }
 
-/** PATCH /v1/workspaces/{id}/assistants/{assistant_id} answering with the default assistant. */
+/** PATCH /v1/workspaces/{id}/products/{product_id} answering with the default assistant. */
 export const updateAssistantOk = http.patch(ASSISTANT, () =>
   HttpResponse.json<Assistant>(makeAssistant()),
 );
 
-/** PATCH /v1/workspaces/{id}/assistants/{assistant_id} refused with `status`, `code`, `details`. */
+/** PATCH /v1/workspaces/{id}/products/{product_id} refused with `status`, `code`, `details`. */
 export function updateAssistantFails(status: number, code: string, details: unknown = null) {
   return http.patch(ASSISTANT, () => apiErrorResponse(status, code, details));
 }
 
-/** DELETE /v1/workspaces/{id}/assistants/{assistant_id} removing it (204). */
+/** DELETE /v1/workspaces/{id}/products/{product_id} removing it (204). */
 export const deleteAssistantOk = http.delete(ASSISTANT, noContent);
 
-/** DELETE /v1/workspaces/{id}/assistants/{assistant_id} refused with `status` and `code`. */
+/** DELETE /v1/workspaces/{id}/products/{product_id} refused with `status` and `code`. */
 export function deleteAssistantFails(status: number, code: string) {
   return http.delete(ASSISTANT, () => apiErrorResponse(status, code));
 }

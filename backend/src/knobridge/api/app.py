@@ -18,7 +18,6 @@ from knobridge.api import (
     admin_conversations,
     admin_dashboard,
     api_keys,
-    assistants,
     audit,
     auth,
     collections,
@@ -31,9 +30,12 @@ from knobridge.api import (
     ingest_tokens,
     invites,
     knowledge,
+    levels,
     me,
+    member_levels,
     members,
     openai_compat,
+    products,
     providers,
     public_conversations,
     recovery,
@@ -140,7 +142,10 @@ def create_app(
         members,
         invites,
         providers,
-        assistants,
+        # Products and response levels (plan 0009 F2.1).
+        products,
+        levels,
+        member_levels,
         conversations,
         admin_conversations,
         search,
@@ -167,7 +172,7 @@ def create_app(
         ingest,
         # Tickets from the panel (plan 0005 F2.4).
         ticket_uploads,
-        # Ticket webhook of the assistants (plan 0005 F3.1).
+        # Ticket webhook of the products (plan 0005 F3.1).
         ticket_webhook,
         # Ticket requests from the chat (plan 0005 F3.2).
         ticket_requests,

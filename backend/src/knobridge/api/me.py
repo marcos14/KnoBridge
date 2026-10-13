@@ -1,5 +1,6 @@
-"""``GET /v1/me``: the authenticated user, their workspaces with role, the superadmin flag and
-the session's superadmin access to a workspace (docs/specs/autenticacao.md)."""
+"""``GET /v1/me``: the authenticated user, their workspaces with role and maximum level in each
+active product, the superadmin flag and the session's superadmin access to a workspace
+(docs/specs/autenticacao.md)."""
 
 from __future__ import annotations
 
@@ -12,7 +13,9 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from knobridge.api.deps import CurrentUserDep, SessionFactoryDep
-from knobridge.core.db import scoped_session
+from knobridge.core.db import scoped_session, system_session
+from knobridge.levels.level import ResponseLevel
+from knobridge.levels.members import user_product_levels
 from knobridge.tenancy.auth import SuperadminAccess
 from knobridge.tenancy.models import Role, Theme, User, WorkspaceStatus
 from knobridge.tenancy.queries import UserWorkspace, get_workspace, list_user_workspaces
@@ -35,6 +38,16 @@ class UserOut(BaseModel):
     email_verified_at: datetime | None
 
 
+class ProductLevelOut(BaseModel):
+    """The user's maximum level in an active product of the workspace."""
+
+    product_id: uuid.UUID
+    product_name: str
+    max_level: ResponseLevel
+    # Recorded by an admin; ``false``: the default of the role.
+    explicit: bool
+
+
 class UserWorkspaceOut(BaseModel):
     id: uuid.UUID
     name: str
@@ -42,6 +55,8 @@ class UserWorkspaceOut(BaseModel):
     status: WorkspaceStatus
     role: Role
     access: WorkspaceAccessKind
+    # By product name; empty for a suspended workspace.
+    product_levels: list[ProductLevelOut]
 
 
 class SuperadminAccessOut(BaseModel):
@@ -65,6 +80,7 @@ def _member_out(workspace: UserWorkspace) -> UserWorkspaceOut:
         status=workspace.status,
         role=workspace.role,
         access=WorkspaceAccessKind.MEMBER,
+        product_levels=[],
     )
 
 
@@ -82,6 +98,32 @@ def _with_access(
         items.append(entered)
         items.sort(key=lambda item: (item.name, str(item.id)))
     return items
+
+
+async def _with_product_levels(
+    factory: async_sessionmaker[AsyncSession], user_id: uuid.UUID, items: list[UserWorkspaceOut]
+) -> list[UserWorkspaceOut]:
+    """The items with the user's level in each active product. System mode, because it reads
+    several workspaces at once, filtered by the ids of these very items (two queries)."""
+    roles = {item.id: item.role for item in items if item.status == WorkspaceStatus.ACTIVE}
+    async with system_session(factory) as db:
+        found = await user_product_levels(db, user_id=user_id, roles=roles)
+    return [
+        item.model_copy(
+            update={
+                "product_levels": [
+                    ProductLevelOut(
+                        product_id=level.product_id,
+                        product_name=level.product_name,
+                        max_level=level.max_level,
+                        explicit=level.explicit,
+                    )
+                    for level in found.get(item.id, [])
+                ]
+            }
+        )
+        for item in items
+    ]
 
 
 async def build_me(
@@ -110,8 +152,10 @@ async def build_me(
             status=entered.status,
             role=SUPERADMIN_ROLE,
             access=WorkspaceAccessKind.SUPERADMIN,
+            product_levels=[],
         )
         items = _with_access(workspaces, entered_out)
+    items = await _with_product_levels(factory, user.id, items)
     return MeResponse(
         user=UserOut(
             id=user.id,

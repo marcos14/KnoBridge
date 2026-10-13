@@ -990,120 +990,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/v1/workspaces/{workspace_id}/assistants": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Assistants
-         * @description Assistants (only the active ones for viewers); ``query`` matches name, description or
-         *     model.
-         */
-        get: operations["list_assistants_v1_workspaces__workspace_id__assistants_get"];
-        put?: never;
-        /**
-         * Create Assistant
-         * @description Create an assistant bound to a provider credential of the workspace.
-         */
-        post: operations["create_assistant_v1_workspaces__workspace_id__assistants_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/workspaces/{workspace_id}/assistants/{assistant_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Assistant
-         * @description One assistant (404 for viewers when it is inactive).
-         */
-        get: operations["get_assistant_v1_workspaces__workspace_id__assistants__assistant_id__get"];
-        put?: never;
-        post?: never;
-        /**
-         * Delete Assistant
-         * @description Delete an assistant.
-         */
-        delete: operations["delete_assistant_v1_workspaces__workspace_id__assistants__assistant_id__delete"];
-        options?: never;
-        head?: never;
-        /**
-         * Update Assistant
-         * @description Change any field; ``no_source_message`` empty or null restores the default and
-         *     ``ticket_webhook_url`` null turns the webhook off.
-         */
-        patch: operations["update_assistant_v1_workspaces__workspace_id__assistants__assistant_id__patch"];
-        trace?: never;
-    };
-    "/v1/workspaces/{workspace_id}/assistants/{assistant_id}/duplicate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Duplicate
-         * @description Copy the configuration and collections; the webhook keeps its URL, not its secret.
-         */
-        post: operations["duplicate_v1_workspaces__workspace_id__assistants__assistant_id__duplicate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/workspaces/{workspace_id}/assistants/{assistant_id}/ticket-webhook/secret": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Rotate Ticket Webhook Secret
-         * @description Generate the signing secret of the webhook, replacing the current one at once.
-         */
-        post: operations["rotate_ticket_webhook_secret_v1_workspaces__workspace_id__assistants__assistant_id__ticket_webhook_secret_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/v1/workspaces/{workspace_id}/assistants/{assistant_id}/ticket-webhook/test": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Test Ticket Webhook
-         * @description Send a signed ``ticket.test`` event to the webhook and report the outcome.
-         */
-        post: operations["test_ticket_webhook_v1_workspaces__workspace_id__assistants__assistant_id__ticket_webhook_test_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/v1/workspaces/{workspace_id}/audit": {
         parameters: {
             query?: never;
@@ -1479,6 +1365,67 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/workspaces/{workspace_id}/levels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Levels
+         * @description The three levels of the workspace, in order (``end_user``, ``support``,
+         *     ``product_dev``).
+         */
+        get: operations["list_levels_v1_workspaces__workspace_id__levels_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/levels/{level}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Level
+         * @description Change the credential, model, temperature or instructions of a level.
+         */
+        patch: operations["update_level_v1_workspaces__workspace_id__levels__level__patch"];
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/member-levels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Member Levels
+         * @description Each member's maximum level in each product (``query`` matches name or e-mail).
+         */
+        get: operations["list_member_levels_v1_workspaces__workspace_id__member_levels_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/workspaces/{workspace_id}/members": {
         parameters: {
             query?: never;
@@ -1522,6 +1469,139 @@ export interface paths {
          * @description Change a member's role.
          */
         patch: operations["change_member_role_v1_workspaces__workspace_id__members__user_id__patch"];
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/members/{user_id}/product-levels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Set Member Levels
+         * @description Record or remove the member's maximum level in the given products.
+         */
+        put: operations["set_member_levels_v1_workspaces__workspace_id__members__user_id__product_levels_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Products
+         * @description Products (only the active ones for viewers); ``query`` matches name or description.
+         */
+        get: operations["list_products_v1_workspaces__workspace_id__products_get"];
+        put?: never;
+        /**
+         * Create Product
+         * @description Create a product.
+         */
+        post: operations["create_product_v1_workspaces__workspace_id__products_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/products/{product_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Product
+         * @description One product (404 for viewers when it is inactive).
+         */
+        get: operations["get_product_v1_workspaces__workspace_id__products__product_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Product
+         * @description Delete a product with its conversations and the members' levels in it.
+         */
+        delete: operations["delete_product_v1_workspaces__workspace_id__products__product_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Product
+         * @description Change any field; ``no_source_message`` empty or null restores the default and
+         *     ``ticket_webhook_url`` null turns the webhook off.
+         */
+        patch: operations["update_product_v1_workspaces__workspace_id__products__product_id__patch"];
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/products/{product_id}/duplicate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Duplicate
+         * @description Copy the configuration and collections; the webhook keeps its URL, not its secret.
+         */
+        post: operations["duplicate_v1_workspaces__workspace_id__products__product_id__duplicate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/products/{product_id}/ticket-webhook/secret": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rotate Ticket Webhook Secret
+         * @description Generate the signing secret of the webhook, replacing the current one at once.
+         */
+        post: operations["rotate_ticket_webhook_secret_v1_workspaces__workspace_id__products__product_id__ticket_webhook_secret_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/products/{product_id}/ticket-webhook/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test Ticket Webhook
+         * @description Send a signed ``ticket.test`` event to the webhook and report the outcome.
+         */
+        post: operations["test_ticket_webhook_v1_workspaces__workspace_id__products__product_id__ticket_webhook_test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/v1/workspaces/{workspace_id}/providers": {
@@ -2387,165 +2467,11 @@ export interface components {
             /** Name */
             name?: string | null;
         };
-        /** AssistantCreate */
-        AssistantCreate: {
-            /**
-             * Active
-             * @default true
-             */
-            active: boolean;
-            /** Collection Ids */
-            collection_ids?: string[];
-            /**
-             * Description
-             * @default
-             */
-            description: string;
-            /**
-             * Language
-             * @default pt-BR
-             */
-            language: string;
-            /** Min Similarity */
-            min_similarity?: number | null;
-            /** Model */
-            model: string;
-            /** Name */
-            name: string;
-            /** No Source Message */
-            no_source_message?: string | null;
-            /**
-             * Provider Id
-             * Format: uuid
-             */
-            provider_id: string;
-            /**
-             * System Prompt
-             * @default
-             */
-            system_prompt: string;
-            /**
-             * Temperature
-             * @default 0.2
-             */
-            temperature: number;
-            /** Ticket Webhook Url */
-            ticket_webhook_url?: string | null;
-            /** @default neutral */
-            tone: components["schemas"]["AssistantTone"];
-        };
-        /**
-         * AssistantDuplicate
-         * @description Omitted or null ``name``: the original name with the first free copy suffix
-         *     (``docs/specs/chat.md``).
-         */
-        AssistantDuplicate: {
-            /** Name */
-            name?: string | null;
-        };
-        /** AssistantOut */
-        AssistantOut: {
-            /** Active */
-            active: boolean;
-            /** Collection Ids */
-            collection_ids: string[];
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /** Description */
-            description: string;
-            /**
-             * Id
-             * Format: uuid
-             */
-            id: string;
-            /** Language */
-            language: string;
-            /** Min Similarity */
-            min_similarity: number;
-            /** Model */
-            model: string;
-            /** Name */
-            name: string;
-            /** No Source Message */
-            no_source_message: string;
-            /**
-             * Provider Id
-             * Format: uuid
-             */
-            provider_id: string;
-            /** System Prompt */
-            system_prompt: string;
-            /** Temperature */
-            temperature: number;
-            /** Ticket Webhook Configured */
-            ticket_webhook_configured: boolean;
-            /** Ticket Webhook Secret Created At */
-            ticket_webhook_secret_created_at: string | null;
-            /** Ticket Webhook Url */
-            ticket_webhook_url: string | null;
-            tone: components["schemas"]["AssistantTone"];
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-        };
-        /** AssistantPage */
-        AssistantPage: {
-            /** Items */
-            items: components["schemas"]["AssistantOut"][];
-            /** Limit */
-            limit: number;
-            /** Offset */
-            offset: number;
-            /** Total */
-            total: number;
-        };
-        /**
-         * AssistantTone
-         * @enum {string}
-         */
-        AssistantTone: "neutral" | "formal" | "friendly";
-        /**
-         * AssistantUpdate
-         * @description Fields to change; omitted (or null) fields stay. ``no_source_message`` empty or null
-         *     restores the default message.
-         */
-        AssistantUpdate: {
-            /** Active */
-            active?: boolean | null;
-            /** Collection Ids */
-            collection_ids?: string[] | null;
-            /** Description */
-            description?: string | null;
-            /** Language */
-            language?: string | null;
-            /** Min Similarity */
-            min_similarity?: number | null;
-            /** Model */
-            model?: string | null;
-            /** Name */
-            name?: string | null;
-            /** No Source Message */
-            no_source_message?: string | null;
-            /** Provider Id */
-            provider_id?: string | null;
-            /** System Prompt */
-            system_prompt?: string | null;
-            /** Temperature */
-            temperature?: number | null;
-            /** Ticket Webhook Url */
-            ticket_webhook_url?: string | null;
-            tone?: components["schemas"]["AssistantTone"] | null;
-        };
         /**
          * AuditAction
          * @enum {string}
          */
-        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "superadmin.workspace_entered" | "superadmin.workspace_exited" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted" | "provider.tested" | "assistant.created" | "assistant.updated" | "assistant.deleted" | "assistant.ticket_webhook_secret_rotated" | "assistant.ticket_webhook_tested" | "conversation.deleted" | "ticket_request.created" | "collection.created" | "collection.updated" | "collection.deleted" | "source.created" | "source.updated" | "source.deleted" | "source.tested" | "source.sync.started" | "source.sync.cancelled" | "source.reindex.started" | "source.ingest_token_rotated" | "source.tickets_uploaded" | "runner.created" | "runner.updated" | "runner.revoked" | "runner.deleted" | "harness_job.cancelled" | "harness_job.enqueued" | "harness_module.created" | "harness_module.updated" | "knowledge_item.updated" | "api_key.created" | "api_key.updated" | "api_key.revoked";
+        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "superadmin.workspace_entered" | "superadmin.workspace_exited" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted" | "provider.tested" | "assistant.created" | "assistant.updated" | "assistant.deleted" | "assistant.ticket_webhook_secret_rotated" | "assistant.ticket_webhook_tested" | "product.created" | "product.updated" | "product.deleted" | "product.ticket_webhook_secret_rotated" | "product.ticket_webhook_tested" | "workspace_level.updated" | "member_level.updated" | "conversation.deleted" | "ticket_request.created" | "collection.created" | "collection.updated" | "collection.deleted" | "source.created" | "source.updated" | "source.deleted" | "source.tested" | "source.sync.started" | "source.sync.cancelled" | "source.reindex.started" | "source.ingest_token_rotated" | "source.tickets_uploaded" | "runner.created" | "runner.updated" | "runner.revoked" | "runner.deleted" | "harness_job.cancelled" | "harness_job.enqueued" | "harness_module.created" | "harness_module.updated" | "knowledge_item.updated" | "api_key.created" | "api_key.updated" | "api_key.revoked";
         /** AuditEventOut */
         AuditEventOut: {
             /** Action */
@@ -3407,6 +3333,8 @@ export interface components {
             id: string;
             /** Invited By User Id */
             invited_by_user_id: string | null;
+            /** Product Levels */
+            product_levels: components["schemas"]["InvitationProductLevel"][];
             role: components["schemas"]["Role"];
         };
         /** InvitationPage */
@@ -3442,6 +3370,18 @@ export interface components {
             /** Workspace Name */
             workspace_name: string;
         };
+        /**
+         * InvitationProductLevel
+         * @description The maximum level the invitee gets in a product when accepting.
+         */
+        InvitationProductLevel: {
+            max_level: components["schemas"]["ResponseLevel"];
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
+        };
         /** InvitationTokenRequest */
         InvitationTokenRequest: {
             /** Token */
@@ -3451,6 +3391,8 @@ export interface components {
         InviteRequest: {
             /** Email */
             email: string;
+            /** Product Levels */
+            product_levels?: components["schemas"]["InvitationProductLevel"][];
             role: components["schemas"]["Role"];
         };
         JsonValue: unknown;
@@ -3581,6 +3523,16 @@ export interface components {
          * @enum {string}
          */
         LastRunFilter: "queued" | "running" | "succeeded" | "failed" | "cancelled" | "never";
+        /**
+         * LevelPrice
+         * @description USD per million tokens of the level's model.
+         */
+        LevelPrice: {
+            /** Input Usd Per Mtok */
+            input_usd_per_mtok: number;
+            /** Output Usd Per Mtok */
+            output_usd_per_mtok: number;
+        };
         /** LiveResponse */
         LiveResponse: {
             /**
@@ -3606,6 +3558,34 @@ export interface components {
             user: components["schemas"]["UserOut"];
             /** Workspaces */
             workspaces: components["schemas"]["UserWorkspaceOut"][];
+        };
+        /** MemberLevelsOut */
+        MemberLevelsOut: {
+            /** Email */
+            email: string;
+            /** Levels */
+            levels: components["schemas"]["MemberProductLevelOut"][];
+            /** Name */
+            name: string;
+            role: components["schemas"]["Role"];
+            /**
+             * User Id
+             * Format: uuid
+             */
+            user_id: string;
+        };
+        /** MemberLevelsPage */
+        MemberLevelsPage: {
+            /** Items */
+            items: components["schemas"]["MemberLevelsOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Products */
+            products: components["schemas"]["ProductRefOut"][];
+            /** Total */
+            total: number;
         };
         /** MemberOut */
         MemberOut: {
@@ -3635,6 +3615,17 @@ export interface components {
             offset: number;
             /** Total */
             total: number;
+        };
+        /** MemberProductLevelOut */
+        MemberProductLevelOut: {
+            /** Explicit */
+            explicit: boolean;
+            max_level: components["schemas"]["ResponseLevel"];
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
         };
         /** MessageCreate */
         MessageCreate: {
@@ -3936,6 +3927,175 @@ export interface components {
          * @enum {string}
          */
         PathMatch: "prefix" | "contains";
+        /** ProductCreate */
+        ProductCreate: {
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+            /** Collection Ids */
+            collection_ids?: string[];
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /**
+             * Instructions
+             * @default
+             */
+            instructions: string;
+            /**
+             * Language
+             * @default pt-BR
+             */
+            language: string;
+            /** Min Similarity */
+            min_similarity?: number | null;
+            /** Name */
+            name: string;
+            /** No Source Message */
+            no_source_message?: string | null;
+            /** Ticket Webhook Url */
+            ticket_webhook_url?: string | null;
+            /** @default neutral */
+            tone: components["schemas"]["ProductTone"];
+        };
+        /**
+         * ProductDuplicate
+         * @description Omitted or null ``name``: the original name with the first free copy suffix.
+         */
+        ProductDuplicate: {
+            /** Name */
+            name?: string | null;
+        };
+        /** ProductLevelIn */
+        ProductLevelIn: {
+            max_level: components["schemas"]["ResponseLevel"] | null;
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
+        };
+        /**
+         * ProductLevelOut
+         * @description The user's maximum level in an active product of the workspace.
+         */
+        ProductLevelOut: {
+            /** Explicit */
+            explicit: boolean;
+            max_level: components["schemas"]["ResponseLevel"];
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
+            /** Product Name */
+            product_name: string;
+        };
+        /** ProductLevelsUpdate */
+        ProductLevelsUpdate: {
+            /** Levels */
+            levels: components["schemas"]["ProductLevelIn"][];
+        };
+        /** ProductOut */
+        ProductOut: {
+            /** Active */
+            active: boolean;
+            /** Collection Ids */
+            collection_ids: string[];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Description */
+            description: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Instructions */
+            instructions: string;
+            /** Language */
+            language: string;
+            /** Min Similarity */
+            min_similarity: number;
+            my_max_level: components["schemas"]["ResponseLevel"];
+            /** Name */
+            name: string;
+            /** No Source Message */
+            no_source_message: string;
+            /** Ticket Webhook Configured */
+            ticket_webhook_configured: boolean;
+            /** Ticket Webhook Secret Created At */
+            ticket_webhook_secret_created_at: string | null;
+            /** Ticket Webhook Url */
+            ticket_webhook_url: string | null;
+            tone: components["schemas"]["ProductTone"];
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** ProductPage */
+        ProductPage: {
+            /** Items */
+            items: components["schemas"]["ProductOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Total */
+            total: number;
+        };
+        /** ProductRefOut */
+        ProductRefOut: {
+            /** Active */
+            active: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
+        };
+        /**
+         * ProductTone
+         * @enum {string}
+         */
+        ProductTone: "neutral" | "formal" | "friendly";
+        /**
+         * ProductUpdate
+         * @description Fields to change; omitted (or null) fields stay. ``no_source_message`` empty or null
+         *     restores the default message.
+         */
+        ProductUpdate: {
+            /** Active */
+            active?: boolean | null;
+            /** Collection Ids */
+            collection_ids?: string[] | null;
+            /** Description */
+            description?: string | null;
+            /** Instructions */
+            instructions?: string | null;
+            /** Language */
+            language?: string | null;
+            /** Min Similarity */
+            min_similarity?: number | null;
+            /** Name */
+            name?: string | null;
+            /** No Source Message */
+            no_source_message?: string | null;
+            /** Ticket Webhook Url */
+            ticket_webhook_url?: string | null;
+            tone?: components["schemas"]["ProductTone"] | null;
+        };
         /**
          * ProfileUpdate
          * @description Fields to change; omitted (or null) fields keep their value.
@@ -4212,6 +4372,12 @@ export interface components {
             /** Token */
             token: string;
         };
+        /**
+         * ResponseLevel
+         * @description The three levels, in increasing order (the order of the members is the order).
+         * @enum {string}
+         */
+        ResponseLevel: "end_user" | "support" | "product_dev";
         /**
          * ReviewAction
          * @enum {string}
@@ -5871,6 +6037,8 @@ export interface components {
             id: string;
             /** Name */
             name: string;
+            /** Product Levels */
+            product_levels: components["schemas"]["ProductLevelOut"][];
             role: components["schemas"]["Role"];
             /** Slug */
             slug: string;
@@ -5926,6 +6094,55 @@ export interface components {
              */
             month_start: string;
             sources: components["schemas"]["SourceCounts"];
+        };
+        /** WorkspaceLevelList */
+        WorkspaceLevelList: {
+            /** Items */
+            items: components["schemas"]["WorkspaceLevelOut"][];
+        };
+        /** WorkspaceLevelOut */
+        WorkspaceLevelOut: {
+            /** Configured */
+            configured: boolean;
+            /** Default Instructions */
+            default_instructions: string;
+            /** Estimated Cost Per Answer Usd */
+            estimated_cost_per_answer_usd: number | null;
+            /** Instructions */
+            instructions: string;
+            /** Instructions Is Default */
+            instructions_is_default: boolean;
+            level: components["schemas"]["ResponseLevel"];
+            /** Model */
+            model: string | null;
+            price: components["schemas"]["LevelPrice"] | null;
+            /** Provider Id */
+            provider_id: string | null;
+            provider_kind: components["schemas"]["ProviderKind"] | null;
+            /** Provider Name */
+            provider_name: string | null;
+            /** Temperature */
+            temperature: number;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * WorkspaceLevelUpdate
+         * @description Omitted fields stay; ``provider_id`` and ``model`` null clear them (together), and
+         *     ``instructions`` null restores the default text.
+         */
+        WorkspaceLevelUpdate: {
+            /** Instructions */
+            instructions?: string | null;
+            /** Model */
+            model?: string | null;
+            /** Provider Id */
+            provider_id?: string | null;
+            /** Temperature */
+            temperature?: number | null;
         };
         /** WorkspaceOut */
         WorkspaceOut: {
@@ -8541,471 +8758,6 @@ export interface operations {
             };
         };
     };
-    list_assistants_v1_workspaces__workspace_id__assistants_get: {
-        parameters: {
-            query?: {
-                /** @description Case-insensitive substring. */
-                query?: string | null;
-                active?: boolean | null;
-                provider_id?: string | null;
-                collection_id?: string | null;
-                sort?: "name" | "-name" | "created_at" | "-created_at" | "updated_at" | "-updated_at";
-                limit?: number;
-                offset?: number;
-            };
-            header?: never;
-            path: {
-                workspace_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AssistantPage"];
-                };
-            };
-            /** @description No live session (standard error shape). */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Workspace suspended. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Workspace or assistant not found, or caller is not a member. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_assistant_v1_workspaces__workspace_id__assistants_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                workspace_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AssistantCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AssistantOut"];
-                };
-            };
-            /** @description No live session (standard error shape). */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Workspace or assistant not found, or caller is not a member. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Name already used in the workspace (`assistant_name_taken`). */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Invalid body, provider not in the workspace (`assistant_provider_invalid`) or collection not in the workspace (`assistant_collection_invalid`), or webhook URL refused (`webhook_url_invalid`, `webhook_destination_blocked`, with `details.reason`). */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    get_assistant_v1_workspaces__workspace_id__assistants__assistant_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                assistant_id: string;
-                workspace_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AssistantOut"];
-                };
-            };
-            /** @description No live session (standard error shape). */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Workspace suspended. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Workspace or assistant not found, or caller is not a member. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_assistant_v1_workspaces__workspace_id__assistants__assistant_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                assistant_id: string;
-                workspace_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No live session (standard error shape). */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Workspace or assistant not found, or caller is not a member. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_assistant_v1_workspaces__workspace_id__assistants__assistant_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                assistant_id: string;
-                workspace_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AssistantUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AssistantOut"];
-                };
-            };
-            /** @description No live session (standard error shape). */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Workspace or assistant not found, or caller is not a member. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Name already used in the workspace (`assistant_name_taken`). */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Invalid body, provider not in the workspace (`assistant_provider_invalid`) or collection not in the workspace (`assistant_collection_invalid`), or webhook URL refused (`webhook_url_invalid`, `webhook_destination_blocked`, with `details.reason`). */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    duplicate_v1_workspaces__workspace_id__assistants__assistant_id__duplicate_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                assistant_id: string;
-                workspace_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["AssistantDuplicate"] | null;
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AssistantOut"];
-                };
-            };
-            /** @description No live session (standard error shape). */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Workspace or assistant not found, or caller is not a member. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description The given name is already used (`assistant_name_taken`). */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    rotate_ticket_webhook_secret_v1_workspaces__workspace_id__assistants__assistant_id__ticket_webhook_secret_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                assistant_id: string;
-                workspace_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TicketWebhookSecretOut"];
-                };
-            };
-            /** @description No live session (standard error shape). */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Role below admin (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Workspace or assistant not found, or caller is not a member. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    test_ticket_webhook_v1_workspaces__workspace_id__assistants__assistant_id__ticket_webhook_test_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                assistant_id: string;
-                workspace_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TicketWebhookTestOut"];
-                };
-            };
-            /** @description No live session (standard error shape). */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Workspace or assistant not found, or caller is not a member. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No URL or no secret (`ticket_webhook_not_configured`). */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     list_workspace_audit_v1_workspaces__workspace_id__audit_get: {
         parameters: {
             query?: {
@@ -10292,14 +10044,12 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Validation Error */
+            /** @description Invalid body (`validation_error`) or product not in the workspace (`invite_product_invalid`). */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
+                content?: never;
             };
         };
     };
@@ -10390,6 +10140,172 @@ export interface operations {
                 content?: never;
             };
             /** @description Workspace (or invitation) not found, or caller is not a member. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_levels_v1_workspaces__workspace_id__levels_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceLevelList"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below admin (`forbidden`) or workspace suspended. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace not found or caller is not a member. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_level_v1_workspaces__workspace_id__levels__level__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                level: components["schemas"]["ResponseLevel"];
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkspaceLevelUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkspaceLevelOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below admin (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace not found or caller is not a member. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid body or level, provider and model not set together (`validation_error`) or provider not in the workspace (`level_provider_invalid`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_member_levels_v1_workspaces__workspace_id__member_levels_get: {
+        parameters: {
+            query?: {
+                /** @description Case-insensitive substring. */
+                query?: string | null;
+                role?: components["schemas"]["Role"] | null;
+                sort?: "name" | "-name" | "email" | "-email" | "role" | "-role" | "joined_at" | "-joined_at";
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberLevelsPage"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below admin (`forbidden`) or workspace suspended. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace not found or caller is not a member. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -10571,6 +10487,523 @@ export interface operations {
                 content?: never;
             };
             /** @description Last owner (`last_owner`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_member_levels_v1_workspaces__workspace_id__members__user_id__product_levels_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductLevelsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberLevelsOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below admin (`forbidden`), member's role above the caller's (`role_not_allowed`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace not found, or the user is not a member. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid body (`validation_error`) or product not in the workspace (`member_level_product_invalid`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_products_v1_workspaces__workspace_id__products_get: {
+        parameters: {
+            query?: {
+                /** @description Case-insensitive substring. */
+                query?: string | null;
+                active?: boolean | null;
+                collection_id?: string | null;
+                sort?: "name" | "-name" | "created_at" | "-created_at" | "updated_at" | "-updated_at";
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductPage"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace suspended. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or product not found, or caller is not a member. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_product_v1_workspaces__workspace_id__products_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or product not found, or caller is not a member. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Name already used in the workspace (`product_name_taken`) or, on create, no level of the workspace has a model (`level_not_configured`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid body, name ending in `:<level>` (`product_name_invalid`), collection not in the workspace (`product_collection_invalid`), or webhook URL refused (`webhook_url_invalid`, `webhook_destination_blocked`, with `details.reason`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_product_v1_workspaces__workspace_id__products__product_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace suspended. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or product not found, or caller is not a member. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_product_v1_workspaces__workspace_id__products__product_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or product not found, or caller is not a member. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_product_v1_workspaces__workspace_id__products__product_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProductUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or product not found, or caller is not a member. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Name already used in the workspace (`product_name_taken`) or, on create, no level of the workspace has a model (`level_not_configured`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid body, name ending in `:<level>` (`product_name_invalid`), collection not in the workspace (`product_collection_invalid`), or webhook URL refused (`webhook_url_invalid`, `webhook_destination_blocked`, with `details.reason`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    duplicate_v1_workspaces__workspace_id__products__product_id__duplicate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ProductDuplicate"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProductOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or product not found, or caller is not a member. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The given name is already used (`product_name_taken`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid body or name ending in `:<level>`. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    rotate_ticket_webhook_secret_v1_workspaces__workspace_id__products__product_id__ticket_webhook_secret_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketWebhookSecretOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below admin (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or product not found, or caller is not a member. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    test_ticket_webhook_v1_workspaces__workspace_id__products__product_id__ticket_webhook_test_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                product_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TicketWebhookTestOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or product not found, or caller is not a member. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No URL or no secret (`ticket_webhook_not_configured`). */
             409: {
                 headers: {
                     [name: string]: unknown;

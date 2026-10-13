@@ -37,7 +37,7 @@ import { ApiKeysPage } from "./ApiKeysPage";
 
 const PATH = `/w/${WORKSPACE_ID}/api-keys`;
 const TABLE = "Chaves de API do workspace";
-const ASSISTANTS = "*/v1/workspaces/:workspaceId/assistants";
+const ASSISTANTS = "*/v1/workspaces/:workspaceId/products";
 
 type User = ReturnType<typeof userEvent.setup>;
 

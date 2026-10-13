@@ -104,7 +104,9 @@ def test_invite_sends_email_with_token(api: ApiEnv) -> None:
     assert "/accept-invitation?token=" in sent.text
     assert "Acme Support" in sent.text
     assert api.emailed_token(email)
-    assert ("membership.invited", {"role": "editor"}) in api.workspace_audit(workspace_id)
+    assert ("membership.invited", {"role": "editor", "product_levels": []}) in (
+        api.workspace_audit(workspace_id)
+    )
 
 
 def test_invite_lists_pending_invitations(api: ApiEnv) -> None:

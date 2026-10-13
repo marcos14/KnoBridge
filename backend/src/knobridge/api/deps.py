@@ -20,7 +20,6 @@ from typing import Annotated
 from fastapi import Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from knobridge.assistants.service import AssistantService
 from knobridge.conversations.chat import ChatService
 from knobridge.conversations.retrieval import Retriever
 from knobridge.conversations.service import ConversationService
@@ -151,10 +150,6 @@ def get_provider_credential_service(request: Request) -> ProviderCredentialServi
     )
 
 
-def get_assistant_service(request: Request) -> AssistantService:
-    return AssistantService(request.app.state.clock)
-
-
 def get_provider_factory() -> ProviderFactory:
     """Builds LLM adapters from credentials; tests override it to return fakes."""
     return create_provider
@@ -193,7 +188,6 @@ ProviderCredentialServiceDep = Annotated[
     ProviderCredentialService, Depends(get_provider_credential_service)
 ]
 ProviderFactoryDep = Annotated[ProviderFactory, Depends(get_provider_factory)]
-AssistantServiceDep = Annotated[AssistantService, Depends(get_assistant_service)]
 EmailSenderDep = Annotated[EmailSender, Depends(get_email_sender)]
 EmailComposerDep = Annotated[EmailComposer, Depends(get_email_composer)]
 

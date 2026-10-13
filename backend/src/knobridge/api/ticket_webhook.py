@@ -1,6 +1,6 @@
-"""Ticket webhook of an assistant (docs/specs/chamados.md, "Abrir chamado (webhook de saída)").
+"""Ticket webhook of a product (docs/specs/chamados.md, "Abrir chamado (webhook de saída)").
 
-- ``POST /v1/workspaces/{workspace_id}/assistants/{assistant_id}/ticket-webhook/secret``
+- ``POST /v1/workspaces/{workspace_id}/products/{product_id}/ticket-webhook/secret``
   (owner or admin, with CSRF: it is a credential): generates the ``kbw_`` signing secret,
   replacing the current one, and answers 201 with it, the only time it is shown.
 - ``POST .../ticket-webhook/test`` (editor or above, with CSRF): sends one signed
@@ -9,7 +9,7 @@
   the attempt is audited either way. 409 ``ticket_webhook_not_configured`` without URL or
   secret.
 
-The URL itself is a field of the assistant (``api/assistants.py``), validated with the
+The URL itself is a field of the product (``api/products.py``), validated with the
 ``DestinationValidatorDep`` defined here. Resolver and HTTP transport are dependencies, so tests
 swap them for fakes (``dependency_overrides``) and never reach the network. Logic in
 ``tickets/webhook.py`` and ``core/outbound.py``.
@@ -110,12 +110,12 @@ _MESSAGES = {
 
 _ERRORS: dict[int | str, dict[str, object]] = {
     401: {"description": "No live session (standard error shape)."},
-    404: {"description": "Workspace or assistant not found, or caller is not a member."},
+    404: {"description": "Workspace or product not found, or caller is not a member."},
 }
 
 router = APIRouter(
-    prefix="/workspaces/{workspace_id}/assistants/{assistant_id}/ticket-webhook",
-    tags=["assistants"],
+    prefix="/workspaces/{workspace_id}/products/{product_id}/ticket-webhook",
+    tags=["products"],
 )
 
 
@@ -132,7 +132,7 @@ router = APIRouter(
     },
 )
 async def rotate_ticket_webhook_secret(
-    assistant_id: uuid.UUID,
+    product_id: uuid.UUID,
     context: AdminContext,
     webhooks: TicketWebhookServiceDep,
     ip: ClientIpDep,
@@ -142,7 +142,7 @@ async def rotate_ticket_webhook_secret(
         context.db,
         workspace_id=context.workspace_id,
         actor_id=context.current.user.id,
-        assistant_id=assistant_id,
+        assistant_id=product_id,
         ip=ip,
     )
     return TicketWebhookSecretOut(secret=issued.secret, created_at=issued.created_at)
@@ -161,7 +161,7 @@ async def rotate_ticket_webhook_secret(
     },
 )
 async def test_ticket_webhook(
-    assistant_id: uuid.UUID,
+    product_id: uuid.UUID,
     context: EditorContext,
     webhooks: TicketWebhookServiceDep,
     ip: ClientIpDep,
@@ -171,7 +171,7 @@ async def test_ticket_webhook(
         context.db,
         workspace_id=context.workspace_id,
         actor_id=context.current.user.id,
-        assistant_id=assistant_id,
+        assistant_id=product_id,
         ip=ip,
     )
     error = None

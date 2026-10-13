@@ -917,468 +917,6 @@
         "title": "ApiKeyUpdate",
         "type": "object"
       },
-      "AssistantCreate": {
-        "properties": {
-          "active": {
-            "default": true,
-            "title": "Active",
-            "type": "boolean"
-          },
-          "collection_ids": {
-            "items": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "maxItems": 50,
-            "title": "Collection Ids",
-            "type": "array"
-          },
-          "description": {
-            "default": "",
-            "maxLength": 1000,
-            "title": "Description",
-            "type": "string"
-          },
-          "language": {
-            "default": "pt-BR",
-            "maxLength": 35,
-            "pattern": "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$",
-            "title": "Language",
-            "type": "string"
-          },
-          "min_similarity": {
-            "anyOf": [
-              {
-                "maximum": 1.0,
-                "minimum": 0.0,
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Min Similarity"
-          },
-          "model": {
-            "maxLength": 200,
-            "minLength": 1,
-            "pattern": "^\\S+$",
-            "title": "Model",
-            "type": "string"
-          },
-          "name": {
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Name",
-            "type": "string"
-          },
-          "no_source_message": {
-            "anyOf": [
-              {
-                "maxLength": 2000,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "No Source Message"
-          },
-          "provider_id": {
-            "format": "uuid",
-            "title": "Provider Id",
-            "type": "string"
-          },
-          "system_prompt": {
-            "default": "",
-            "maxLength": 20000,
-            "title": "System Prompt",
-            "type": "string"
-          },
-          "temperature": {
-            "default": 0.2,
-            "maximum": 2.0,
-            "minimum": 0.0,
-            "title": "Temperature",
-            "type": "number"
-          },
-          "ticket_webhook_url": {
-            "anyOf": [
-              {
-                "maxLength": 2000,
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ticket Webhook Url"
-          },
-          "tone": {
-            "$ref": "#/components/schemas/AssistantTone",
-            "default": "neutral"
-          }
-        },
-        "required": [
-          "name",
-          "provider_id",
-          "model"
-        ],
-        "title": "AssistantCreate",
-        "type": "object"
-      },
-      "AssistantDuplicate": {
-        "description": "Omitted or null ``name``: the original name with the first free copy suffix\n(``docs/specs/chat.md``).",
-        "properties": {
-          "name": {
-            "anyOf": [
-              {
-                "maxLength": 200,
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          }
-        },
-        "title": "AssistantDuplicate",
-        "type": "object"
-      },
-      "AssistantOut": {
-        "properties": {
-          "active": {
-            "title": "Active",
-            "type": "boolean"
-          },
-          "collection_ids": {
-            "items": {
-              "format": "uuid",
-              "type": "string"
-            },
-            "title": "Collection Ids",
-            "type": "array"
-          },
-          "created_at": {
-            "format": "date-time",
-            "title": "Created At",
-            "type": "string"
-          },
-          "description": {
-            "title": "Description",
-            "type": "string"
-          },
-          "id": {
-            "format": "uuid",
-            "title": "Id",
-            "type": "string"
-          },
-          "language": {
-            "title": "Language",
-            "type": "string"
-          },
-          "min_similarity": {
-            "title": "Min Similarity",
-            "type": "number"
-          },
-          "model": {
-            "title": "Model",
-            "type": "string"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string"
-          },
-          "no_source_message": {
-            "title": "No Source Message",
-            "type": "string"
-          },
-          "provider_id": {
-            "format": "uuid",
-            "title": "Provider Id",
-            "type": "string"
-          },
-          "system_prompt": {
-            "title": "System Prompt",
-            "type": "string"
-          },
-          "temperature": {
-            "title": "Temperature",
-            "type": "number"
-          },
-          "ticket_webhook_configured": {
-            "title": "Ticket Webhook Configured",
-            "type": "boolean"
-          },
-          "ticket_webhook_secret_created_at": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ticket Webhook Secret Created At"
-          },
-          "ticket_webhook_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ticket Webhook Url"
-          },
-          "tone": {
-            "$ref": "#/components/schemas/AssistantTone"
-          },
-          "updated_at": {
-            "format": "date-time",
-            "title": "Updated At",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "description",
-          "system_prompt",
-          "provider_id",
-          "model",
-          "temperature",
-          "language",
-          "tone",
-          "no_source_message",
-          "active",
-          "collection_ids",
-          "min_similarity",
-          "ticket_webhook_url",
-          "ticket_webhook_configured",
-          "ticket_webhook_secret_created_at",
-          "created_at",
-          "updated_at"
-        ],
-        "title": "AssistantOut",
-        "type": "object"
-      },
-      "AssistantPage": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/AssistantOut"
-            },
-            "title": "Items",
-            "type": "array"
-          },
-          "limit": {
-            "title": "Limit",
-            "type": "integer"
-          },
-          "offset": {
-            "title": "Offset",
-            "type": "integer"
-          },
-          "total": {
-            "title": "Total",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "items",
-          "total",
-          "limit",
-          "offset"
-        ],
-        "title": "AssistantPage",
-        "type": "object"
-      },
-      "AssistantTone": {
-        "enum": [
-          "neutral",
-          "formal",
-          "friendly"
-        ],
-        "title": "AssistantTone",
-        "type": "string"
-      },
-      "AssistantUpdate": {
-        "description": "Fields to change; omitted (or null) fields stay. ``no_source_message`` empty or null\nrestores the default message.",
-        "properties": {
-          "active": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Active"
-          },
-          "collection_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "format": "uuid",
-                  "type": "string"
-                },
-                "maxItems": 50,
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Collection Ids"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "maxLength": 1000,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "language": {
-            "anyOf": [
-              {
-                "maxLength": 35,
-                "pattern": "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Language"
-          },
-          "min_similarity": {
-            "anyOf": [
-              {
-                "maximum": 1.0,
-                "minimum": 0.0,
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Min Similarity"
-          },
-          "model": {
-            "anyOf": [
-              {
-                "maxLength": 200,
-                "minLength": 1,
-                "pattern": "^\\S+$",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Model"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "maxLength": 200,
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "no_source_message": {
-            "anyOf": [
-              {
-                "maxLength": 2000,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "No Source Message"
-          },
-          "provider_id": {
-            "anyOf": [
-              {
-                "format": "uuid",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Provider Id"
-          },
-          "system_prompt": {
-            "anyOf": [
-              {
-                "maxLength": 20000,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "System Prompt"
-          },
-          "temperature": {
-            "anyOf": [
-              {
-                "maximum": 2.0,
-                "minimum": 0.0,
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Temperature"
-          },
-          "ticket_webhook_url": {
-            "anyOf": [
-              {
-                "maxLength": 2000,
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Ticket Webhook Url"
-          },
-          "tone": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/AssistantTone"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "title": "AssistantUpdate",
-        "type": "object"
-      },
       "AuditAction": {
         "enum": [
           "setup.completed",
@@ -1418,6 +956,13 @@
           "assistant.deleted",
           "assistant.ticket_webhook_secret_rotated",
           "assistant.ticket_webhook_tested",
+          "product.created",
+          "product.updated",
+          "product.deleted",
+          "product.ticket_webhook_secret_rotated",
+          "product.ticket_webhook_tested",
+          "workspace_level.updated",
+          "member_level.updated",
           "conversation.deleted",
           "ticket_request.created",
           "collection.created",
@@ -3795,6 +3340,13 @@
             ],
             "title": "Invited By User Id"
           },
+          "product_levels": {
+            "items": {
+              "$ref": "#/components/schemas/InvitationProductLevel"
+            },
+            "title": "Product Levels",
+            "type": "array"
+          },
           "role": {
             "$ref": "#/components/schemas/Role"
           }
@@ -3806,7 +3358,8 @@
           "invited_by_user_id",
           "created_at",
           "expires_at",
-          "expired"
+          "expired",
+          "product_levels"
         ],
         "title": "InvitationOut",
         "type": "object"
@@ -3893,6 +3446,25 @@
         "title": "InvitationPreviewOut",
         "type": "object"
       },
+      "InvitationProductLevel": {
+        "description": "The maximum level the invitee gets in a product when accepting.",
+        "properties": {
+          "max_level": {
+            "$ref": "#/components/schemas/ResponseLevel"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id",
+          "max_level"
+        ],
+        "title": "InvitationProductLevel",
+        "type": "object"
+      },
       "InvitationTokenRequest": {
         "properties": {
           "token": {
@@ -3915,6 +3487,14 @@
             "pattern": "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$",
             "title": "Email",
             "type": "string"
+          },
+          "product_levels": {
+            "items": {
+              "$ref": "#/components/schemas/InvitationProductLevel"
+            },
+            "maxItems": 200,
+            "title": "Product Levels",
+            "type": "array"
           },
           "role": {
             "$ref": "#/components/schemas/Role"
@@ -4231,6 +3811,25 @@
         "title": "LastRunFilter",
         "type": "string"
       },
+      "LevelPrice": {
+        "description": "USD per million tokens of the level's model.",
+        "properties": {
+          "input_usd_per_mtok": {
+            "title": "Input Usd Per Mtok",
+            "type": "number"
+          },
+          "output_usd_per_mtok": {
+            "title": "Output Usd Per Mtok",
+            "type": "number"
+          }
+        },
+        "required": [
+          "input_usd_per_mtok",
+          "output_usd_per_mtok"
+        ],
+        "title": "LevelPrice",
+        "type": "object"
+      },
       "LiveResponse": {
         "properties": {
           "status": {
@@ -4308,6 +3907,81 @@
         "title": "MeResponse",
         "type": "object"
       },
+      "MemberLevelsOut": {
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "levels": {
+            "items": {
+              "$ref": "#/components/schemas/MemberProductLevelOut"
+            },
+            "title": "Levels",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/Role"
+          },
+          "user_id": {
+            "format": "uuid",
+            "title": "User Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "name",
+          "email",
+          "role",
+          "levels"
+        ],
+        "title": "MemberLevelsOut",
+        "type": "object"
+      },
+      "MemberLevelsPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/MemberLevelsOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "products": {
+            "items": {
+              "$ref": "#/components/schemas/ProductRefOut"
+            },
+            "title": "Products",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "products",
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "MemberLevelsPage",
+        "type": "object"
+      },
       "MemberOut": {
         "properties": {
           "email": {
@@ -4371,6 +4045,29 @@
           "offset"
         ],
         "title": "MemberPage",
+        "type": "object"
+      },
+      "MemberProductLevelOut": {
+        "properties": {
+          "explicit": {
+            "title": "Explicit",
+            "type": "boolean"
+          },
+          "max_level": {
+            "$ref": "#/components/schemas/ResponseLevel"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id",
+          "max_level",
+          "explicit"
+        ],
+        "title": "MemberProductLevelOut",
         "type": "object"
       },
       "MessageCreate": {
@@ -5187,6 +4884,492 @@
         "title": "PathMatch",
         "type": "string"
       },
+      "ProductCreate": {
+        "properties": {
+          "active": {
+            "default": true,
+            "title": "Active",
+            "type": "boolean"
+          },
+          "collection_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "title": "Collection Ids",
+            "type": "array"
+          },
+          "description": {
+            "default": "",
+            "maxLength": 1000,
+            "title": "Description",
+            "type": "string"
+          },
+          "instructions": {
+            "default": "",
+            "maxLength": 20000,
+            "title": "Instructions",
+            "type": "string"
+          },
+          "language": {
+            "default": "pt-BR",
+            "maxLength": 35,
+            "pattern": "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$",
+            "title": "Language",
+            "type": "string"
+          },
+          "min_similarity": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Similarity"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "no_source_message": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "No Source Message"
+          },
+          "ticket_webhook_url": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticket Webhook Url"
+          },
+          "tone": {
+            "$ref": "#/components/schemas/ProductTone",
+            "default": "neutral"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "ProductCreate",
+        "type": "object"
+      },
+      "ProductDuplicate": {
+        "description": "Omitted or null ``name``: the original name with the first free copy suffix.",
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "title": "ProductDuplicate",
+        "type": "object"
+      },
+      "ProductLevelIn": {
+        "properties": {
+          "max_level": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResponseLevel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id",
+          "max_level"
+        ],
+        "title": "ProductLevelIn",
+        "type": "object"
+      },
+      "ProductLevelOut": {
+        "description": "The user's maximum level in an active product of the workspace.",
+        "properties": {
+          "explicit": {
+            "title": "Explicit",
+            "type": "boolean"
+          },
+          "max_level": {
+            "$ref": "#/components/schemas/ResponseLevel"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "product_name": {
+            "title": "Product Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "product_id",
+          "product_name",
+          "max_level",
+          "explicit"
+        ],
+        "title": "ProductLevelOut",
+        "type": "object"
+      },
+      "ProductLevelsUpdate": {
+        "properties": {
+          "levels": {
+            "items": {
+              "$ref": "#/components/schemas/ProductLevelIn"
+            },
+            "maxItems": 200,
+            "minItems": 1,
+            "title": "Levels",
+            "type": "array"
+          }
+        },
+        "required": [
+          "levels"
+        ],
+        "title": "ProductLevelsUpdate",
+        "type": "object"
+      },
+      "ProductOut": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "collection_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Collection Ids",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "instructions": {
+            "title": "Instructions",
+            "type": "string"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "min_similarity": {
+            "title": "Min Similarity",
+            "type": "number"
+          },
+          "my_max_level": {
+            "$ref": "#/components/schemas/ResponseLevel"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "no_source_message": {
+            "title": "No Source Message",
+            "type": "string"
+          },
+          "ticket_webhook_configured": {
+            "title": "Ticket Webhook Configured",
+            "type": "boolean"
+          },
+          "ticket_webhook_secret_created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticket Webhook Secret Created At"
+          },
+          "ticket_webhook_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticket Webhook Url"
+          },
+          "tone": {
+            "$ref": "#/components/schemas/ProductTone"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "instructions",
+          "language",
+          "tone",
+          "no_source_message",
+          "active",
+          "collection_ids",
+          "min_similarity",
+          "ticket_webhook_url",
+          "ticket_webhook_configured",
+          "ticket_webhook_secret_created_at",
+          "my_max_level",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ProductOut",
+        "type": "object"
+      },
+      "ProductPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProductOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "ProductPage",
+        "type": "object"
+      },
+      "ProductRefOut": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "active"
+        ],
+        "title": "ProductRefOut",
+        "type": "object"
+      },
+      "ProductTone": {
+        "enum": [
+          "neutral",
+          "formal",
+          "friendly"
+        ],
+        "title": "ProductTone",
+        "type": "string"
+      },
+      "ProductUpdate": {
+        "description": "Fields to change; omitted (or null) fields stay. ``no_source_message`` empty or null\nrestores the default message.",
+        "properties": {
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "collection_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "maxItems": 100,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Collection Ids"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "instructions": {
+            "anyOf": [
+              {
+                "maxLength": 20000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instructions"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "maxLength": 35,
+                "pattern": "^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "min_similarity": {
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Similarity"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "no_source_message": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "No Source Message"
+          },
+          "ticket_webhook_url": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticket Webhook Url"
+          },
+          "tone": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProductTone"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "ProductUpdate",
+        "type": "object"
+      },
       "ProfileUpdate": {
         "description": "Fields to change; omitted (or null) fields keep their value.",
         "properties": {
@@ -5900,6 +6083,16 @@
         ],
         "title": "ResetPasswordRequest",
         "type": "object"
+      },
+      "ResponseLevel": {
+        "description": "The three levels, in increasing order (the order of the members is the order).",
+        "enum": [
+          "end_user",
+          "support",
+          "product_dev"
+        ],
+        "title": "ResponseLevel",
+        "type": "string"
       },
       "ReviewAction": {
         "enum": [
@@ -10638,6 +10831,13 @@
             "title": "Name",
             "type": "string"
           },
+          "product_levels": {
+            "items": {
+              "$ref": "#/components/schemas/ProductLevelOut"
+            },
+            "title": "Product Levels",
+            "type": "array"
+          },
           "role": {
             "$ref": "#/components/schemas/Role"
           },
@@ -10655,7 +10855,8 @@
           "slug",
           "status",
           "role",
-          "access"
+          "access",
+          "product_levels"
         ],
         "title": "UserWorkspaceOut",
         "type": "object"
@@ -10800,6 +11001,194 @@
           "checklist"
         ],
         "title": "WorkspaceDashboardOut",
+        "type": "object"
+      },
+      "WorkspaceLevelList": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WorkspaceLevelOut"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "WorkspaceLevelList",
+        "type": "object"
+      },
+      "WorkspaceLevelOut": {
+        "properties": {
+          "configured": {
+            "title": "Configured",
+            "type": "boolean"
+          },
+          "default_instructions": {
+            "title": "Default Instructions",
+            "type": "string"
+          },
+          "estimated_cost_per_answer_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Cost Per Answer Usd"
+          },
+          "instructions": {
+            "title": "Instructions",
+            "type": "string"
+          },
+          "instructions_is_default": {
+            "title": "Instructions Is Default",
+            "type": "boolean"
+          },
+          "level": {
+            "$ref": "#/components/schemas/ResponseLevel"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "price": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LevelPrice"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "provider_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Id"
+          },
+          "provider_kind": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProviderKind"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "provider_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Name"
+          },
+          "temperature": {
+            "title": "Temperature",
+            "type": "number"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "level",
+          "provider_id",
+          "provider_name",
+          "provider_kind",
+          "model",
+          "temperature",
+          "instructions",
+          "instructions_is_default",
+          "default_instructions",
+          "configured",
+          "price",
+          "estimated_cost_per_answer_usd",
+          "updated_at"
+        ],
+        "title": "WorkspaceLevelOut",
+        "type": "object"
+      },
+      "WorkspaceLevelUpdate": {
+        "description": "Omitted fields stay; ``provider_id`` and ``model`` null clear them (together), and\n``instructions`` null restores the default text.",
+        "properties": {
+          "instructions": {
+            "anyOf": [
+              {
+                "maxLength": 20000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instructions"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "pattern": "^\\S+$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "provider_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Id"
+          },
+          "temperature": {
+            "anyOf": [
+              {
+                "maximum": 2.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Temperature"
+          }
+        },
+        "title": "WorkspaceLevelUpdate",
         "type": "object"
       },
       "WorkspaceOut": {
@@ -13719,622 +14108,6 @@
         ]
       }
     },
-    "/v1/workspaces/{workspace_id}/assistants": {
-      "get": {
-        "description": "Assistants (only the active ones for viewers); ``query`` matches name, description or\nmodel.",
-        "operationId": "list_assistants_v1_workspaces__workspace_id__assistants_get",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "workspace_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Workspace Id",
-              "type": "string"
-            }
-          },
-          {
-            "description": "Case-insensitive substring.",
-            "in": "query",
-            "name": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "maxLength": 200,
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "Case-insensitive substring.",
-              "title": "Query"
-            }
-          },
-          {
-            "in": "query",
-            "name": "active",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Active"
-            }
-          },
-          {
-            "in": "query",
-            "name": "provider_id",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "format": "uuid",
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Provider Id"
-            }
-          },
-          {
-            "in": "query",
-            "name": "collection_id",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "format": "uuid",
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Collection Id"
-            }
-          },
-          {
-            "in": "query",
-            "name": "sort",
-            "required": false,
-            "schema": {
-              "default": "name",
-              "enum": [
-                "name",
-                "-name",
-                "created_at",
-                "-created_at",
-                "updated_at",
-                "-updated_at"
-              ],
-              "title": "Sort",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "limit",
-            "required": false,
-            "schema": {
-              "default": 50,
-              "maximum": 200,
-              "minimum": 1,
-              "title": "Limit",
-              "type": "integer"
-            }
-          },
-          {
-            "in": "query",
-            "name": "offset",
-            "required": false,
-            "schema": {
-              "default": 0,
-              "minimum": 0,
-              "title": "Offset",
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AssistantPage"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "401": {
-            "description": "No live session (standard error shape)."
-          },
-          "403": {
-            "description": "Workspace suspended."
-          },
-          "404": {
-            "description": "Workspace or assistant not found, or caller is not a member."
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "List Assistants",
-        "tags": [
-          "assistants"
-        ]
-      },
-      "post": {
-        "description": "Create an assistant bound to a provider credential of the workspace.",
-        "operationId": "create_assistant_v1_workspaces__workspace_id__assistants_post",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "workspace_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Workspace Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AssistantCreate"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AssistantOut"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "401": {
-            "description": "No live session (standard error shape)."
-          },
-          "403": {
-            "description": "Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
-          },
-          "404": {
-            "description": "Workspace or assistant not found, or caller is not a member."
-          },
-          "409": {
-            "description": "Name already used in the workspace (`assistant_name_taken`)."
-          },
-          "422": {
-            "description": "Invalid body, provider not in the workspace (`assistant_provider_invalid`) or collection not in the workspace (`assistant_collection_invalid`), or webhook URL refused (`webhook_url_invalid`, `webhook_destination_blocked`, with `details.reason`)."
-          }
-        },
-        "summary": "Create Assistant",
-        "tags": [
-          "assistants"
-        ]
-      }
-    },
-    "/v1/workspaces/{workspace_id}/assistants/{assistant_id}": {
-      "delete": {
-        "description": "Delete an assistant.",
-        "operationId": "delete_assistant_v1_workspaces__workspace_id__assistants__assistant_id__delete",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "assistant_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Assistant Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "path",
-            "name": "workspace_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Workspace Id",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Successful Response"
-          },
-          "401": {
-            "description": "No live session (standard error shape)."
-          },
-          "403": {
-            "description": "Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
-          },
-          "404": {
-            "description": "Workspace or assistant not found, or caller is not a member."
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Delete Assistant",
-        "tags": [
-          "assistants"
-        ]
-      },
-      "get": {
-        "description": "One assistant (404 for viewers when it is inactive).",
-        "operationId": "get_assistant_v1_workspaces__workspace_id__assistants__assistant_id__get",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "assistant_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Assistant Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "path",
-            "name": "workspace_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Workspace Id",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AssistantOut"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "401": {
-            "description": "No live session (standard error shape)."
-          },
-          "403": {
-            "description": "Workspace suspended."
-          },
-          "404": {
-            "description": "Workspace or assistant not found, or caller is not a member."
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Get Assistant",
-        "tags": [
-          "assistants"
-        ]
-      },
-      "patch": {
-        "description": "Change any field; ``no_source_message`` empty or null restores the default and\n``ticket_webhook_url`` null turns the webhook off.",
-        "operationId": "update_assistant_v1_workspaces__workspace_id__assistants__assistant_id__patch",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "assistant_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Assistant Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "path",
-            "name": "workspace_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Workspace Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AssistantUpdate"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AssistantOut"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "401": {
-            "description": "No live session (standard error shape)."
-          },
-          "403": {
-            "description": "Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
-          },
-          "404": {
-            "description": "Workspace or assistant not found, or caller is not a member."
-          },
-          "409": {
-            "description": "Name already used in the workspace (`assistant_name_taken`)."
-          },
-          "422": {
-            "description": "Invalid body, provider not in the workspace (`assistant_provider_invalid`) or collection not in the workspace (`assistant_collection_invalid`), or webhook URL refused (`webhook_url_invalid`, `webhook_destination_blocked`, with `details.reason`)."
-          }
-        },
-        "summary": "Update Assistant",
-        "tags": [
-          "assistants"
-        ]
-      }
-    },
-    "/v1/workspaces/{workspace_id}/assistants/{assistant_id}/duplicate": {
-      "post": {
-        "description": "Copy the configuration and collections; the webhook keeps its URL, not its secret.",
-        "operationId": "duplicate_v1_workspaces__workspace_id__assistants__assistant_id__duplicate_post",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "assistant_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Assistant Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "path",
-            "name": "workspace_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Workspace Id",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "anyOf": [
-                  {
-                    "$ref": "#/components/schemas/AssistantDuplicate"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "title": "Body"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AssistantOut"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "401": {
-            "description": "No live session (standard error shape)."
-          },
-          "403": {
-            "description": "Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
-          },
-          "404": {
-            "description": "Workspace or assistant not found, or caller is not a member."
-          },
-          "409": {
-            "description": "The given name is already used (`assistant_name_taken`)."
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Duplicate",
-        "tags": [
-          "assistants"
-        ]
-      }
-    },
-    "/v1/workspaces/{workspace_id}/assistants/{assistant_id}/ticket-webhook/secret": {
-      "post": {
-        "description": "Generate the signing secret of the webhook, replacing the current one at once.",
-        "operationId": "rotate_ticket_webhook_secret_v1_workspaces__workspace_id__assistants__assistant_id__ticket_webhook_secret_post",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "assistant_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Assistant Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "path",
-            "name": "workspace_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Workspace Id",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TicketWebhookSecretOut"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "401": {
-            "description": "No live session (standard error shape)."
-          },
-          "403": {
-            "description": "Role below admin (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
-          },
-          "404": {
-            "description": "Workspace or assistant not found, or caller is not a member."
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Rotate Ticket Webhook Secret",
-        "tags": [
-          "assistants"
-        ]
-      }
-    },
-    "/v1/workspaces/{workspace_id}/assistants/{assistant_id}/ticket-webhook/test": {
-      "post": {
-        "description": "Send a signed ``ticket.test`` event to the webhook and report the outcome.",
-        "operationId": "test_ticket_webhook_v1_workspaces__workspace_id__assistants__assistant_id__ticket_webhook_test_post",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "assistant_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Assistant Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "path",
-            "name": "workspace_id",
-            "required": true,
-            "schema": {
-              "format": "uuid",
-              "title": "Workspace Id",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TicketWebhookTestOut"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "401": {
-            "description": "No live session (standard error shape)."
-          },
-          "403": {
-            "description": "Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
-          },
-          "404": {
-            "description": "Workspace or assistant not found, or caller is not a member."
-          },
-          "409": {
-            "description": "No URL or no secret (`ticket_webhook_not_configured`)."
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Test Ticket Webhook",
-        "tags": [
-          "assistants"
-        ]
-      }
-    },
     "/v1/workspaces/{workspace_id}/audit": {
       "get": {
         "description": "Events of the workspace, newest first; the period is ``[occurred_from, occurred_to)``.",
@@ -15963,14 +15736,7 @@
             "description": "The address belongs to a member (`already_member`) or a concurrent request invited it first (`invitation_pending`)."
           },
           "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
+            "description": "Invalid body (`validation_error`) or product not in the workspace (`invite_product_invalid`)."
           }
         },
         "summary": "Create Invite",
@@ -16095,6 +15861,254 @@
         "summary": "Resend Invite",
         "tags": [
           "invites"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/levels": {
+      "get": {
+        "description": "The three levels of the workspace, in order (``end_user``, ``support``,\n``product_dev``).",
+        "operationId": "list_levels_v1_workspaces__workspace_id__levels_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceLevelList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below admin (`forbidden`) or workspace suspended."
+          },
+          "404": {
+            "description": "Workspace not found or caller is not a member."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Levels",
+        "tags": [
+          "levels"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/levels/{level}": {
+      "patch": {
+        "description": "Change the credential, model, temperature or instructions of a level.",
+        "operationId": "update_level_v1_workspaces__workspace_id__levels__level__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "level",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ResponseLevel"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkspaceLevelUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceLevelOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below admin (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
+          },
+          "404": {
+            "description": "Workspace not found or caller is not a member."
+          },
+          "422": {
+            "description": "Invalid body or level, provider and model not set together (`validation_error`) or provider not in the workspace (`level_provider_invalid`)."
+          }
+        },
+        "summary": "Update Level",
+        "tags": [
+          "levels"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/member-levels": {
+      "get": {
+        "description": "Each member's maximum level in each product (``query`` matches name or e-mail).",
+        "operationId": "list_member_levels_v1_workspaces__workspace_id__member_levels_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Case-insensitive substring.",
+            "in": "query",
+            "name": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Case-insensitive substring.",
+              "title": "Query"
+            }
+          },
+          {
+            "in": "query",
+            "name": "role",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Role"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Role"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "name",
+              "enum": [
+                "name",
+                "-name",
+                "email",
+                "-email",
+                "role",
+                "-role",
+                "joined_at",
+                "-joined_at"
+              ],
+              "title": "Sort",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberLevelsPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below admin (`forbidden`) or workspace suspended."
+          },
+          "404": {
+            "description": "Workspace not found or caller is not a member."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Member Levels",
+        "tags": [
+          "levels"
         ]
       }
     },
@@ -16359,6 +16373,664 @@
         "summary": "Change Member Role",
         "tags": [
           "members"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/members/{user_id}/product-levels": {
+      "put": {
+        "description": "Record or remove the member's maximum level in the given products.",
+        "operationId": "set_member_levels_v1_workspaces__workspace_id__members__user_id__product_levels_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "User Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductLevelsUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemberLevelsOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below admin (`forbidden`), member's role above the caller's (`role_not_allowed`), workspace suspended or CSRF failure (`csrf_failed`)."
+          },
+          "404": {
+            "description": "Workspace not found, or the user is not a member."
+          },
+          "422": {
+            "description": "Invalid body (`validation_error`) or product not in the workspace (`member_level_product_invalid`)."
+          }
+        },
+        "summary": "Set Member Levels",
+        "tags": [
+          "levels"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/products": {
+      "get": {
+        "description": "Products (only the active ones for viewers); ``query`` matches name or description.",
+        "operationId": "list_products_v1_workspaces__workspace_id__products_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Case-insensitive substring.",
+            "in": "query",
+            "name": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Case-insensitive substring.",
+              "title": "Query"
+            }
+          },
+          {
+            "in": "query",
+            "name": "active",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Active"
+            }
+          },
+          {
+            "in": "query",
+            "name": "collection_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Collection Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "name",
+              "enum": [
+                "name",
+                "-name",
+                "created_at",
+                "-created_at",
+                "updated_at",
+                "-updated_at"
+              ],
+              "title": "Sort",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Workspace suspended."
+          },
+          "404": {
+            "description": "Workspace or product not found, or caller is not a member."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Products",
+        "tags": [
+          "products"
+        ]
+      },
+      "post": {
+        "description": "Create a product.",
+        "operationId": "create_product_v1_workspaces__workspace_id__products_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
+          },
+          "404": {
+            "description": "Workspace or product not found, or caller is not a member."
+          },
+          "409": {
+            "description": "Name already used in the workspace (`product_name_taken`) or, on create, no level of the workspace has a model (`level_not_configured`)."
+          },
+          "422": {
+            "description": "Invalid body, name ending in `:<level>` (`product_name_invalid`), collection not in the workspace (`product_collection_invalid`), or webhook URL refused (`webhook_url_invalid`, `webhook_destination_blocked`, with `details.reason`)."
+          }
+        },
+        "summary": "Create Product",
+        "tags": [
+          "products"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/products/{product_id}": {
+      "delete": {
+        "description": "Delete a product with its conversations and the members' levels in it.",
+        "operationId": "delete_product_v1_workspaces__workspace_id__products__product_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "product_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Product Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
+          },
+          "404": {
+            "description": "Workspace or product not found, or caller is not a member."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Product",
+        "tags": [
+          "products"
+        ]
+      },
+      "get": {
+        "description": "One product (404 for viewers when it is inactive).",
+        "operationId": "get_product_v1_workspaces__workspace_id__products__product_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "product_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Product Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Workspace suspended."
+          },
+          "404": {
+            "description": "Workspace or product not found, or caller is not a member."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Product",
+        "tags": [
+          "products"
+        ]
+      },
+      "patch": {
+        "description": "Change any field; ``no_source_message`` empty or null restores the default and\n``ticket_webhook_url`` null turns the webhook off.",
+        "operationId": "update_product_v1_workspaces__workspace_id__products__product_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "product_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Product Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
+          },
+          "404": {
+            "description": "Workspace or product not found, or caller is not a member."
+          },
+          "409": {
+            "description": "Name already used in the workspace (`product_name_taken`) or, on create, no level of the workspace has a model (`level_not_configured`)."
+          },
+          "422": {
+            "description": "Invalid body, name ending in `:<level>` (`product_name_invalid`), collection not in the workspace (`product_collection_invalid`), or webhook URL refused (`webhook_url_invalid`, `webhook_destination_blocked`, with `details.reason`)."
+          }
+        },
+        "summary": "Update Product",
+        "tags": [
+          "products"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/products/{product_id}/duplicate": {
+      "post": {
+        "description": "Copy the configuration and collections; the webhook keeps its URL, not its secret.",
+        "operationId": "duplicate_v1_workspaces__workspace_id__products__product_id__duplicate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "product_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Product Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ProductDuplicate"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
+          },
+          "404": {
+            "description": "Workspace or product not found, or caller is not a member."
+          },
+          "409": {
+            "description": "The given name is already used (`product_name_taken`)."
+          },
+          "422": {
+            "description": "Invalid body or name ending in `:<level>`."
+          }
+        },
+        "summary": "Duplicate",
+        "tags": [
+          "products"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/products/{product_id}/ticket-webhook/secret": {
+      "post": {
+        "description": "Generate the signing secret of the webhook, replacing the current one at once.",
+        "operationId": "rotate_ticket_webhook_secret_v1_workspaces__workspace_id__products__product_id__ticket_webhook_secret_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "product_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Product Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketWebhookSecretOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below admin (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
+          },
+          "404": {
+            "description": "Workspace or product not found, or caller is not a member."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Rotate Ticket Webhook Secret",
+        "tags": [
+          "products"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/products/{product_id}/ticket-webhook/test": {
+      "post": {
+        "description": "Send a signed ``ticket.test`` event to the webhook and report the outcome.",
+        "operationId": "test_ticket_webhook_v1_workspaces__workspace_id__products__product_id__ticket_webhook_test_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "product_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Product Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TicketWebhookTestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
+          },
+          "404": {
+            "description": "Workspace or product not found, or caller is not a member."
+          },
+          "409": {
+            "description": "No URL or no secret (`ticket_webhook_not_configured`)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Test Ticket Webhook",
+        "tags": [
+          "products"
         ]
       }
     },

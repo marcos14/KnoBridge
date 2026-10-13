@@ -73,7 +73,7 @@ def configured_world(api: ApiEnv, *roles: Role, webhook: bool = True) -> World:
     world = build_world(api, *(roles or (Role.OWNER,)), **extra)
     if webhook:
         secret = api.client.post(
-            f"/v1/workspaces/{world.workspace_id}/assistants/{world.assistant_id}"
+            f"/v1/workspaces/{world.workspace_id}/products/{world.assistant_id}"
             "/ticket-webhook/secret",
             headers=api.csrf_headers(),
         )

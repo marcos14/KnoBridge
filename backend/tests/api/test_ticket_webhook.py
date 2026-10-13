@@ -82,7 +82,7 @@ def hooks(api: ApiEnv) -> Generator[Hooks]:
 
 
 def _assistant_path(world: World, suffix: str = "") -> str:
-    return f"/v1/workspaces/{world.workspace_id}/assistants/{world.assistant_id}{suffix}"
+    return f"/v1/workspaces/{world.workspace_id}/products/{world.assistant_id}{suffix}"
 
 
 def _patch(api: ApiEnv, world: World, body: dict[str, object]) -> httpx2.Response:
@@ -178,11 +178,9 @@ def test_create_refuses_private_webhook_url(api: ApiEnv, hooks: Hooks) -> None:
     world = build_world(api, Role.ADMIN)
 
     response = api.client.post(
-        f"/v1/workspaces/{world.workspace_id}/assistants",
+        f"/v1/workspaces/{world.workspace_id}/products",
         json={
             "name": "Outro",
-            "provider_id": world.provider_id,
-            "model": "fake-model",
             "ticket_webhook_url": HOOK_URL,
         },
         headers=api.csrf_headers(),
@@ -205,7 +203,7 @@ def test_update_webhook_url_audited_by_field_name(api: ApiEnv, hooks: Hooks) -> 
     response = _patch(api, world, {"ticket_webhook_url": HOOK_URL + "?token=abc"})
 
     assert response.status_code == 200, response.text
-    updated = _events(api, world, "assistant.updated")
+    updated = _events(api, world, "product.updated")
     assert {"name": "Suporte", "fields": ["ticket_webhook_url"]} in updated
     assert all("token=abc" not in json.dumps(event) for event in updated)
 
@@ -227,7 +225,7 @@ def test_update_same_url_is_not_audited(api: ApiEnv, hooks: Hooks) -> None:
     response = _patch(api, world, {"ticket_webhook_url": HOOK_URL})
 
     assert response.status_code == 200
-    assert _events(api, world, "assistant.updated") == []
+    assert _events(api, world, "product.updated") == []
 
 
 def test_generate_secret_shows_it_once_and_stores_ciphertext(api: ApiEnv, hooks: Hooks) -> None:
@@ -247,7 +245,7 @@ def test_generate_secret_shows_it_once_and_stores_ciphertext(api: ApiEnv, hooks:
     shown = api.client.get(_assistant_path(world))
     assert secret not in shown.text
     assert shown.json()["ticket_webhook_configured"] is True
-    listed = api.client.get(f"/v1/workspaces/{world.workspace_id}/assistants")
+    listed = api.client.get(f"/v1/workspaces/{world.workspace_id}/products")
     assert secret not in listed.text
 
 

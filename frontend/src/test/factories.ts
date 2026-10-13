@@ -31,6 +31,7 @@ export function makeWorkspace(overrides: Partial<UserWorkspace> = {}): UserWorks
     status: "active",
     role: "owner",
     access: "member",
+    product_levels: [],
     ...overrides,
   };
 }
@@ -146,6 +147,7 @@ export function makeInvitation(overrides: Partial<Invitation> = {}): Invitation 
     created_at: "2026-10-10T10:00:00Z",
     expires_at: "2026-10-17T10:00:00Z",
     expired: false,
+    product_levels: [],
     ...overrides,
   };
 }
@@ -343,16 +345,13 @@ export function makeProviders(): Provider[] {
 export const ASSISTANT_ID = "00000000-0000-4000-8000-0000000000f1";
 export const OTHER_ASSISTANT_ID = "00000000-0000-4000-8000-0000000000f2";
 
-/** One item of `GET /v1/workspaces/{id}/assistants`: by default the active "Suporte ERP", on Código ERP. */
+/** One product (`GET /v1/workspaces/{id}/products`, still "assistant" on screen): by default the active "Suporte ERP", on Código ERP. */
 export function makeAssistant(overrides: Partial<Assistant> = {}): Assistant {
   return {
     id: ASSISTANT_ID,
     name: "Suporte ERP",
     description: "Dúvidas sobre o ERP.",
-    system_prompt: "Responda com base nas fontes.",
-    provider_id: PROVIDER_ID,
-    model: "gpt-4.1-mini",
-    temperature: 0.2,
+    instructions: "Responda com base nas fontes.",
     language: "pt-BR",
     tone: "neutral",
     no_source_message: "Não encontrei isso nas fontes. Quer abrir um chamado?",
@@ -362,21 +361,20 @@ export function makeAssistant(overrides: Partial<Assistant> = {}): Assistant {
     ticket_webhook_url: null,
     ticket_webhook_configured: false,
     ticket_webhook_secret_created_at: null,
+    my_max_level: "product_dev",
     created_at: "2026-10-02T10:00:00Z",
     updated_at: "2026-10-02T10:00:00Z",
     ...overrides,
   };
 }
 
-/** The default assistants, by name: Rascunho (inactive, on Anthropic, no collection) and Suporte ERP (active). */
+/** The default assistants, by name: Rascunho (inactive, no collection) and Suporte ERP (active). */
 export function makeAssistants(): Assistant[] {
   return [
     makeAssistant({
       id: OTHER_ASSISTANT_ID,
       name: "Rascunho",
       description: "",
-      provider_id: OTHER_PROVIDER_ID,
-      model: "claude-sonnet",
       tone: "friendly",
       active: false,
       collection_ids: [],

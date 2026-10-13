@@ -10,6 +10,7 @@ from typing import cast
 import pytest
 from api_support import ApiEnv
 from chat_support import ChatOverrides, World, ask, build_world, error, events, messages, start
+from product_support import configure_level
 from search_support import Passage, SearchWorld, add_passages, build_search_world
 
 from fakes.embedding_provider import RecordingEmbeddingFactory, RecordingEmbeddingProvider
@@ -54,12 +55,11 @@ NO_SOURCE = "Não achei nas fontes."
 
 
 def _assistant(api: ApiEnv, world: SearchWorld, *collections: uuid.UUID) -> World:
+    configure_level(api, world.workspace_id, str(world.provider_id))
     created = api.client.post(
-        f"/v1/workspaces/{world.workspace_id}/assistants",
+        f"/v1/workspaces/{world.workspace_id}/products",
         json={
             "name": "Suporte",
-            "provider_id": str(world.provider_id),
-            "model": "fake-model",
             "no_source_message": NO_SOURCE,
             "collection_ids": [str(cid) for cid in collections],
         },

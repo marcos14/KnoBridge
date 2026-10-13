@@ -4,10 +4,15 @@ import { apiClient, unwrap } from "./client";
 import { fetchAllPages } from "./pages";
 import type { components, operations } from "./schema.gen";
 
-export type Assistant = components["schemas"]["AssistantOut"];
-export type AssistantTone = components["schemas"]["AssistantTone"];
-export type AssistantInput = components["schemas"]["AssistantCreate"];
-export type AssistantChanges = components["schemas"]["AssistantUpdate"];
+/*
+ * Transitional (plan 0009): assistants became products in the API (`/products`, same ids). The
+ * screens still speak of assistants until the Products screen replaces them, so this module keeps
+ * its names over the product routes and types.
+ */
+export type Assistant = components["schemas"]["ProductOut"];
+export type AssistantTone = components["schemas"]["ProductTone"];
+export type AssistantInput = components["schemas"]["ProductCreate"];
+export type AssistantChanges = components["schemas"]["ProductUpdate"];
 export type TicketWebhookSecret = components["schemas"]["TicketWebhookSecretOut"];
 export type TicketWebhookTest = components["schemas"]["TicketWebhookTestOut"];
 
@@ -25,7 +30,7 @@ export function useAssistants(workspaceId: string) {
     queryFn: ({ signal }) =>
       fetchAllPages(async (query) =>
         unwrap(
-          await apiClient.GET("/v1/workspaces/{workspace_id}/assistants", {
+          await apiClient.GET("/v1/workspaces/{workspace_id}/products", {
             params: { path: { workspace_id: workspaceId }, query },
             signal,
           }),
@@ -34,9 +39,9 @@ export function useAssistants(workspaceId: string) {
   });
 }
 
-/** Search, filters, sort and page of `GET /v1/workspaces/{workspace_id}/assistants` (`docs/specs`, "Listagens"). */
+/** Search, filters, sort and page of `GET /v1/workspaces/{workspace_id}/products` (`docs/specs`, "Listagens"). */
 export type AssistantListQuery = NonNullable<
-  operations["list_assistants_v1_workspaces__workspace_id__assistants_get"]["parameters"]["query"]
+  operations["list_products_v1_workspaces__workspace_id__products_get"]["parameters"]["query"]
 >;
 
 /**
@@ -48,7 +53,7 @@ export function useAssistantPage(workspaceId: string, query: AssistantListQuery)
     queryKey: [...assistantsQueryKey(workspaceId), "page", query],
     queryFn: async ({ signal }) =>
       unwrap(
-        await apiClient.GET("/v1/workspaces/{workspace_id}/assistants", {
+        await apiClient.GET("/v1/workspaces/{workspace_id}/products", {
           params: { path: { workspace_id: workspaceId }, query },
           signal,
         }),
@@ -63,7 +68,7 @@ function useRefreshAssistants(workspaceId: string) {
 }
 
 /**
- * `POST .../assistants/{assistant_id}/duplicate` (201, editor or above): a new assistant with the
+ * `POST .../products/{product_id}/duplicate` (201, editor or above): a new assistant with the
  * original's configuration, named "<nome> (cópia)" by the API. The webhook secret is not copied.
  */
 export function useDuplicateAssistant(workspaceId: string) {
@@ -71,8 +76,8 @@ export function useDuplicateAssistant(workspaceId: string) {
   return useMutation({
     mutationFn: async (assistantId: string) =>
       unwrap(
-        await apiClient.POST("/v1/workspaces/{workspace_id}/assistants/{assistant_id}/duplicate", {
-          params: { path: { workspace_id: workspaceId, assistant_id: assistantId } },
+        await apiClient.POST("/v1/workspaces/{workspace_id}/products/{product_id}/duplicate", {
+          params: { path: { workspace_id: workspaceId, product_id: assistantId } },
           body: {},
         }),
       ),
@@ -81,15 +86,15 @@ export function useDuplicateAssistant(workspaceId: string) {
 }
 
 /**
- * `POST /v1/workspaces/{id}/assistants` (201). 409 `assistant_name_taken`; 422
- * `assistant_provider_invalid` when the provider is not a credential of the workspace.
+ * `POST /v1/workspaces/{id}/products` (201). 409 `product_name_taken` or, while no level of the
+ * workspace has a model, `level_not_configured`; 422 `product_name_invalid`.
  */
 export function useCreateAssistant(workspaceId: string) {
   const refresh = useRefreshAssistants(workspaceId);
   return useMutation({
     mutationFn: async (body: AssistantInput) =>
       unwrap(
-        await apiClient.POST("/v1/workspaces/{workspace_id}/assistants", {
+        await apiClient.POST("/v1/workspaces/{workspace_id}/products", {
           params: { path: { workspace_id: workspaceId } },
           body,
         }),
@@ -104,7 +109,7 @@ export interface AssistantUpdate {
 }
 
 /**
- * `PATCH /v1/workspaces/{id}/assistants/{assistant_id}`; an empty `no_source_message` restores
+ * `PATCH /v1/workspaces/{id}/products/{product_id}`; an empty `no_source_message` restores
  * the default message.
  */
 export function useUpdateAssistant(workspaceId: string) {
@@ -112,8 +117,8 @@ export function useUpdateAssistant(workspaceId: string) {
   return useMutation({
     mutationFn: async ({ assistantId, changes }: AssistantUpdate) =>
       unwrap(
-        await apiClient.PATCH("/v1/workspaces/{workspace_id}/assistants/{assistant_id}", {
-          params: { path: { workspace_id: workspaceId, assistant_id: assistantId } },
+        await apiClient.PATCH("/v1/workspaces/{workspace_id}/products/{product_id}", {
+          params: { path: { workspace_id: workspaceId, product_id: assistantId } },
           body: changes,
         }),
       ),
@@ -122,7 +127,7 @@ export function useUpdateAssistant(workspaceId: string) {
 }
 
 /**
- * `POST .../assistants/{assistant_id}/ticket-webhook/secret` (201, owner or admin): generates the
+ * `POST .../products/{product_id}/ticket-webhook/secret` (201, owner or admin): generates the
  * `kbw_` secret that signs the ticket webhook, replacing the current one at once. The whole secret
  * comes only in this answer; the list is reloaded for `ticket_webhook_configured` and the date.
  */
@@ -132,8 +137,8 @@ export function useRotateTicketWebhookSecret(workspaceId: string) {
     mutationFn: async (assistantId: string) =>
       unwrap(
         await apiClient.POST(
-          "/v1/workspaces/{workspace_id}/assistants/{assistant_id}/ticket-webhook/secret",
-          { params: { path: { workspace_id: workspaceId, assistant_id: assistantId } } },
+          "/v1/workspaces/{workspace_id}/products/{product_id}/ticket-webhook/secret",
+          { params: { path: { workspace_id: workspaceId, product_id: assistantId } } },
         ),
       ),
     onSuccess: refresh,
@@ -141,7 +146,7 @@ export function useRotateTicketWebhookSecret(workspaceId: string) {
 }
 
 /**
- * `POST .../assistants/{assistant_id}/ticket-webhook/test` (editor or above): one signed
+ * `POST .../products/{product_id}/ticket-webhook/test` (editor or above): one signed
  * `ticket.test` event to the saved URL, without retries. 200 also when the destination fails
  * (`ok: false` with `error`); 409 `ticket_webhook_not_configured` without URL or secret.
  */
@@ -150,15 +155,15 @@ export function useTestTicketWebhook(workspaceId: string) {
     mutationFn: async (assistantId: string) =>
       unwrap(
         await apiClient.POST(
-          "/v1/workspaces/{workspace_id}/assistants/{assistant_id}/ticket-webhook/test",
-          { params: { path: { workspace_id: workspaceId, assistant_id: assistantId } } },
+          "/v1/workspaces/{workspace_id}/products/{product_id}/ticket-webhook/test",
+          { params: { path: { workspace_id: workspaceId, product_id: assistantId } } },
         ),
       ),
   });
 }
 
 /**
- * `DELETE /v1/workspaces/{id}/assistants/{assistant_id}` (204). The assistant's conversations go
+ * `DELETE /v1/workspaces/{id}/products/{product_id}` (204). The assistant's conversations go
  * with it; deactivating keeps them.
  */
 export function useDeleteAssistant(workspaceId: string) {
@@ -166,8 +171,8 @@ export function useDeleteAssistant(workspaceId: string) {
   return useMutation({
     mutationFn: async (assistantId: string) => {
       unwrap(
-        await apiClient.DELETE("/v1/workspaces/{workspace_id}/assistants/{assistant_id}", {
-          params: { path: { workspace_id: workspaceId, assistant_id: assistantId } },
+        await apiClient.DELETE("/v1/workspaces/{workspace_id}/products/{product_id}", {
+          params: { path: { workspace_id: workspaceId, product_id: assistantId } },
         }),
       );
     },

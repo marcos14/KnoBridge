@@ -1,6 +1,6 @@
-"""``assistant_collections`` against real Postgres: forced RLS (owner and non-owner roles), the
+"""``product_collections`` against real Postgres: forced RLS (owner and non-owner roles), the
 composite foreign keys that keep both sides in one workspace, the service's validation and
-the cascades from the assistant and from the collection."""
+the cascades from the product and from the collection."""
 
 from __future__ import annotations
 
@@ -15,17 +15,19 @@ from sqlalchemy.exc import DBAPIError, IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
-from knobridge.assistants.models import Assistant, AssistantCollection, AssistantTone
-from knobridge.assistants.service import (
-    AssistantChanges,
-    AssistantCollectionInvalidError,
-    AssistantService,
-    AssistantSettings,
-)
 from knobridge.core.clock import FrozenClock
 from knobridge.core.db import create_session_factory, scoped_session, system_session
 from knobridge.ingestion.models import Collection
+from knobridge.levels.level import ResponseLevel
+from knobridge.levels.models import WorkspaceLevel
 from knobridge.llm.models import ProviderCredential, ProviderKind
+from knobridge.products.models import Product, ProductCollection, ProductTone
+from knobridge.products.service import (
+    ProductChanges,
+    ProductCollectionInvalidError,
+    ProductService,
+    ProductSettings,
+)
 from knobridge.tenancy.models import User, Workspace
 
 pytestmark = pytest.mark.integration
@@ -83,6 +85,15 @@ async def _seed(factory: SessionFactory) -> _Space:
         )
         db.add(credential)
         await db.flush()
+        # A product takes its (transitional) model from a configured level.
+        db.add(
+            WorkspaceLevel(
+                workspace_id=workspace.id,
+                level=ResponseLevel.PRODUCT_DEV,
+                credential_id=credential.id,
+                model="fake-model",
+            )
+        )
         collections = [
             Collection(
                 workspace_id=workspace.id,
@@ -98,16 +109,13 @@ async def _seed(factory: SessionFactory) -> _Space:
         return _Space(workspace.id, credential.id, [c.id for c in collections], user.id)
 
 
-def _settings(space: _Space, collection_ids: tuple[uuid.UUID, ...]) -> AssistantSettings:
-    return AssistantSettings(
+def _settings(space: _Space, collection_ids: tuple[uuid.UUID, ...]) -> ProductSettings:
+    return ProductSettings(
         name=f"A {uuid.uuid4().hex[:8]}",
         description="",
-        system_prompt="",
-        credential_id=space.credential_id,
-        model="fake-model",
-        temperature=0.2,
+        instructions="",
         language="pt-BR",
-        tone=AssistantTone.NEUTRAL,
+        tone=ProductTone.NEUTRAL,
         no_source_message="",
         active=True,
         collection_ids=collection_ids,
@@ -117,9 +125,9 @@ def _settings(space: _Space, collection_ids: tuple[uuid.UUID, ...]) -> Assistant
 
 async def _create(
     factory: SessionFactory, space: _Space, collection_ids: tuple[uuid.UUID, ...]
-) -> Assistant:
+) -> Product:
     async with scoped_session(factory, workspace_id=space.workspace_id, user_id=None) as db:
-        return await AssistantService(CLOCK).create(
+        return await ProductService(CLOCK).create(
             db,
             workspace_id=space.workspace_id,
             actor_id=space.actor_id,
@@ -128,30 +136,28 @@ async def _create(
         )
 
 
-async def _links(factory: SessionFactory, assistant_id: uuid.UUID) -> list[uuid.UUID]:
+async def _links(factory: SessionFactory, product_id: uuid.UUID) -> list[uuid.UUID]:
     async with system_session(factory) as db:
         rows = await db.scalars(
-            select(AssistantCollection.collection_id)
-            .where(AssistantCollection.assistant_id == assistant_id)
-            .order_by(AssistantCollection.collection_id)
+            select(ProductCollection.collection_id)
+            .where(ProductCollection.product_id == product_id)
+            .order_by(ProductCollection.collection_id)
         )
         return list(rows)
 
 
-def test_assistant_collections_rls_isolates_workspaces(rls_database_url: str) -> None:
+def test_product_collections_rls_isolates_workspaces(rls_database_url: str) -> None:
     async def scenario(factory: SessionFactory) -> None:
         a, b = await _seed(factory), await _seed(factory)
         own = await _create(factory, a, (a.collections[0],))
         other = await _create(factory, b, (b.collections[0],))
         async with scoped_session(factory, workspace_id=a.workspace_id, user_id=None) as db:
-            visible = set((await db.scalars(select(AssistantCollection.assistant_id))).all())
+            visible = set((await db.scalars(select(ProductCollection.product_id))).all())
             await db.execute(
-                delete(AssistantCollection).where(
-                    AssistantCollection.workspace_id == b.workspace_id
-                )
+                delete(ProductCollection).where(ProductCollection.workspace_id == b.workspace_id)
             )
         async with factory() as db:
-            unscoped = (await db.scalars(select(AssistantCollection.assistant_id))).all()
+            unscoped = (await db.scalars(select(ProductCollection.product_id))).all()
         assert visible == {own.id}
         assert unscoped == []
         assert await _links(factory, other.id) == [b.collections[0]]
@@ -159,7 +165,7 @@ def test_assistant_collections_rls_isolates_workspaces(rls_database_url: str) ->
     _run(rls_database_url, scenario)
 
 
-def test_assistant_collections_rls_refuses_insert_into_other_workspace(
+def test_product_collections_rls_refuses_insert_into_other_workspace(
     rls_database_url: str,
 ) -> None:
     async def scenario(factory: SessionFactory) -> None:
@@ -167,9 +173,9 @@ def test_assistant_collections_rls_refuses_insert_into_other_workspace(
         other = await _create(factory, b, ())
         async with scoped_session(factory, workspace_id=a.workspace_id, user_id=None) as db:
             db.add(
-                AssistantCollection(
+                ProductCollection(
                     workspace_id=b.workspace_id,
-                    assistant_id=other.id,
+                    product_id=other.id,
                     collection_id=b.collections[0],
                 )
             )
@@ -179,7 +185,7 @@ def test_assistant_collections_rls_refuses_insert_into_other_workspace(
         _run(rls_database_url, scenario)
 
 
-def test_assistant_collections_fk_refuses_collection_of_other_workspace(
+def test_product_collections_fk_refuses_collection_of_other_workspace(
     app_database_url: str,
 ) -> None:
     async def scenario(factory: SessionFactory) -> None:
@@ -188,9 +194,9 @@ def test_assistant_collections_fk_refuses_collection_of_other_workspace(
         # System mode sees every row, so only the composite foreign key can refuse it.
         async with system_session(factory) as db:
             db.add(
-                AssistantCollection(
+                ProductCollection(
                     workspace_id=a.workspace_id,
-                    assistant_id=assistant.id,
+                    product_id=assistant.id,
                     collection_id=b.collections[0],
                 )
             )
@@ -200,20 +206,20 @@ def test_assistant_collections_fk_refuses_collection_of_other_workspace(
         _run(app_database_url, scenario)
 
 
-def test_assistant_collections_must_belong_to_workspace_in_service(app_database_url: str) -> None:
+def test_product_collections_must_belong_to_workspace_in_service(app_database_url: str) -> None:
     async def scenario(factory: SessionFactory) -> None:
         a, b = await _seed(factory), await _seed(factory)
-        with pytest.raises(AssistantCollectionInvalidError) as created:
+        with pytest.raises(ProductCollectionInvalidError) as created:
             await _create(factory, a, (a.collections[0], b.collections[0]))
         assistant = await _create(factory, a, (a.collections[0],))
-        with pytest.raises(AssistantCollectionInvalidError) as updated:
+        with pytest.raises(ProductCollectionInvalidError) as updated:
             async with scoped_session(factory, workspace_id=a.workspace_id, user_id=None) as db:
-                await AssistantService(CLOCK).update(
+                await ProductService(CLOCK).update(
                     db,
                     workspace_id=a.workspace_id,
                     actor_id=a.actor_id,
-                    assistant_id=assistant.id,
-                    changes=AssistantChanges(collection_ids=(b.collections[1],)),
+                    product_id=assistant.id,
+                    changes=ProductChanges(collection_ids=(b.collections[1],)),
                     ip=None,
                 )
         assert created.value.details == {"collection_ids": [str(b.collections[0])]}
@@ -224,20 +230,20 @@ def test_assistant_collections_must_belong_to_workspace_in_service(app_database_
     _run(app_database_url, scenario)
 
 
-def test_assistant_collections_replaced_on_update(app_database_url: str) -> None:
+def test_product_collections_replaced_on_update(app_database_url: str) -> None:
     async def scenario(factory: SessionFactory) -> None:
         space = await _seed(factory)
         first, second = space.collections
         assistant = await _create(factory, space, (first, first))
         before = await _links(factory, assistant.id)
         async with scoped_session(factory, workspace_id=space.workspace_id, user_id=None) as db:
-            service = AssistantService(CLOCK)
+            service = ProductService(CLOCK)
             await service.update(
                 db,
                 workspace_id=space.workspace_id,
                 actor_id=space.actor_id,
-                assistant_id=assistant.id,
-                changes=AssistantChanges(collection_ids=(second,)),
+                product_id=assistant.id,
+                changes=ProductChanges(collection_ids=(second,)),
                 ip=None,
             )
             empty = await service.collections_of(db, space.workspace_id, [])
@@ -248,7 +254,7 @@ def test_assistant_collections_replaced_on_update(app_database_url: str) -> None
     _run(app_database_url, scenario)
 
 
-def test_assistant_collections_cascade_from_both_sides(app_database_url: str) -> None:
+def test_product_collections_cascade_from_both_sides(app_database_url: str) -> None:
     async def scenario(factory: SessionFactory) -> None:
         space = await _seed(factory)
         first, second = space.collections
@@ -256,12 +262,12 @@ def test_assistant_collections_cascade_from_both_sides(app_database_url: str) ->
         gone = await _create(factory, space, (first,))
         async with system_session(factory) as db:
             await db.execute(delete(Collection).where(Collection.id == first))
-            await db.execute(delete(Assistant).where(Assistant.id == gone.id))
+            await db.execute(delete(Product).where(Product.id == gone.id))
         async with system_session(factory) as db:
             orphans = (
                 await db.scalars(
-                    select(AssistantCollection.collection_id).where(
-                        AssistantCollection.assistant_id == gone.id
+                    select(ProductCollection.collection_id).where(
+                        ProductCollection.product_id == gone.id
                     )
                 )
             ).all()

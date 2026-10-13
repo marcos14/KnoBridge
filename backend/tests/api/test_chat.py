@@ -316,7 +316,7 @@ def test_inactive_assistant_refuses_conversations_and_messages(api: ApiEnv) -> N
     world = build_world(api, Role.OWNER)
     conversation_id = start(api, world)
     deactivated = api.client.patch(
-        f"/v1/workspaces/{world.workspace_id}/assistants/{world.assistant_id}",
+        f"/v1/workspaces/{world.workspace_id}/products/{world.assistant_id}",
         json={"active": False},
         headers=api.csrf_headers(),
     )

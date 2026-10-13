@@ -107,7 +107,7 @@ def test_create_workspace_invites_owner(api: ApiEnv) -> None:
     workspace_id = uuid.UUID(workspace["id"])
     events = api.workspace_audit(workspace_id)
     assert ("workspace.created", {"slug": workspace["slug"]}) in events
-    assert ("membership.invited", {"role": "owner"}) in events
+    assert ("membership.invited", {"role": "owner", "product_levels": []}) in events
     instance = api.client.get(
         "/v1/admin/audit", params={"action": "workspace.created", "actor_user_id": str(admin.id)}
     ).json()

@@ -39,11 +39,9 @@ NO_SOURCE = "Não achei nas fontes. Quer abrir um chamado?"
 
 def _assistant(api: ApiEnv, workspace_id: uuid.UUID, name: str, **fields: object) -> str:
     created = api.client.post(
-        f"/v1/workspaces/{workspace_id}/assistants",
+        f"/v1/workspaces/{workspace_id}/products",
         json={
             "name": name,
-            "provider_id": fields.pop("provider_id"),
-            "model": "fake-model",
             **fields,
         },
         headers=api.csrf_headers(),
@@ -55,7 +53,7 @@ def _assistant(api: ApiEnv, workspace_id: uuid.UUID, name: str, **fields: object
 
 def _set_active(api: ApiEnv, workspace_id: uuid.UUID, assistant_id: str, active: bool) -> None:
     response = api.client.patch(
-        f"/v1/workspaces/{workspace_id}/assistants/{assistant_id}",
+        f"/v1/workspaces/{workspace_id}/products/{assistant_id}",
         json={"active": active},
         headers=api.csrf_headers(),
     )
@@ -85,8 +83,8 @@ def test_create_public_conversation(api: ApiEnv) -> None:
 
 def test_create_public_conversation_hides_assistants_outside_reach(api: ApiEnv) -> None:
     world = build_world(api, Role.OWNER)
-    other = _assistant(api, world.workspace_id, "Outro", provider_id=world.provider_id)
-    inactive = _assistant(api, world.workspace_id, "Inativo", provider_id=world.provider_id)
+    other = _assistant(api, world.workspace_id, "Outro")
+    inactive = _assistant(api, world.workspace_id, "Inativo")
     _set_active(api, world.workspace_id, inactive, active=False)
     foreign = build_world(api, Role.OWNER)
     api.login(world.users[0])
@@ -203,7 +201,7 @@ def test_public_answer_provider_failure_is_200_failed(api: ApiEnv, chat: ChatOve
 def test_public_message_errors(api: ApiEnv, chat: ChatOverrides) -> None:
     chat.provider(UnreachableLLMProvider())
     world = build_world(api, Role.OWNER)
-    other = _assistant(api, world.workspace_id, "Outro", provider_id=world.provider_id)
+    other = _assistant(api, world.workspace_id, "Outro")
     api_key_id, key = create_key(api, world.workspace_id)
     _, other_key = create_key(api, world.workspace_id)
     mine = start_public_id(api, key, world.assistant_id)

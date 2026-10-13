@@ -25,10 +25,10 @@ from knobridge.tenancy.models import Role
 pytestmark = pytest.mark.integration
 
 
-def _second_assistant(api: ApiEnv, workspace_id: uuid.UUID, provider_id: str) -> str:
+def _second_assistant(api: ApiEnv, workspace_id: uuid.UUID) -> str:
     response = api.client.post(
-        f"/v1/workspaces/{workspace_id}/assistants",
-        json={"name": "Vendas", "provider_id": provider_id, "model": "fake-model"},
+        f"/v1/workspaces/{workspace_id}/products",
+        json={"name": "Vendas"},
         headers=api.csrf_headers(),
     )
     assert response.status_code == 201, response.text
@@ -39,7 +39,7 @@ def _second_assistant(api: ApiEnv, workspace_id: uuid.UUID, provider_id: str) ->
 def test_admin_conversations_filters(api: ApiEnv) -> None:
     world = build_world(api, Role.OWNER, Role.EDITOR)
     owner, editor = world.users
-    sales = _second_assistant(api, world.workspace_id, world.provider_id)
+    sales = _second_assistant(api, world.workspace_id)
     first = start(api, world)
     ask(api, world.workspace_id, first, "Pergunta do owner")
     rate(

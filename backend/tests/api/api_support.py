@@ -25,6 +25,7 @@ from knobridge.audit.models import AuditEvent
 from knobridge.core.clock import FrozenClock
 from knobridge.core.db import create_session_factory, system_session
 from knobridge.core.settings import Settings
+from knobridge.levels.models import create_workspace_levels
 from knobridge.security.csrf import CSRF_COOKIE_NAME, CSRF_HEADER_NAME
 from knobridge.security.models import Session
 from knobridge.security.passwords import Argon2Params, PasswordHasher
@@ -124,6 +125,8 @@ class ApiEnv:
                 workspace = Workspace(name=name, slug=unique("ws"), status=status)
                 db.add(workspace)
                 await db.flush()
+                # As every real workspace: born with its three levels.
+                await create_workspace_levels(db, workspace.id)
                 db.add_all(
                     Membership(workspace_id=workspace.id, user_id=user_id, role=role)
                     for user_id, role in members.items()

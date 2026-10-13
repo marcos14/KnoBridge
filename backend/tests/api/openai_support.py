@@ -49,11 +49,9 @@ def key_world(api: ApiEnv, assistant_ids: list[str] | None = None, **assistant: 
 
 def add_assistant(api: ApiEnv, world: World, name: str, *, active: bool = True) -> str:
     created = api.client.post(
-        f"/v1/workspaces/{world.workspace_id}/assistants",
+        f"/v1/workspaces/{world.workspace_id}/products",
         json={
             "name": name,
-            "provider_id": world.provider_id,
-            "model": "fake-model",
             "description": f"Assistente {name}",
         },
         headers=api.csrf_headers(),
@@ -62,7 +60,7 @@ def add_assistant(api: ApiEnv, world: World, name: str, *, active: bool = True) 
     assistant_id: str = created.json()["id"]
     if not active:
         response = api.client.patch(
-            f"/v1/workspaces/{world.workspace_id}/assistants/{assistant_id}",
+            f"/v1/workspaces/{world.workspace_id}/products/{assistant_id}",
             json={"active": False},
             headers=api.csrf_headers(),
         )

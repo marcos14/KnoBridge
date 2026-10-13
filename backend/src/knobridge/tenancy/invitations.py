@@ -12,6 +12,7 @@ the commit, outside the request (see ``email/delivery.py``).
 from __future__ import annotations
 
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import timedelta
 
@@ -22,7 +23,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from knobridge.audit.actions import AuditAction
 from knobridge.audit.service import AuditService, AuditTarget
 from knobridge.core.clock import Clock
-from knobridge.core.errors import ConflictError, NotFoundError
+from knobridge.core.errors import ConflictError, NotFoundError, ValidationError
+from knobridge.levels.grants import LevelGrant, existing_products, missing_ids
 from knobridge.security.models import TokenPurpose, UserToken
 from knobridge.security.tokens import IssuedToken, UserTokenService
 from knobridge.tenancy.models import Invitation, Membership, Role, User, Workspace
@@ -37,6 +39,10 @@ class InvitationPendingError(ConflictError):
     """Lost a race: a concurrent request left a pending invitation to the same address."""
 
     code = "invitation_pending"
+
+
+class InviteProductInvalidError(ValidationError):
+    code = "invite_product_invalid"
 
 
 @dataclass(frozen=True)
@@ -89,13 +95,22 @@ class InvitationService:
         email: str,
         role: Role,
         ip: str | None,
+        product_levels: Sequence[LevelGrant] = (),
     ) -> IssuedInvitation:
         """Invite ``email`` with ``role``; a pending invitation to the same address is revoked.
 
         Nobody invites with a role above their own (403 ``role_not_allowed``); an address that
-        already belongs to a member answers 409 ``already_member``.
+        already belongs to a member answers 409 ``already_member``. ``product_levels`` are the
+        maximum levels recorded on acceptance; a product not in the workspace is 422
+        ``invite_product_invalid``.
         """
         ensure_role_within(actor_role, role)
+        wanted = [grant.product_id for grant in product_levels]
+        missing = missing_ids(wanted, await existing_products(db, workspace_id, wanted, lock=False))
+        if missing:
+            raise InviteProductInvalidError(
+                "Some products do not exist in this workspace.", details={"product_ids": missing}
+            )
         address = normalize_email(email)
         if await self._is_member(db, workspace_id=workspace_id, email=address):
             raise AlreadyMemberError("This address already belongs to a member.")
@@ -116,6 +131,7 @@ class InvitationService:
             invited_by_user_id=actor.id,
             token_id=issued.record.id,
             expires_at=issued.record.expires_at,
+            product_levels=[grant.as_json() for grant in product_levels],
         )
         db.add(invitation)
         try:
@@ -133,7 +149,10 @@ class InvitationService:
             workspace_id=workspace_id,
             actor_user_id=actor.id,
             target=_target(invitation),
-            metadata={"role": role.value},
+            metadata={
+                "role": role.value,
+                "product_levels": [dict(grant.as_json()) for grant in product_levels],
+            },
             ip=ip,
         )
         return await self._issued(db, invitation, token=issued.token, inviter=actor)

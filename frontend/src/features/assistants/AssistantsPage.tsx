@@ -38,11 +38,8 @@ export const ASSISTANTS_PAGE_SIZE = 20;
 const ASSISTANT_SORTS = ["name", "-name", "-created_at", "-updated_at"] as const;
 
 /** Search, filters and sort of the list, in the URL. */
-const ASSISTANT_LIST: ListSearchSpec<
-  "active" | "provider" | "collection",
-  (typeof ASSISTANT_SORTS)[number]
-> = {
-  filters: { active: isBooleanFilter, provider: isUuid, collection: isUuid },
+const ASSISTANT_LIST: ListSearchSpec<"active" | "collection", (typeof ASSISTANT_SORTS)[number]> = {
+  filters: { active: isBooleanFilter, collection: isUuid },
   sorts: ASSISTANT_SORTS,
 };
 
@@ -88,7 +85,6 @@ function AssistantsList({
   const assistants = useAssistantPage(workspaceId, {
     query: search.query === "" ? undefined : search.query,
     active: booleanFilter(filters.active),
-    provider_id: filters.provider,
     collection_id: filters.collection,
     sort: search.sort,
     limit: ASSISTANTS_PAGE_SIZE,
@@ -172,7 +168,6 @@ function AssistantsList({
 
   const { items, total } = assistants.data;
   const providerList = providers.data;
-  const providerNames = new Map(providerList.map((item) => [item.id, item.name] as const));
   const criteria = hasListCriteria(search);
   const filter = (key: keyof typeof filters) => ({
     key,
@@ -196,14 +191,6 @@ function AssistantsList({
           )}
         </div>
       ),
-    },
-    {
-      key: "model",
-      header: t("assistants.columns.model"),
-      cell: (item) =>
-        [providerNames.get(item.provider_id), item.model]
-          .filter((part) => part !== undefined)
-          .join(" · "),
     },
     {
       key: "collections",
@@ -233,7 +220,6 @@ function AssistantsList({
           <AssistantDialog
             workspaceId={workspaceId}
             assistant={item}
-            providers={providerList}
             canManageSecret={canManageSecret}
             trigger={
               <Button
@@ -293,7 +279,6 @@ function AssistantsList({
         {providerList.length > 0 && (
           <AssistantDialog
             workspaceId={workspaceId}
-            providers={providerList}
             canManageSecret={canManageSecret}
             trigger={<Button type="button">{t("assistants.create")}</Button>}
             onSaved={showSaved("assistants.created")}
@@ -330,12 +315,6 @@ function AssistantsList({
               { value: "true", label: t("listToolbar.activeOnly") },
               { value: "false", label: t("listToolbar.inactiveOnly") },
             ],
-          },
-          {
-            ...filter("provider"),
-            label: t("assistants.providerFilter"),
-            allLabel: t("assistants.allProviders"),
-            options: providerList.map((item) => ({ value: item.id, label: item.name })),
           },
           {
             ...filter("collection"),
@@ -383,7 +362,6 @@ function AssistantsList({
           key={copy.id}
           workspaceId={workspaceId}
           assistant={copy}
-          providers={providerList}
           canManageSecret={canManageSecret}
           defaultOpen
           onClosed={() => {

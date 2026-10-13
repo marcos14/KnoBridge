@@ -145,8 +145,8 @@ def test_lists_ignore_another_workspace_with_the_same_ids(api: ApiEnv) -> None:
     api.login(owner)
     create_provider(api, workspace_id)
 
-    assistants = _items(api, f"{base(workspace_id)}/assistants", provider_id=foreign_provider)
+    products = _items(api, f"{base(workspace_id)}/products", collection_id=str(uuid.uuid4()))
     collections = _items(api, f"{base(workspace_id)}/collections", provider_id=foreign_provider)
     unknown = _items(api, f"{base(workspace_id)}/sources", collection_id=str(uuid.uuid4()))
 
-    assert assistants == collections == unknown == []
+    assert products == collections == unknown == []

@@ -259,7 +259,7 @@ def test_assistant_without_webhook_conflicts(api: ApiEnv, overrides: RequestOver
 def test_inactive_assistant_conflicts(api: ApiEnv, overrides: RequestOverrides) -> None:
     asked = ask_question(api, configured_world(api))
     api.client.patch(
-        f"/v1/workspaces/{asked.world.workspace_id}/assistants/{asked.world.assistant_id}",
+        f"/v1/workspaces/{asked.world.workspace_id}/products/{asked.world.assistant_id}",
         json={"active": False},
         headers=api.csrf_headers(),
     )

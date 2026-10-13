@@ -35,10 +35,10 @@ fases:
     subfases:
       - id: F2.1
         titulo: Produtos, configuração dos níveis do workspace e nível de cada membro por produto
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-13
-        concluida_em: null
+        concluida_em: 2026-10-13
         commit: null
       - id: F2.2
         titulo: Chat por produto e nível (busca filtrada pelo nível, instruções e modelo do nível)
@@ -209,6 +209,13 @@ decisoes:
     decisao: "F1.2: assistants renomeada para products (e assistant_collections para product_collections) com os mesmos ids e políticas renomeadas; nomes terminados em :nível viram ' - nível' (ou (2), (3)) e uma restrição impede novos; workspace_levels com o modelo do assistente mais usado; conversas, mensagens e chaves em product_dev; chunks.min_level com padrão product_dev no banco (o mais restritivo); a migração liga app.system só na transação para os passos de dados; downgrade recusa produto novo, conversa ou chave abaixo de product_dev, nível de membro, convite com níveis e fonte cards; colunas credential_id, model e temperature ficam transitórias em products e saem na F2.2 por uma migração 0019 (o downgrade devolve o modelo do nível product_dev)"
     motivo: "suíte verde sem antecipar a F2; nada vaza por padrão"
     alternativas: "editar a 0018 na F2; criar products e copiar"
+    adr: null
+  - id: D16
+    data: 2026-10-13
+    por: agente
+    decisao: "F2.1: serviços em products/ (service, listing, duplicate) e levels/ (defaults com os textos padrão, workspace com preço e custo estimado, members, grants de convite); rotas /assistants removidas (404) e webhook em /products/{id}/ticket-webhook; até a F2.2, criar produto copia credential_id, model e temperature do primeiro nível configurado (product_dev, support, end_user) e responde 409 level_not_configured sem nenhum; collection_ids repetidos e PATCH vazio dão 422; níveis de membro gravados com upsert; o E2E da stack quebra até a tela de níveis (F3.1/F4.1); os eventos de auditoria do webhook ainda usam assistant.* e passam a product.* na F2.4"
+    motivo: "contrato da F1.1 com a suíte verde no meio da transição"
+    alternativas: "manter /assistants como alias no painel"
     adr: null
 pendencias_usuario: []
 ---
@@ -461,6 +468,7 @@ Nenhuma.
 - 2026-10-13 — F1.2 concluída: migração 0018 (assistentes viram produtos com o mesmo id, níveis do workspace e do membro, nível em conversas, mensagens e chaves, nível mínimo em fontes, documentos e trechos), RLS e teste com dados semeados; gates do agente: backend 2451 passed com 99,89%; orquestrador: ruff, pyright e AGENTS na integração
 - 2026-10-13 — F2.1 iniciada (agente em worktree).
 - 2026-10-13 — F2.3 iniciada (agente em worktree).
+- 2026-10-13 — F2.1 concluída: produtos no lugar dos assistentes, configuração dos níveis do workspace, nível por membro e produto e convites com níveis; gates do agente: backend 2513 passed com 99,88%, frontend 1437; orquestrador: ruff, pyright e AGENTS na integração
 
 ## 8. Encerramento
 

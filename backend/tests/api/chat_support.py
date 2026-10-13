@@ -14,6 +14,7 @@ from typing import cast
 import httpx2 as httpx
 from api_support import ApiEnv, SeededUser
 from fastapi import FastAPI
+from product_support import seed_level
 
 from fakes.embedding_provider import RecordingEmbeddingFactory
 from fakes.llm_provider import RecordingFactory
@@ -64,15 +65,16 @@ def build_world(api: ApiEnv, *roles: Role, **assistant: object) -> World:
     )
     assert provider.status_code == 201, provider.text
     provider_id: str = provider.json()["id"]
+    # The model belongs to the level (the product copies it, plan 0009); written straight in
+    # the database because the first user may be an editor.
+    seed_level(api, workspace_id, provider_id, model=str(assistant.pop("model", "fake-model")))
     body: dict[str, object] = {
         "name": "Suporte",
-        "provider_id": provider_id,
-        "model": "fake-model",
-        "system_prompt": "Você ajuda com o ERP.",
+        "instructions": "Você ajuda com o ERP.",
         **assistant,
     }
     created = api.client.post(
-        f"/v1/workspaces/{workspace_id}/assistants", json=body, headers=api.csrf_headers()
+        f"/v1/workspaces/{workspace_id}/products", json=body, headers=api.csrf_headers()
     )
     assert created.status_code == 201, created.text
     return World(workspace_id, users, provider_id, created.json()["id"])

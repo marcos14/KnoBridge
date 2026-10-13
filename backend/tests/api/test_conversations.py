@@ -207,7 +207,7 @@ def test_deleting_assistant_deletes_its_conversations(api: ApiEnv) -> None:
     conversation_id = start(api, world)
 
     removed = api.client.delete(
-        f"/v1/workspaces/{world.workspace_id}/assistants/{world.assistant_id}",
+        f"/v1/workspaces/{world.workspace_id}/products/{world.assistant_id}",
         headers=api.csrf_headers(),
     )
 

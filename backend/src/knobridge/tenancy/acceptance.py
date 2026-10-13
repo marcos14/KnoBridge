@@ -21,6 +21,7 @@ from knobridge.audit.service import AuditTarget
 from knobridge.core.clock import Clock
 from knobridge.core.db import system_session
 from knobridge.core.errors import ForbiddenError, UnauthenticatedError, ValidationError
+from knobridge.levels.grants import LevelGrant, record_grants
 from knobridge.security.models import TokenPurpose
 from knobridge.security.passwords import PasswordHasher, validate_password
 from knobridge.security.tokens import InvalidTokenError, UserTokenService
@@ -165,6 +166,12 @@ class InvitationAcceptance:
             db.add(membership)
             invitation.accepted_at = now
             await db.flush()
+            await record_grants(
+                db,
+                workspace_id=invitation.workspace_id,
+                user_id=user.id,
+                grants=[LevelGrant.from_json(item) for item in invitation.product_levels],
+            )
             await self._auth.audit.record(
                 db,
                 action=AuditAction.MEMBERSHIP_INVITATION_ACCEPTED,

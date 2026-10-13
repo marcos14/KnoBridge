@@ -1,18 +1,19 @@
-"""Assistants of a workspace (``/v1/workspaces/{workspace_id}/assistants``).
+"""Products of a workspace (``/v1/workspaces/{workspace_id}/products``;
+``docs/specs/produtos-e-niveis.md``, "Produto").
 
-Every member lists and reads them, but viewers only see active assistants (an inactive one
-is 404 for them). Owners, admins and editors create, update and delete. The provider must be
-a credential of the same workspace (422 ``assistant_provider_invalid``); names are unique per
-workspace (409 ``assistant_name_taken``). An empty or null ``no_source_message`` stores the
-default "I don't know, shall I open a ticket?" message. ``collection_ids`` are the collections
-the assistant answers from, all of the same workspace (422 ``assistant_collection_invalid``);
-optional on write (empty by default: every answer is "no source"), always returned.
-``min_similarity`` is the retrieval threshold (0 to 1; omitted or null on create: the default).
+Every member lists and reads them, but viewers only see active products (an inactive one is
+404 for them). Owners, admins and editors create, update, duplicate and delete. Names are
+unique per workspace (409 ``product_name_taken``) and cannot end in ``:<level>`` (422
+``product_name_invalid``). An empty or null ``no_source_message`` stores the default "I don't
+know, shall I open a ticket?" message. ``collection_ids`` are the collections the product
+answers from, all of the same workspace (422 ``product_collection_invalid``). ``min_similarity``
+is the retrieval threshold (0 to 1; omitted or null on create: the default).
 ``ticket_webhook_url`` is where ticket requests go (``null``: off), checked against the SSRF
 rules when saved (422 ``webhook_url_invalid`` or ``webhook_destination_blocked``); its signing
-secret and the test event live in ``api/ticket_webhook.py``. The list takes ``query``,
-``active``, ``provider_id``, ``collection_id`` and ``sort``; ``POST .../{id}/duplicate``
-copies an assistant (``assistants/duplicate.py``).
+secret and the test event live in ``api/ticket_webhook.py``. ``my_max_level`` is the reader's
+maximum level in the product. The model of the answers is the level's
+(``api/levels.py``); while the chat still reads it from the product (plan 0009), creating one
+needs a configured level (409 ``level_not_configured``).
 """
 
 from __future__ import annotations
@@ -22,33 +23,27 @@ from datetime import datetime
 from http import HTTPStatus
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
-from pydantic import BaseModel, Field, StringConstraints
+from fastapi import APIRouter, Depends, Query, Request
+from pydantic import BaseModel, Field, StringConstraints, model_validator
 
-from knobridge.api.deps import (
-    AssistantServiceDep,
-    ClientIpDep,
-    WorkspaceContext,
-    WorkspaceContextDep,
-    require_role,
-)
+from knobridge.api.deps import ClientIpDep, WorkspaceContext, WorkspaceContextDep, require_role
 from knobridge.api.listing import SearchQuery
 from knobridge.api.ticket_webhook import DestinationValidatorDep
-from knobridge.assistants.duplicate import duplicate_assistant
-from knobridge.assistants.listing import AssistantFilter, AssistantSort
-from knobridge.assistants.models import (
+from knobridge.levels.defaults import role_default_level
+from knobridge.levels.level import ResponseLevel
+from knobridge.levels.members import recorded_levels
+from knobridge.products.duplicate import duplicate_product
+from knobridge.products.listing import ProductFilter, ProductSort
+from knobridge.products.models import (
     DEFAULT_LANGUAGE,
     DEFAULT_MIN_SIMILARITY,
-    DEFAULT_TEMPERATURE,
     MAX_SIMILARITY,
-    MAX_TEMPERATURE,
     MIN_SIMILARITY,
-    MIN_TEMPERATURE,
     TICKET_WEBHOOK_URL_MAX_LENGTH,
-    Assistant,
-    AssistantTone,
+    Product,
+    ProductTone,
 )
-from knobridge.assistants.service import AssistantChanges, AssistantService, AssistantSettings
+from knobridge.products.service import ProductChanges, ProductService, ProductSettings
 from knobridge.security.csrf import require_csrf
 from knobridge.tenancy.models import Role
 from knobridge.tenancy.rbac import role_at_least
@@ -56,17 +51,20 @@ from knobridge.tickets.webhook import check_webhook_url
 
 DEFAULT_LIMIT = 50
 MAX_LIMIT = 200
+MAX_COLLECTIONS = 100
 
 EditorContext = Annotated[WorkspaceContext, Depends(require_role(Role.EDITOR))]
 
+
+def get_product_service(request: Request) -> ProductService:
+    return ProductService(request.app.state.clock)
+
+
+ProductServiceDep = Annotated[ProductService, Depends(get_product_service)]
+
 Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
 Description = Annotated[str, StringConstraints(strip_whitespace=True, max_length=1000)]
-SystemPrompt = Annotated[str, StringConstraints(strip_whitespace=True, max_length=20000)]
-# Identifier as the provider knows it: no spaces (``gpt-4.1-mini``, ``vendor/model:tag``).
-ModelId = Annotated[
-    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200, pattern=r"^\S+$")
-]
-Temperature = Annotated[float, Field(ge=MIN_TEMPERATURE, le=MAX_TEMPERATURE, allow_inf_nan=False)]
+Instructions = Annotated[str, StringConstraints(strip_whitespace=True, max_length=20000)]
 # BCP 47 language tag, e.g. ``pt-BR``, ``en``, ``es-419``.
 Language = Annotated[
     str,
@@ -76,7 +74,6 @@ Language = Annotated[
 ]
 NoSourceMessage = Annotated[str, StringConstraints(strip_whitespace=True, max_length=2000)]
 MinSimilarity = Annotated[float, Field(ge=MIN_SIMILARITY, le=MAX_SIMILARITY, allow_inf_nan=False)]
-MAX_COLLECTIONS = 50
 CollectionIds = Annotated[list[uuid.UUID], Field(max_length=MAX_COLLECTIONS)]
 WebhookUrl = Annotated[
     str,
@@ -88,7 +85,7 @@ WebhookUrl = Annotated[
 _ERRORS: dict[int | str, dict[str, object]] = {
     401: {"description": "No live session (standard error shape)."},
     403: {"description": "Workspace suspended."},
-    404: {"description": "Workspace or assistant not found, or caller is not a member."},
+    404: {"description": "Workspace or product not found, or caller is not a member."},
 }
 _WRITE_ERRORS: dict[int | str, dict[str, object]] = {
     **_ERRORS,
@@ -99,25 +96,31 @@ _WRITE_ERRORS: dict[int | str, dict[str, object]] = {
 }
 _SAVE_ERRORS: dict[int | str, dict[str, object]] = {
     **_WRITE_ERRORS,
-    409: {"description": "Name already used in the workspace (`assistant_name_taken`)."},
+    409: {
+        "description": "Name already used in the workspace (`product_name_taken`) or, on "
+        "create, no level of the workspace has a model (`level_not_configured`)."
+    },
     422: {
-        "description": "Invalid body, provider not in the workspace "
-        "(`assistant_provider_invalid`) or collection not in the workspace "
-        "(`assistant_collection_invalid`), or webhook URL refused (`webhook_url_invalid`, "
-        "`webhook_destination_blocked`, with `details.reason`)."
+        "description": "Invalid body, name ending in `:<level>` (`product_name_invalid`), "
+        "collection not in the workspace (`product_collection_invalid`), or webhook URL "
+        "refused (`webhook_url_invalid`, `webhook_destination_blocked`, with "
+        "`details.reason`)."
     },
 }
 
 
-class AssistantCreate(BaseModel):
+def _unique(ids: list[uuid.UUID] | None) -> list[uuid.UUID] | None:
+    if ids is not None and len(set(ids)) != len(ids):
+        raise ValueError("collection_ids must not repeat.")
+    return ids
+
+
+class ProductCreate(BaseModel):
     name: Name
     description: Description = ""
-    system_prompt: SystemPrompt = ""
-    provider_id: uuid.UUID
-    model: ModelId
-    temperature: Temperature = DEFAULT_TEMPERATURE
+    instructions: Instructions = ""
     language: Language = DEFAULT_LANGUAGE
-    tone: AssistantTone = AssistantTone.NEUTRAL
+    tone: ProductTone = ProductTone.NEUTRAL
     # Empty or null: the default "no source" message.
     no_source_message: NoSourceMessage | None = None
     active: bool = True
@@ -127,19 +130,21 @@ class AssistantCreate(BaseModel):
     # ``https`` (``http`` only for an allowlisted development host); null: ticket requests off.
     ticket_webhook_url: WebhookUrl | None = None
 
+    @model_validator(mode="after")
+    def _distinct_collections(self) -> ProductCreate:
+        _unique(self.collection_ids)
+        return self
 
-class AssistantUpdate(BaseModel):
+
+class ProductUpdate(BaseModel):
     """Fields to change; omitted (or null) fields stay. ``no_source_message`` empty or null
     restores the default message."""
 
     name: Name | None = None
     description: Description | None = None
-    system_prompt: SystemPrompt | None = None
-    provider_id: uuid.UUID | None = None
-    model: ModelId | None = None
-    temperature: Temperature | None = None
+    instructions: Instructions | None = None
     language: Language | None = None
-    tone: AssistantTone | None = None
+    tone: ProductTone | None = None
     no_source_message: NoSourceMessage | None = None
     active: bool | None = None
     # Replaces the whole set when given.
@@ -148,17 +153,21 @@ class AssistantUpdate(BaseModel):
     # Unlike the other fields, null turns the webhook off; omitted keeps it.
     ticket_webhook_url: WebhookUrl | None = None
 
+    @model_validator(mode="after")
+    def _not_empty(self) -> ProductUpdate:
+        if not self.model_fields_set:
+            raise ValueError("Give at least one field to change.")
+        _unique(self.collection_ids)
+        return self
 
-class AssistantOut(BaseModel):
+
+class ProductOut(BaseModel):
     id: uuid.UUID
     name: str
     description: str
-    system_prompt: str
-    provider_id: uuid.UUID
-    model: str
-    temperature: float
+    instructions: str
     language: str
-    tone: AssistantTone
+    tone: ProductTone
     no_source_message: str
     active: bool
     collection_ids: list[uuid.UUID]
@@ -168,106 +177,108 @@ class AssistantOut(BaseModel):
     ticket_webhook_configured: bool
     # When the current signing secret was generated (never the secret); null: none yet.
     ticket_webhook_secret_created_at: datetime | None
+    # The reader's maximum level in this product (recorded by an admin or the role's default).
+    my_max_level: ResponseLevel
     created_at: datetime
     updated_at: datetime
 
 
-class AssistantPage(BaseModel):
-    items: list[AssistantOut]
+class ProductPage(BaseModel):
+    items: list[ProductOut]
     total: int
     limit: int
     offset: int
 
 
-def _out(assistant: Assistant, collection_ids: list[uuid.UUID]) -> AssistantOut:
-    return AssistantOut(
-        id=assistant.id,
-        name=assistant.name,
-        description=assistant.description,
-        system_prompt=assistant.system_prompt,
-        provider_id=assistant.credential_id,
-        model=assistant.model,
-        temperature=assistant.temperature,
-        language=assistant.language,
-        tone=assistant.tone,
-        no_source_message=assistant.no_source_message,
-        active=assistant.active,
+def _out(
+    product: Product, collection_ids: list[uuid.UUID], my_max_level: ResponseLevel
+) -> ProductOut:
+    return ProductOut(
+        id=product.id,
+        name=product.name,
+        description=product.description,
+        instructions=product.instructions,
+        language=product.language,
+        tone=product.tone,
+        no_source_message=product.no_source_message,
+        active=product.active,
         collection_ids=collection_ids,
-        min_similarity=assistant.min_similarity,
-        ticket_webhook_url=assistant.ticket_webhook_url,
-        ticket_webhook_configured=assistant.ticket_webhook_configured,
-        ticket_webhook_secret_created_at=assistant.ticket_webhook_secret_created_at,
-        created_at=assistant.created_at,
-        updated_at=assistant.updated_at,
+        min_similarity=product.min_similarity,
+        ticket_webhook_url=product.ticket_webhook_url,
+        ticket_webhook_configured=product.ticket_webhook_configured,
+        ticket_webhook_secret_created_at=product.ticket_webhook_secret_created_at,
+        my_max_level=my_max_level,
+        created_at=product.created_at,
+        updated_at=product.updated_at,
     )
 
 
 def _only_active(context: WorkspaceContext) -> bool:
-    """Viewers only see active assistants; editors and above manage all of them."""
+    """Viewers only see active products; editors and above manage all of them."""
     return not role_at_least(context.role, Role.EDITOR)
 
 
-async def _one(
-    context: WorkspaceContext, assistants: AssistantService, assistant: Assistant
-) -> AssistantOut:
-    links = await assistants.collections_of(context.db, context.workspace_id, [assistant.id])
-    return _out(assistant, links.get(assistant.id, []))
+async def _outs(
+    context: WorkspaceContext, products: ProductService, items: list[Product]
+) -> list[ProductOut]:
+    """The products with their collections and the reader's level (two queries)."""
+    ids = [item.id for item in items]
+    links = await products.collections_of(context.db, context.workspace_id, ids)
+    user_id = context.current.user.id
+    recorded = (
+        await recorded_levels(
+            context.db, workspace_id=context.workspace_id, user_ids=[user_id], product_ids=ids
+        )
+    ).get(user_id, {})
+    default = role_default_level(context.role)
+    return [_out(item, links.get(item.id, []), recorded.get(item.id, default)) for item in items]
 
 
-router = APIRouter(prefix="/workspaces/{workspace_id}/assistants", tags=["assistants"])
+router = APIRouter(prefix="/workspaces/{workspace_id}/products", tags=["products"])
 
 
 @router.get("", responses=_ERRORS)
-async def list_assistants(
+async def list_products(
     context: WorkspaceContextDep,
-    assistants: AssistantServiceDep,
+    products: ProductServiceDep,
     query: SearchQuery = None,
     active: bool | None = None,
-    provider_id: uuid.UUID | None = None,
     collection_id: uuid.UUID | None = None,
-    sort: AssistantSort = "name",
+    sort: ProductSort = "name",
     limit: Annotated[int, Query(ge=1, le=MAX_LIMIT)] = DEFAULT_LIMIT,
     offset: Annotated[int, Query(ge=0)] = 0,
-) -> AssistantPage:
-    """Assistants (only the active ones for viewers); ``query`` matches name, description or
-    model."""
-    items, total = await assistants.list_assistants(
+) -> ProductPage:
+    """Products (only the active ones for viewers); ``query`` matches name or description."""
+    items, total = await products.list_products(
         context.db,
         workspace_id=context.workspace_id,
-        filters=AssistantFilter(
+        filters=ProductFilter(
             active_only=_only_active(context),
             query=query,
             active=active,
-            provider_id=provider_id,
             collection_id=collection_id,
             sort=sort,
         ),
         limit=limit,
         offset=offset,
     )
-    links = await assistants.collections_of(
-        context.db, context.workspace_id, [item.id for item in items]
-    )
-    return AssistantPage(
-        items=[_out(item, links.get(item.id, [])) for item in items],
-        total=total,
-        limit=limit,
-        offset=offset,
+    return ProductPage(
+        items=await _outs(context, products, items), total=total, limit=limit, offset=offset
     )
 
 
-@router.get("/{assistant_id}", responses=_ERRORS)
-async def get_assistant(
-    assistant_id: uuid.UUID, context: WorkspaceContextDep, assistants: AssistantServiceDep
-) -> AssistantOut:
-    """One assistant (404 for viewers when it is inactive)."""
-    assistant = await assistants.get(
+@router.get("/{product_id}", responses=_ERRORS)
+async def get_product(
+    product_id: uuid.UUID, context: WorkspaceContextDep, products: ProductServiceDep
+) -> ProductOut:
+    """One product (404 for viewers when it is inactive)."""
+    product = await products.get(
         context.db,
         workspace_id=context.workspace_id,
-        assistant_id=assistant_id,
+        product_id=product_id,
         active_only=_only_active(context),
     )
-    return await _one(context, assistants, assistant)
+    return (await _outs(context, products, [product]))[0]
 
 
 @router.post(
@@ -276,27 +287,24 @@ async def get_assistant(
     dependencies=[Depends(require_csrf)],
     responses=_SAVE_ERRORS,
 )
-async def create_assistant(
-    body: AssistantCreate,
+async def create_product(
+    body: ProductCreate,
     context: EditorContext,
-    assistants: AssistantServiceDep,
+    products: ProductServiceDep,
     validator: DestinationValidatorDep,
     ip: ClientIpDep,
-) -> AssistantOut:
-    """Create an assistant bound to a provider credential of the workspace."""
+) -> ProductOut:
+    """Create a product."""
     if body.ticket_webhook_url is not None:
         await check_webhook_url(validator, body.ticket_webhook_url)
-    assistant = await assistants.create(
+    product = await products.create(
         context.db,
         workspace_id=context.workspace_id,
         actor_id=context.current.user.id,
-        settings=AssistantSettings(
+        settings=ProductSettings(
             name=body.name,
             description=body.description,
-            system_prompt=body.system_prompt,
-            credential_id=body.provider_id,
-            model=body.model,
-            temperature=body.temperature,
+            instructions=body.instructions,
             language=body.language,
             tone=body.tone,
             no_source_message=body.no_source_message or "",
@@ -309,18 +317,18 @@ async def create_assistant(
         ),
         ip=ip,
     )
-    return await _one(context, assistants, assistant)
+    return (await _outs(context, products, [product]))[0]
 
 
-@router.patch("/{assistant_id}", dependencies=[Depends(require_csrf)], responses=_SAVE_ERRORS)
-async def update_assistant(
-    assistant_id: uuid.UUID,
-    body: AssistantUpdate,
+@router.patch("/{product_id}", dependencies=[Depends(require_csrf)], responses=_SAVE_ERRORS)
+async def update_product(
+    product_id: uuid.UUID,
+    body: ProductUpdate,
     context: EditorContext,
-    assistants: AssistantServiceDep,
+    products: ProductServiceDep,
     validator: DestinationValidatorDep,
     ip: ClientIpDep,
-) -> AssistantOut:
+) -> ProductOut:
     """Change any field; ``no_source_message`` empty or null restores the default and
     ``ticket_webhook_url`` null turns the webhook off."""
     if body.ticket_webhook_url is not None:
@@ -328,18 +336,15 @@ async def update_assistant(
     no_source_message = body.no_source_message
     if no_source_message is None and "no_source_message" in body.model_fields_set:
         no_source_message = ""
-    assistant = await assistants.update(
+    product = await products.update(
         context.db,
         workspace_id=context.workspace_id,
         actor_id=context.current.user.id,
-        assistant_id=assistant_id,
-        changes=AssistantChanges(
+        product_id=product_id,
+        changes=ProductChanges(
             name=body.name,
             description=body.description,
-            system_prompt=body.system_prompt,
-            credential_id=body.provider_id,
-            model=body.model,
-            temperature=body.temperature,
+            instructions=body.instructions,
             language=body.language,
             tone=body.tone,
             no_source_message=no_source_message,
@@ -351,62 +356,62 @@ async def update_assistant(
         ),
         ip=ip,
     )
-    return await _one(context, assistants, assistant)
+    return (await _outs(context, products, [product]))[0]
 
 
 @router.delete(
-    "/{assistant_id}",
+    "/{product_id}",
     status_code=HTTPStatus.NO_CONTENT,
     dependencies=[Depends(require_csrf)],
     responses=_WRITE_ERRORS,
 )
-async def delete_assistant(
-    assistant_id: uuid.UUID,
+async def delete_product(
+    product_id: uuid.UUID,
     context: EditorContext,
-    assistants: AssistantServiceDep,
+    products: ProductServiceDep,
     ip: ClientIpDep,
 ) -> None:
-    """Delete an assistant."""
-    await assistants.delete(
+    """Delete a product with its conversations and the members' levels in it."""
+    await products.delete(
         context.db,
         workspace_id=context.workspace_id,
         actor_id=context.current.user.id,
-        assistant_id=assistant_id,
+        product_id=product_id,
         ip=ip,
     )
 
 
-class AssistantDuplicate(BaseModel):
-    """Omitted or null ``name``: the original name with the first free copy suffix
-    (``docs/specs/chat.md``)."""
+class ProductDuplicate(BaseModel):
+    """Omitted or null ``name``: the original name with the first free copy suffix."""
 
     name: Name | None = None
 
 
 @router.post(
-    "/{assistant_id}/duplicate",
+    "/{product_id}/duplicate",
     status_code=HTTPStatus.CREATED,
     dependencies=[Depends(require_csrf)],
     responses={
         **_WRITE_ERRORS,
-        409: {"description": "The given name is already used (`assistant_name_taken`)."},
+        409: {"description": "The given name is already used (`product_name_taken`)."},
+        422: {"description": "Invalid body or name ending in `:<level>`."},
     },
 )
 async def duplicate(
-    assistant_id: uuid.UUID,
+    product_id: uuid.UUID,
     context: EditorContext,
-    assistants: AssistantServiceDep,
+    products: ProductServiceDep,
     ip: ClientIpDep,
-    body: AssistantDuplicate | None = None,
-) -> AssistantOut:
+    body: ProductDuplicate | None = None,
+) -> ProductOut:
     """Copy the configuration and collections; the webhook keeps its URL, not its secret."""
-    assistant = await duplicate_assistant(
-        assistants,
+    product = await duplicate_product(
+        products,
         context.db,
         workspace_id=context.workspace_id,
         actor_id=context.current.user.id,
-        assistant_id=assistant_id,
+        product_id=product_id,
         name=None if body is None else body.name,
         ip=ip,
     )
-    return await _one(context, assistants, assistant)
+    return (await _outs(context, products, [product]))[0]
