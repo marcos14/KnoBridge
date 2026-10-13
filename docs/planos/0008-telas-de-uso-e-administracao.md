@@ -49,10 +49,10 @@ fases:
         commit: null
       - id: F2.3
         titulo: Chaves de API e a API REST de conversa autenticada por chave
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
-        concluida_em: null
+        concluida_em: 2026-10-12
         commit: null
       - id: F2.4
         titulo: API compatível com OpenAI (/v1/models e /v1/chat/completions)
@@ -188,6 +188,13 @@ decisoes:
     decisao: "F2.1: POST /v1/setup exige workspace_name (cria superadmin, workspace com slug, membership owner e sessão numa transação, auditando workspace.created nas duas trilhas); entrar e sair em api/admin_access.py e tenancy/superadmin_access.py; o acesso fica no AuthenticatedUser só enquanto o usuário é superadmin (sessão adulterada ou superadmin perdido não concede nada); workspace_context aceita o acesso sem membership, com o mesmo SET LOCAL; /v1/me inclui o workspace acessado; a tela de setup envia o nome padrão Meu workspace até a F3.1"
     motivo: "contrato da F1.1 e segurança do acesso"
     alternativas: "acesso por membership temporário"
+    adr: null
+  - id: D12
+    data: 2026-10-12
+    por: agente
+    decisao: "F2.3: chaves kbk_ em apikeys/ (tokens, auth, service, conversations) e rotas em api/api_keys.py e api/public_conversations.py; POST .../messages abre a própria transação para o prepare e confirma antes de consumir o stream (senão o placeholder não estaria confirmado no modo stream false); last_used_at na transação curta da autenticação; escopo validado no Pydantic e id fora do workspace dá 422 api_key_assistant_invalid; PATCH sem mudança não audita; assistente fora do escopo dá 404 também no GET; a API compatível com OpenAI fica em api/openai_compat.py como na spec (o AGENTS de api citava channels/)"
+    motivo: "contrato da F1.1 e consistência transacional"
+    alternativas: "segunda transação para last_used_at; compat em channels/"
     adr: null
 pendencias_usuario: []
 ---
@@ -425,6 +432,7 @@ Nenhuma.
 - 2026-10-12 — F2.1 concluída: setup que cria o primeiro workspace e acesso de superadmin a qualquer workspace como admin auditado, integrados sobre a F2.5; backend 2203 passed com 99% de cobertura, frontend 1240
 - 2026-10-12 — F2.2 iniciada (agente em worktree).
 - 2026-10-12 — F2.3 iniciada (agente em worktree).
+- 2026-10-12 — F2.3 concluída: chaves de API (CRUD, revogação, escopo por assistente) e a API REST de conversa com channel api; gates do agente: backend 2258 passed com 99,88%, frontend 1240; orquestrador: ruff, pyright e AGENTS na integração
 
 ## 8. Encerramento
 

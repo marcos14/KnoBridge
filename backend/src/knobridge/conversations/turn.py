@@ -73,7 +73,8 @@ class LLMCall:
 @dataclass
 class PreparedTurn:
     workspace_id: uuid.UUID
-    user_id: uuid.UUID
+    # The asking person; ``None`` when an API key asks (the outcome is saved without a user).
+    user_id: uuid.UUID | None
     conversation_id: uuid.UUID
     user_message_id: uuid.UUID
     message_id: uuid.UUID

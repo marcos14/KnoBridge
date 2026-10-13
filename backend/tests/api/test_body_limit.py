@@ -42,6 +42,10 @@ def _client() -> TestClient:
         # The upload streams and enforces its own limit while reading.
         ("/v1/workspaces/abc/sources/def/tickets/upload", None),
         ("/v1/workspaces/abc/runners", None),
+        ("/v1/conversations", 4 * KIB),
+        ("/v1/conversations/abc/messages", 64 * KIB),
+        ("/v1/conversations/abc", None),
+        ("/v1/workspaces/abc/conversations/def/messages", None),
     ],
 )
 def test_body_limit_per_route(path: str, limit: int | None) -> None:

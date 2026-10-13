@@ -1724,7 +1724,10 @@
     "harness_module_updated": "Módulo do harness atualizado",
     "harness_job_enqueued": "Tarefas do harness enfileiradas",
     "harness_job_cancelled": "Tarefa do harness cancelada",
-    "knowledge_item_updated": "Item de conhecimento revisado"
+    "knowledge_item_updated": "Item de conhecimento revisado",
+    "api_key_created": "Chave de API criada",
+    "api_key_updated": "Chave de API atualizada",
+    "api_key_revoked": "Chave de API revogada"
   },
   "admin": {
     "search": "Buscar",

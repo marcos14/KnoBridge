@@ -28,7 +28,13 @@ import anyio
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from knobridge.conversations.models import Conversation, Message, MessageRole, MessageStatus
+from knobridge.conversations.models import (
+    Conversation,
+    ConversationChannel,
+    Message,
+    MessageRole,
+    MessageStatus,
+)
 from knobridge.conversations.prompt import (
     AssistantProfile,
     HistoryItem,
@@ -37,10 +43,10 @@ from knobridge.conversations.prompt import (
 )
 from knobridge.conversations.retrieval import RetrievalQuery, Retriever, citation
 from knobridge.conversations.service import (
+    Owner,
     Reader,
     get_active_assistant,
-    get_readable_conversation,
-    require_owner,
+    get_owned_conversation,
 )
 from knobridge.conversations.stale import interrupt_stale_streaming
 from knobridge.conversations.turn import (
@@ -103,13 +109,18 @@ class ChatService:
         *,
         workspace_id: uuid.UUID,
         conversation_id: uuid.UUID,
-        reader: Reader,
+        reader: Owner,
         question: str,
     ) -> PreparedTurn:
-        """Save the question and the answer's starting point (phase 1, see module doc)."""
+        """Save the question and the answer's starting point (phase 1, see module doc).
+
+        ``reader`` is the person who owns the conversation or, in the public API, the key
+        that owns it; both messages take the conversation's channel.
+        """
         started_at = self._clock.now()
-        conversation = await get_readable_conversation(db, workspace_id, conversation_id, reader)
-        require_owner(conversation, reader)
+        conversation = await get_owned_conversation(db, workspace_id, conversation_id, reader)
+        user_id = reader.user_id if isinstance(reader, Reader) else None
+        channel = conversation.channel
         assistant = await get_active_assistant(db, workspace_id, conversation.assistant_id)
         # Retrieval embeds the question over the network: done after the access checks but
         # before locking the conversation, so concurrent questions do not queue behind it.
@@ -118,11 +129,11 @@ class ChatService:
             RetrievalQuery(
                 workspace_id=workspace_id,
                 assistant_id=assistant.id,
-                user_id=reader.user_id,
+                user_id=user_id,
                 text=question,
             ),
         )
-        await get_readable_conversation(db, workspace_id, conversation_id, reader, lock=True)
+        await get_owned_conversation(db, workspace_id, conversation_id, reader, lock=True)
         # An answer orphaned by a dead process must not stay ``streaming`` behind the new one.
         await interrupt_stale_streaming(
             db, workspace_id=workspace_id, conversation_id=conversation_id, now=started_at
@@ -139,7 +150,7 @@ class ChatService:
             )
         )
         user_message = self._message(
-            workspace_id, conversation_id, position, MessageRole.USER, question
+            workspace_id, conversation_id, position, MessageRole.USER, question, channel=channel
         )
         db.add(user_message)
         if not sources:
@@ -150,13 +161,14 @@ class ChatService:
                 MessageRole.ASSISTANT,
                 assistant.no_source_message,
                 status=MessageStatus.NO_SOURCE,
+                channel=channel,
             )
             answer.latency_ms = self._elapsed_ms(started_at)
             db.add(answer)
             await db.flush()
             return PreparedTurn(
                 workspace_id=workspace_id,
-                user_id=reader.user_id,
+                user_id=user_id,
                 conversation_id=conversation_id,
                 user_message_id=user_message.id,
                 message_id=answer.id,
@@ -182,6 +194,7 @@ class ChatService:
             MessageRole.ASSISTANT,
             "",
             status=MessageStatus.STREAMING,
+            channel=channel,
         )
         answer.citations = list(citations)
         answer.model = assistant.model
@@ -189,7 +202,7 @@ class ChatService:
         await db.flush()
         return PreparedTurn(
             workspace_id=workspace_id,
-            user_id=reader.user_id,
+            user_id=user_id,
             conversation_id=conversation_id,
             user_message_id=user_message.id,
             message_id=answer.id,
@@ -395,6 +408,7 @@ class ChatService:
         content: str,
         *,
         status: MessageStatus = MessageStatus.COMPLETED,
+        channel: ConversationChannel,
     ) -> Message:
         return Message(
             id=uuid.uuid4(),
@@ -405,4 +419,5 @@ class ChatService:
             content=content,
             citations=[],
             status=status,
+            channel=channel,
         )

@@ -74,11 +74,12 @@ class Source:
 
 @dataclass(frozen=True)
 class RetrievalQuery:
-    """What to search for and on whose behalf (permissions are filtered by ``user_id``)."""
+    """What to search for and on whose behalf (permissions are filtered by ``user_id``; ``None``
+    for an API key, whose access is its scope over the assistant's collections)."""
 
     workspace_id: uuid.UUID
     assistant_id: uuid.UUID
-    user_id: uuid.UUID
+    user_id: uuid.UUID | None
     text: str
 
 

@@ -1,11 +1,15 @@
 # backend/src/knobridge/apikeys/
 
-**Função**: chaves de API (`kbk_`) que abrem a API pública de um workspace a programas ([ADR 0007](../../../../docs/adr/0007-chaves-e-api-publica.md), contrato em [api-publica.md](../../../../docs/specs/api-publica.md)). Hoje só o modelo de dados (plano 0008, F1.2); geração, autenticação e gestão chegam nas subfases seguintes.
+**Função**: chaves de API (`kbk_`) que abrem a API pública de um workspace a programas ([ADR 0007](../../../../docs/adr/0007-chaves-e-api-publica.md), contrato em [api-publica.md](../../../../docs/specs/api-publica.md)). Modelo (plano 0008, F1.2), geração, autenticação, gestão e as conversas da chave (F2.3).
 
 **Entra aqui**:
 - `models.py`: `ApiKey` (`api_keys`: nome único no workspace, `key_prefix` `[a-z0-9]{8}` único na instância, `key_hash` SHA-256 hex da chave inteira, `assistant_ids` `uuid[]` opcional (nulo = todos os assistentes ativos; 1 a 100 ids, sem nulos), `created_by`, `last_used_at`, `revoked_at`), com RLS forçada e a política padrão de workspace; `REFERENCED_MODELS` (`Workspace`, `User`), para o metadata estar completo onde o modelo é usado sozinho.
+- `tokens.py`: `generate_api_key` (`kbk_<prefixo>_<segredo>`, `GeneratedKey` com o SHA-256), `api_key_prefix` e `key_matches` (tempo constante, hash fictício para prefixo desconhecido).
+- `auth.py`: `authenticate_api_key` (em modo de sistema; 401 único `InvalidApiKeyError` `invalid_api_key` para chave ausente do formato, desconhecida, com hash diferente ou revogada; 403 `workspace_suspended`), `ApiKeyIdentity` (chave, workspace, prefixo, escopo, `in_scope` e `reader`) e `touch_last_used` (`UPDATE` só com `last_used_at` nulo ou mais velho que 60 s, `LAST_USED_WINDOW`). Falha loga só o motivo e o prefixo.
+- `service.py`: `ApiKeyService` (listar por nome com `query`/`status` e `created_by_name`, criar devolvendo a chave uma vez, editar nome e escopo (`ScopeChange`), revogar idempotente; auditado com `key_prefix`, nunca a chave); erros `api_key_name_taken`, `api_key_revoked`, `api_key_assistant_invalid`.
+- `conversations.py`: conversas da chave (`channel = api`, `api_key_id`, sem `user_id`): `get_scoped_assistant` (inexistente, inativo ou fora do escopo = 404), `create_key_conversation`, `get_conversation`, `list_messages` e `get_message` (status efetivo de `conversations/stale.py`). A rodada é o `ChatService` de `conversations/` com `ApiKeyReader`.
 
-**Não entra aqui**: routers e schemas (`api/`), a conversa da API e o motor do chat (`conversations/`), migrações (`backend/migrations/`).
+**Não entra aqui**: routers, schemas e dependências de autenticação (`api/api_keys.py`, `api/public_conversations.py`, `api/api_key_deps.py`), o motor do chat (`conversations/`), migrações (`backend/migrations/`).
 
 **Convenções locais**:
 - `conversations/` não importa este pacote: `conversations.api_key_id` aponta para `api_keys` pelo nome da tabela (FK composta `(workspace_id, api_key_id)`), e quem grava conversas carrega `ApiKey` (`api/conversations.py`, `REFERENCED_MODELS`).

@@ -51,6 +51,22 @@ class Reader:
 
 
 @dataclass(frozen=True)
+class ApiKeyReader:
+    """An API key asking in its own conversations (``docs/specs/api-publica.md``).
+
+    ``assistant_ids`` is the key's scope (``None``: every assistant): a conversation whose
+    assistant left the scope reads as missing (404), like one of another key.
+    """
+
+    api_key_id: uuid.UUID
+    assistant_ids: frozenset[uuid.UUID] | None
+
+
+# Who may ask in a conversation: the person who owns it, or the API key that owns it.
+type Owner = Reader | ApiKeyReader
+
+
+@dataclass(frozen=True)
 class MessageView:
     """A message with the reader's own feedback on it (``None`` when not given).
 
@@ -107,6 +123,48 @@ async def get_readable_conversation(
     conversation = (await db.scalars(query)).one_or_none()
     if conversation is None or not (conversation.user_id == reader.user_id or reader.can_read_all):
         raise NotFoundError("Conversation not found.")
+    return conversation
+
+
+async def get_key_conversation(
+    db: AsyncSession,
+    workspace_id: uuid.UUID,
+    conversation_id: uuid.UUID,
+    reader: ApiKeyReader,
+    *,
+    lock: bool = False,
+) -> Conversation:
+    """The conversation of the key, its assistant still in the key's scope; 404 otherwise."""
+    query = select(Conversation).where(
+        Conversation.workspace_id == workspace_id,
+        Conversation.id == conversation_id,
+        Conversation.api_key_id == reader.api_key_id,
+    )
+    if lock:
+        query = query.with_for_update()
+    conversation = (await db.scalars(query)).one_or_none()
+    if conversation is None or (
+        reader.assistant_ids is not None and conversation.assistant_id not in reader.assistant_ids
+    ):
+        raise NotFoundError("Conversation not found.")
+    return conversation
+
+
+async def get_owned_conversation(
+    db: AsyncSession,
+    workspace_id: uuid.UUID,
+    conversation_id: uuid.UUID,
+    owner: Owner,
+    *,
+    lock: bool = False,
+) -> Conversation:
+    """The conversation ``owner`` asks in: 404 when not visible, 403 for an admin who reads it."""
+    if isinstance(owner, ApiKeyReader):
+        return await get_key_conversation(db, workspace_id, conversation_id, owner, lock=lock)
+    conversation = await get_readable_conversation(
+        db, workspace_id, conversation_id, owner, lock=lock
+    )
+    require_owner(conversation, owner)
     return conversation
 
 

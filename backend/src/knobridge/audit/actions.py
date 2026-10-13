@@ -90,3 +90,8 @@ class AuditAction(StrEnum):
     HARNESS_MODULE_UPDATED = "harness_module.updated"
     # Review of a knowledge item (key, action and edited fields; never the text).
     KNOWLEDGE_ITEM_UPDATED = "knowledge_item.updated"
+    # API keys of the public API (name, ``key_prefix``, scope and changed fields; never the key
+    # or its hash). Each request made with a key is not audited.
+    API_KEY_CREATED = "api_key.created"
+    API_KEY_UPDATED = "api_key.updated"
+    API_KEY_REVOKED = "api_key.revoked"

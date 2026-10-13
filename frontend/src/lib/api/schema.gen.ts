@@ -308,6 +308,67 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Public Conversation
+         * @description Start a conversation of the key with an active assistant of its scope.
+         */
+        post: operations["create_public_conversation_v1_conversations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/conversations/{conversation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Public Conversation
+         * @description A conversation of the key with its messages in order.
+         */
+        get: operations["get_public_conversation_v1_conversations__conversation_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/conversations/{conversation_id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send Public Message
+         * @description Ask the assistant. The question and the answer's starting point are committed before
+         *     the answer starts; access and state errors answer with the standard JSON error.
+         */
+        post: operations["send_public_message_v1_conversations__conversation_id__messages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/health/live": {
         parameters: {
             query?: never;
@@ -756,6 +817,71 @@ export interface paths {
         get: operations["get_workspace_conversation_v1_workspaces__workspace_id__admin_conversations__conversation_id__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/api-keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Api Keys
+         * @description Keys by name, revoked ones included; never the key or its hash. ``query`` matches name
+         *     or prefix.
+         */
+        get: operations["list_api_keys_v1_workspaces__workspace_id__api_keys_get"];
+        put?: never;
+        /**
+         * Create Api Key
+         * @description Create a key and return it, the only time it is shown.
+         */
+        post: operations["create_api_key_v1_workspaces__workspace_id__api_keys_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/api-keys/{api_key_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Update Api Key
+         * @description Rename and/or change the scope; the key itself never changes.
+         */
+        patch: operations["update_api_key_v1_workspaces__workspace_id__api_keys__api_key_id__patch"];
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/api-keys/{api_key_id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Revoke Api Key
+         * @description Revoke the key (final; again is a no-op); valid from the key's next request.
+         */
+        post: operations["revoke_api_key_v1_workspaces__workspace_id__api_keys__api_key_id__revoke_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2031,6 +2157,72 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** ApiKeyCreate */
+        ApiKeyCreate: {
+            /** Assistant Ids */
+            assistant_ids?: string[] | null;
+            /** Name */
+            name: string;
+        };
+        /** ApiKeyCreated */
+        ApiKeyCreated: {
+            api_key: components["schemas"]["ApiKeyOut"];
+            /** Key */
+            key: string;
+        };
+        /** ApiKeyOut */
+        ApiKeyOut: {
+            /** Assistant Ids */
+            assistant_ids: string[] | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string | null;
+            /** Created By Name */
+            created_by_name: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Key Prefix */
+            key_prefix: string;
+            /** Last Used At */
+            last_used_at: string | null;
+            /** Name */
+            name: string;
+            /** Revoked At */
+            revoked_at: string | null;
+        };
+        /** ApiKeyPage */
+        ApiKeyPage: {
+            /** Items */
+            items: components["schemas"]["ApiKeyOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Total */
+            total: number;
+        };
+        /**
+         * ApiKeyStatus
+         * @enum {string}
+         */
+        ApiKeyStatus: "active" | "revoked";
+        /**
+         * ApiKeyUpdate
+         * @description Fields to change; omitted fields stay, ``assistant_ids: null`` is every assistant.
+         */
+        ApiKeyUpdate: {
+            /** Assistant Ids */
+            assistant_ids?: string[] | null;
+            /** Name */
+            name?: string | null;
+        };
         /** AssistantCreate */
         AssistantCreate: {
             /**
@@ -2189,7 +2381,7 @@ export interface components {
          * AuditAction
          * @enum {string}
          */
-        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "superadmin.workspace_entered" | "superadmin.workspace_exited" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted" | "provider.tested" | "assistant.created" | "assistant.updated" | "assistant.deleted" | "assistant.ticket_webhook_secret_rotated" | "assistant.ticket_webhook_tested" | "conversation.deleted" | "ticket_request.created" | "collection.created" | "collection.updated" | "collection.deleted" | "source.created" | "source.updated" | "source.deleted" | "source.tested" | "source.sync.started" | "source.sync.cancelled" | "source.reindex.started" | "source.ingest_token_rotated" | "source.tickets_uploaded" | "runner.created" | "runner.updated" | "runner.revoked" | "runner.deleted" | "harness_job.cancelled" | "harness_job.enqueued" | "harness_module.created" | "harness_module.updated" | "knowledge_item.updated";
+        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "superadmin.workspace_entered" | "superadmin.workspace_exited" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted" | "provider.tested" | "assistant.created" | "assistant.updated" | "assistant.deleted" | "assistant.ticket_webhook_secret_rotated" | "assistant.ticket_webhook_tested" | "conversation.deleted" | "ticket_request.created" | "collection.created" | "collection.updated" | "collection.deleted" | "source.created" | "source.updated" | "source.deleted" | "source.tested" | "source.sync.started" | "source.sync.cancelled" | "source.reindex.started" | "source.ingest_token_rotated" | "source.tickets_uploaded" | "runner.created" | "runner.updated" | "runner.revoked" | "runner.deleted" | "harness_job.cancelled" | "harness_job.enqueued" | "harness_module.created" | "harness_module.updated" | "knowledge_item.updated" | "api_key.created" | "api_key.updated" | "api_key.revoked";
         /** AuditEventOut */
         AuditEventOut: {
             /** Action */
@@ -3408,6 +3600,132 @@ export interface components {
             base_url?: string | null;
             /** Name */
             name?: string | null;
+        };
+        /** PublicAnswerOut */
+        PublicAnswerOut: {
+            message: components["schemas"]["PublicMessageOut"];
+            /**
+             * User Message Id
+             * Format: uuid
+             */
+            user_message_id: string;
+        };
+        /** PublicConversationCreate */
+        PublicConversationCreate: {
+            /**
+             * Assistant Id
+             * Format: uuid
+             */
+            assistant_id: string;
+        };
+        /** PublicConversationDetail */
+        PublicConversationDetail: {
+            /**
+             * Assistant Id
+             * Format: uuid
+             */
+            assistant_id: string;
+            channel: components["schemas"]["ConversationChannel"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            messages: components["schemas"]["PublicMessagePage"];
+            /** Title */
+            title: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** PublicConversationOut */
+        PublicConversationOut: {
+            /**
+             * Assistant Id
+             * Format: uuid
+             */
+            assistant_id: string;
+            channel: components["schemas"]["ConversationChannel"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** PublicMessageCreate */
+        PublicMessageCreate: {
+            /** Content */
+            content: string;
+            /**
+             * Stream
+             * @default false
+             */
+            stream: boolean;
+        };
+        /**
+         * PublicMessageOut
+         * @description A message as the panel's ``MessageOut``, without feedback and ticket request.
+         */
+        PublicMessageOut: {
+            channel: components["schemas"]["ConversationChannel"];
+            /** Citations */
+            citations: components["schemas"]["CitationOut"][];
+            /** Content */
+            content: string;
+            /** Cost Usd */
+            cost_usd: number | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Error Code */
+            error_code: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Input Tokens */
+            input_tokens: number | null;
+            /** Latency Ms */
+            latency_ms: number | null;
+            /** Model */
+            model: string | null;
+            /** Output Tokens */
+            output_tokens: number | null;
+            role: components["schemas"]["MessageRole"];
+            status: components["schemas"]["MessageStatus"];
+        };
+        /** PublicMessagePage */
+        PublicMessagePage: {
+            /** Items */
+            items: components["schemas"]["PublicMessageOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Total */
+            total: number;
         };
         /** ReadyResponse */
         ReadyResponse: {
@@ -5734,6 +6052,193 @@ export interface operations {
             };
         };
     };
+    create_public_conversation_v1_conversations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicConversationCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicConversationOut"];
+                };
+            };
+            /** @description Missing, malformed, unknown or revoked key (`invalid_api_key`). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace of the key suspended (`workspace_suspended`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Assistant missing, inactive or outside the key's scope. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Body above 4 KiB (`payload_too_large`). */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_public_conversation_v1_conversations__conversation_id__get: {
+        parameters: {
+            query?: {
+                messages_limit?: number;
+                messages_offset?: number;
+            };
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicConversationDetail"];
+                };
+            };
+            /** @description Missing, malformed, unknown or revoked key (`invalid_api_key`). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace of the key suspended (`workspace_suspended`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conversation not found for this key. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_public_message_v1_conversations__conversation_id__messages_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PublicMessageCreate"];
+            };
+        };
+        responses: {
+            /** @description With `stream: true`, Server-Sent Events: `citations`, `delta` (repeated), then `done` or `error` (see `docs/specs/chat-sse.md`). With `stream: false`, the saved answer as JSON. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicAnswerOut"];
+                    "text/event-stream": string;
+                };
+            };
+            /** @description Missing, malformed, unknown or revoked key (`invalid_api_key`). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace of the key suspended (`workspace_suspended`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Conversation not found for this key, or its assistant left the key's scope. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The assistant is inactive (`assistant_inactive`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Body above 64 KiB (`payload_too_large`). */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     live_v1_health_live_get: {
         parameters: {
             query?: never;
@@ -6924,6 +7429,240 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    list_api_keys_v1_workspaces__workspace_id__api_keys_get: {
+        parameters: {
+            query?: {
+                /** @description Case-insensitive substring. */
+                query?: string | null;
+                status?: components["schemas"]["ApiKeyStatus"] | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiKeyPage"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below admin (`forbidden`) or workspace suspended. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or API key not found (`not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_api_key_v1_workspaces__workspace_id__api_keys_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApiKeyCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiKeyCreated"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below admin (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or API key not found (`not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Name already used in the workspace (`api_key_name_taken`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid body (`validation_error`) or an assistant of the scope outside the workspace (`api_key_assistant_invalid`, `details.assistant_ids`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_api_key_v1_workspaces__workspace_id__api_keys__api_key_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                api_key_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApiKeyUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiKeyOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below admin (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or API key not found (`not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Name already used (`api_key_name_taken`) or the key is revoked (`api_key_revoked`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid body (`validation_error`) or an assistant of the scope outside the workspace (`api_key_assistant_invalid`, `details.assistant_ids`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    revoke_api_key_v1_workspaces__workspace_id__api_keys__api_key_id__revoke_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                api_key_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiKeyOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below admin (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or API key not found (`not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

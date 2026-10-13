@@ -29,6 +29,7 @@
 | `source.ingest_token_rotated` (token de envio `kbi_` de fonte `tickets` emitido ou girado: `name` e `prefix`, o prefixo público; nunca o token nem o hash) | workspace |
 | `source.tickets_uploaded` (arquivo de chamados enviado no painel: `name` da fonte, `filename`, `format`, `total` e `counts` por status; nunca o conteúdo) | workspace |
 | `runner.created`, `runner.updated`, `runner.revoked`, `runner.deleted` (runners do harness: `name`, `prefix` (o prefixo público do token; a chave não pode conter `token`) e, na alteração, `fields`; nunca o token nem o hash) | workspace |
+| `api_key.created`, `api_key.updated`, `api_key.revoked` (chaves da API pública: `name`, `key_prefix` (o prefixo público; a chave não pode conter `api_key`), `assistant_ids` na criação, `fields` na alteração; a revogação só na primeira vez; nunca a chave nem o hash; o uso da chave não é auditado) | workspace |
 | `harness_job.cancelled` (tarefa do harness cancelada no painel: `module_key` e `source_id`; nunca conteúdo de conhecimento), `harness_job.enqueued` (um evento por lote do painel: `source_id`, `module_keys`, `executor`, `trigger`; o enfileiramento por commit do runner não é auditado) | workspace |
 | `harness_module.created`, `harness_module.updated` (módulos de fonte `runner` no painel: `key`, `source_id` e, na alteração, `fields`) | workspace |
 

@@ -16,6 +16,7 @@ from knobridge.api import (
     admin,
     admin_access,
     admin_conversations,
+    api_keys,
     assistants,
     audit,
     auth,
@@ -31,6 +32,7 @@ from knobridge.api import (
     me,
     members,
     providers,
+    public_conversations,
     recovery,
     runner_heartbeat,
     runner_jobs,
@@ -163,6 +165,9 @@ def create_app(
         ticket_webhook,
         # Ticket requests from the chat (plan 0005 F3.2).
         ticket_requests,
+        # API keys and the public REST API of conversations (plan 0008 F2.3).
+        api_keys,
+        public_conversations,
     )
     for module in routers:
         v1.include_router(module.router)
