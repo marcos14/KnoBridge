@@ -42,9 +42,9 @@ fases:
         commit: 3aabe2a
       - id: F2.2
         titulo: Chat por produto e nível (busca filtrada pelo nível, instruções e modelo do nível)
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-13
         concluida_em: null
         commit: null
       - id: F2.3
@@ -53,7 +53,7 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-13
         concluida_em: 2026-10-13
-        commit: null
+        commit: 6773c35
       - id: F2.4
         titulo: API pública e webhook por produto e nível (chaves com produtos e nível máximo, model produto:nível, canal público só usuário final)
         status: pendente
@@ -479,6 +479,7 @@ Nenhuma.
 - 2026-10-13 — F2.3 iniciada (agente em worktree).
 - 2026-10-13 — F2.1 concluída: produtos no lugar dos assistentes, configuração dos níveis do workspace, nível por membro e produto e convites com níveis; gates do agente: backend 2513 passed com 99,88%, frontend 1437; orquestrador: ruff, pyright e AGENTS na integração
 - 2026-10-13 — F2.3 concluída: cards de desenvolvimento por push (API e upload), conector interno cards, Markdown e chunking do card e citação kind card, integrados sobre a F2.1; backend 2621 passed com 99% de cobertura, frontend 1438
+- 2026-10-13 — F2.2 iniciada (agente em worktree).
 
 ## 8. Encerramento
 
