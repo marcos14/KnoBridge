@@ -7,6 +7,7 @@ import {
   Database,
   Gauge,
   House,
+  KeyRound,
   Library,
   MessageSquare,
   MessagesSquare,
@@ -32,6 +33,7 @@ export type WorkspaceArea =
   | "providers"
   | "sources"
   | "runners"
+  | "apiKeys"
   | "pipelines"
   | "collections"
   | "channels"
@@ -66,6 +68,7 @@ export const WORKSPACE_AREAS: readonly WorkspaceAreaDefinition[] = [
   { key: "providers", path: "providers", minRole: "editor", icon: Cpu },
   { key: "sources", path: "sources", minRole: "viewer", icon: Database },
   { key: "runners", path: "runners", minRole: "admin", icon: Server },
+  { key: "apiKeys", path: "api-keys", minRole: "admin", icon: KeyRound },
   { key: "pipelines", path: "pipelines", minRole: "viewer", icon: Workflow },
   { key: "collections", path: "collections", minRole: "viewer", icon: Library },
   { key: "channels", path: "channels", minRole: "viewer", icon: Cable },
@@ -89,13 +92,22 @@ export interface NavItem<Key extends string> {
   icon: LucideIcon;
 }
 
-/** Role required by a workspace area; also used by the router to guard its route. */
-export function areaMinRole(area: WorkspaceArea): Role {
+function workspaceArea(area: WorkspaceArea): WorkspaceAreaDefinition {
   const definition = WORKSPACE_AREAS.find(({ key }) => key === area);
   if (definition === undefined) {
     throw new Error(`Unknown workspace area: ${area}`);
   }
-  return definition.minRole;
+  return definition;
+}
+
+/** Role required by a workspace area; also used by the router to guard its route. */
+export function areaMinRole(area: WorkspaceArea): Role {
+  return workspaceArea(area).minRole;
+}
+
+/** URL segment of a workspace area below `/w/:workspaceId` (e.g. `api-keys`). */
+export function areaPath(area: WorkspaceArea): string {
+  return workspaceArea(area).path;
 }
 
 function joinPath(root: string, path: string): string {

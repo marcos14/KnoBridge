@@ -16,6 +16,7 @@
       "providers": "Provedores",
       "sources": "Fontes",
       "runners": "Runners",
+      "apiKeys": "Chaves de API",
       "pipelines": "Pipelines",
       "collections": "Coleções",
       "channels": "Canais",
@@ -1562,6 +1563,99 @@
       "done": "Concluído"
     }
   },
+  "apiKeys": {
+    "title": "Chaves de API",
+    "description": "Chaves para sistemas externos conversarem com os assistentes pela API REST ou pela API compatível com OpenAI. Cada chave vale para todos os assistentes ativos ou só para os escolhidos.",
+    "create": "Nova chave",
+    "tableLabel": "Chaves de API do workspace",
+    "columns": {
+      "name": "Nome",
+      "scope": "Escopo",
+      "created": "Criada em",
+      "lastUsed": "Último uso",
+      "status": "Estado",
+      "actions": "Ações"
+    },
+    "scope": {
+      "all": "Todos os assistentes",
+      "count_zero": "Nenhum assistente",
+      "count_one": "{{count}} assistente",
+      "count_other": "{{count}} assistentes",
+      "none": "Nenhum assistente (os escolhidos foram excluídos)"
+    },
+    "status": {
+      "active": "Ativa",
+      "revoked": "Revogada"
+    },
+    "createdBy": "por {{name}}",
+    "neverUsed": "Nunca usada",
+    "empty": "Nenhuma chave criada. Crie uma para chamar os assistentes pela API.",
+    "loading": "Carregando chaves…",
+    "loadFailed": "Não foi possível carregar as chaves.",
+    "retry": "Tentar novamente",
+    "edit": "Editar",
+    "editLabel": "Editar {{name}}",
+    "updated": "A chave {{name}} foi salva.",
+    "revoke": "Revogar",
+    "revokeLabel": "Revogar {{name}}",
+    "revokeTitle": "Revogar a chave {{name}}?",
+    "revokeDescription": "A chave deixa de valer na próxima requisição. Não dá para desfazer: para voltar a acessar, crie outra chave. As conversas feitas com ela continuam em Conversas.",
+    "revoked": "A chave {{name}} foi revogada.",
+    "form": {
+      "createTitle": "Nova chave de API",
+      "editTitle": "Editar a chave {{name}}",
+      "description": "Dê um nome que identifique quem usa a chave e escolha os assistentes que ela alcança. A chave aparece uma única vez, logo depois de criar.",
+      "name": "Nome",
+      "nameHint": "Ex.: portal do cliente ou integração do ERP.",
+      "scope": "Assistentes",
+      "scopes": {
+        "all": "Todos os assistentes ativos, inclusive os criados depois",
+        "selected": "Só os assistentes escolhidos"
+      },
+      "assistants": "Assistentes da chave",
+      "assistantsLoading": "Carregando assistentes…",
+      "assistantsLoadFailed": "Não foi possível carregar os assistentes.",
+      "assistantsEmpty": "Nenhum assistente no workspace.",
+      "inactiveAssistant": "{{name}} (inativo)",
+      "submit": "Salvar",
+      "cancel": "Cancelar",
+      "validation": {
+        "nameRequired": "Informe o nome da chave.",
+        "assistantsRequired": "Escolha pelo menos um assistente.",
+        "tooManyAssistants": "Escolha no máximo {{max}} assistentes."
+      }
+    },
+    "secret": {
+      "title": "Chave {{name}} criada",
+      "description": "Copie a chave agora: ela não aparece de novo. Guarde-a num cofre ou na variável de ambiente {{variable}}, nunca no código. Se perder, crie outra e revogue esta.",
+      "label": "Chave de API",
+      "copy": "Copiar chave",
+      "done": "Concluído"
+    },
+    "examples": {
+      "title": "Como usar",
+      "description": "Os exemplos leem a chave da variável de ambiente {{variable}}. As fontes citadas vêm no campo knobridge da resposta.",
+      "assistant": "Exemplos com o assistente {{name}}; troque pelo nome de outro assistente do escopo da chave.",
+      "noAssistant": "Nenhum assistente ativo: troque os marcadores pelo id e pelo nome do assistente.",
+      "assistantIdPlaceholder": "<id-do-assistente>",
+      "assistantNamePlaceholder": "<nome do assistente>",
+      "curl": {
+        "title": "curl (API REST)",
+        "hint": "Cria uma conversa e faz uma pergunta. A resposta traz o texto e as citações.",
+        "copy": "Copiar exemplo curl"
+      },
+      "python": {
+        "title": "Python (SDK oficial da OpenAI)",
+        "hint": "O modelo é o nome do assistente. Instale com pip install openai.",
+        "copy": "Copiar exemplo Python"
+      },
+      "javascript": {
+        "title": "JavaScript (SDK oficial da OpenAI)",
+        "hint": "Para Node.js com módulos ES. Instale com npm install openai.",
+        "copy": "Copiar exemplo JavaScript"
+      }
+    }
+  },
   "chat": {
     "title": "Chat",
     "retry": "Tentar de novo",
@@ -2193,6 +2287,9 @@
     "runner_not_found": "Runner não encontrado.",
     "runner_repository_in_use": "Já existe uma fonte para esse repositório nesse runner.",
     "runner_revoked": "Este runner foi revogado e não pode ser reativado.",
+    "api_key_name_taken": "Já existe uma chave de API com esse nome.",
+    "api_key_assistant_invalid": "Algum assistente escolhido não existe mais. Confira a lista e tente de novo.",
+    "api_key_revoked": "Esta chave foi revogada e não pode mais ser alterada.",
     "module_key_taken": "Já existe um módulo com essa chave nesta fonte.",
     "module_not_found": "Módulo não encontrado. A lista foi atualizada.",
     "job_not_found": "Tarefa não encontrada.",

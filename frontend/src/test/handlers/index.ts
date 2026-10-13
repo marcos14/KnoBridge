@@ -1,5 +1,6 @@
 import { accountHandlers } from "./account";
 import { adminHandlers } from "./admin";
+import { apiKeysHandlers } from "./apiKeys";
 import { assistantsHandlers } from "./assistants";
 import { auditHandlers } from "./audit";
 import { authHandlers } from "./auth";
@@ -22,6 +23,7 @@ import { workspaceConversationsHandlers } from "./workspaceConversations";
 
 export * from "./account";
 export * from "./admin";
+export * from "./apiKeys";
 export * from "./assistants";
 export * from "./audit";
 export * from "./auth";
@@ -63,6 +65,7 @@ export const handlers = [
   ...assistantsHandlers,
   ...collectionsHandlers,
   ...runnersHandlers,
+  ...apiKeysHandlers,
   ...sourcesHandlers,
   ...ticketsHandlers,
   ...harnessHandlers,

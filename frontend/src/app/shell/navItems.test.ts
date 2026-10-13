@@ -2,7 +2,13 @@ import { describe, expect, it } from "vitest";
 
 import { WORKSPACE_ID } from "@/test/factories";
 
-import { adminNavItems, areaMinRole, workspaceNavItems, type WorkspaceArea } from "./navItems";
+import {
+  adminNavItems,
+  areaMinRole,
+  areaPath,
+  workspaceNavItems,
+  type WorkspaceArea,
+} from "./navItems";
 
 function keysFor(role: "owner" | "admin" | "editor" | "viewer") {
   return workspaceNavItems(WORKSPACE_ID, role).map(({ key }) => key);
@@ -45,6 +51,7 @@ describe("workspaceNavItems", () => {
       "providers",
       "sources",
       "runners",
+      "apiKeys",
       "pipelines",
       "collections",
       "channels",
@@ -89,9 +96,23 @@ describe("areaMinRole", () => {
     expect(areaMinRole("assistants")).toBe("editor");
     expect(areaMinRole("sources")).toBe("viewer");
     expect(areaMinRole("runners")).toBe("admin");
+    expect(areaMinRole("apiKeys")).toBe("admin");
   });
 
   it("test_area_min_role_rejects_unknown_area", () => {
     expect(() => areaMinRole("unknown" as WorkspaceArea)).toThrow("Unknown workspace area");
+  });
+});
+
+describe("areaPath", () => {
+  it("test_area_path_reads_the_url_segment_of_the_menu_table", () => {
+    expect(areaPath("runners")).toBe("runners");
+    expect(areaPath("apiKeys")).toBe("api-keys");
+  });
+
+  it("test_area_path_builds_the_menu_link_of_api_keys", () => {
+    const item = workspaceNavItems(WORKSPACE_ID, "admin").find(({ key }) => key === "apiKeys");
+
+    expect(item?.to).toBe(`/w/${WORKSPACE_ID}/api-keys`);
   });
 });

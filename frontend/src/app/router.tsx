@@ -15,7 +15,7 @@ import { PublicLayout } from "./PublicLayout";
 import { AppShell } from "./shell/AppShell";
 import { AreaSkeletonPage } from "./shell/AreaSkeletonPage";
 import { HomeRedirect } from "./shell/HomeRedirect";
-import { areaMinRole, type WorkspaceArea } from "./shell/navItems";
+import { areaMinRole, areaPath, type WorkspaceArea } from "./shell/navItems";
 import { WorkspaceLayout } from "./shell/WorkspaceLayout";
 
 // Elements of the feature pages, each loaded on its first visit (code splitting); guards and
@@ -34,6 +34,9 @@ const InstanceDashboardPage = lazyPage(() =>
 );
 const AdminWorkspacesPage = lazyPage(() =>
   import("@/features/admin/AdminWorkspacesPage").then((m) => m.AdminWorkspacesPage),
+);
+const ApiKeysPage = lazyPage(() =>
+  import("@/features/apikeys/ApiKeysPage").then((m) => m.ApiKeysPage),
 );
 const AssistantsPage = lazyPage(() =>
   import("@/features/assistants/AssistantsPage").then((m) => m.AssistantsPage),
@@ -83,7 +86,7 @@ const WorkspaceSettingsPage = lazyPage(() =>
 );
 
 /**
- * Route of a workspace area (`/w/:workspaceId/<area>`), guarded by the role the menu uses for
+ * Route of a workspace area (`/w/:workspaceId/<path of the area>`), guarded by the role the menu uses for
  * the same area (`WORKSPACE_AREAS`), so a hidden item is also a closed route. `subPaths` (e.g.
  * `:conversationId`) are served by the same element, which stays mounted while the URL moves
  * between them; other sub-pages are a 404.
@@ -94,7 +97,7 @@ function workspaceArea(
   subPaths: readonly string[] = [],
 ): RouteObject {
   return {
-    path: area,
+    path: areaPath(area),
     element: <RequireWorkspaceRole minRole={areaMinRole(area)} />,
     children:
       subPaths.length === 0
@@ -172,6 +175,7 @@ export const routes: RouteObject[] = [
                           workspaceArea("providers", ProvidersPage),
                           workspaceArea("sources", SourcesPage, [":sourceId"]),
                           workspaceArea("runners", RunnersPage),
+                          workspaceArea("apiKeys", ApiKeysPage),
                           workspaceArea("pipelines", <AreaSkeletonPage area="pipelines" />),
                           workspaceArea("collections", CollectionsPage, [":collectionId"]),
                           workspaceArea("channels", <AreaSkeletonPage area="channels" />),

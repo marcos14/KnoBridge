@@ -88,10 +88,10 @@ fases:
         commit: 7f98606
       - id: F3.3
         titulo: Tela de chaves de API com exemplos
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
-        concluida_em: null
+        concluida_em: 2026-10-12
         commit: null
       - id: F3.4
         titulo: Melhorias nas telas existentes (busca, filtros, paginação, ações novas e estados vazios)
@@ -99,7 +99,7 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
         concluida_em: 2026-10-12
-        commit: null
+        commit: fbd2c02
   - id: F4
     titulo: Entrega
     status: pendente
@@ -230,6 +230,13 @@ decisoes:
     decisao: "F3.4: listas de assistentes, provedores, coleções, fontes, membros e runners com busca, filtros, ordenação e paginação no servidor (20 por página, estado na URL, busca com espera de 300 ms) via components/ListToolbar.tsx, hooks/use-list-search.ts e use-offset-clamp.ts; Reindexar (desabilitado com motivo para chamados), Sincronizar todas, Duplicar (abre a edição da cópia) e Sair de todas as sessões; estados vazios com o próximo passo e Limpar filtros; Cancelar sincronização passou a pedir confirmação; os hooks de lista completa continuam para diálogos e filtros"
     motivo: "contrato da F2.5 e telas que orientam o próximo passo"
     alternativas: "busca no navegador; paginação infinita"
+    adr: null
+  - id: D18
+    data: 2026-10-12
+    por: agente
+    decisao: "F3.3: área Chaves de API em features/apikeys (owner/admin) na URL api-keys (navItems.ts ganhou areaPath e o router usa o caminho do menu); token mostrado uma vez; editar só nome e escopo, sem requisição quando nada muda; chave revogada fica sem ações; exemplos curl, Python e JavaScript com o SDK da OpenAI usam window.location.origin + /v1, o primeiro assistente ativo como model e KNOBRIDGE_API_KEY, sem o token embutido"
+    motivo: "padrão de token mostrado uma vez e exemplos que não vazam a chave"
+    alternativas: "URL igual à chave interna da área"
     adr: null
 pendencias_usuario: []
 ---
@@ -477,6 +484,7 @@ Nenhuma.
 - 2026-10-12 — F3.3 iniciada (agente em worktree).
 - 2026-10-12 — F3.4 iniciada (agente em worktree).
 - 2026-10-12 — F3.4 concluída: busca, filtros, ordenação e paginação nas seis listas, Reindexar, Sincronizar todas, Duplicar, Sair de todas as sessões e estados vazios; gates do agente: frontend 1398 testes, 98,54% de branches, build e check:api; orquestrador: lint, typecheck e formato na integração
+- 2026-10-12 — F3.3 concluída: tela de chaves de API com escopo por assistente, token mostrado uma vez, revogação e exemplos REST e SDK da OpenAI, integrada sobre a F3.4; frontend 1439 testes, 98,58% de branches, lint, formato, build e check:api
 
 ## 8. Encerramento
 
