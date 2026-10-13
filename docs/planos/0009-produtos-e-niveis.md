@@ -21,12 +21,12 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-13
         concluida_em: 2026-10-13
-        commit: null
+        commit: fd381b8
       - id: F1.2
         titulo: Migração 0018 (produtos a partir dos assistentes, níveis por membro e produto, nível mínimo de fonte e documento, níveis do workspace) com RLS
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-13
         concluida_em: null
         commit: null
   - id: F2
@@ -448,6 +448,7 @@ Nenhuma.
 - 2026-10-13 — plano criado na branch `plano/0009-produtos-e-niveis` (a partir de `plano/0008-telas-de-uso-e-administracao`, ainda não integrada); aguardando aprovação.
 - 2026-10-13 — plano aprovado pelo usuário ("Aprovado"); F1.1 iniciada (agente em worktree).
 - 2026-10-13 — F1.1 concluída: ADR 0008, specs produtos-e-niveis.md e cards.md, ajustes em chat, chat-sse, api-publica, chamados, indexação, autenticação e uso-e-custos, visão v0.6; links e checagens verdes
+- 2026-10-13 — F1.2 iniciada (agente em worktree).
 
 ## 8. Encerramento
 
