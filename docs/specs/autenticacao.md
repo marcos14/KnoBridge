@@ -1,6 +1,8 @@
 # Autenticação, papéis e permissões
 
-> Rascunho v0.2 · 2026-10-12 · Em uso (planos 0002 e 0008)
+> Rascunho v0.3 · 2026-10-13 · Em uso (planos 0002, 0008 e 0009)
+>
+> **Mudanças da v0.3** (plano 0009, F1.1; implementação na F2.1): **nível máximo por membro e produto**, com padrão pelo papel e valor gravado pelo admin ([produtos-e-niveis.md](produtos-e-niveis.md#nível-por-membro-e-produto)); convites com `product_levels` ([Convites](#convites)); `GET /v1/me` com o nível de cada produto ([Nível por produto no `/v1/me`](#nível-por-produto-no-v1me)); na matriz, as rotas de produtos no lugar das de assistentes, a configuração dos níveis, a tabela de níveis dos membros, o nível mínimo das fontes (admin) e "testar busca" para editor.
 >
 > **Mudanças da v0.2** (plano 0008, F1.1; implementação nas F2.1 a F2.5): a configuração inicial cria também o primeiro workspace, com o superadmin como owner ([Configuração inicial e superadmin](#configuração-inicial-e-superadmin)); o superadmin entra em qualquer workspace como admin efetivo, sem membership e auditado ([Acesso de superadmin a um workspace](#acesso-de-superadmin-a-um-workspace)); chaves de API para a API pública ([api-publica.md](api-publica.md)); rotas novas de uso e custos, painéis, ações e chaves na matriz.
 
@@ -51,6 +53,19 @@ Como cada evento afeta as sessões:
 
 `GET /v1/me` devolve o usuário (com `is_superadmin`, `email_verified_at`, idioma e tema), os workspaces dele com o papel em cada um e, desde a v0.2, o acesso de superadmin ativo na sessão (`superadmin_access`); o painel usa essa resposta para montar o menu. A dependência `current_user` responde 401 `unauthenticated` sem sessão viva ou com usuário suspenso.
 
+### Nível por produto no `/v1/me`
+
+Desde a v0.3 (plano 0009), cada item de `workspaces` em `GET /v1/me` (e nas respostas de login, setup, `enter` e `workspace-access`) traz `product_levels`: o nível máximo de quem está logado em cada produto **ativo** daquele workspace, por nome do produto:
+
+```json
+{"id": "…", "name": "Cliente Alfa", "role": "editor", "access": "member",
+ "product_levels": [{"product_id": "…", "product_name": "ERP", "max_level": "support", "explicit": true}]}
+```
+
+- `max_level` segue a regra de [produtos-e-niveis.md](produtos-e-niveis.md#nível-por-membro-e-produto): o valor gravado pelo admin ou, sem ele, o padrão do papel (`product_dev` para owner e admin, inclusive o admin efetivo do superadmin; `end_user` para editor e leitor). `explicit` diz qual dos dois.
+- A consulta lê produtos e níveis de vários workspaces, então roda em modo de sistema, **filtrada pelos ids dos workspaces da própria resposta** (as memberships do usuário e o workspace do acesso de superadmin), num número constante de statements. Há teste de que um workspace de que o usuário não participa nunca aparece.
+- Workspace suspenso vem com `product_levels: []`.
+
 ## CSRF
 
 Double-submit assinado ([ADR 0002](../adr/0002-sessao-server-side.md), item 6; `security/csrf.py`):
@@ -81,14 +96,14 @@ Tokens opacos de 32 bytes (43 caracteres base64url), guardados só como SHA-256 
 
 Convites são dado de workspace (`invitations`), e o link de cada um é um token `invitation` com o `workspace_id` do convite ([emenda do ADR 0001](../adr/0001-tenancy-e-rls.md#emenda-2026-10-10-tokens-de-convite-com-workspace_id)): convidar, reenviar e revogar acontecem numa só transação do workspace, junto com a auditoria.
 
-- **Convidar** (`POST /v1/workspaces/{id}/invites`, admin+): e-mail e papel (até o papel de quem convida). Reconvidar o mesmo e-mail substitui o convite pendente; e-mail de quem já é membro dá 409 `already_member`.
+- **Convidar** (`POST /v1/workspaces/{id}/invites`, admin+): e-mail e papel (até o papel de quem convida) e, desde a v0.3, `product_levels` opcional (`[{product_id, max_level}]`, até 200, produto do workspace, senão 422 `invite_product_invalid`): o nível máximo da pessoa em cada produto, gravado no aceite; sem ele, vale o padrão do papel ([produtos-e-niveis.md](produtos-e-niveis.md#convites-com-nível)). `GET .../invites` devolve `product_levels` de cada convite. Reconvidar o mesmo e-mail substitui o convite pendente; e-mail de quem já é membro dá 409 `already_member`.
 - **Reenviar** troca o token (o anterior para de funcionar) e recomeça a validade; **revogar** invalida o link. Convite vencido continua listado (marcado como vencido) e pode ser reenviado.
 - **Pré-visualizar** (`POST /v1/invites/preview`, público): workspace, papel, quem convidou, validade e se o e-mail já tem conta.
 - **Aceitar** (`POST /v1/invites/accept`, público):
   - e-mail sem conta: exige `name` e `password` (422 `account_details_required` ou `weak_password`), cria a conta já verificada, a membership e uma sessão;
   - e-mail com conta: exige estar logado com essa conta (401 `login_required`; logado com outra, 403 `invitation_email_mismatch`) e cria a membership;
   - já membro: 409 `already_member`.
-  O token é consumido na mesma transação que cria a membership; qualquer recusa desfaz tudo e o link continua valendo.
+  O token é consumido na mesma transação que cria a membership e grava os níveis do convite (produtos excluídos nesse meio tempo são ignorados); qualquer recusa desfaz tudo e o link continua valendo.
 
 ## Limitação de login
 
@@ -165,12 +180,17 @@ Legenda: "público" = sem sessão; "logado" = qualquer sessão viva; nos papéis
 | `GET .../dashboard` | viewer (`cost_month` só para admin; [uso-e-custos.md](uso-e-custos.md#painel-do-workspace-início)) |
 | `GET .../usage`, `GET .../usage.csv` | admin ([uso-e-custos.md](uso-e-custos.md#uso-e-custos-do-workspace)) |
 | `GET .../members` | viewer |
-| `GET .../assistants`, `GET .../assistants/{id}` | viewer (o leitor só vê assistentes ativos) |
+| `GET .../products`, `GET .../products/{id}` | viewer (o leitor só vê produtos ativos; v0.3, no lugar de `.../assistants`, que saíram) |
 | `POST .../conversations`, `GET .../conversations` | viewer (cada um lista só as próprias) |
 | `GET .../conversations/{id}` | viewer, se dono da conversa; admin lê qualquer uma |
-| `POST .../conversations/{id}/messages`, `DELETE .../conversations/{id}` | viewer, só o dono da conversa |
+| `POST .../conversations/{id}/messages`, `DELETE .../conversations/{id}` | viewer, só o dono da conversa; perguntar exige o nível da conversa até o máximo do dono no produto ([produtos-e-niveis.md](produtos-e-niveis.md#chat-com-produto-e-nível)) |
 | `POST .../conversations/{id}/messages/{message_id}/feedback` | quem pode ler a conversa |
-| `POST`, `PATCH`, `DELETE .../assistants[/{id}]`, `POST .../assistants/{id}/duplicate` | editor ([chat.md](chat.md#listagem-e-duplicação-de-assistentes)) |
+| `POST`, `PATCH`, `DELETE .../products[/{id}]`, `POST .../products/{id}/duplicate`, `POST .../products/{id}/ticket-webhook/test` | editor ([produtos-e-niveis.md](produtos-e-niveis.md#rotas)) |
+| `POST .../products/{id}/ticket-webhook/secret` | admin |
+| `GET .../levels`, `PATCH .../levels/{level}` | admin ([configuração dos níveis](produtos-e-niveis.md#configuração-dos-níveis-no-workspace)) |
+| `GET .../member-levels`, `PUT .../members/{user_id}/product-levels` | admin (respeitando `role_not_allowed`; [nível por membro](produtos-e-niveis.md#nível-por-membro-e-produto)) |
+| `min_level` em `POST .../sources` (diferente do padrão) e em `PATCH .../sources/{id}` | admin; os demais campos da fonte continuam editor ([nível mínimo](produtos-e-niveis.md#quem-muda-e-o-que-acontece)) |
+| `POST .../collections/{id}/search` (testar busca) | editor (v0.3; antes, qualquer membro) |
 | `POST .../sources/{id}/reindex`, `POST .../collections/{id}/sync` | editor ([indexacao.md](indexacao.md#reindexar-uma-fonte)) |
 | `GET`, `POST .../api-keys`, `PATCH .../api-keys/{id}`, `POST .../api-keys/{id}/revoke` | admin ([api-publica.md](api-publica.md#gestão-no-painel-owner-ou-admin)) |
 | `GET /v1/models`, `POST /v1/chat/completions`, `POST /v1/conversations`, `GET /v1/conversations/{id}`, `POST /v1/conversations/{id}/messages` | chave de API (`Authorization: Bearer kbk_...`), sem sessão nem CSRF ([api-publica.md](api-publica.md#autenticação)) |
@@ -193,13 +213,13 @@ O papel mínimo de cada área do workspace vem de `WORKSPACE_AREAS` em `frontend
 | Tela (rota) | Papel mínimo | Observação |
 |---|---|---|
 | Início (`/w/:id`) | viewer | Cartões e checklist; o custo do mês só para admin+. |
-| Chat (`/w/:id/chat`) | viewer | O atalho para gerenciar assistentes só aparece para editor+. |
+| Chat (`/w/:id/chat`) | viewer | Seletor de produto e de nível, só até o máximo de quem pergunta. O atalho para gerenciar produtos só aparece para editor+. |
 | Conversas (`/w/:id/conversations`) | admin | Visão administrativa. |
-| Assistentes (`/w/:id/assistants`) | editor | |
+| Produtos (`/w/:id/products`) | editor | No lugar de Assistentes (v0.3). |
 | Provedores (`/w/:id/providers`) | editor | |
 | Fontes, Pipelines, Coleções, Canais | viewer | Telas de esqueleto, sem funcionalidade ainda. |
-| Membros (`/w/:id/members`) | viewer | Leitor vê a lista; convidar e gerenciar só para admin+. |
-| Configurações (`/w/:id/settings`) | admin | |
+| Membros (`/w/:id/members`) | viewer | Leitor vê a lista; convidar, gerenciar e editar o nível por produto só para admin+. |
+| Configurações (`/w/:id/settings`) | admin | Inclui **Níveis de resposta** (v0.3). |
 | Uso e custos (`/w/:id/usage`) | admin | |
 | Chaves de API (`/w/:id/api-keys`) | admin | |
 | Auditoria (`/w/:id/audit`) | admin | |
@@ -210,7 +230,7 @@ O papel mínimo de cada área do workspace vem de `WORKSPACE_AREAS` em `frontend
 
 ## Auditoria
 
-Login (sucesso e falha), logout, troca e redefinição de senha, verificação de e-mail, mudanças de perfil, revogação de sessões, convites, membros, provedores, assistentes, chaves de API, exclusão de conversa, entrada e saída de superadmin num workspace e todo o trabalho de superadmin gravam um evento em `audit_events` na mesma transação da mudança, sem segredos (catálogo em `backend/src/knobridge/audit/actions.py`). Owner e admin leem a trilha do workspace; o superadmin lê a da instância.
+Login (sucesso e falha), logout, troca e redefinição de senha, verificação de e-mail, mudanças de perfil, revogação de sessões, convites, membros, níveis dos membros, provedores, produtos, configuração dos níveis, nível mínimo das fontes, chaves de API, exclusão de conversa, entrada e saída de superadmin num workspace e todo o trabalho de superadmin gravam um evento em `audit_events` na mesma transação da mudança, sem segredos (catálogo em `backend/src/knobridge/audit/actions.py`). Owner e admin leem a trilha do workspace; o superadmin lê a da instância.
 
 ## Referências
 

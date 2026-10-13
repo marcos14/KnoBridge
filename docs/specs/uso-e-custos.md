@@ -1,6 +1,8 @@
 # Uso e custos, painel do workspace e painel da instância
 
-> Rascunho v0.2 · 2026-10-12 · Plano 0008 (F1.1; implementado na F2.2)
+> Rascunho v0.3 · 2026-10-13 · Planos 0008 (F1.1; implementado na F2.2) e 0009 (F1.1)
+
+> **Mudanças da v0.3** (plano 0009, F1.1; implementação nas F2.2 e F3.3): uso e custos agrupam por **produto** (`group_by=product`, no lugar de `assistant`) e por **nível** (`group_by=level`) e filtram por `product_id` e `level` ([Filtros por produto e nível](#filtros-por-produto-e-nível)); o preço de cada resposta usa o modelo do nível; o checklist ganha `levels` e troca `assistant` por `product` ([produtos-e-niveis.md](produtos-e-niveis.md)).
 
 > **Mudanças da v0.2** (F2.2): preços conferidos no catálogo do OpenRouter, com os ids `anthropic/...` acrescentados; somas sem item com preço valem zero e o aviso vem de `unpriced_*`; `channel` lista sempre os dois canais; `InstanceHealth` com `version` no topo e os textos de `detail`.
 
@@ -21,7 +23,7 @@ Código previsto: `backend/src/knobridge/llm/chat_pricing.py` (preços), `backen
 
 ## Preços do chat
 
-`ChatPriceTable` (`llm/chat_pricing.py`), no mesmo modelo da `EmbeddingPriceTable` (`llm/pricing.py`): USD por milhão de tokens, separado em entrada e saída, chave = identificador do modelo como o assistente grava (`assistants.model`). O custo de uma resposta é `(input_tokens × entrada + output_tokens × saída) / 1 000 000`, arredondado a 6 casas (`ROUND_HALF_UP`). Faltando o preço do modelo, `input_tokens` ou `output_tokens`, o custo é `null`.
+`ChatPriceTable` (`llm/chat_pricing.py`), no mesmo modelo da `EmbeddingPriceTable` (`llm/pricing.py`): USD por milhão de tokens, separado em entrada e saída, chave = identificador do modelo como a configuração do nível grava (`workspace_levels.model`; até a v0.2, `assistants.model`), o mesmo que fica em `messages.model`. O custo de uma resposta é `(input_tokens × entrada + output_tokens × saída) / 1 000 000`, arredondado a 6 casas (`ROUND_HALF_UP`). Faltando o preço do modelo, `input_tokens` ou `output_tokens`, o custo é `null`.
 
 Preços padrão (USD por 1M tokens):
 
@@ -56,13 +58,13 @@ Owner e admin (403 `forbidden` para os demais). Tela **Uso e custos** do painel.
 
 ### `GET .../usage`
 
-Parâmetros: `from`, `to` (período), `group_by` (obrigatório, abaixo). Resposta 200 `UsageReport`:
+Parâmetros: `from`, `to` (período), `group_by` (obrigatório, abaixo) e, desde a v0.3, `product_id` e `level` (opcionais, [abaixo](#filtros-por-produto-e-nível)). Resposta 200 `UsageReport`:
 
 ```json
 {
   "period_start": "2026-09-12T00:00:00Z",
   "period_end": "2026-10-12T00:00:00Z",
-  "group_by": "assistant",
+  "group_by": "product",
   "totals": {
     "embedding_tokens": 1250000, "embedding_cost_usd": 0.025, "runs": 14, "unpriced_runs": 0,
     "chat_input_tokens": 98000, "chat_output_tokens": 12000, "chat_cost_usd": 0.0584,
@@ -71,7 +73,7 @@ Parâmetros: `from`, `to` (período), `group_by` (obrigatório, abaixo). Respost
   },
   "rows": [
     {
-      "key": "6f1c…", "label": "Suporte ERP",
+      "key": "6f1c…", "label": "ERP",
       "embedding_tokens": null, "embedding_cost_usd": null, "runs": null, "unpriced_runs": null,
       "chat_input_tokens": 98000, "chat_output_tokens": 12000, "chat_cost_usd": 0.0584,
       "answers": 120, "unpriced_answers": 3,
@@ -85,17 +87,26 @@ Parâmetros: `from`, `to` (período), `group_by` (obrigatório, abaixo). Respost
 |---|---|---|---|
 | `source` | Uma por fonte com execução encerrada no período | id / nome da fonte | embeddings |
 | `collection` | Uma por coleção (pela fonte da execução) | id / nome da coleção | embeddings |
-| `assistant` | Uma por assistente com resposta no período | id / nome do assistente | chat |
+| `product` | Uma por produto com resposta no período (v0.3; no lugar de `assistant`, que passa a dar 422) | id / nome do produto | chat |
+| `level` | `end_user`, `support` e `product_dev`, sempre as três, na ordem dos níveis (v0.3) | nível / o mesmo nome (o painel traduz) | chat |
 | `channel` | `panel` e `api` | canal / "Painel" ou "API" (o painel traduz) | chat |
 | `api_key` | Uma por chave com resposta no período (canal `api`) | id / nome da chave | chat |
 | `model` | Uma por modelo (de embedding ou de chat) | modelo / modelo | as do tipo do modelo |
 | `day` | Um dia UTC por linha, do primeiro ao último do período, inclusive dias vazios (com zeros) | `2026-10-01` / a mesma data | todas |
 
 - Colunas que não se aplicam ao agrupamento vêm `null` (não zero). `cost_usd` da linha é a soma dos custos conhecidos que se aplicam; sem nenhum custo conhecido, a soma é `0` e `unpriced_runs`/`unpriced_answers` dizem quantos itens ficaram de fora. `totals` é sempre do período inteiro, com todas as colunas.
-- `channel` traz sempre as duas linhas (`panel` e `api`), com zeros quando o canal não teve resposta; em `model`, um modelo usado nos dois papéis vem numa linha só, com os dois lados.
-- Linhas ordenadas por `cost_usd` decrescente (nulos por último) e depois por `label`; em `day`, pela data. Sem paginação: o número de linhas é limitado pelo agrupamento (fontes, assistentes, chaves) ou pelo período (até 367 dias).
-- Fonte, coleção, assistente ou chave excluídos: as execuções e conversas vão junto (cascata), então somem do relatório. Assistente renomeado aparece com o nome atual.
+- `channel` traz sempre as duas linhas (`panel` e `api`) e `level` sempre as três, com zeros quando não houve resposta; em `model`, um modelo usado nos dois papéis vem numa linha só, com os dois lados.
+- Linhas ordenadas por `cost_usd` decrescente (nulos por último) e depois por `label`; em `day`, pela data; em `level`, pela ordem dos níveis. Sem paginação: o número de linhas é limitado pelo agrupamento (fontes, produtos, chaves, níveis) ou pelo período (até 367 dias).
+- Fonte, coleção, produto ou chave excluídos: as execuções e conversas vão junto (cascata), então somem do relatório. Produto renomeado aparece com o nome atual. As respostas de antes da migração `0018` contam no produto que veio do assistente (mesmo id) e no nível `product_dev`.
 - Número constante de statements: um para os totais e um para as linhas.
+
+### Filtros por produto e nível
+
+Desde a v0.3, `product_id` (um produto do workspace; outro id dá linhas vazias, sem erro) e `level` (`end_user`, `support` ou `product_dev`; outro valor: 422) restringem **as respostas do chat** a esse produto e/ou nível, pelos campos `messages.product_id` e `messages.level`, sem junção.
+
+- Embeddings não pertencem a um produto nem a um nível (uma coleção serve vários produtos e todos os níveis). Com algum desses filtros, as colunas de embeddings vêm `null` em `totals` e nas linhas, e `cost_usd` soma só o chat.
+- Com `group_by` = `source` ou `collection`, que só têm embeddings, os filtros dão 422 `validation_error`.
+- O CSV aceita os mesmos filtros e acrescenta ao nome do arquivo `-<nível>` quando há `level` (o produto não entra no nome).
 
 ### `GET .../usage.csv`
 
@@ -137,7 +148,8 @@ Itens na ordem do fluxo, cada um `{"key", "done"}`. O painel mostra os pendentes
 | `provider` | Existe ao menos uma credencial de provedor. | Provedores | editor |
 | `collection` | Existe ao menos uma coleção. | Coleções | editor |
 | `source` | Existe ao menos uma fonte com uma execução `succeeded`. | Fontes | editor |
-| `assistant` | Existe ao menos um assistente ativo ligado a uma coleção. | Assistentes | editor |
+| `levels` | O nível `end_user` tem credencial e modelo no workspace (v0.3). | Configurações > Níveis de resposta | admin |
+| `product` | Existe ao menos um produto ativo ligado a uma coleção (v0.3; até a v0.2, `assistant`). | Produtos | editor |
 | `chat` | Existe ao menos uma resposta `completed` com citação no workspace. | Chat | viewer |
 
 ## Painel da instância (Administração)

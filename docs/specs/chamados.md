@@ -1,6 +1,8 @@
 # Chamados
 
-> Rascunho v0.1 · 2026-10-12 · Em definição (plano 0005)
+> Rascunho v0.2 · 2026-10-13 · Em uso (planos 0005 e 0009)
+>
+> **Mudanças da v0.2** (plano 0009, F1.1; implementação nas F2.1 e F2.4): o webhook de abrir chamado passa do assistente para o **produto** ([produtos-e-niveis.md](produtos-e-niveis.md)), com as rotas em `/products/{pid}/ticket-webhook`, `product_id` no pedido e `product` e `level` no payload (que mantém `assistant`, obsoleto, com os mesmos valores); a fonte `tickets` tem nível mínimo padrão `support`; os **cards de desenvolvimento** seguem o mesmo caminho dos chamados, em [cards.md](cards.md).
 
 Como chamados de qualquer sistema entram no KnoBridge e viram fonte do chat, e como o chat abre um chamado quando não sabe responder. Cobre o formato do chamado (JSON Schema), o envio pela API com token, o upload no painel, a caixa de entrada e seu ciclo de vida, a anonimização, o Markdown e o chunking, a citação `kind: ticket` e o webhook de saída. A arquitetura está no [ADR 0006](../adr/0006-chamados-por-push.md); o workflow de ingestão, em [indexacao.md](indexacao.md); o formato da citação no fio, em [chat-sse.md](chat-sse.md#citations) (v0.6); as tabelas, em [modelo-de-dados.md](modelo-de-dados.md).
 
@@ -471,6 +473,7 @@ Resposta **200** (`TicketPreviewOut`):
 - **Testar conexão** (`POST .../sources/{id}/test`): `{"ok": true, "error": null}` se a fonte tem token; senão `{"ok": false, "error": {"code": "source_unavailable", "details": {"reason": "ingest_token_missing"}}}`.
 - **Sincronizar** manualmente processa as entradas pendentes da caixa de entrada.
 - **Excluir a fonte** apaga a caixa de entrada e invalida o token.
+- **Nível mínimo** (v0.2): padrão `support`, alterável pelo admin; perguntas no nível `end_user` não recebem chamados ([produtos-e-niveis.md](produtos-e-niveis.md#padrões-por-tipo)).
 
 ## Caixa de entrada
 
@@ -688,22 +691,22 @@ Formato no fio em [chat-sse.md](chat-sse.md#citations) (v0.6):
 
 ## Abrir chamado (webhook de saída)
 
-Quando o assistente não sabe responder, o usuário pode pedir que um chamado seja aberto. O KnoBridge envia o pedido para um webhook configurado no assistente. Quem recebe abre o chamado no sistema que quiser.
+Quando o KnoBridge não sabe responder, o usuário pode pedir que um chamado seja aberto. O KnoBridge envia o pedido para um webhook configurado no produto da conversa (até a v0.1, no assistente). Quem recebe abre o chamado no sistema que quiser.
 
-### Configuração no assistente
+### Configuração no produto
 
 | Campo | Regras |
 |---|---|
-| `ticket_webhook_url` | `https`, até 2000 caracteres (espaços nas pontas removidos), sem usuário e senha, ou `null` (desligado). Validada ao salvar (no `POST` e no `PATCH` do assistente, pelos mesmos papéis que editam o assistente) pelas regras de [SSRF](#proteção-contra-ssrf) (422 `webhook_url_invalid` ou `webhook_destination_blocked`, com `details.reason`). No `PATCH`, omitida fica e `null` desliga. |
+| `ticket_webhook_url` | `https`, até 2000 caracteres (espaços nas pontas removidos), sem usuário e senha, ou `null` (desligado). Validada ao salvar (no `POST` e no `PATCH` do produto, pelos mesmos papéis que editam o produto) pelas regras de [SSRF](#proteção-contra-ssrf) (422 `webhook_url_invalid` ou `webhook_destination_blocked`, com `details.reason`). No `PATCH`, omitida fica e `null` desliga. |
 | `ticket_webhook_configured` | Só leitura: `true` quando há URL e segredo. |
 | `ticket_webhook_secret_created_at` | Só leitura: quando o segredo atual foi gerado, ou `null` sem segredo. Nunca o segredo. |
 
-- **Segredo**: gerado pelo servidor em `POST /v1/workspaces/{wid}/assistants/{aid}/ticket-webhook/secret` (sessão, CSRF, owner ou admin: é uma credencial), que devolve 201 `TicketWebhookSecretOut` `{"secret": "kbw_<segredo>", "created_at"}` **uma única vez** (`segredo` = `secrets.token_urlsafe(32)`). O servidor precisa do segredo para assinar, então o guarda cifrado com AES-256-GCM ([ADR 0003](../adr/0003-segredos-cifrados.md)), nunca o devolve de novo nem o loga. Gerar de novo substitui o anterior na hora. Auditoria: `assistant.ticket_webhook_secret_rotated` (só o nome do assistente, sem o segredo); mudar a URL entra no `assistant.updated` (só o nome do campo, `ticket_webhook_url`, nunca a URL, que pode levar um token do destino).
-- Apagar a URL desliga o recurso; o segredo continua guardado até ser girado ou o assistente ser excluído.
+- **Segredo**: gerado pelo servidor em `POST /v1/workspaces/{wid}/products/{pid}/ticket-webhook/secret` (sessão, CSRF, owner ou admin: é uma credencial), que devolve 201 `TicketWebhookSecretOut` `{"secret": "kbw_<segredo>", "created_at"}` **uma única vez** (`segredo` = `secrets.token_urlsafe(32)`). O servidor precisa do segredo para assinar, então o guarda cifrado com AES-256-GCM ([ADR 0003](../adr/0003-segredos-cifrados.md)), nunca o devolve de novo nem o loga. Gerar de novo substitui o anterior na hora. Auditoria: `product.ticket_webhook_secret_rotated` (só o nome do produto, sem o segredo); mudar a URL entra no `product.updated` (só o nome do campo, `ticket_webhook_url`, nunca a URL, que pode levar um token do destino).
+- Apagar a URL desliga o recurso; o segredo continua guardado até ser girado ou o produto ser excluído. O segredo dos produtos migrados continua cifrado com os dados associados `assistant_ticket_webhook:<workspace_id>:<id>` (o id se preserva; [migração](produtos-e-niveis.md#migração-dos-assistentes)).
 
 **Motivos (`details.reason`)** de `webhook_url_invalid`: `malformed` (URL ou porta inválida), `scheme_not_https`, `host_missing`, `credentials_in_url`, `host_unresolvable` (o host não resolve, ou não tem endereço); de `webhook_destination_blocked`: `loopback`, `private`, `link_local`, `cgnat`, `unspecified`, `multicast`, `reserved` (qualquer outro endereço que não é roteável na internet, como as faixas de documentação).
 
-**Testar o webhook**: `POST /v1/workspaces/{wid}/assistants/{aid}/ticket-webhook/test` (sessão, CSRF, editor ou acima) envia **um** evento de teste assinado, sem retentativas, para a URL configurada, com as mesmas regras de SSRF, cabeçalhos e assinatura da entrega real, e responde 200 `TicketWebhookTestOut`:
+**Testar o webhook**: `POST /v1/workspaces/{wid}/products/{pid}/ticket-webhook/test` (sessão, CSRF, editor ou acima) envia **um** evento de teste assinado, sem retentativas, para a URL configurada, com as mesmas regras de SSRF, cabeçalhos e assinatura da entrega real, e responde 200 `TicketWebhookTestOut`:
 
 ```json
 { "ok": false, "delivery_id": "…", "status": 500, "error": { "code": "webhook_rejected", "message": "…", "details": { "status": 500 } } }
@@ -712,8 +715,8 @@ Quando o assistente não sabe responder, o usuário pode pedir que um chamado se
 - `ok`: o destino respondeu 2xx (o corpo da resposta é ignorado). `status`: status HTTP do destino, ou `null` sem resposta. `delivery_id`: o `KnoBridge-Delivery` e o `id` do evento.
 - `error` (ou `null`): `webhook_url_invalid` e `webhook_destination_blocked` (com `details.reason`, como acima: o destino é verificado de novo no envio), `webhook_unreachable` (`details.reason` `timeout` ou `network`) ou `webhook_rejected` (qualquer status fora de 2xx, inclusive 3xx, que não é seguido; `details.status`). Falha do destino não vira erro HTTP, para a tentativa ser auditada.
 - Sem URL ou sem segredo: 409 `ticket_webhook_not_configured`.
-- Corpo do evento (`KnoBridge-Event: ticket.test`): `{"event": "ticket.test", "version": 1, "id", "created_at", "workspace": {"id", "name"}, "assistant": {"id", "name"}}`. O destino deve responder 2xx sem abrir chamado.
-- Auditoria: `assistant.ticket_webhook_tested` com `name`, `ok`, `status` e `error_code`.
+- Corpo do evento (`KnoBridge-Event: ticket.test`): `{"event": "ticket.test", "version": 1, "id", "created_at", "workspace": {"id", "name"}, "product": {"id", "name"}, "assistant": {"id", "name"}}` (`assistant` repete `product`, obsoleto desde a v0.2). O destino deve responder 2xx sem abrir chamado.
+- Auditoria: `product.ticket_webhook_tested` com `name`, `ok`, `status` e `error_code`.
 
 ### Pedido no chat
 
@@ -734,11 +737,11 @@ Só o dono da conversa pede (como enviar mensagens); os demais recebem 403 `forb
 
 - `message_id`: mensagem do assistente nesta conversa, com status `no_source` ou `completed`. O painel oferece o pedido nas respostas `no_source`. Outra mensagem: 422 `validation_error`.
 - `question`: a pergunta do usuário que gerou essa resposta.
-- `summary`: resumo gerado pelo modelo do assistente (uma chamada, até 600 caracteres, em pt-BR, só a partir da conversa). Se o provedor falhar, `summary` = `question` cortada em 600 caracteres e `summary_generated = false`. O preview não grava nada.
+- `summary`: resumo gerado pelo modelo do nível da conversa (uma chamada, até 600 caracteres, em pt-BR, só a partir da conversa). Se o provedor falhar, `summary` = `question` cortada em 600 caracteres e `summary_generated = false`. O preview não grava nada.
 - `requester`: nome e e-mail da conta do usuário logado.
 - `messages`: as mensagens da conversa até `message_id`, inclusive, só `completed` e `no_source`, as 20 mais recentes, cada `content` cortado em 4000 caracteres.
 
-**`POST .../ticket-requests`** (`TicketRequestIn`: `{"message_id", "summary"}`, `summary` de 1 a 2000 caracteres, editável pelo usuário na tela) → 202 `TicketRequestOut`. Monta o payload com os mesmos dados do preview e o `summary` recebido, grava o pedido `pending` e inicia o workflow de entrega. Auditoria: `ticket_request.created` (`conversation_id`, `message_id` e `assistant_id`, sem conteúdo).
+**`POST .../ticket-requests`** (`TicketRequestIn`: `{"message_id", "summary"}`, `summary` de 1 a 2000 caracteres, editável pelo usuário na tela) → 202 `TicketRequestOut`. Monta o payload com os mesmos dados do preview e o `summary` recebido, grava o pedido `pending` e inicia o workflow de entrega. Auditoria: `ticket_request.created` (`conversation_id`, `message_id` e `product_id`, sem conteúdo).
 
 - O workflow é iniciado depois do commit, em segundo plano. **Temporal fora do ar**: a resposta continua 202 com o pedido `pending` (log `ticket_request_deferred`); o worker, ao subir, inicia o workflow de todo pedido `pending` que ainda não tem um, com o prazo de 24 h contado da criação do pedido (log `ticket_deliveries_resumed`).
 - O resumo é gerado no preview e só lá; o `POST` não chama o modelo. A chamada do preview é limitada a 400 tokens de saída, temperatura 0, com a conversa como dado numa mensagem só (instruções que estejam nela não são seguidas).
@@ -746,17 +749,17 @@ Só o dono da conversa pede (como enviar mensagens); os demais recebem 403 `forb
 
 **`GET .../ticket-requests/{rid}`** → 200 `TicketRequestOut`. Lê quem lê a conversa (o dono, ou owner/admin do workspace); pedido de outra conversa ou inexistente: 404 `not_found`.
 
-`TicketRequestOut`: `id`, `conversation_id`, `message_id`, `assistant_id`, `status` (`pending`, `delivered` ou `failed`), `attempts`, `external_ticket_id` (texto ou `null`), `external_url` (texto ou `null`), `error_code` (ou `null`), `created_at`, `delivered_at` (ou `null`).
+`TicketRequestOut`: `id`, `conversation_id`, `message_id`, `product_id` (até a v0.1, `assistant_id`), `status` (`pending`, `delivered` ou `failed`), `attempts`, `external_ticket_id` (texto ou `null`), `external_url` (texto ou `null`), `error_code` (ou `null`), `created_at`, `delivered_at` (ou `null`).
 
-`GET .../conversations/{cid}` ganha `ticket_requests_enabled` (o assistente tem `ticket_webhook_configured`) e, em cada mensagem do assistente, `ticket_request` (`TicketRequestOut` ou `null`). O evento `done` do chat traz o mesmo `ticket_requests_enabled` ([chat-sse.md](chat-sse.md#done), v0.7).
+`GET .../conversations/{cid}` ganha `ticket_requests_enabled` (o produto tem `ticket_webhook_configured`) e, em cada mensagem do assistente, `ticket_request` (`TicketRequestOut` ou `null`). O evento `done` do chat traz o mesmo `ticket_requests_enabled` ([chat-sse.md](chat-sse.md#done), v0.7).
 
 Erros:
 
 | Código | HTTP | Quando |
 |---|---|---|
-| `ticket_webhook_not_configured` | 409 | O assistente não tem URL ou segredo. |
+| `ticket_webhook_not_configured` | 409 | O produto não tem URL ou segredo. |
 | `ticket_request_exists` | 409 | Já há pedido para essa mensagem (`details.ticket_request_id`). |
-| `assistant_inactive` | 409 | Assistente desativado. |
+| `product_inactive` | 409 | Produto desativado (até a v0.1, `assistant_inactive`). |
 | `not_found` | 404 | Conversa, mensagem ou pedido inexistente ou de outro workspace. |
 | `validation_error` | 422 | Corpo inválido ou mensagem que não pode gerar pedido. |
 
@@ -771,7 +774,9 @@ Erros:
   "id": "0e8b…",
   "created_at": "2026-10-12T13:00:00Z",
   "workspace": { "id": "…", "name": "Cliente Alfa" },
-  "assistant": { "id": "…", "name": "Suporte ERP" },
+  "product": { "id": "…", "name": "ERP" },
+  "level": "end_user",
+  "assistant": { "id": "…", "name": "ERP" },
   "conversation": { "id": "…", "url": "https://kb.exemplo.com.br/w/…/conversations/…" },
   "requester": { "name": "Ana Souza", "email": "ana@exemplo.com.br" },
   "question": "Como emito nota fiscal para cliente do exterior?",
@@ -783,6 +788,7 @@ Erros:
 }
 ```
 
+- `product` e `level` (v0.2): o produto e o nível da conversa. `assistant` repete `product` e é obsoleto: fica enquanto houver destinos que o leem e sai numa versão futura, anunciada no `CHANGELOG.md`. `version` continua 1, porque a mudança só acrescenta campos.
 - `id`: id do pedido, o mesmo em todas as tentativas. O destino deve usá-lo para não abrir dois chamados.
 - `conversation.url`: `KNOBRIDGE_PUBLIC_BASE_URL` + caminho da conversa no painel; `null` sem a variável.
 - O corpo é montado uma vez, na criação do pedido, e reenviado byte a byte em cada tentativa.
@@ -815,9 +821,9 @@ Erros:
 - **Redirecionamentos** não são seguidos: 3xx é falha definitiva (`webhook_rejected`).
 - **Timeout** por tentativa: 10 s (conexão e resposta).
 
-Entrega pelo workflow `knobridge.ticket_webhook.v1` (id `ticket-webhook-<pedido>`), com uma activity `knobridge.ticket_webhook.deliver.v1` (timeout 30 s) que faz **uma** tentativa e grava o desfecho. Política de retentativa: primeira espera de 10 s, multiplicador 2, intervalo máximo de 1 h, **prazo total de 24 h** desde a criação. As esperas são timers do workflow (não a política de retentativa da activity, que só cobre falha da própria activity, como o banco fora): nenhuma tentativa começa depois do prazo. Esgotado o prazo: a activity `knobridge.ticket_webhook.expire.v1` grava `failed` com `webhook_expired` (mantendo `last_error` e `last_http_status` da última tentativa). Cada tentativa incrementa `attempts`. Pedido já `delivered` ou `failed` nunca é reenviado; pedido apagado (conversa, mensagem ou assistente excluídos) encerra o workflow sem enviar. A suíte de testes usa um destino fake e relógio injetado.
+Entrega pelo workflow `knobridge.ticket_webhook.v1` (id `ticket-webhook-<pedido>`), com uma activity `knobridge.ticket_webhook.deliver.v1` (timeout 30 s) que faz **uma** tentativa e grava o desfecho. Política de retentativa: primeira espera de 10 s, multiplicador 2, intervalo máximo de 1 h, **prazo total de 24 h** desde a criação. As esperas são timers do workflow (não a política de retentativa da activity, que só cobre falha da própria activity, como o banco fora): nenhuma tentativa começa depois do prazo. Esgotado o prazo: a activity `knobridge.ticket_webhook.expire.v1` grava `failed` com `webhook_expired` (mantendo `last_error` e `last_http_status` da última tentativa). Cada tentativa incrementa `attempts`. Pedido já `delivered` ou `failed` nunca é reenviado; pedido apagado (conversa, mensagem ou produto excluídos) encerra o workflow sem enviar. A suíte de testes usa um destino fake e relógio injetado.
 
-Além das regras acima, na entrega: host que não resolve é tentado de novo (pode ser falha passageira de DNS); destino bloqueado ou URL que deixou de passar nas regras (ex.: `http` fora da lista de desenvolvimento) é falha definitiva; webhook desligado depois do pedido (sem URL ou sem segredo) é falha definitiva sem envio. A assinatura usa o segredo atual do assistente; a URL é a atual do assistente.
+Além das regras acima, na entrega: host que não resolve é tentado de novo (pode ser falha passageira de DNS); destino bloqueado ou URL que deixou de passar nas regras (ex.: `http` fora da lista de desenvolvimento) é falha definitiva; webhook desligado depois do pedido (sem URL ou sem segredo) é falha definitiva sem envio. A assinatura usa o segredo atual do produto; a URL é a atual do produto.
 
 `error_code` possíveis: `webhook_rejected`, `webhook_expired`, `webhook_destination_blocked` (o destino passou a resolver para endereço proibido; definitivo), `webhook_url_invalid` (a URL deixou de passar nas regras; definitivo) e `ticket_webhook_not_configured` (o webhook foi desligado depois do pedido).
 

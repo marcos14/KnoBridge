@@ -1,6 +1,8 @@
 # Indexação e busca
 
-> Rascunho v0.3 · 2026-10-12 · Em uso (planos 0003, 0004 e 0008)
+> Rascunho v0.4 · 2026-10-13 · Em uso (planos 0003, 0004, 0008 e 0009)
+>
+> **Mudanças da v0.4** (plano 0009, F1.1; implementação nas F1.2, F2.2 e F2.3): cada trecho tem um [nível mínimo](#nível-mínimo) (o maior entre o da fonte, o do documento e o do trecho), a [busca híbrida](#busca-híbrida) filtra pelo nível da pergunta no SQL dos dois braços, a lista de fontes filtra por `min_level`, "testar busca" exige editor e aceita `level`, e as fontes [`cards`](#cards) entram como as de chamados.
 >
 > **Mudanças da v0.3** (plano 0008, F1.1; implementação na F2.5): [reindexar uma fonte](#reindexar-uma-fonte), [sincronizar todas as fontes de uma coleção](#sincronizar-todas-as-fontes-de-uma-coleção) e [busca, filtros e ordenação](#listagens-de-coleções-e-fontes) nas listas de coleções e fontes. Na F4.1, a [sincronização pendente](#sincronização-pendente) tenta iniciar de novo com esperas crescentes enquanto o workflow anterior fecha.
 >
@@ -113,6 +115,7 @@ O divisor por linhas faz janelas gulosas de cerca de `TARGET_TOKENS`, cada uma r
 | `language`, `parent`, `node_type` | Código (`node_type`: `function`, `method`, `class`, `interface`, `type`, `enum`, `struct`). |
 | `sha`, `title`, `author`, `date` | Commits (`author` só o nome). |
 | `display` | Gravado pelo motor junto com o trecho: o corpo sem o cabeçalho de embedding. |
+| `min_level` | Opcional (v0.4): refinamento do nível mínimo do trecho pelo chunking (hoje, só a seção de evidências do conhecimento, `support`). O nível efetivo fica na coluna `chunks.min_level` ([Nível mínimo](#nível-mínimo)). |
 
 ## Conhecimento do harness
 
@@ -132,6 +135,20 @@ Fontes `tickets` (plano 0005) passam pelo mesmo workflow, com o conector interno
 - **Incremental pela caixa de entrada**: entradas `pending` com status em `statuses` são adicionadas ou alteradas, as fora de `statuses` e as lápides são removidas; o cursor (`{"kind": "tickets", "version": 1}`) só identifica o conector.
 - **Documento**: `natural_key` = `external_id`, `kind = ticket`, `uri = ticket:<external_id>`, Markdown anonimizado (`tickets/markdown.py`), hash do Markdown e dos metadados de citação; parsing direto (`ParsedKind.TICKET`) e chunking por seção (`chunk_ticket`).
 - **Fechamento do item**: o conector implementa `settle` (`ingestion/settle.py`), que o lote chama na transação de cada documento ([Um lote](#workflow-knobridgeingestionv1)): a entrada sai de `pending` e o payload bruto é apagado junto com a gravação do documento, nunca antes.
+
+## Cards
+
+Fontes `cards` (plano 0009) passam pelo mesmo caminho das fontes `tickets`, com o conector interno `cards` sobre a mesma caixa de entrada: documento `kind = card`, `uri = card:<external_id>`, Markdown do card e chunking por seção ([cards.md](cards.md#conector-interno-cards)).
+
+## Nível mínimo
+
+Desde a v0.4 (plano 0009; contrato em [produtos-e-niveis.md](produtos-e-niveis.md#nível-mínimo-de-fonte-de-documento-e-de-trecho)), cada trecho guarda o nível mínimo de pergunta que pode recebê-lo, em `chunks.min_level` (`end_user`, `support` ou `product_dev`):
+
+- **Cálculo**, no lote que grava o documento: o maior entre `sources.min_level`, `documents.min_level` (refinamento do conector, opcional) e `chunks.meta.min_level` (refinamento do chunking, opcional).
+- **Padrões da fonte**: `folder` e `runner`, `end_user`; `tickets`, `support`; `git` e `cards`, `product_dev`.
+- **Refinamentos**: documento `ParsedKind.CODE` numa fonte `folder` → `product_dev`; item de conhecimento `inferido` → documento `support`; a seção `## Evidências` de um item de conhecimento → trecho `support` (o chunking do conhecimento nunca junta essa seção com outra). Os demais conectores não refinam.
+- **Mudança do nível da fonte** (`PATCH .../sources/{id}` com `min_level`, só owner e admin): recalcula `chunks.min_level` dos trechos da fonte numa instrução, na mesma transação, sem reindexar nem chamar o embedding. Uma execução em andamento grava os documentos seguintes já com o nível novo, porque o lote lê o nível da fonte a cada documento.
+- O nível **não** entra no `content_hash` do documento: mudar o nível não muda o conteúdo nem pede reindexação, por isso o recálculo é explícito.
 
 ## Embeddings
 
@@ -234,7 +251,7 @@ Resposta 202 com o run, como `POST .../sync`. Os documentos continuam no índice
 | Lista | `query` (até 200 caracteres, sem diferenciar maiúsculas, com `%`, `_` e `\` escapados) | Filtros | `sort` |
 |---|---|---|---|
 | Coleções | nome ou descrição | `provider_id` | `name` (padrão), `-name`, `created_at`, `-created_at`, `updated_at`, `-updated_at`, `document_count`, `-document_count` |
-| Fontes | nome | `collection_id` (já existe), `kind` (`git`, `folder`, `runner`, `tickets`), `active`, `last_run_status` (`queued`, `running`, `succeeded`, `failed`, `cancelled` ou `never` para fonte sem execução) | `name` (padrão), `-name`, `created_at`, `-created_at`, `updated_at`, `-updated_at`, `last_run_at`, `-last_run_at` (pelo `created_at` da última execução; sem execução, por último) |
+| Fontes | nome | `collection_id` (já existe), `kind` (`git`, `folder`, `runner`, `tickets`, `cards`), `min_level` (v0.4), `active`, `last_run_status` (`queued`, `running`, `succeeded`, `failed`, `cancelled` ou `never` para fonte sem execução) | `name` (padrão), `-name`, `created_at`, `-created_at`, `updated_at`, `-updated_at`, `last_run_at`, `-last_run_at` (pelo `created_at` da última execução; sem execução, por último) |
 
 Empate pelo `id`; valor fora da lista: 422 `validation_error`. As contagens e a última execução continuam vindo em número constante de statements.
 
@@ -266,15 +283,17 @@ Cada execução guarda `embedding_tokens` (soma dos tokens das chamadas de embed
 
 ## Busca híbrida
 
-`SearchService.search` (`retrieval/search.py`) serve a rota "testar busca" (`POST .../collections/{id}/search`, qualquer membro; `query` até 2000 caracteres, `limit` padrão 10 e máximo 50, `min_similarity` padrão 0,35, calibrado pelo [ensaio com dados reais](../pesquisa/0001-ensaio-minski.md)) e o `HybridRetriever` do chat.
+`SearchService.search` (`retrieval/search.py`) serve a rota "testar busca" (`POST .../collections/{id}/search`, editor ou acima desde a v0.4, antes qualquer membro; `query` até 2000 caracteres, `limit` padrão 10 e máximo 50, `level` padrão `product_dev` (v0.4), `min_similarity` padrão 0,35, calibrado pelo [ensaio com dados reais](../pesquisa/0001-ensaio-minski.md)) e o `HybridRetriever` do chat.
 
 1. **Coleções e credenciais** numa consulta. Coleção ausente ou de outro workspace: 404 `not_found`.
 2. **Embedding da pergunta**, um por par (credencial, modelo). Coleções com o mesmo modelo compartilham o vetor; vetores de modelos diferentes nunca se comparam.
-3. **Braço vetorial**, por modelo: os `candidatos` mais próximos por distância de cosseno (`<=>`, índice HNSW, só trechos com aquele `embedding_model`). Os candidatos são `limit × 4`, entre 40 e 200, com `hnsw.ef_search` = 1000 (o máximo do pgvector) na transação, para compensar o filtro de workspace e coleção aplicado depois do índice e a recall do HNSW: no ensaio do plano 0004, 100 perdeu o trecho mais próximo de uma pergunta real numa coleção de 20 mil trechos (recall@10 de 0,90 contra a varredura exata; 0,98 com 1000). Um candidato só segue se `1 - distância >= min_similarity`.
-4. **Braço textual (FTS)**, numa consulta: `websearch_to_tsquery` em `portuguese` OU em `simple` OU em `simple` sobre a pergunta com `/` e `.` trocados por espaço, contra `chunks.tsv`, ordenado por `ts_rank_cd`. `chunks.tsv` é uma coluna gerada pelo banco: `to_tsvector('portuguese', content)` mais `to_tsvector('simple', ...)` sobre o caminho (inteiro e quebrado em `/` e `.`) e o símbolo, com índice GIN.
+3. **Braço vetorial**, por modelo: os `candidatos` mais próximos por distância de cosseno (`<=>`, índice HNSW, só trechos com aquele `embedding_model`). Os candidatos são `limit × 4`, entre 40 e 200, com `hnsw.ef_search` = 1000 (o máximo do pgvector) na transação, para compensar o filtro de workspace e coleção aplicado depois do índice e a recall do HNSW: no ensaio do plano 0004, 100 perdeu o trecho mais próximo de uma pergunta real numa coleção de 20 mil trechos (recall@10 de 0,90 contra a varredura exata; 0,98 com 1000). Um candidato só segue se `1 - distância >= min_similarity`. Desde a v0.4, a consulta filtra também `chunks.min_level = ANY(:allowed_levels)` (os níveis de `end_user` até o da pergunta).
+4. **Braço textual (FTS)**, numa consulta: `websearch_to_tsquery` em `portuguese` OU em `simple` OU em `simple` sobre a pergunta com `/` e `.` trocados por espaço, contra `chunks.tsv`, ordenado por `ts_rank_cd`, com o mesmo filtro de `chunks.min_level` (v0.4). `chunks.tsv` é uma coluna gerada pelo banco: `to_tsvector('portuguese', content)` mais `to_tsvector('simple', ...)` sobre o caminho (inteiro e quebrado em `/` e `.`) e o símbolo, com índice GIN.
 5. **Fusão RRF** (Reciprocal Rank Fusion, `fusion.py`) sobre todos os rankings: `soma de 1 / (60 + posição)`. Não exige normalizar pontuações, que no cosseno e no `ts_rank_cd` vivem em escalas sem relação.
 6. **Vizinhos removidos**: trecho do mesmo documento em posição adjacente, ou com faixa de linhas que se cruza, sai em favor do mais bem colocado.
 7. **Carga**: os trechos escolhidos são lidos com o documento numa consulta. O número de statements é constante: 5, mais 1 por modelo extra.
+
+**Nível** (v0.4): o filtro de `chunks.min_level` entra no SQL dos dois braços, antes da fusão; nunca se filtra depois. Um trecho acima do nível da pergunta não é candidato, não entra na fusão nem tira vaga de um trecho permitido ([produtos-e-niveis.md](produtos-e-niveis.md#o-filtro-na-busca)).
 
 **Limiar** (decisão D12 do plano 0003): um trecho entra se alcança `min_similarity` **ou** se casa a busca textual. `websearch_to_tsquery` é conjuntivo: exige todos os termos da pergunta, fora stop words. Casar o FTS já é sinal forte, e é o que acha identificadores exatos que o embedding perde. Uma pergunta sem relação com o índice não passa em nenhum dos dois e volta vazia. Trechos de modelo diferente do da coleção só aparecem pelo FTS. O reranker (`retrieval/rerank.py`) existe só como interface, sem uso.
 
@@ -282,7 +301,7 @@ Cada resultado traz `vector_similarity`, `fts_rank`, `fused_score`, o documento 
 
 ## Da busca à citação
 
-O `HybridRetriever` (`retrieval/retriever.py`) lê as coleções e a similaridade mínima do assistente. Sem coleção, devolve vazio sem chamar o embedding. Com coleções, busca até 10 trechos e transforma cada um numa fonte (`retrieval/context.py`):
+O `HybridRetriever` (`retrieval/retriever.py`) lê as coleções e a similaridade mínima do produto e busca no nível da conversa. Sem coleção, devolve vazio sem chamar o embedding. Com coleções, busca até 10 trechos e transforma cada um numa fonte (`retrieval/context.py`):
 
 | Campo da citação | Origem |
 |---|---|
@@ -292,6 +311,7 @@ O `HybridRetriever` (`retrieval/retriever.py`) lê as coleções e a similaridad
 | `kind`, `path`, `symbol`, `start_line`, `end_line`, `language`, `sha`, `author`, `date` | `meta` do trecho (`null` quando não se aplica) |
 | item de conhecimento (`kind = knowledge`) | `title` = título do item, `uri` = `knowledge:<chave>`, `confidence` e `evidence` (arquivo, linhas, símbolo, excerto) do `meta`; sem `path` nem linhas ([Conhecimento do harness](#conhecimento-do-harness)) |
 | chamado (`kind = ticket`) | `title` = título do chamado (anonimizado), `uri` = `ticket:<external_id>`, `date`, `ticket_number`, `ticket_status`, `ticket_date_kind` e `url` do `meta`; o LLM lê antes do conteúdo a linha `Chamado <número> · <status> · <data> · seção <Seção>`, que não entra na citação ([Chamados](#chamados)) |
+| card (`kind = card`) | `title` = título do card, `uri` = `card:<external_id>`, `date`, `card_number`, `card_type`, `card_status`, `card_sprint`, `card_date_kind` e `url` do `meta`; o LLM lê antes do conteúdo a linha `Card <número> · <tipo> · <status> · sprint <nome> · <data> · seção <Seção>` ([cards.md](cards.md#no-chat)) |
 
 As fontes ficam na ordem da busca e são cortadas pelo orçamento de 6000 tokens estimados; a numeração `[n]` é a posição nessa lista. Sem nenhuma fonte, o chat responde a mensagem de "sem fonte" sem chamar o LLM. Detalhes em [chat.md](chat.md#recuperação-de-fontes) e formato no fio em [chat-sse.md](chat-sse.md#citations).
 

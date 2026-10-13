@@ -1,6 +1,6 @@
 # ADR 0006 — Chamados por push e webhook de saída
 
-> Status: aceito · 2026-10-12 · plano 0005 (F1.1)
+> Status: aceito · 2026-10-12 · plano 0005 (F1.1) · item 6 (webhook por assistente) substituído pelo [ADR 0008](0008-produtos-e-niveis.md): o webhook é do produto
 
 ## Contexto
 

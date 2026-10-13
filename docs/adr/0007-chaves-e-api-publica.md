@@ -1,6 +1,6 @@
 # ADR 0007 — Chaves de API e API pública
 
-> Status: aceito · 2026-10-12 · plano 0008 (F1.1)
+> Status: aceito · 2026-10-12 · plano 0008 (F1.1) · item 4 (escopo por assistente) e "modelo = assistente" substituídos pelo [ADR 0008](0008-produtos-e-niveis.md): escopo por produto com nível máximo e `model` = `<produto>[:<nível>]`
 
 ## Contexto
 
