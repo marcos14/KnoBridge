@@ -2,7 +2,7 @@
 
 Plataforma open source (Apache 2.0) que conecta repositórios de código, sistemas de chamados e documentações, transforma tudo em índices para RAG e responde em linguagem natural, sempre citando a fonte. Sem fonte, o assistente diz que não sabe e oferece abrir um chamado.
 
-> **Status**: em desenvolvimento; Fase 0 do roadmap concluída. Já funcionam painel, workspaces, indexação de pastas, repositórios Git, código (via runner) e chamados, e chat com citações; ainda não há canvas de pipelines nem canais externos (Slack, Google Chat, widget). O que mudou está no [CHANGELOG.md](CHANGELOG.md).
+> **Status**: em desenvolvimento; Fase 0 do roadmap concluída. Já funcionam painel, workspaces, indexação de pastas, repositórios Git, código (via runner) e chamados, chat com citações, uso e custos e API pública (REST e compatível com OpenAI); ainda não há canvas de pipelines nem canais externos (Slack, Google Chat, widget). O que mudou está no [CHANGELOG.md](CHANGELOG.md).
 
 ## Requisitos
 
@@ -29,21 +29,19 @@ Da instância vazia a uma resposta com citação sobre os seus próprios documen
 
    A primeira vez constrói as imagens e leva alguns minutos. O comando volta quando tudo está saudável; confira com `docker compose ps -a` (`migrate` aparece `exited (0)`).
 
-3. **Crie o superadmin.** Abra o painel em <http://localhost:5173>. Na tela **Configuração inicial**, informe nome, e-mail (fictício serve, ex.: `voce@example.test`) e senha de 12 caracteres ou mais, e clique em **Criar conta e entrar**. O topo deve mostrar **API: disponível**.
+3. **Crie o superadmin e o workspace.** Abra o painel em <http://localhost:5173>. Na tela **Configuração inicial**, informe nome, e-mail (fictício serve, ex.: `voce@example.test`), senha de 12 caracteres ou mais e o **Nome do workspace**, e clique em **Criar conta e entrar**. O painel abre o **Início** do workspace, com a lista **Primeiros passos** (os passos abaixo), e o topo deve mostrar **API: disponível**.
 
-4. **Crie o workspace e aceite o convite.** Clique em **Criar ou gerenciar workspaces** > **Criar workspace**, preencha **Nome** e, em **E-mail do proprietário**, o seu próprio e-mail; clique em **Criar**. Abra o Mailpit em <http://localhost:8025>, abra o e-mail de convite, clique no link e em **Aceitar convite**. O painel abre o workspace.
-
-5. **Cadastre o provedor.** Em **Provedores** > **Novo provedor**: **Tipo** `OpenRouter`, **Nome** `OpenRouter`, **Chave de API** a sua chave (deixe **URL base (opcional)** em branco). Clique em **Salvar** e, na linha do provedor, em **Testar conexão**: deve aparecer "Conexão com OpenRouter funcionando."
+4. **Cadastre o provedor.** Em **Provedores** > **Novo provedor**: **Tipo** `OpenRouter`, **Nome** `OpenRouter`, **Chave de API** a sua chave (deixe **URL base (opcional)** em branco). Clique em **Salvar** e, na linha do provedor, em **Testar conexão**: deve aparecer "Conexão com OpenRouter funcionando."
 
    Com a OpenAI direta, use **Tipo** `OpenAI`; nos próximos passos, os modelos ficam sem o prefixo `openai/`.
 
-6. **Crie a coleção.** Em **Coleções** > **Nova coleção**: **Nome** (ex.: `Meus documentos`), **Credencial de embedding** o provedor do passo 5 e **Modelo de embedding** `openai/text-embedding-3-small`. Clique em **Salvar**.
+5. **Crie a coleção.** Em **Coleções** > **Nova coleção**: **Nome** (ex.: `Meus documentos`), **Credencial de embedding** o provedor do passo 4 e **Modelo de embedding** `openai/text-embedding-3-small`. Clique em **Salvar**.
 
-7. **Cadastre e sincronize a fonte.** Em **Fontes** > **Nova fonte**: **Nome**, **Coleção** a do passo 6, **Tipo** `Pasta` e **Caminho da pasta** `/sources/manual` (o caminho de dentro do contêiner, nunca o do host nem a raiz `/sources`). Deixe **Ativa** marcada e clique em **Salvar**. Clique no nome da fonte e use **Testar conexão** ("A fonte ... está acessível.") e **Sincronizar agora**. Em **Execuções**, a linha passa de **Na fila** a **Em execução** e termina **Concluída**, com documentos novos e trechos maiores que zero.
+6. **Cadastre e sincronize a fonte.** Em **Fontes** > **Nova fonte**: **Nome**, **Coleção** a do passo 5, **Tipo** `Pasta` e **Caminho da pasta** `/sources/manual` (o caminho de dentro do contêiner, nunca o do host nem a raiz `/sources`). Deixe **Ativa** marcada e clique em **Salvar**. Clique no nome da fonte e use **Testar conexão** ("A fonte ... está acessível.") e **Sincronizar agora**. Em **Execuções**, a linha passa de **Na fila** a **Em execução** e termina **Concluída**, com documentos novos e trechos maiores que zero.
 
-8. **Crie o assistente.** Em **Assistentes** > **Novo assistente**: **Nome**, **Provedor** o do passo 5, **Modelo** `openai/gpt-4.1-mini` (qualquer modelo de chat do OpenRouter serve, com o prefixo do fornecedor) e, em **Coleções**, marque a coleção do passo 6. A **Similaridade mínima** padrão (0,35) é calibrada para o embedding da OpenAI; deixe como está. Clique em **Salvar**.
+7. **Crie o assistente.** Em **Assistentes** > **Novo assistente**: **Nome**, **Provedor** o do passo 4, **Modelo** `openai/gpt-4.1-mini` (qualquer modelo de chat do OpenRouter serve, com o prefixo do fornecedor) e, em **Coleções**, marque a coleção do passo 5. A **Similaridade mínima** padrão (0,35) é calibrada para o embedding da OpenAI; deixe como está. Clique em **Salvar**.
 
-9. **Pergunte.** Em **Chat**, escolha o **Assistente**, escreva uma pergunta sobre os seus documentos e clique em **Enviar**. A resposta chega em streaming com marcadores `[1]`, `[2]`... e, abaixo dela, as **Fontes**: clique numa para ver o trecho e o arquivo. Uma pergunta sem relação com os documentos volta com "Respondida sem fonte: o assistente ofereceu abrir chamado."
+8. **Pergunte.** Em **Chat**, escolha o **Assistente**, escreva uma pergunta sobre os seus documentos e clique em **Enviar**. A resposta chega em streaming com marcadores `[1]`, `[2]`... e, abaixo dela, as **Fontes**: clique numa para ver o trecho e o arquivo. Uma pergunta sem relação com os documentos volta com "Respondida sem fonte: o assistente ofereceu abrir chamado."
 
 Se o chat responder "sem fonte" para uma pergunta que deveria ter resposta, abra a coleção e use **Testar busca** para ver o que a busca encontra; detalhes em [indexar-uma-fonte.md](docs/guias/indexar-uma-fonte.md#problemas-comuns).
 
@@ -53,7 +51,8 @@ Se o chat responder "sem fonte" para uma pergunta que deveria ter resposta, abra
 - **Mapear código com o runner** (Claude Code ou Codex somente leitura na sua máquina, gerando regras de negócio com evidência): [mapear-codigo-com-runner.md](docs/guias/mapear-codigo-com-runner.md).
 - **Receber chamados por API** (token de envio ou upload de JSON/JSONL, com anonimização): [receber-chamados-por-api.md](docs/guias/receber-chamados-por-api.md).
 - **"Abrir chamado" no seu sistema** a partir de uma resposta sem fonte, por webhook assinado: [receber-chamados-por-api.md](docs/guias/receber-chamados-por-api.md#9-receber-abrir-chamado-do-chat).
-- Convidar pessoas, papéis e outros fluxos de conta: [primeiro-acesso.md](docs/guias/primeiro-acesso.md).
+- **Chamar os assistentes de outro sistema** com uma chave de API, pela REST ou pelo SDK oficial da OpenAI, com as citações na resposta: [usar-a-api.md](docs/guias/usar-a-api.md).
+- Convidar pessoas, papéis, painel da instância, uso e custos e outros fluxos de conta: [primeiro-acesso.md](docs/guias/primeiro-acesso.md).
 
 ## Parar e limpar
 
@@ -90,7 +89,7 @@ A CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) roda tudo isso, mais
 
 - [docs/01-visao-do-projeto.md](docs/01-visao-do-projeto.md): visão, arquitetura, stack, decisões e roadmap.
 - [docs/guias/](docs/guias/): guias de uso e operação.
-- [docs/specs/](docs/specs/): contratos (autenticação, chat, conectores, indexação, runner, harness, chamados, modelo de dados, OpenAPI).
+- [docs/specs/](docs/specs/): contratos (autenticação, chat, API pública, uso e custos, conectores, indexação, runner, harness, chamados, modelo de dados, OpenAPI).
 - [docs/adr/](docs/adr/): decisões de arquitetura.
 - [docs/planos/](docs/planos/): planos de execução, com andamento e decisões.
 - [CHANGELOG.md](CHANGELOG.md): o que mudou.

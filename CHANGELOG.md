@@ -8,6 +8,18 @@ O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/) e 
 
 ### Added
 
+Telas de uso e administração (plano [0008](docs/planos/0008-telas-de-uso-e-administracao.md)): primeiro acesso com workspace, painéis do workspace e da instância, uso e custos, API pública com chaves e melhorias nas telas existentes.
+
+- Arquitetura ([ADR 0007](docs/adr/0007-chaves-e-api-publica.md)): chaves de API por workspace, só com hash, que abrem só a API pública; API compatível com OpenAI em que cada assistente é um modelo e as citações vão no texto e no campo extra `knobridge`; contratos em [api-publica.md](docs/specs/api-publica.md) e [uso-e-custos.md](docs/specs/uso-e-custos.md).
+- Dados: tabela `api_keys` com RLS, `channel`, `api_key_id` e `cost_usd` nas conversas e mensagens, acesso de superadmin na sessão; migração `0017` ([modelo de dados](docs/specs/modelo-de-dados.md)).
+- Primeiro acesso: a configuração inicial cria o superadmin e o primeiro workspace (com o nome informado), já como owner, sem convite; o painel abre direto o Início. O superadmin **entra** em qualquer workspace pela administração, com papel admin efetivo só na sessão, faixa no topo e auditoria nas duas trilhas.
+- Custos e painéis: custo estimado por resposta do chat (tabela de preços com `KNOBRIDGE_CHAT_PRICES`), **Uso e custos** do workspace (tokens e US$ de embeddings e de chat por dia, fonte, coleção, assistente, canal, chave ou modelo, com CSV), **Início** com os números do mês e o checklist de primeiros passos, e painel da instância com contagens, falhas recentes, uso por workspace e saúde dos serviços.
+- API pública: chaves criadas no painel (mostradas uma vez, escopo por assistente, último uso, revogação), REST de conversa (`/v1/conversations`, com JSON ou SSE) e API compatível com OpenAI (`/v1/models`, `/v1/chat/completions`, com e sem streaming), com erros no formato de cada uma e limites de corpo.
+- Ações e listas: reindexar fonte, sincronizar todas as fontes de uma coleção, duplicar assistente, sair de todas as sessões; busca, filtros, ordenação e paginação nas listas de assistentes, provedores, fontes, coleções, membros e runners; estados vazios com o próximo passo.
+- Painel: telas de Início, Uso e custos, Chaves de API (com exemplos `curl`, Python e JavaScript) e Painel da instância; campo do workspace na configuração inicial; "Entrar" na lista de workspaces da administração.
+- E2E: primeiro acesso numa stack limpa até o Início com o checklist; chave de API criada no painel e usada pelo SDK oficial `openai` para Node (com e sem streaming, citações em `knobridge`, rodapé de fontes desligado, chave errada com 401); Uso e custos contando as respostas no canal `api`.
+- Docs: guia [usar a API](docs/guias/usar-a-api.md) (chave, escopo, REST com JSON e SSE, compatível com OpenAI em `curl`, Python e JavaScript, erros, limites, revogação); [primeiro acesso](docs/guias/primeiro-acesso.md) e o início rápido do README sem o convite pelo Mailpit.
+
 Chamados por API (plano [0005](docs/planos/0005-chamados-por-api.md)): chamados de qualquer sistema entram por push num formato único, são anonimizados, indexados e citados no chat; sem fonte, o chat abre um chamado no sistema do cliente por um webhook assinado.
 
 - Arquitetura ([ADR 0006](docs/adr/0006-chamados-por-push.md)): push num formato do KnoBridge em vez de um conector por provedor, caixa de entrada no Postgres com a regra do `updated_at`, conector interno `tickets` no workflow de ingestão, bruto apagado depois de indexado e webhook de saída por assistente; contrato em [chamados.md](docs/specs/chamados.md) (JSON Schema do chamado).
@@ -68,6 +80,7 @@ Bootstrap do monorepo (plano [0001](docs/planos/0001-bootstrap.md)), sem funcion
 
 ### Changed
 
+- Configuração inicial (plano [0008](docs/planos/0008-telas-de-uso-e-administracao.md)): `POST /v1/setup` passou a exigir `workspace_name` e cria o primeiro workspace com o superadmin como owner ([autenticação v0.2](docs/specs/autenticacao.md#configuração-inicial-e-superadmin)). O `docker-compose.yml` repassa `KNOBRIDGE_CHAT_PRICES` (padrão `{}`) aos serviços do backend.
 - Deploy (plano [0006](docs/planos/0006-compose-na-raiz.md)): `docker-compose.yml`, `docker-compose.e2e.yml` e `.env.example` saíram de `deploy/` para a raiz do repositório; a stack sobe da raiz com `docker compose up -d --build --wait` e lê o `.env` da raiz. `deploy/postgres/` e `deploy/sources/` continuam em `deploy/`, e o padrão de `KNOBRIDGE_SOURCES_DIR` passou a `./deploy/sources`. Os nomes de projeto (`knobridge`, `knobridge-e2e`) não mudaram, então volumes existentes continuam valendo. Quem tinha `deploy/.env` deve movê-lo para a raiz e, se definia `KNOBRIDGE_SOURCES_DIR` relativo, ajustar o caminho à raiz.
 
 ### Fixed

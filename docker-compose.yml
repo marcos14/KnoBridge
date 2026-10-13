@@ -44,6 +44,9 @@ x-backend: &backend
     # Hosts the ticket webhooks of assistants may reach over http and without the SSRF address
     # checks (docs/specs/chamados.md). Empty here; docker-compose.e2e.yml sets its fake destination.
     KNOBRIDGE_WEBHOOK_ALLOWED_HOSTS: ${KNOBRIDGE_WEBHOOK_ALLOWED_HOSTS:-}
+    # Extra chat prices (USD per million tokens) over the built-in table, for the estimated cost
+    # of each answer (docs/specs/uso-e-custos.md). JSON; the default {} adds none.
+    KNOBRIDGE_CHAT_PRICES: ${KNOBRIDGE_CHAT_PRICES:-{}}
 
 services:
   postgres:

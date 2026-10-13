@@ -6,12 +6,15 @@ import {
   ask as askAssistant,
   createCollection,
   createFakeProvider,
+  createFolderSource,
   createWorkspace,
+  KNOWLEDGE,
   login,
   logout,
   NO_SOURCE_ANSWER,
   personPage,
   pickOption,
+  syncSource,
 } from "./flows";
 import { emailedLink } from "./mailpit";
 
@@ -48,16 +51,15 @@ const QUESTION = `Como emito a nota de devolução ${RUN}?`;
 // synthetic folder knowledge/ (two Markdown files and one TypeScript file) is /sources/knowledge.
 const COLLECTION = `Base E2E ${RUN}`;
 const SOURCE = `Manual E2E ${RUN}`;
-const SOURCE_PATH = "/sources/knowledge";
-const KNOWN_FILE = "fechamento-de-caixa.md";
+const {
+  path: SOURCE_PATH,
+  documents: KNOWLEDGE_DOCUMENTS,
+  file: KNOWN_FILE,
+  question: KNOWLEDGE_QUESTION,
+} = KNOWLEDGE;
 const SEARCH_TERM = "sangria";
-// Every term is in one section of KNOWN_FILE, so the full-text arm finds it. No run suffix here:
-// it would be a term the section lacks.
-const KNOWLEDGE_QUESTION = "Como registrar a sangria do caixa?";
 // No word in common with the fixtures: neither search arm finds anything (rule 8).
 const UNRELATED_QUESTION = `Previsão meteorológica para Júpiter ${RUN}`;
-// Indexing runs in the worker (Temporal): generous, but bounded.
-const SYNC_TIMEOUT = 120_000;
 
 const RESET_SUBJECT = "Redefinição de senha do KnoBridge";
 
@@ -181,32 +183,11 @@ test("test_platform_flows_from_setup_to_conversation_review", async ({ browser, 
   });
 
   await test.step("owner adds the mounted folder as a source and tests it", async () => {
-    await owner.goto(`/w/${workspaceId}/sources`);
-    await owner.getByRole("button", { name: "Nova fonte" }).click();
-    const dialog = owner.getByRole("dialog", { name: "Nova fonte" });
-    await dialog.getByLabel("Nome").fill(SOURCE);
-    await expect(dialog.getByRole("combobox", { name: "Coleção" })).toHaveText(COLLECTION);
-    await dialog.getByRole("radio", { name: "Pasta" }).click();
-    await dialog.getByLabel("Caminho da pasta").fill(SOURCE_PATH);
-    await dialog.getByRole("button", { name: "Salvar" }).click();
-    await expect(owner.getByText(`Fonte ${SOURCE} criada.`)).toBeVisible();
-
-    await owner.getByRole("link", { name: SOURCE }).click();
-    await expect(owner.getByRole("heading", { level: 1, name: SOURCE })).toBeVisible();
-    await owner.getByRole("button", { name: "Testar conexão" }).click();
-    await expect(owner.getByText(`A fonte ${SOURCE} está acessível.`)).toBeVisible();
+    await createFolderSource(owner, workspaceId, SOURCE, COLLECTION, SOURCE_PATH);
   });
 
   await test.step("owner syncs the source and sees the run succeed", async () => {
-    await owner.getByRole("button", { name: `Sincronizar ${SOURCE} agora` }).click();
-    await expect(owner.getByText(`Sincronização de ${SOURCE} na fila.`)).toBeVisible();
-
-    // The screen polls while the run is active; wait for a final status, then require success.
-    const runs = owner.getByRole("table", { name: "Execuções da fonte" });
-    const status = runs.getByRole("row").nth(1).getByRole("cell").first();
-    await expect(status).toHaveText(/Concluída|Falhou|Cancelada/, { timeout: SYNC_TIMEOUT });
-    await expect(status).toHaveText("Concluída");
-    await expect(owner.getByText("Documentos indexados: 3")).toBeVisible();
+    await syncSource(owner, SOURCE, KNOWLEDGE_DOCUMENTS);
   });
 
   await test.step("owner tests the search with a word of the fixture", async () => {
