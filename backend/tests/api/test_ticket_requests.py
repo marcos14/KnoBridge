@@ -28,7 +28,7 @@ from ticket_request_support import (
     update_message,
 )
 
-from fakes.llm_provider import FailingLLMProvider
+from fakes.llm_provider import FailingLLMProvider, UnreachableLLMProvider
 from fakes.retriever import StaticRetriever
 from knobridge.conversations.models import MessageRole, MessageStatus
 from knobridge.core.logging import configure_logging
@@ -80,6 +80,26 @@ def test_preview_falls_back_to_question_when_llm_fails(
     assert response.status_code == 200, response.text
     assert (response.json()["summary"], response.json()["summary_generated"]) == (QUESTION, False)
     assert failing.closed
+
+
+def test_preview_falls_back_to_question_without_a_model_for_the_level(
+    api: ApiEnv, overrides: RequestOverrides, chat: ChatOverrides
+) -> None:
+    """The summary is written by the model of the conversation's level; none, no summary."""
+    factory = chat.provider(UnreachableLLMProvider())
+    asked = ask_question(api, configured_world(api))
+    cleared = api.client.patch(
+        f"/v1/workspaces/{asked.world.workspace_id}/levels/product_dev",
+        json={"provider_id": None, "model": None},
+        headers=api.csrf_headers(),
+    )
+    assert cleared.status_code == 200, cleared.text
+
+    response = preview(api, asked)
+
+    assert response.status_code == 200, response.text
+    assert (response.json()["summary"], response.json()["summary_generated"]) == (QUESTION, False)
+    assert factory.calls == []
 
 
 def test_preview_keeps_twenty_recent_messages_cut(api: ApiEnv, overrides: RequestOverrides) -> None:
@@ -256,7 +276,7 @@ def test_assistant_without_webhook_conflicts(api: ApiEnv, overrides: RequestOver
     assert error(create(api, asked)) == (409, "ticket_webhook_not_configured")
 
 
-def test_inactive_assistant_conflicts(api: ApiEnv, overrides: RequestOverrides) -> None:
+def test_inactive_product_conflicts(api: ApiEnv, overrides: RequestOverrides) -> None:
     asked = ask_question(api, configured_world(api))
     api.client.patch(
         f"/v1/workspaces/{asked.world.workspace_id}/products/{asked.world.assistant_id}",
@@ -264,7 +284,7 @@ def test_inactive_assistant_conflicts(api: ApiEnv, overrides: RequestOverrides) 
         headers=api.csrf_headers(),
     )
 
-    assert error(create(api, asked)) == (409, "assistant_inactive")
+    assert error(create(api, asked)) == (409, "product_inactive")
 
 
 def test_question_message_is_not_requestable(api: ApiEnv, overrides: RequestOverrides) -> None:

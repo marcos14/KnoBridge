@@ -46,7 +46,7 @@ export function useWorkspaceConversations(workspaceId: string, query: WorkspaceC
           params: {
             path: { workspace_id: workspaceId },
             query: {
-              assistant_id: query.assistantId,
+              product_id: query.assistantId,
               user_id: query.userId,
               channel: query.channel,
               created_from: query.createdFrom,

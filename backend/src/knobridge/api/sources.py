@@ -7,8 +7,9 @@ field errors in ``details``); the collection must be of the same workspace (422
 ``schedule_cron`` is a five-field UTC cron (422 ``source_schedule_invalid``) mirrored on a
 Temporal Schedule (paused while ``schedule_enabled`` is false, removed with the source or when
 it is deactivated; saved even with Temporal down, the worker reconciles it), and the list
-takes ``query`` (name), ``collection_id``, ``kind``, ``active``, ``last_run_status`` and
-``sort``;
+takes ``query`` (name), ``collection_id``, ``kind``, ``active``, ``min_level``,
+``last_run_status`` and ``sort``; ``min_level`` (default by kind) is set and changed only by
+owners and admins, and a change recomputes the chunks at once (``ingestion/source_levels.py``);
 ``next_run_at`` is its next tick computed from the clock. ``POST .../{id}/test`` answers 200
 ``{ok, error}``;
 ``POST .../{id}/sync`` queues a run and starts the ingestion workflow (202 with the run; 409
@@ -44,11 +45,14 @@ from knobridge.api.runs import RunOut, run_out
 from knobridge.ingestion.models import RunTrigger
 from knobridge.ingestion.schedule import CRON_MAX_LENGTH
 from knobridge.ingestion.source_config import SourceKind
+from knobridge.ingestion.source_levels import default_min_level
 from knobridge.ingestion.source_listing import LastRunFilter, SourceFilter, SourceSort
 from knobridge.ingestion.sources import SourceChanges, SourceSettings, SourceView
 from knobridge.ingestion.sync import start_sync
+from knobridge.levels.level import ResponseLevel
 from knobridge.security.csrf import require_csrf
 from knobridge.tenancy.models import Role
+from knobridge.tenancy.rbac import role_at_least
 
 DEFAULT_LIMIT = 50
 MAX_LIMIT = 200
@@ -78,6 +82,11 @@ _WRITE_ERRORS: dict[int | str, dict[str, object]] = {
 }
 _BODY_ERRORS: dict[int | str, dict[str, object]] = {
     **_WRITE_ERRORS,
+    403: {
+        "description": "Role below editor, or an editor setting a minimum level other than "
+        "the kind's default or changing it (`forbidden`, `details.required_role` = `admin`); "
+        "workspace suspended or CSRF failure (`csrf_failed`)."
+    },
     409: {"description": "Name already used in the workspace (`source_name_taken`)."},
     422: {
         "description": "Invalid body, config (`source_config_invalid`), collection "
@@ -102,6 +111,8 @@ class SourceCreate(BaseModel):
     schedule_cron: Cron | None = None
     schedule_enabled: bool = False
     active: bool = True
+    # Omitted: the default of the kind. Another value needs owner or admin.
+    min_level: ResponseLevel | None = None
 
 
 class SourceUpdate(BaseModel):
@@ -115,6 +126,8 @@ class SourceUpdate(BaseModel):
     schedule_cron: Cron | None = None
     schedule_enabled: bool | None = None
     active: bool | None = None
+    # Owner or admin only; recomputes the chunks at once, without reindexing.
+    min_level: ResponseLevel | None = None
 
 
 class SourceOut(BaseModel):
@@ -128,6 +141,9 @@ class SourceOut(BaseModel):
     schedule_cron: str | None
     schedule_enabled: bool
     active: bool
+    # Lowest level of question that reads the source, and whether it is the kind's default.
+    min_level: ResponseLevel
+    min_level_is_default: bool
     # Next scheduled tick (UTC); null when there is no enabled schedule or the source is
     # inactive.
     next_run_at: datetime | None
@@ -171,6 +187,8 @@ def _out(view: SourceView) -> SourceOut:
         schedule_cron=source.schedule_cron,
         schedule_enabled=source.schedule_enabled,
         active=source.active,
+        min_level=source.min_level,
+        min_level_is_default=source.min_level is default_min_level(source.kind),
         next_run_at=view.next_run_at,
         document_count=view.document_count,
         last_run=None if view.last_run is None else run_out(view.last_run),
@@ -190,6 +208,7 @@ async def list_sources(
     collection_id: uuid.UUID | None = None,
     kind: SourceKind | None = None,
     active: bool | None = None,
+    min_level: ResponseLevel | None = None,
     last_run_status: LastRunFilter | None = None,
     sort: SourceSort = "name",
     limit: Annotated[int, Query(ge=1, le=MAX_LIMIT)] = DEFAULT_LIMIT,
@@ -205,6 +224,7 @@ async def list_sources(
             collection_id=collection_id,
             kind=kind,
             active=active,
+            min_level=min_level,
             last_run_status=last_run_status,
             sort=sort,
         ),
@@ -243,8 +263,10 @@ async def create_source(
             schedule_cron=body.schedule_cron,
             schedule_enabled=body.schedule_enabled,
             active=body.active,
+            min_level=body.min_level,
         ),
         ip=ip,
+        can_set_level=role_at_least(context.role, Role.ADMIN),
     )
     return _out(view)
 
@@ -271,8 +293,10 @@ async def update_source(
             schedule_cron_given="schedule_cron" in body.model_fields_set,
             schedule_enabled=body.schedule_enabled,
             active=body.active,
+            min_level=body.min_level,
         ),
         ip=ip,
+        can_set_level=role_at_least(context.role, Role.ADMIN),
     )
     return _out(view)
 

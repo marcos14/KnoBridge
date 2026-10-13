@@ -156,20 +156,16 @@ def test_product_name_cannot_end_in_a_level(api: ApiEnv, name: str) -> None:
     assert allowed.status_code == 201
 
 
-def test_product_needs_a_configured_level(api: ApiEnv) -> None:
-    """Transitional (plan 0009): the chat still reads the model from the product."""
+def test_product_is_created_without_a_configured_level(api: ApiEnv) -> None:
+    """The model of the answers is the levels' (migration 0019), so a product needs none."""
     owner = api.create_user()
     workspace_id = api.create_workspace({owner.id: Role.OWNER})
     api.login(owner)
-    provider_id = create_provider(api, workspace_id)
 
-    refused = _create(api, workspace_id)
-    configure_level(api, workspace_id, provider_id, level="support", model="gpt-4.1-mini")
     created = _create(api, workspace_id)
 
-    assert _error(refused) == (409, "level_not_configured")
-    assert refused.json()["error"]["details"] == {"level": "product_dev"}
     assert created.status_code == 201
+    assert not {"provider_id", "model", "temperature"} & set(created.json())
 
 
 def test_viewer_lists_only_active(api: ApiEnv) -> None:
@@ -451,22 +447,22 @@ def test_old_assistant_routes_are_gone(api: ApiEnv) -> None:
     assert read.status_code == 404
 
 
-def test_provider_in_use_by_product_cannot_be_deleted(api: ApiEnv) -> None:
+def test_provider_is_held_by_levels_not_by_products(api: ApiEnv) -> None:
     owner = api.create_user()
     workspace_id = api.create_workspace({owner.id: Role.OWNER})
     api.login(owner)
     provider_id = create_provider(api, workspace_id)
     configure_level(api, workspace_id, provider_id)
-    product_id = _create(api, workspace_id).json()["id"]
+    _create(api, workspace_id)
+    provider_path = f"/v1/workspaces/{workspace_id}/providers/{provider_id}"
+
+    refused = api.client.delete(provider_path, headers=api.csrf_headers())
     api.client.patch(
         f"/v1/workspaces/{workspace_id}/levels/product_dev",
         json={"provider_id": None, "model": None},
         headers=api.csrf_headers(),
     )
-    provider_path = f"/v1/workspaces/{workspace_id}/providers/{provider_id}"
-
-    refused = api.client.delete(provider_path, headers=api.csrf_headers())
-    _delete(api, workspace_id, product_id)
+    # The product stays: it has no credential of its own (migration 0019).
     allowed = api.client.delete(provider_path, headers=api.csrf_headers())
 
     assert _error(refused) == (409, "provider_in_use")

@@ -17,6 +17,7 @@ from knobridge.audit.models import JSONValue
 from knobridge.core.db import system_session
 from knobridge.ingestion.models import Chunk, Collection, Document, DocumentKind, Source
 from knobridge.ingestion.source_config import SourceKind
+from knobridge.levels.level import ResponseLevel
 from knobridge.llm.fake_embeddings import fake_vector
 from knobridge.tenancy.models import Role
 
@@ -41,6 +42,8 @@ class Passage:
     position: int = 0
     meta: dict[str, JSONValue] = field(default_factory=lambda: {})
     kind: DocumentKind = DocumentKind.FILE
+    # Effective minimum level of the chunk (the database default, the most restrictive).
+    min_level: ResponseLevel = ResponseLevel.PRODUCT_DEV
 
 
 def search_path(workspace_id: uuid.UUID, collection_id: uuid.UUID | str) -> str:
@@ -147,6 +150,7 @@ def add_passages(api: ApiEnv, world: SearchWorld, *passages: Passage) -> list[uu
                     content_hash=HASH,
                     embedding_model=MODEL,
                     embedding=fake_vector(passage.content),
+                    min_level=passage.min_level,
                 )
                 db.add(chunk)
                 await db.flush()

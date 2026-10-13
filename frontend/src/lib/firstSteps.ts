@@ -14,7 +14,9 @@ const STEP_SCREENS: Record<ChecklistKey, StepScreen> = {
   provider: { path: "providers", minRole: "editor" },
   collection: { path: "collections", minRole: "editor" },
   source: { path: "sources", minRole: "editor" },
-  assistant: { path: "assistants", minRole: "editor" },
+  levels: { path: "settings", minRole: "admin" },
+  // The products screen still lives at the assistants route until plan 0009, F3.1.
+  product: { path: "assistants", minRole: "editor" },
   chat: { path: "chat", minRole: "viewer" },
 };
 

@@ -8,12 +8,7 @@ or one that does not exist, is 422 ``product_collection_invalid``); the composit
 are the last barrier. Updating ``collection_ids`` replaces the whole set. An empty "no source"
 message falls back to ``DEFAULT_NO_SOURCE_MESSAGE`` (rule 8 of AGENTS.md). Audit metadata
 carries names, collection ids and changed fields, never the instructions nor the webhook URL.
-
-Transitional (plan 0009): ``products`` still has the ``credential_id``, ``model`` and
-``temperature`` the chat reads until it reads the level of the conversation. A new product
-takes them from the first configured level of the workspace (``product_dev``, then
-``support``, then ``end_user``; none configured is 409 ``level_not_configured``), a copy from
-its original.
+The model of the answers is not the product's: it belongs to each level of the workspace.
 """
 
 from __future__ import annotations
@@ -34,8 +29,6 @@ from knobridge.conversations.models import Conversation
 from knobridge.core.clock import Clock
 from knobridge.core.errors import ConflictError, NotFoundError, ValidationError
 from knobridge.ingestion.models import Collection
-from knobridge.levels.level import ResponseLevel
-from knobridge.levels.workspace import LevelModel, first_configured_level
 from knobridge.products.listing import ProductFilter, page_products
 from knobridge.products.models import (
     DEFAULT_MIN_SIMILARITY,
@@ -45,9 +38,6 @@ from knobridge.products.models import (
     ProductCollection,
     ProductTone,
 )
-
-# The level a new product takes its transitional model from, in order of preference.
-_MODEL_LEVELS = (ResponseLevel.PRODUCT_DEV, ResponseLevel.SUPPORT, ResponseLevel.END_USER)
 
 
 class ProductNameTakenError(ConflictError):
@@ -159,28 +149,14 @@ class ProductService:
         ip: str | None,
         duplicated_from: Product | None = None,
     ) -> Product:
-        """Create a product; ``duplicated_from`` (the original) goes to the audit and gives
-        the copy its transitional model."""
+        """Create a product; ``duplicated_from`` (the original) goes to the audit."""
         check_name(settings.name)
         await self._lock_collections(db, workspace_id, settings.collection_ids)
-        model = (
-            await first_configured_level(db, workspace_id=workspace_id, levels=_MODEL_LEVELS)
-            if duplicated_from is None
-            else LevelModel(
-                ResponseLevel.PRODUCT_DEV,
-                duplicated_from.credential_id,
-                duplicated_from.model,
-                duplicated_from.temperature,
-            )
-        )
         product = Product(
             workspace_id=workspace_id,
             name=settings.name,
             description=settings.description,
             instructions=settings.instructions,
-            credential_id=model.credential_id,
-            model=model.model,
-            temperature=model.temperature,
             language=settings.language,
             tone=settings.tone,
             no_source_message=no_source_message_or_default(settings.no_source_message),

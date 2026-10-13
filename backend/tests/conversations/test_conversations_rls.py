@@ -43,7 +43,7 @@ def _message(seeded: Seeded, conversation_id: uuid.UUID | None = None) -> Messag
         content="Resposta",
         citations=[],
         status=MessageStatus.COMPLETED,
-        product_id=seeded.assistant_id,
+        product_id=seeded.product_id,
         level=ResponseLevel.PRODUCT_DEV,
     )
 
@@ -120,7 +120,7 @@ def test_rls_refuses_insert_into_other_workspace(
             db.add(
                 Conversation(
                     workspace_id=mine.workspace_id,
-                    assistant_id=mine.assistant_id,
+                    product_id=mine.product_id,
                     user_id=other.user_id,
                     channel=ConversationChannel.PANEL,
                     level=ResponseLevel.PRODUCT_DEV,
@@ -143,12 +143,12 @@ def test_children_must_share_the_parent_workspace(app_database_url: str) -> None
             db.add(message)
             await db.flush()
 
-    async def foreign_assistant(factory: SessionFactory) -> None:
+    async def foreign_product(factory: SessionFactory) -> None:
         async with system_session(factory) as db:
             db.add(
                 Conversation(
                     workspace_id=other.workspace_id,
-                    assistant_id=mine.assistant_id,
+                    product_id=mine.product_id,
                     user_id=other.user_id,
                     channel=ConversationChannel.PANEL,
                     level=ResponseLevel.PRODUCT_DEV,
@@ -159,4 +159,4 @@ def test_children_must_share_the_parent_workspace(app_database_url: str) -> None
     with pytest.raises(IntegrityError, match="fk_messages_workspace_id_conversations"):
         run(app_database_url, foreign_conversation)
     with pytest.raises(IntegrityError, match="fk_conversations_workspace_id_products"):
-        run(app_database_url, foreign_assistant)
+        run(app_database_url, foreign_product)

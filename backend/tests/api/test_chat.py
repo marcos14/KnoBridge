@@ -25,6 +25,8 @@ from chat_support import (
 
 from fakes.llm_provider import FactoryCall, ScriptedLLMProvider, UnreachableLLMProvider
 from fakes.retriever import StaticRetriever
+from knobridge.levels.defaults import default_instructions
+from knobridge.levels.level import ResponseLevel
 from knobridge.llm.errors import LLMProviderError, ProviderRateLimitError, ProviderUnavailableError
 from knobridge.llm.models import ProviderKind
 from knobridge.llm.provider import ChatParams, ChatRole
@@ -166,7 +168,10 @@ def test_with_sources_streams_and_saves_citations(api: ApiEnv, chat: ChatOverrid
         ChatRole.SYSTEM,
         ChatRole.USER,
     ]
-    assert call.messages[0].content.startswith("Você ajuda com o ERP.")
+    # The level's instructions, then the product's text, then the fixed rules.
+    assert call.messages[0].content.startswith(
+        default_instructions(ResponseLevel.PRODUCT_DEV) + "\n\nVocê ajuda com o ERP.\n\n"
+    )
     assert NO_SOURCE in call.messages[0].content
     assert "pt-BR" in call.messages[0].content
     assert "[1] Fechamento de caixa (docs/caixa.md)" in call.messages[1].content
@@ -175,7 +180,8 @@ def test_with_sources_streams_and_saves_citations(api: ApiEnv, chat: ChatOverrid
     (query,) = retriever.queries
     assert query.text == "Como fecho o caixa?"
     assert query.user_id == world.users[0].id
-    assert str(query.assistant_id) == world.assistant_id
+    assert str(query.product_id) == world.assistant_id
+    assert query.level is ResponseLevel.PRODUCT_DEV
 
 
 def test_sse_event_sequence(api: ApiEnv, chat: ChatOverrides) -> None:
@@ -317,7 +323,7 @@ def test_send_message_requires_csrf_and_content(api: ApiEnv) -> None:
     assert messages(api, world.workspace_id, conversation_id) == []
 
 
-def test_inactive_assistant_refuses_conversations_and_messages(api: ApiEnv) -> None:
+def test_inactive_product_refuses_conversations_and_messages(api: ApiEnv) -> None:
     world = build_world(api, Role.OWNER)
     conversation_id = start(api, world)
     deactivated = api.client.patch(
@@ -330,12 +336,12 @@ def test_inactive_assistant_refuses_conversations_and_messages(api: ApiEnv) -> N
     message = ask(api, world.workspace_id, conversation_id, "Oi")
     conversation = api.client.post(
         f"/v1/workspaces/{world.workspace_id}/conversations",
-        json={"assistant_id": world.assistant_id},
+        json={"product_id": world.assistant_id},
         headers=api.csrf_headers(),
     )
 
-    assert error(message) == (409, "assistant_inactive")
-    assert error(conversation) == (409, "assistant_inactive")
+    assert error(message) == (409, "product_inactive")
+    assert error(conversation) == (409, "product_inactive")
     assert messages(api, world.workspace_id, conversation_id) == []
 
 

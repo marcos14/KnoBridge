@@ -1,6 +1,7 @@
 """Seeding for the conversation tests against real Postgres: a workspace with a user, an
-encrypted ``fake`` credential, an assistant and a conversation, built through the services
-(the same path as production). Not a test module; imported by its basename."""
+encrypted ``fake`` credential on the three levels, a product and a conversation, built
+through the services (the same path as production). Not a test module; imported by its
+basename."""
 
 from __future__ import annotations
 
@@ -10,13 +11,15 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
+from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
-from knobridge.conversations.service import ConversationService
+from knobridge.conversations.service import ConversationService, Reader
 from knobridge.core.clock import FrozenClock
 from knobridge.core.crypto import SecretBox
 from knobridge.core.db import create_session_factory, scoped_session, system_session
+from knobridge.levels.models import WorkspaceLevel, create_workspace_levels
 from knobridge.llm.credentials import CREDENTIALS_KEY_INFO, ProviderCredentialService
 from knobridge.llm.models import ProviderKind
 from knobridge.products.models import Product, ProductTone
@@ -49,7 +52,7 @@ def run[T](database_url: str, scenario: Callable[[SessionFactory], Awaitable[T]]
 class Seeded:
     workspace_id: uuid.UUID
     user_id: uuid.UUID
-    assistant_id: uuid.UUID
+    product_id: uuid.UUID
     conversation_id: uuid.UUID
 
 
@@ -72,23 +75,29 @@ async def seed(factory: SessionFactory, clock: FrozenClock) -> Seeded:
             api_key=API_KEY,
             ip=None,
         )
-        # Written directly: the chat still reads the (transitional) model of the product.
-        assistant = Product(
+        # The three levels of the workspace, all answering with the ``fake`` credential.
+        await create_workspace_levels(db, workspace_id)
+        await db.execute(
+            update(WorkspaceLevel)
+            .where(WorkspaceLevel.workspace_id == workspace_id)
+            .values(credential_id=credential.id, model="fake-model")
+        )
+        product = Product(
             workspace_id=workspace_id,
             name="Suporte",
             description="",
             instructions="",
-            credential_id=credential.id,
-            model="fake-model",
-            temperature=0.2,
             language="pt-BR",
             tone=ProductTone.NEUTRAL,
             no_source_message=NO_SOURCE,
             active=True,
         )
-        db.add(assistant)
+        db.add(product)
         await db.flush()
-        conversation = await ConversationService(clock).create(
-            db, workspace_id=workspace_id, user_id=user_id, assistant_id=assistant.id
+        view = await ConversationService(clock).create(
+            db,
+            workspace_id=workspace_id,
+            reader=Reader(user_id=user_id, can_read_all=True, role=Role.OWNER),
+            product_id=product.id,
         )
-        return Seeded(workspace_id, user_id, assistant.id, conversation.id)
+        return Seeded(workspace_id, user_id, product.id, view.conversation.id)

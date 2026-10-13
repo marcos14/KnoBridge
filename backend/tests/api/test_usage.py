@@ -28,6 +28,7 @@ from usage_support import (
 
 from knobridge.conversations.models import ConversationChannel, MessageStatus
 from knobridge.ingestion.models import RunStatus
+from knobridge.levels.level import ResponseLevel
 from knobridge.tenancy.models import Role
 
 pytestmark = pytest.mark.integration
@@ -99,7 +100,7 @@ class Seeded:
         add_answer(api, world, panel, at=_at(1), model=None, tokens=None, cost=None)
         add_answer(api, world, panel, at=_at(2), tokens=None, status=MessageStatus.FAILED)
         add_answer(api, world, panel, at=_at(4, 0), tokens=(9, 9), cost="1")
-        sales = add_conversation(api, world, assistant_id=self.sales)
+        sales = add_conversation(api, world, assistant_id=self.sales, level=ResponseLevel.SUPPORT)
         add_answer(
             api, world, sales, at=_at(2), model="claude-haiku-4-5", tokens=(10, 5), cost="0.000035"
         )
@@ -133,11 +134,11 @@ def _rows(api: ApiEnv, world: UsageWorld, group_by: str) -> list[dict[str, objec
 
 
 def test_usage_totals_of_the_period(api: ApiEnv, seeded: Seeded) -> None:
-    body = _report(api, seeded.world, "assistant")
+    body = _report(api, seeded.world, "product")
 
     assert body["period_start"] == "2026-09-01T00:00:00Z"
     assert body["period_end"] == "2026-09-04T00:00:00Z"
-    assert body["group_by"] == "assistant"
+    assert body["group_by"] == "product"
     assert body["totals"] == {
         **_embedding(1800, 0.00003, 3, 1),
         **_chat(360, 75, 0.000287, 5, 1),
@@ -145,8 +146,8 @@ def test_usage_totals_of_the_period(api: ApiEnv, seeded: Seeded) -> None:
     }
 
 
-def test_usage_by_assistant(api: ApiEnv, seeded: Seeded) -> None:
-    assert _rows(api, seeded.world, "assistant") == [
+def test_usage_by_product(api: ApiEnv, seeded: Seeded) -> None:
+    assert _rows(api, seeded.world, "product") == [
         {
             "key": str(seeded.world.assistant_id),
             "label": "Suporte ERP",
@@ -162,6 +163,83 @@ def test_usage_by_assistant(api: ApiEnv, seeded: Seeded) -> None:
             "cost_usd": 0.000035,
         },
     ]
+
+
+def test_usage_by_level_has_the_three_levels_in_order(api: ApiEnv, seeded: Seeded) -> None:
+    assert _rows(api, seeded.world, "level") == [
+        {
+            "key": "end_user",
+            "label": "end_user",
+            **_EMPTY_EMBEDDING,
+            **_chat(0, 0, 0.0, 0, 0),
+            "cost_usd": 0.0,
+        },
+        {
+            "key": "support",
+            "label": "support",
+            **_EMPTY_EMBEDDING,
+            **_chat(10, 5, 0.000035, 1, 0),
+            "cost_usd": 0.000035,
+        },
+        {
+            "key": "product_dev",
+            "label": "product_dev",
+            **_EMPTY_EMBEDDING,
+            **_chat(350, 70, 0.000252, 4, 1),
+            "cost_usd": 0.000252,
+        },
+    ]
+
+
+def test_usage_filtered_by_product_or_level_leaves_embeddings_out(
+    api: ApiEnv, seeded: Seeded
+) -> None:
+    def report(**filters: str) -> dict[str, object]:
+        response = api.client.get(
+            usage_path(seeded.world), params={**PERIOD, "group_by": "day", **filters}
+        )
+        assert response.status_code == 200, response.text
+        body: dict[str, object] = response.json()
+        return body
+
+    by_product = report(product_id=str(seeded.sales))
+    by_level = report(level="product_dev")
+    both = report(product_id=str(seeded.sales), level="product_dev")
+    other = report(product_id=str(uuid.uuid4()))
+
+    assert by_product["totals"] == {
+        **_EMPTY_EMBEDDING,
+        **_chat(10, 5, 0.000035, 1, 0),
+        "cost_usd": 0.000035,
+    }
+    assert by_level["totals"] == {
+        **_EMPTY_EMBEDDING,
+        **_chat(350, 70, 0.000252, 4, 1),
+        "cost_usd": 0.000252,
+    }
+    assert both["totals"] == {**_EMPTY_EMBEDDING, **_chat(0, 0, 0.0, 0, 0), "cost_usd": 0.0}
+    assert other["rows"] == [
+        {"key": day, "label": day, **_EMPTY_EMBEDDING, **_chat(0, 0, 0.0, 0, 0), "cost_usd": 0.0}
+        for day in ("2026-09-01", "2026-09-02", "2026-09-03")
+    ]
+    rows: list[dict[str, object]] = by_product["rows"]  # type: ignore[assignment]
+    assert [row["answers"] for row in rows] == [0, 1, 0]
+    assert all(row["embedding_tokens"] is None for row in rows)
+
+
+def test_usage_csv_name_carries_the_level(api: ApiEnv, seeded: Seeded) -> None:
+    response = api.client.get(
+        usage_path(seeded.world, "usage.csv"),
+        params={**PERIOD, "group_by": "product", "level": "support"},
+    )
+
+    assert response.status_code == 200, response.text
+    assert response.headers["content-disposition"] == (
+        'attachment; filename="knobridge-uso-product-2026-09-01-2026-09-04-support.csv"'
+    )
+    lines = response.text.split("\r\n")
+    assert lines[1] == f"{seeded.sales},Vendas,,,,,10,5,0.000035,1,0,0.000035"
+    assert lines[2] == "total,Total,,,,,10,5,0.000035,1,0,0.000035"
 
 
 def test_usage_by_source_and_collection(api: ApiEnv, seeded: Seeded) -> None:
@@ -310,7 +388,7 @@ def test_usage_day_rows_of_an_unaligned_period(api: ApiEnv) -> None:
 def test_usage_default_period_is_the_30_days_before_now(api: ApiEnv) -> None:
     world = usage_world(api, Role.OWNER)
 
-    response = api.client.get(usage_path(world), params={"group_by": "assistant"})
+    response = api.client.get(usage_path(world), params={"group_by": "product"})
 
     assert response.status_code == 200, response.text
     body = response.json()
@@ -328,6 +406,10 @@ def test_usage_default_period_is_the_30_days_before_now(api: ApiEnv) -> None:
             "usage_period_too_long",
         ),
         ({"group_by": "workspace"}, "validation_error"),
+        ({"group_by": "assistant"}, "validation_error"),
+        ({"group_by": "day", "level": "admin"}, "validation_error"),
+        ({"group_by": "source", "level": "support"}, "validation_error"),
+        ({"group_by": "collection", "product_id": str(uuid.uuid4())}, "validation_error"),
         ({}, "validation_error"),
     ],
 )
@@ -388,7 +470,7 @@ def test_usage_is_isolated_between_workspaces(api: ApiEnv, seeded: Seeded) -> No
     assert foreign.status_code == 404
 
 
-@pytest.mark.parametrize("group_by", ["assistant", "model", "day"])
+@pytest.mark.parametrize("group_by", ["product", "level", "model", "day"])
 def test_usage_takes_a_constant_number_of_statements(
     api: ApiEnv, seeded: Seeded, group_by: str
 ) -> None:

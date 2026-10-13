@@ -15,11 +15,10 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.pool import NullPool
 
 from knobridge.apikeys.models import ApiKey
-from knobridge.assistants.models import Assistant, AssistantTone
 from knobridge.conversations.models import Conversation, ConversationChannel
 from knobridge.core.db import create_session_factory, system_session
 from knobridge.levels.level import ResponseLevel
-from knobridge.llm.models import ProviderCredential, ProviderKind
+from knobridge.products.models import Product, ProductTone
 from knobridge.tenancy.models import User, Workspace
 
 SessionFactory = async_sessionmaker[AsyncSession]
@@ -78,26 +77,14 @@ def api_conversation(seeded: Seeded, key_id: uuid.UUID | None = None) -> Convers
     )
 
 
-async def _assistant(db: AsyncSession, workspace_id: uuid.UUID) -> Assistant:
-    credential = ProviderCredential(
-        workspace_id=workspace_id,
-        name="Fake",
-        kind=ProviderKind.FAKE,
-        key_ciphertext="v1.x",
-        key_last4="1234",
-    )
-    db.add(credential)
-    await db.flush()
-    assistant = Assistant(
+async def _assistant(db: AsyncSession, workspace_id: uuid.UUID) -> Product:
+    assistant = Product(
         workspace_id=workspace_id,
         name="Suporte",
         description="",
-        system_prompt="",
-        credential_id=credential.id,
-        model="fake-model",
-        temperature=0.2,
+        instructions="",
         language="pt-BR",
-        tone=AssistantTone.NEUTRAL,
+        tone=ProductTone.NEUTRAL,
         no_source_message="Sem fonte.",
     )
     db.add(assistant)

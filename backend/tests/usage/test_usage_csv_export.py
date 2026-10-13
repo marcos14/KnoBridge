@@ -51,7 +51,7 @@ def test_usage_csv_lines() -> None:
     )
     report = UsageReport(
         period=PERIOD,
-        group_by=UsageGroup.ASSISTANT,
+        group_by=UsageGroup.PRODUCT,
         totals=UsageTotals(
             embedding=EmbeddingUsage(tokens=1250000, cost_usd=Decimal("0.025"), runs=14),
             chat=chat,

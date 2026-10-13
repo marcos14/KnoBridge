@@ -6,9 +6,9 @@ import uuid
 
 import pytest
 
-from knobridge.assistants.models import Assistant
 from knobridge.core.crypto import DecryptionError, SecretBox
 from knobridge.llm.credentials import CREDENTIALS_KEY_INFO
+from knobridge.products.models import Product as Assistant
 from knobridge.tickets.webhook_secret import (
     TICKET_WEBHOOK_KEY_INFO,
     open_webhook_secret,

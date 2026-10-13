@@ -12,6 +12,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from admin_chat_support import count_statements
 from api_support import START, ApiEnv, SessionFactory, run_db
+from sqlalchemy import update
 from usage_support import (
     UsageWorld,
     add_answer,
@@ -26,12 +27,14 @@ from usage_support import (
 from knobridge.conversations.models import Feedback, FeedbackRating, MessageStatus
 from knobridge.core.db import system_session
 from knobridge.ingestion.models import RunStatus
+from knobridge.levels.level import ResponseLevel
+from knobridge.levels.models import WorkspaceLevel
 from knobridge.tenancy.models import Role
 
 pytestmark = pytest.mark.integration
 
 MONTH = datetime(2026, 10, 1, tzinfo=UTC)
-CHECKLIST_KEYS = ["provider", "collection", "source", "assistant", "chat"]
+CHECKLIST_KEYS = ["provider", "collection", "source", "levels", "product", "chat"]
 
 
 def _dashboard(api: ApiEnv, world: UsageWorld) -> dict[str, object]:
@@ -56,7 +59,7 @@ def _rate(api: ApiEnv, world: UsageWorld, message_id: uuid.UUID, rating: Feedbac
     run_db(api.database_url, scenario)
 
 
-def _link_assistant(api: ApiEnv, world: UsageWorld, collection_id: uuid.UUID) -> None:
+def _link_product(api: ApiEnv, world: UsageWorld, collection_id: uuid.UUID) -> None:
     response = api.client.patch(
         usage_path(world, f"products/{world.assistant_id}"),
         json={"collection_ids": [str(collection_id)]},
@@ -133,15 +136,15 @@ def test_dashboard_checklist_follows_the_setup(api: ApiEnv) -> None:
         assert [item["key"] for item in items] == CHECKLIST_KEYS
         return {str(item["key"]): bool(item["done"]) for item in items}
 
-    # The world already has a provider and an assistant (without a collection).
-    assert done() == dict.fromkeys(CHECKLIST_KEYS, False) | {"provider": True}
+    # The world already has a provider on every level and a product (without a collection).
+    assert done() == dict.fromkeys(CHECKLIST_KEYS, False) | {"provider": True, "levels": True}
     collection = add_collection(api, world, "Docs")
     source = add_source(api, world, collection, "Manual")
     add_run(api, world, source, finished_at=START, status=RunStatus.FAILED)
     assert done()["collection"]
     assert not done()["source"]
     add_run(api, world, source, finished_at=START)
-    _link_assistant(api, world, collection)
+    _link_product(api, world, collection)
     conversation = add_conversation(api, world)
     add_answer(api, world, conversation, at=START)  # completed, without citations
     add_answer(api, world, conversation, at=START, cited=True, status=MessageStatus.FAILED)
@@ -150,9 +153,9 @@ def test_dashboard_checklist_follows_the_setup(api: ApiEnv) -> None:
     assert done() == dict.fromkeys(CHECKLIST_KEYS, True)
 
 
-def test_dashboard_inactive_assistant_does_not_count(api: ApiEnv) -> None:
+def test_dashboard_inactive_product_does_not_count(api: ApiEnv) -> None:
     world = usage_world(api, Role.OWNER)
-    _link_assistant(api, world, add_collection(api, world, "Docs"))
+    _link_product(api, world, add_collection(api, world, "Docs"))
     response = api.client.patch(
         usage_path(world, f"products/{world.assistant_id}"),
         json={"active": False},
@@ -162,7 +165,33 @@ def test_dashboard_inactive_assistant_does_not_count(api: ApiEnv) -> None:
 
     items: list[dict[str, object]] = _dashboard(api, world)["checklist"]  # type: ignore[assignment]
 
-    assert {"key": "assistant", "done": False} in items
+    assert {"key": "product", "done": False} in items
+
+
+def test_dashboard_levels_item_needs_the_end_user_model(api: ApiEnv) -> None:
+    world = usage_world(api, Role.OWNER)
+
+    async def clear(factory: SessionFactory, level: ResponseLevel) -> None:
+        async with system_session(factory) as db:
+            await db.execute(
+                update(WorkspaceLevel)
+                .where(
+                    WorkspaceLevel.workspace_id == world.workspace_id,
+                    WorkspaceLevel.level == level,
+                )
+                .values(credential_id=None, model=None)
+            )
+
+    def levels_done() -> bool:
+        items: list[dict[str, object]] = _dashboard(api, world)["checklist"]  # type: ignore[assignment]
+        return {str(item["key"]): bool(item["done"]) for item in items}["levels"]
+
+    run_db(api.database_url, lambda factory: clear(factory, ResponseLevel.PRODUCT_DEV))
+    still_done = levels_done()
+    run_db(api.database_url, lambda factory: clear(factory, ResponseLevel.END_USER))
+
+    assert still_done
+    assert not levels_done()
 
 
 def test_dashboard_is_isolated_between_workspaces(api: ApiEnv) -> None:

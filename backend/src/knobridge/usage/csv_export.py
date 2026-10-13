@@ -81,6 +81,10 @@ def usage_csv(report: UsageReport) -> str:
 
 
 def csv_filename(report: UsageReport) -> str:
+    """``knobridge-uso-<group_by>-<from>-<to>.csv``, with ``-<level>`` when filtered by level
+    (the product does not go in the name)."""
     start = report.period.start.date().isoformat()
     end = report.period.end.date().isoformat()
-    return f"knobridge-uso-{report.group_by.value}-{start}-{end}.csv"
+    level = None if report.chat_filter is None else report.chat_filter.level
+    suffix = "" if level is None else f"-{level.value}"
+    return f"knobridge-uso-{report.group_by.value}-{start}-{end}{suffix}.csv"

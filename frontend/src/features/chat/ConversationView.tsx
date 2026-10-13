@@ -82,7 +82,7 @@ export function ConversationView({
   }
 
   const detail = conversation.data;
-  const assistant = assistants.data?.find((item) => item.id === detail.assistant_id);
+  const assistant = assistants.data?.find((item) => item.id === detail.product_id);
   // The detail says whether the assistant offers tickets; after each answer it is reloaded, so it
   // carries the same `ticket_requests_enabled` as the stream's `done` event.
   const openTicket =

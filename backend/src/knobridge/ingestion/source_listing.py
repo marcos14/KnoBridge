@@ -20,6 +20,7 @@ from knobridge.core.listing import sort_order, text_match
 from knobridge.ingestion.index_queries import document_count
 from knobridge.ingestion.models import Run, RunStatus, Source
 from knobridge.ingestion.source_config import SourceKind
+from knobridge.levels.level import ResponseLevel
 
 # A plain alias, not ``type``: FastAPI reads it as a query parameter.
 SourceSort = Literal[
@@ -53,6 +54,7 @@ class SourceFilter:
     collection_id: uuid.UUID | None = None
     kind: SourceKind | None = None
     active: bool | None = None
+    min_level: ResponseLevel | None = None
     last_run_status: LastRunFilter | None = None
     sort: SourceSort = "name"
 
@@ -79,6 +81,8 @@ def _conditions(workspace_id: uuid.UUID, filters: SourceFilter) -> list[ColumnEl
         conditions.append(Source.kind == filters.kind)
     if filters.active is not None:
         conditions.append(Source.active.is_(filters.active))
+    if filters.min_level is not None:
+        conditions.append(Source.min_level == filters.min_level)
     if filters.last_run_status is LastRunFilter.NEVER:
         conditions.append(_last_run(Run.id).is_(None))
     elif filters.last_run_status is not None:

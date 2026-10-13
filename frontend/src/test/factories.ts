@@ -395,7 +395,9 @@ export function messageId(n: number): string {
 export function makeConversation(overrides: Partial<Conversation> = {}): Conversation {
   return {
     id: CONVERSATION_ID,
-    assistant_id: ASSISTANT_ID,
+    product_id: ASSISTANT_ID,
+    product_name: "Suporte ERP",
+    level: "product_dev",
     user_id: USER_ID,
     channel: "panel",
     title: "Como fecho o caixa?",
@@ -493,8 +495,9 @@ export function makeWorkspaceConversation(
 ): WorkspaceConversation {
   return {
     id: CONVERSATION_ID,
-    assistant_id: ASSISTANT_ID,
-    assistant_name: "Suporte ERP",
+    product_id: ASSISTANT_ID,
+    product_name: "Suporte ERP",
+    level: "product_dev",
     user_id: USER_ID,
     user_name: "Ana Teste",
     user_email: "ana@example.test",
@@ -659,6 +662,8 @@ export function makeSource(overrides: Partial<Source> = {}): Source {
     include_globs: [],
     exclude_globs: [],
     active: true,
+    min_level: "product_dev",
+    min_level_is_default: true,
     schedule_cron: null,
     schedule_enabled: false,
     next_run_at: null,

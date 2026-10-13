@@ -8,7 +8,7 @@ import type { components } from "./schema.gen";
 export type UsageGroup = components["schemas"]["UsageGroup"];
 export type UsageReport = components["schemas"]["UsageReportOut"];
 export type UsageRow = components["schemas"]["UsageRowOut"];
-export type UsageTotals = components["schemas"]["UsageTotalsOut"];
+export type UsageTotals = components["schemas"]["UsageReportTotalsOut"];
 
 /** Grouping and period `[from, to)` (ISO 8601 instants; missing = the API's default). */
 export interface UsageQuery {

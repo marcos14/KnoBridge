@@ -38,13 +38,13 @@ from knobridge.api.openai_wire import (
 from knobridge.apikeys.assistants import find_key_assistant, list_key_assistants
 from knobridge.apikeys.auth import ApiKeyIdentity
 from knobridge.apikeys.conversations import create_key_conversation, get_message
-from knobridge.assistants.models import Assistant
 from knobridge.conversations.chat import ChatService
 from knobridge.conversations.turn import ErrorEvent, PreparedTurn
 from knobridge.core.clock import Clock
 from knobridge.core.db import scoped_session
 from knobridge.core.errors import KnoBridgeError
 from knobridge.core.logging import get_logger
+from knobridge.products.models import Product as Assistant
 
 _log = get_logger(__name__)
 

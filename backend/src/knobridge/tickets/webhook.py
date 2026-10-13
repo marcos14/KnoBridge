@@ -19,7 +19,6 @@ from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from knobridge.assistants.models import Assistant
 from knobridge.audit.actions import AuditAction
 from knobridge.audit.service import AuditService, AuditTarget
 from knobridge.core.clock import Clock
@@ -34,6 +33,7 @@ from knobridge.core.outbound import (
     OutboundResponse,
     OutboundUrlInvalid,
 )
+from knobridge.products.models import Product as Assistant
 from knobridge.tenancy.models import Workspace
 from knobridge.tickets.signature import SIGNATURE_HEADER, signature_header
 from knobridge.tickets.webhook_secret import open_webhook_secret, seal_webhook_secret

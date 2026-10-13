@@ -12,6 +12,9 @@ Steps (section 7.4 of ``docs/01-visao-do-projeto.md``; decisions D8 and D12 of p
 4. Full-text arm, one query: ``websearch_to_tsquery`` in ``portuguese`` (stemmed content) OR
    in ``simple`` (identifiers and paths as written), the configurations of ``chunks.tsv``,
    ranked by ``ts_rank_cd``.
+   Both arms only read chunks a question at the given level may receive (``chunks.min_level``
+   among the levels up to it, ``docs/specs/produtos-e-niveis.md``): a chunk above the level
+   is never a candidate, so it never reaches the fusion, the citations or the LLM.
 5. RRF over every ranking (``fusion.RRF_K`` = 60), neighbor chunks of the same document
    dropped, and the survivors loaded with their document (one query).
 
@@ -40,6 +43,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from knobridge.audit.models import JSONValue
 from knobridge.core.errors import NotFoundError
 from knobridge.ingestion.models import Chunk, Collection, Document, DocumentKind
+from knobridge.levels.level import ResponseLevel, levels_up_to
 from knobridge.llm.credentials import ProviderCredentialService
 from knobridge.llm.factory import (
     EmbeddingProviderFactory,
@@ -180,10 +184,16 @@ class SearchService:
         query: str,
         limit: int = DEFAULT_LIMIT,
         min_similarity: float = DEFAULT_MIN_SIMILARITY,
+        level: ResponseLevel = ResponseLevel.PRODUCT_DEV,
     ) -> list[SearchHit]:
-        """The best chunks for ``query`` in the collections, at most ``limit``; may be empty."""
+        """The best chunks for ``query`` in the collections, at most ``limit``; may be empty.
+
+        Only chunks a question at ``level`` may read are candidates: both arms filter
+        ``chunks.min_level`` in SQL, before the fusion (never afterwards).
+        """
         groups = await self._groups(db, workspace_id, collection_ids)
         candidates = candidate_count(limit)
+        allowed = levels_up_to(level)
         await db.execute(
             text("SELECT set_config('hnsw.ef_search', :value, true)"),
             {"value": str(EF_SEARCH)},
@@ -193,14 +203,14 @@ class SearchService:
         similarities: dict[uuid.UUID, float] = {}
         for group in groups:
             vector = await self.embed_query(group.credential, group.model, query)
-            found = await self._vector_arm(db, workspace_id, group, vector, candidates)
+            found = await self._vector_arm(db, workspace_id, group, vector, candidates, allowed)
             kept = [item for item in found if item.score >= min_similarity]
             rankings.append([item.span.chunk_id for item in kept])
             for item in kept:
                 spans[item.span.chunk_id] = item.span
                 similarities[item.span.chunk_id] = item.score
         all_ids = [cid for group in groups for cid in group.collection_ids]
-        lexical = await self._fts_arm(db, workspace_id, all_ids, query, candidates)
+        lexical = await self._fts_arm(db, workspace_id, all_ids, query, candidates, allowed)
         rankings.append([item.span.chunk_id for item in lexical])
         fts_ranks = {item.span.chunk_id: item.score for item in lexical}
         spans.update({item.span.chunk_id: item.span for item in lexical})
@@ -271,6 +281,7 @@ class SearchService:
         group: _EmbeddingGroup,
         vector: list[float],
         candidates: int,
+        allowed: Sequence[ResponseLevel],
     ) -> list[_Candidate]:
         distance = Chunk.embedding.cosine_distance(vector)  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType] - pgvector comparator is untyped
         rows = await db.execute(
@@ -279,6 +290,7 @@ class SearchService:
                 Chunk.workspace_id == workspace_id,
                 Chunk.collection_id.in_(group.collection_ids),
                 Chunk.embedding_model == group.model,
+                Chunk.min_level.in_(allowed),
             )
             .order_by(distance)
             .limit(candidates)
@@ -295,6 +307,7 @@ class SearchService:
         collection_ids: Sequence[uuid.UUID],
         query: str,
         candidates: int,
+        allowed: Sequence[ResponseLevel],
     ) -> list[_Candidate]:
         # The third query splits on ``/`` and ``.`` like the path part of ``chunks.tsv``, so
         # ``invoice.ts`` (one host-like token to the parser) matches the path segments.
@@ -311,6 +324,7 @@ class SearchService:
                 Chunk.workspace_id == workspace_id,
                 Chunk.collection_id.in_(collection_ids),
                 Chunk.tsv.op("@@")(tsquery),
+                Chunk.min_level.in_(allowed),
             )
             .order_by(rank.desc(), Chunk.id)
             .limit(candidates)

@@ -22,7 +22,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from knobridge.assistants.models import Assistant, AssistantCollection
 from knobridge.conversations.admin import as_utc
 from knobridge.conversations.models import (
     Conversation,
@@ -34,13 +33,16 @@ from knobridge.conversations.models import (
 )
 from knobridge.core.models import Base
 from knobridge.ingestion.models import Collection, Document, Run, RunStatus, Source
+from knobridge.levels.level import ResponseLevel
+from knobridge.levels.models import WorkspaceLevel
 from knobridge.llm.models import ProviderCredential
+from knobridge.products.models import Product, ProductCollection
 from knobridge.usage.period import Period
 from knobridge.usage.report import answers_in, runs_in
 
 RECENT_FAILURES = timedelta(days=7)
 # Order of the setup flow; the panel shows the pending ones.
-CHECKLIST_KEYS = ("provider", "collection", "source", "assistant", "chat")
+CHECKLIST_KEYS = ("provider", "collection", "source", "levels", "product", "chat")
 
 
 @dataclass(frozen=True)
@@ -152,11 +154,17 @@ def _checklist_conditions(workspace_id: uuid.UUID) -> list[Exists]:
             Run.source_id == Source.id,
             Run.status == RunStatus.SUCCEEDED,
         ),
+        # The end-user level answers: the level every member asks at by default.
         exists().where(
-            Assistant.workspace_id == workspace_id,
-            Assistant.active.is_(True),
-            AssistantCollection.workspace_id == Assistant.workspace_id,
-            AssistantCollection.assistant_id == Assistant.id,
+            WorkspaceLevel.workspace_id == workspace_id,
+            WorkspaceLevel.level == ResponseLevel.END_USER,
+            WorkspaceLevel.model.is_not(None),
+        ),
+        exists().where(
+            Product.workspace_id == workspace_id,
+            Product.active.is_(True),
+            ProductCollection.workspace_id == Product.workspace_id,
+            ProductCollection.product_id == Product.id,
         ),
         exists().where(
             Message.workspace_id == workspace_id,

@@ -83,6 +83,8 @@ class AuditAction(StrEnum):
     SOURCE_TESTED = "source.tested"
     SOURCE_SYNC_STARTED = "source.sync.started"
     SOURCE_SYNC_CANCELLED = "source.sync.cancelled"
+    # The minimum level of a source changed (name, from, to); its chunks were recomputed.
+    SOURCE_MIN_LEVEL_CHANGED = "source.min_level_changed"
     # Cursor and content hashes reset before a manual sync (name and run id).
     SOURCE_REINDEX_STARTED = "source.reindex.started"
     # Ingest token of a ``tickets`` or ``cards`` source issued or rotated (the prefix only,

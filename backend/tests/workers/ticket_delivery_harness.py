@@ -19,7 +19,6 @@ from sqlalchemy import update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
-from knobridge.assistants.models import Assistant, AssistantTone
 from knobridge.conversations.models import (
     Conversation,
     ConversationChannel,
@@ -33,6 +32,8 @@ from knobridge.core.db import create_session_factory, scoped_session, system_ses
 from knobridge.core.outbound import DestinationValidator, OutboundClient
 from knobridge.levels.level import ResponseLevel
 from knobridge.llm.models import ProviderCredential, ProviderKind
+from knobridge.products.models import Product as Assistant
+from knobridge.products.models import ProductTone as AssistantTone
 from knobridge.tenancy.models import User, Workspace
 from knobridge.tickets.delivery import TicketDelivery
 from knobridge.tickets.models import TicketRequest, TicketRequestStatus
@@ -129,10 +130,7 @@ async def _seed(factory: SessionFactory) -> Ids:
             workspace_id=workspace.id,
             name="Suporte",
             description="",
-            system_prompt="",
-            credential_id=credential.id,
-            model="fake-model",
-            temperature=0.2,
+            instructions="",
             language="pt-BR",
             tone=AssistantTone.NEUTRAL,
             no_source_message="Sem fonte.",

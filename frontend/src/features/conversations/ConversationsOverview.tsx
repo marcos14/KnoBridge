@@ -68,7 +68,7 @@ export function ConversationsOverview({ workspaceId }: { workspaceId: string }) 
     {
       key: "assistant",
       header: t("conversations.columns.assistant"),
-      cell: (row) => row.assistant_name,
+      cell: (row) => row.product_name,
     },
     {
       key: "messages",

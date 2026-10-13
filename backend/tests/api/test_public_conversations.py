@@ -208,7 +208,7 @@ def test_public_message_errors(api: ApiEnv, chat: ChatOverrides) -> None:
     moving = start_public_id(api, key, other)
     panel = api.client.post(
         f"/v1/workspaces/{world.workspace_id}/conversations",
-        json={"assistant_id": world.assistant_id},
+        json={"product_id": world.assistant_id},
         headers=api.csrf_headers(),
     ).json()["id"]
     api.client.patch(
@@ -229,7 +229,7 @@ def test_public_message_errors(api: ApiEnv, chat: ChatOverrides) -> None:
         assert error(response) == (404, "not_found")
     assert error(blank) == (422, "validation_error")
     assert error(too_long) == (422, "validation_error")
-    assert error(inactive) == (409, "assistant_inactive")
+    assert error(inactive) == (409, "product_inactive")
     _, stored = stored_conversation(api, mine)
     assert stored == []
 

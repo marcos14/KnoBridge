@@ -119,9 +119,13 @@
           "title": "Adicione uma fonte e sincronize até concluir uma execução",
           "link": "Ir para Fontes"
         },
-        "assistant": {
-          "title": "Crie um assistente ativo ligado a uma coleção",
-          "link": "Ir para Assistentes"
+        "levels": {
+          "title": "Configure o modelo do nível Usuário final",
+          "link": "Ir para Configurações"
+        },
+        "product": {
+          "title": "Crie um produto ativo ligado a uma coleção",
+          "link": "Ir para Produtos"
         },
         "chat": {
           "title": "Faça uma pergunta no chat e receba uma resposta com fonte",
@@ -1880,7 +1884,8 @@
       "day": "Dia",
       "source": "Fonte",
       "collection": "Coleção",
-      "assistant": "Assistente",
+      "product": "Produto",
+      "level": "Nível",
       "channel": "Canal",
       "api_key": "Chave de API",
       "model": "Modelo"
@@ -2039,6 +2044,7 @@
     "source_tested": "Conexão com a fonte testada",
     "source_sync_started": "Sincronização da fonte iniciada",
     "source_sync_cancelled": "Sincronização da fonte cancelada",
+    "source_min_level_changed": "Nível mínimo da fonte alterado",
     "source_reindex_started": "Reindexação da fonte iniciada",
     "source_ingest_token_rotated": "Token de envio da fonte gerado",
     "source_tickets_uploaded": "Arquivo de chamados enviado",

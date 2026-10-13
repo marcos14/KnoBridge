@@ -11,9 +11,7 @@ is the retrieval threshold (0 to 1; omitted or null on create: the default).
 ``ticket_webhook_url`` is where ticket requests go (``null``: off), checked against the SSRF
 rules when saved (422 ``webhook_url_invalid`` or ``webhook_destination_blocked``); its signing
 secret and the test event live in ``api/ticket_webhook.py``. ``my_max_level`` is the reader's
-maximum level in the product. The model of the answers is the level's
-(``api/levels.py``); while the chat still reads it from the product (plan 0009), creating one
-needs a configured level (409 ``level_not_configured``).
+maximum level in the product. The model of the answers is the level's (``api/levels.py``).
 """
 
 from __future__ import annotations
@@ -96,10 +94,7 @@ _WRITE_ERRORS: dict[int | str, dict[str, object]] = {
 }
 _SAVE_ERRORS: dict[int | str, dict[str, object]] = {
     **_WRITE_ERRORS,
-    409: {
-        "description": "Name already used in the workspace (`product_name_taken`) or, on "
-        "create, no level of the workspace has a model (`level_not_configured`)."
-    },
+    409: {"description": "Name already used in the workspace (`product_name_taken`)."},
     422: {
         "description": "Invalid body, name ending in `:<level>` (`product_name_invalid`), "
         "collection not in the workspace (`product_collection_invalid`), or webhook URL "

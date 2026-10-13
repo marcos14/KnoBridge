@@ -23,23 +23,24 @@ from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from knobridge.assistants.models import Assistant
 from knobridge.audit.actions import AuditAction
 from knobridge.audit.service import AuditService, AuditTarget
 from knobridge.conversations.models import Conversation, Message, MessageRole, MessageStatus
 from knobridge.conversations.service import (
     Reader,
-    get_active_assistant,
+    get_active_product,
     get_readable_conversation,
     require_owner,
 )
 from knobridge.conversations.stale import effective_status
 from knobridge.core.clock import Clock
 from knobridge.core.errors import ConflictError, NotFoundError, ValidationError
+from knobridge.levels.workspace import LevelNotConfiguredError, answer_settings
 from knobridge.llm.credentials import ProviderCredentialService
 from knobridge.llm.factory import ProviderFactory
 from knobridge.llm.models import ProviderCredential
 from knobridge.llm.provider import LLMProvider
+from knobridge.products.models import Product
 from knobridge.tenancy.models import User, Workspace
 from knobridge.tickets.delivery import REQUESTED_EVENT
 from knobridge.tickets.models import TicketRequest, TicketRequestStatus
@@ -77,7 +78,7 @@ class TicketRequestDraft:
 @dataclass(frozen=True)
 class _Target:
     conversation: Conversation
-    assistant: Assistant
+    assistant: Product
     answer: Message
     question: str
     requester: Requester
@@ -111,17 +112,15 @@ async def requests_by_message(
 
 
 async def ticket_requests_enabled(
-    db: AsyncSession, workspace_id: uuid.UUID, assistant_id: uuid.UUID
+    db: AsyncSession, workspace_id: uuid.UUID, product_id: uuid.UUID
 ) -> bool:
-    """Whether the assistant offers to open a ticket (webhook with URL and secret)."""
-    assistant = (
+    """Whether the product offers to open a ticket (webhook with URL and secret)."""
+    product = (
         await db.scalars(
-            select(Assistant).where(
-                Assistant.workspace_id == workspace_id, Assistant.id == assistant_id
-            )
+            select(Product).where(Product.workspace_id == workspace_id, Product.id == product_id)
         )
     ).one()
-    return assistant.ticket_webhook_configured
+    return product.ticket_webhook_configured
 
 
 class TicketRequestService:
@@ -149,15 +148,18 @@ class TicketRequestService:
         message_id: uuid.UUID,
     ) -> TicketRequestDraft:
         target = await self._target(db, workspace_id, conversation_id, reader, message_id)
-        credential = (
-            await db.scalars(
-                select(ProviderCredential).where(
-                    ProviderCredential.workspace_id == workspace_id,
-                    ProviderCredential.id == target.assistant.credential_id,
-                )
+        # The summary is written by the model of the conversation's level; without one, the
+        # question stands in for it.
+        try:
+            settings = await answer_settings(
+                db, workspace_id=workspace_id, level=target.conversation.level
             )
-        ).one()
-        summary = await summarize(self._opener(credential), target.assistant.model, target.messages)
+        except LevelNotConfiguredError:
+            summary = None
+        else:
+            summary = await summarize(
+                self._opener(settings.credential), settings.model, target.messages
+            )
         return TicketRequestDraft(
             message_id=message_id,
             question=target.question,
@@ -278,7 +280,7 @@ class TicketRequestService:
         )
         require_owner(conversation, reader)
         answer = await self._answer(db, conversation, message_id)
-        assistant = await get_active_assistant(db, workspace_id, conversation.assistant_id)
+        assistant = await get_active_product(db, workspace_id, conversation.product_id)
         if not assistant.ticket_webhook_configured:
             raise TicketWebhookNotConfiguredError("The assistant has no webhook URL or secret.")
         existing = await db.scalar(

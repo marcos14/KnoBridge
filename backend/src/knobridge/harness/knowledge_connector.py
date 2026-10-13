@@ -30,8 +30,9 @@ from knobridge.connectors.errors import DocumentNotFoundError, InvalidCursorErro
 from knobridge.core.db import scoped_session
 from knobridge.harness.knowledge import items_with_module
 from knobridge.harness.knowledge_markdown import effective_title, item_markdown, parse_evidence
-from knobridge.harness.models import KnowledgeItem, KnowledgeReviewStatus
+from knobridge.harness.models import KnowledgeConfidence, KnowledgeItem, KnowledgeReviewStatus
 from knobridge.ingestion.models import DocumentKind, Source
+from knobridge.levels.level import ResponseLevel
 
 URI_PREFIX = "knowledge:"
 
@@ -52,10 +53,15 @@ class KnowledgeDocument:
     markdown: str
     metadata: dict[str, JSONValue]
     digest: str
+    # An inferred item is for support and above until reviewed; a reviewed one keeps the
+    # source's level (docs/specs/produtos-e-niveis.md, "Padrões por tipo").
+    min_level: ResponseLevel | None = None
 
 
 def knowledge_document(item: KnowledgeItem, module_key: str) -> KnowledgeDocument:
-    """The document of an item: Markdown, chunk metadata and the hash over both."""
+    """The document of an item: Markdown, chunk metadata, the hash over both and the minimum
+    level (``support`` while the item is inferred; the confidence is in the hash, so approving
+    or reopening it reindexes the document)."""
     title = effective_title(item)
     markdown = item_markdown(item)
     evidence: list[JSONValue] = [entry.as_meta() for entry in parse_evidence(item.evidence)]
@@ -70,7 +76,9 @@ def knowledge_document(item: KnowledgeItem, module_key: str) -> KnowledgeDocumen
     }
     payload = json.dumps({"markdown": markdown, "meta": metadata}, sort_keys=True)
     digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()
-    return KnowledgeDocument(item.key, title, markdown, metadata, digest)
+    inferred = item.confidence is KnowledgeConfidence.INFERRED
+    min_level = ResponseLevel.SUPPORT if inferred else None
+    return KnowledgeDocument(item.key, title, markdown, metadata, digest, min_level)
 
 
 def _parse_cursor(cursor: Cursor | None) -> dict[str, str]:
@@ -139,6 +147,7 @@ class KnowledgeConnector:
             extension="md",
             metadata=document.metadata,
             digest=document.digest,
+            min_level=document.min_level,
         )
 
     async def permissions(self, ref: DocumentRef) -> Acl:

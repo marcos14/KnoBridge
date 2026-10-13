@@ -27,7 +27,6 @@ from typing import Protocol, cast
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from knobridge.assistants.models import Assistant
 from knobridge.core.clock import Clock
 from knobridge.core.crypto import SecretBox
 from knobridge.core.db import scoped_session, system_session
@@ -41,6 +40,7 @@ from knobridge.core.outbound import (
     OutboundResponse,
     OutboundUrlInvalid,
 )
+from knobridge.products.models import Product as Assistant
 from knobridge.tickets.models import (
     ERROR_MAX_LENGTH,
     EXTERNAL_ID_MAX_LENGTH,

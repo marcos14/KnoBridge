@@ -53,6 +53,8 @@ export function searchBody(values: SearchFormValues): SearchRequest {
     query: values.query,
     limit: SEARCH_LIMIT,
     min_similarity: effectiveMinSimilarity(values),
+    // Every chunk of the collection, as before the levels (the level choice comes later).
+    level: "product_dev",
   };
 }
 

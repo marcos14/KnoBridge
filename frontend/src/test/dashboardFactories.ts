@@ -7,11 +7,12 @@ const CHECKLIST_KEYS: readonly ChecklistKey[] = [
   "provider",
   "collection",
   "source",
-  "assistant",
+  "levels",
+  "product",
   "chat",
 ];
 
-/** The five checklist items in the API order, done when their key is in `done`. */
+/** The six checklist items in the API order, done when their key is in `done`. */
 export function makeChecklist(done: readonly ChecklistKey[] = []): WorkspaceDashboard["checklist"] {
   return CHECKLIST_KEYS.map((key) => ({ key, done: done.includes(key) }));
 }

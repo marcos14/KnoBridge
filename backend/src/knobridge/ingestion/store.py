@@ -28,9 +28,11 @@ from knobridge.ingestion.models import (
     RunError,
     RunErrorStage,
     RunItem,
+    Source,
 )
 from knobridge.ingestion.runs import RunScope, workspace_session
 from knobridge.ingestion.settle import Settle
+from knobridge.levels.level import ResponseLevel, highest
 
 TITLE_MAX_LENGTH = 500
 ERROR_CODE_MAX_LENGTH = 64
@@ -48,6 +50,8 @@ class PreparedDocument:
     language: str | None
     meta: Mapping[str, JSONValue]
     chunks: Sequence[ChunkDraft]
+    # Refinement of the document's minimum level (``documents.min_level``); ``None``: none.
+    min_level: ResponseLevel | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -62,6 +66,25 @@ def _chunk_meta(draft: ChunkDraft) -> dict[str, JSONValue]:
     # ``content`` (stored and embedded) carries a context header; ``display`` is the body
     # alone, kept for the citation snippet.
     return {**draft.meta, "display": draft.display}
+
+
+_LEVEL_VALUES = frozenset(level.value for level in ResponseLevel)
+
+
+def _meta_level(draft: ChunkDraft) -> ResponseLevel | None:
+    """The chunking's refinement (``meta.min_level``), when it is a level."""
+    value = draft.meta.get("min_level")
+    if isinstance(value, str) and value in _LEVEL_VALUES:
+        return ResponseLevel(value)
+    return None
+
+
+def chunk_min_level(
+    source: ResponseLevel, document: ResponseLevel | None, draft: ChunkDraft
+) -> ResponseLevel:
+    """The effective minimum level of a chunk: the highest of the source's, the document's
+    and the chunk's own (refinements only raise it)."""
+    return highest(source, document, _meta_level(draft))
 
 
 class BatchStore:
@@ -159,8 +182,21 @@ class BatchStore:
         now: datetime,
         settle: Settle | None = None,
     ) -> None:
-        """Upsert the document and replace its chunks."""
+        """Upsert the document and replace its chunks, each with its effective minimum level.
+
+        The source's level is read in this transaction (locked ``FOR SHARE`` before the
+        document, as a level change locks the source before the chunks): a change of the
+        source's level during a run applies to the documents stored after it, and one stored
+        meanwhile waits for it instead of keeping the old level.
+        """
         async with workspace_session(self._factory, scope) as db:
+            source_level = (
+                await db.execute(
+                    select(Source.min_level)
+                    .where(Source.workspace_id == scope.workspace_id, Source.id == scope.source_id)
+                    .with_for_update(read=True)
+                )
+            ).scalar_one()
             row = await db.scalar(
                 select(Document)
                 .where(
@@ -190,6 +226,7 @@ class BatchStore:
             row.content_hash = document.content_hash
             row.language = document.language
             row.meta = dict(document.meta)
+            row.min_level = document.min_level
             row.indexed_at = now
             await db.flush()
             db.add_all(
@@ -203,6 +240,7 @@ class BatchStore:
                     content_hash=draft.content_hash,
                     embedding_model=collection.embedding_model,
                     embedding=vectors[draft.content_hash],
+                    min_level=chunk_min_level(source_level, document.min_level, draft),
                 )
                 for draft in document.chunks
             )

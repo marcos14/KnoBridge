@@ -73,26 +73,33 @@ def test_create_and_list_my_conversations(api: ApiEnv) -> None:
     item = body["items"][0]
     assert set(item) == {
         "id",
-        "assistant_id",
+        "product_id",
+        "product_name",
+        "level",
         "user_id",
         "title",
         "channel",
         "created_at",
         "updated_at",
     }
-    assert (item["assistant_id"], item["user_id"]) == (world.assistant_id, str(world.users[0].id))
+    assert (item["product_id"], item["product_name"], item["level"]) == (
+        world.assistant_id,
+        "Suporte",
+        "product_dev",
+    )
+    assert item["user_id"] == str(world.users[0].id)
     assert (item["title"], item["channel"]) == ("Pergunta", "panel")
     assert body["items"][1]["title"] is None
 
 
-def test_create_conversation_requires_known_assistant_and_csrf(api: ApiEnv) -> None:
+def test_create_conversation_requires_known_product_and_csrf(api: ApiEnv) -> None:
     world = build_world(api, Role.OWNER)
     path = conversations_path(world.workspace_id)
 
     unknown = api.client.post(
-        path, json={"assistant_id": str(uuid.uuid4())}, headers=api.csrf_headers()
+        path, json={"product_id": str(uuid.uuid4())}, headers=api.csrf_headers()
     )
-    without_csrf = api.client.post(path, json={"assistant_id": world.assistant_id})
+    without_csrf = api.client.post(path, json={"product_id": world.assistant_id})
 
     assert error(unknown) == (404, "not_found")
     assert error(without_csrf) == (403, "csrf_failed")
@@ -199,10 +206,12 @@ def test_delete_conversation_audited_and_cascades(api: ApiEnv) -> None:
         for action, details in api.workspace_audit(world.workspace_id)
         if action == "conversation.deleted"
     ]
-    assert events == [{"assistant_id": world.assistant_id, "message_count": 2}]
+    assert events == [
+        {"product_id": world.assistant_id, "level": "product_dev", "message_count": 2}
+    ]
 
 
-def test_deleting_assistant_deletes_its_conversations(api: ApiEnv) -> None:
+def test_deleting_product_deletes_its_conversations(api: ApiEnv) -> None:
     world = build_world(api, Role.OWNER)
     conversation_id = start(api, world)
 
@@ -262,9 +271,9 @@ def test_conversations_isolated_by_workspace(api: ApiEnv) -> None:
 
     read = api.client.get(conversations_path(other_workspace, conversation_id))
     listed = api.client.get(conversations_path(other_workspace))
-    foreign_assistant = api.client.post(
+    foreign_product = api.client.post(
         conversations_path(other_workspace),
-        json={"assistant_id": world.assistant_id},
+        json={"product_id": world.assistant_id},
         headers=api.csrf_headers(),
     )
     sent = ask(api, other_workspace, conversation_id, "Oi")
@@ -274,7 +283,7 @@ def test_conversations_isolated_by_workspace(api: ApiEnv) -> None:
 
     assert error(read) == (404, "not_found")
     assert listed.json()["total"] == 0
-    assert error(foreign_assistant) == (404, "not_found")
+    assert error(foreign_product) == (404, "not_found")
     assert error(sent) == (404, "not_found")
     assert error(deleted) == (404, "not_found")
     assert api.client.get(conversations_path(world.workspace_id, conversation_id)).status_code == (

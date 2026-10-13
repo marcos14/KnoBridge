@@ -14,7 +14,7 @@ import {
 import { renderWithProviders } from "@/test/renderWithProviders";
 import { server } from "@/test/server";
 
-const ALL_DONE = makeChecklist(["provider", "collection", "source", "assistant", "chat"]);
+const ALL_DONE = makeChecklist(["provider", "collection", "source", "levels", "product", "chat"]);
 
 function asRole(role: Role) {
   server.use(meAs(makeMe({ workspaces: [makeWorkspace({ role })] })));
@@ -93,10 +93,10 @@ describe("HomePage", () => {
     const { router } = await renderHome();
 
     const checklist = await screen.findByRole("region", { name: "Primeiros passos" });
-    expect(within(checklist).getByText("2 de 5 concluídos", { exact: false })).toBeInTheDocument();
+    expect(within(checklist).getByText("2 de 6 concluídos", { exact: false })).toBeInTheDocument();
     expect(within(checklist).queryByText("Cadastre um provedor de LLM")).not.toBeInTheDocument();
     expect(within(checklist).queryByText("Crie uma coleção")).not.toBeInTheDocument();
-    expect(within(checklist).getAllByRole("listitem")).toHaveLength(3);
+    expect(within(checklist).getAllByRole("listitem")).toHaveLength(4);
     expect(within(checklist).getByRole("link", { name: "Ir para o Chat" })).toHaveAttribute(
       "href",
       `/w/${WORKSPACE_ID}/chat`,
@@ -115,7 +115,7 @@ describe("HomePage", () => {
     const checklist = await screen.findByRole("region", { name: "Primeiros passos" });
     expect(
       within(checklist).getAllByText("Peça a um administrador do workspace para fazer este passo."),
-    ).toHaveLength(4);
+    ).toHaveLength(5);
     expect(within(checklist).getAllByRole("link")).toHaveLength(1);
     expect(within(checklist).getByRole("link", { name: "Ir para o Chat" })).toBeInTheDocument();
   });

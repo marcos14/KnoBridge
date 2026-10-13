@@ -9,7 +9,9 @@
 - A commit is one chunk (its rendered Markdown); a very long one is split by lines, each part
   repeating the subject.
 - A knowledge item is cut at its headings like Markdown; each chunk carries the item (key,
-  module, confidence, title) and the evidence it relies on, for the citation.
+  module, confidence, title) and the evidence it relies on, for the citation. The evidence
+  section (paths and code excerpts) is always its own chunk, marked ``meta.min_level``
+  ``support``.
 - A ticket is cut at its sections (problem, resolution, conversation, fields, attachments), with
   the title and metadata list in the first chunk; each chunk carries the ticket's citation data.
   A card is cut the same way, at its own sections (description, acceptance criteria, links,
@@ -43,6 +45,7 @@ from knobridge.ingestion.chunk_base import (
 from knobridge.ingestion.code_chunking import chunk_code, chunk_lines, unfence
 from knobridge.ingestion.commits import commit_author, commit_date
 from knobridge.ingestion.parsing import ParsedDocument, ParsedKind
+from knobridge.levels.level import ResponseLevel
 from knobridge.llm.embeddings import estimate_tokens
 
 _HEADING = re.compile(r"^ {0,3}(#{1,6})[ \t]+(.+?)(?:[ \t]+#+)?[ \t]*$")
@@ -53,6 +56,11 @@ _EVIDENCE_REF = re.compile(r"\[(\d{1,4})\]")
 # nothing. A module item may have hundreds, each with up to 8 KiB of excerpt; a chunk keeps few.
 KNOWLEDGE_CITED_EVIDENCE = 10
 KNOWLEDGE_CHUNK_EVIDENCE = 5
+# The section of a knowledge item that lists the evidence (paths and code excerpts), shared
+# with the renderer in ``harness``. Its chunks are for support and above
+# (``meta.min_level``), and it is always a chunk of its own: sections are never merged.
+KNOWLEDGE_EVIDENCE_HEADING = "Evidências"
+KNOWLEDGE_EVIDENCE_MIN_LEVEL = ResponseLevel.SUPPORT
 # Sections of a ticket's Markdown (docs/specs/chamados.md, "Layout"), shared with the renderer
 # in ``tickets`` so the headings it writes are the ones cut here, and their ``section`` value.
 TICKET_PROBLEM = "Problema"
@@ -215,6 +223,9 @@ def chunk_knowledge(doc: ParsedDocument) -> list[Piece]:
     pieces: list[Piece] = []
     for section in _sections(doc.markdown):
         meta: dict[str, JSONValue] = {**base, "headings": list(section.headings)}
+        # Any heading of the path, as migration 0018 marked the chunks indexed before.
+        if KNOWLEDGE_EVIDENCE_HEADING in section.headings:
+            meta["min_level"] = KNOWLEDGE_EVIDENCE_MIN_LEVEL.value
         context = [
             ("item", item_key if isinstance(item_key, str) else None),
             ("section", _SECTION_SEPARATOR.join(section.headings)),

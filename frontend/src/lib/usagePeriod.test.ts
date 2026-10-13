@@ -44,11 +44,11 @@ describe("usageSearchParams", () => {
   it("test_usage_search_params_write_custom_days_and_group", () => {
     const params = usageSearchParams({
       preset: "custom",
-      group: "assistant",
+      group: "product",
       from: "2026-09-01",
       to: "2026-09-30",
     });
-    expect(params.toString()).toBe("period=custom&from=2026-09-01&to=2026-09-30&group=assistant");
+    expect(params.toString()).toBe("period=custom&from=2026-09-01&to=2026-09-30&group=product");
   });
 
   it("test_usage_search_params_skip_missing_custom_days", () => {

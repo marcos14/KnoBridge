@@ -70,9 +70,15 @@ def test_create_source_returns_it_and_audits(api: ApiEnv, index: IndexOverrides)
         True,
     )
     assert (body["document_count"], body["last_run"]) == (0, None)
+    assert (body["min_level"], body["min_level_is_default"]) == ("product_dev", True)
     created = (
         "source.created",
-        {"name": "ERP", "kind": "git", "collection_id": world.collection_id},
+        {
+            "name": "ERP",
+            "kind": "git",
+            "collection_id": world.collection_id,
+            "min_level": "product_dev",
+        },
     )
     assert created in api.workspace_audit(world.workspace_id)
 

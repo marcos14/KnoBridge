@@ -54,6 +54,7 @@ const ACTIONS: Record<AuditAction, true> = {
   "source.tested": true,
   "source.sync.started": true,
   "source.sync.cancelled": true,
+  "source.min_level_changed": true,
   "source.reindex.started": true,
   "source.ingest_token_rotated": true,
   "source.tickets_uploaded": true,

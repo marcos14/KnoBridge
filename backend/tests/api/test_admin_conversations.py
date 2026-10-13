@@ -25,7 +25,7 @@ from knobridge.tenancy.models import Role
 pytestmark = pytest.mark.integration
 
 
-def _second_assistant(api: ApiEnv, workspace_id: uuid.UUID) -> str:
+def _second_product(api: ApiEnv, workspace_id: uuid.UUID) -> str:
     response = api.client.post(
         f"/v1/workspaces/{workspace_id}/products",
         json={"name": "Vendas"},
@@ -39,7 +39,7 @@ def _second_assistant(api: ApiEnv, workspace_id: uuid.UUID) -> str:
 def test_admin_conversations_filters(api: ApiEnv) -> None:
     world = build_world(api, Role.OWNER, Role.EDITOR)
     owner, editor = world.users
-    sales = _second_assistant(api, world.workspace_id)
+    sales = _second_product(api, world.workspace_id)
     first = start(api, world)
     ask(api, world.workspace_id, first, "Pergunta do owner")
     rate(
@@ -67,7 +67,10 @@ def test_admin_conversations_filters(api: ApiEnv) -> None:
     path = admin_path(world.workspace_id)
 
     everything = api.client.get(path)
-    by_assistant = api.client.get(path, params={"assistant_id": sales})
+    by_product = api.client.get(path, params={"product_id": sales})
+    by_level = api.client.get(path, params={"level": "end_user"})
+    old_filter = api.client.get(path, params={"assistant_id": sales})
+    unknown_level = api.client.get(path, params={"level": "admin"})
     by_user = api.client.get(path, params={"user_id": str(editor.id)})
     # Half-open period, given with an offset: [START - 1 day, START).
     by_period = api.client.get(
@@ -82,7 +85,11 @@ def test_admin_conversations_filters(api: ApiEnv) -> None:
 
     assert ids(everything) == [third, second, first]
     assert everything.json()["total"] == 3
-    assert ids(by_assistant) == [third]
+    assert ids(by_product) == [third]
+    # The editor asks at the default of the role (end_user), the owner at product_dev.
+    assert ids(by_level) == [third, second]
+    assert error(old_filter) == (422, "validation_error")
+    assert error(unknown_level) == (422, "validation_error")
     assert ids(by_user) == [third, second]
     assert ids(by_period) == [second]
     assert ids(negative) == [first]
@@ -94,8 +101,9 @@ def test_admin_conversations_filters(api: ApiEnv) -> None:
         "id": first,
         "title": "Pergunta do owner",
         "channel": "panel",
-        "assistant_id": world.assistant_id,
-        "assistant_name": "Suporte",
+        "product_id": world.assistant_id,
+        "product_name": "Suporte",
+        "level": "product_dev",
         "user_id": str(owner.id),
         "user_name": "Test User",
         "user_email": owner.email,
@@ -114,7 +122,11 @@ def test_admin_conversations_filters(api: ApiEnv) -> None:
         1,
         0,
     )
-    assert (newest["assistant_name"], newest["message_count"]) == ("Vendas", 0)
+    assert (newest["product_name"], newest["level"], newest["message_count"]) == (
+        "Vendas",
+        "end_user",
+        0,
+    )
     assert (newest["title"], newest["last_message_at"]) == (None, None)
 
 

@@ -166,7 +166,7 @@ def test_duplicate_numbers_copies_and_takes_a_given_name(api: ApiEnv) -> None:
 
 
 def test_duplicate_works_without_a_configured_level(api: ApiEnv) -> None:
-    """The copy takes the original's model, not the level's (plan 0009, transitional)."""
+    """Neither the copy nor a new product needs a model: it is the levels' (migration 0019)."""
     world = _world(api, Role.OWNER)
     original_id = _create(api, world, "Suporte")
     api.client.patch(
@@ -181,7 +181,7 @@ def test_duplicate_works_without_a_configured_level(api: ApiEnv) -> None:
     )
 
     assert response.status_code == 201, response.text
-    assert error_code(fresh) == (409, "level_not_configured")
+    assert fresh.status_code == 201, fresh.text
 
 
 def test_duplicate_cuts_a_long_name(api: ApiEnv) -> None:

@@ -8,8 +8,8 @@ so a ciphertext copied to another assistant or workspace does not decrypt.
 
 from __future__ import annotations
 
-from knobridge.assistants.models import Assistant
 from knobridge.core.crypto import SecretBox
+from knobridge.products.models import Product as Assistant
 
 # HKDF label of the data key; a new label (v2) means a new key, never reuse this one.
 TICKET_WEBHOOK_KEY_INFO = b"knobridge/ticket-webhook-secrets/v1"

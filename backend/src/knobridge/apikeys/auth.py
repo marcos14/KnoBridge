@@ -22,6 +22,7 @@ from knobridge.apikeys.tokens import api_key_prefix, key_matches
 from knobridge.conversations.service import ApiKeyReader
 from knobridge.core.errors import ForbiddenError, KnoBridgeError
 from knobridge.core.logging import get_logger
+from knobridge.levels.level import ResponseLevel
 from knobridge.tenancy.models import Workspace, WorkspaceStatus
 
 # ``last_used_at`` is written at most once per window, not on every request.
@@ -51,13 +52,17 @@ class ApiKeyIdentity:
     key_prefix: str
     # ``None``: every active assistant of the workspace.
     assistant_ids: frozenset[uuid.UUID] | None
+    # The highest level the key's questions may ask.
+    max_level: ResponseLevel = ResponseLevel.PRODUCT_DEV
 
     def in_scope(self, assistant_id: uuid.UUID) -> bool:
         return self.assistant_ids is None or assistant_id in self.assistant_ids
 
     @property
     def reader(self) -> ApiKeyReader:
-        return ApiKeyReader(api_key_id=self.api_key_id, assistant_ids=self.assistant_ids)
+        return ApiKeyReader(
+            api_key_id=self.api_key_id, product_ids=self.assistant_ids, max_level=self.max_level
+        )
 
 
 async def authenticate_api_key(db: AsyncSession, *, key: str) -> ApiKeyIdentity:
@@ -86,6 +91,7 @@ async def authenticate_api_key(db: AsyncSession, *, key: str) -> ApiKeyIdentity:
         workspace_id=stored.workspace_id,
         key_prefix=prefix,
         assistant_ids=scope,
+        max_level=stored.max_level,
     )
 
 

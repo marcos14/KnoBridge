@@ -99,7 +99,7 @@ export function useConversation(workspaceId: string, conversationId: string) {
   });
 }
 
-/** `POST /v1/workspaces/{id}/conversations` (201); 409 `assistant_inactive`. */
+/** `POST /v1/workspaces/{id}/conversations` (201); 403 `level_not_allowed`, 409 `product_inactive` or `level_not_configured`. */
 export function useCreateConversation(workspaceId: string) {
   const queryClient = useQueryClient();
   return useMutation({
@@ -107,7 +107,7 @@ export function useCreateConversation(workspaceId: string) {
       unwrap(
         await apiClient.POST("/v1/workspaces/{workspace_id}/conversations", {
           params: { path: { workspace_id: workspaceId } },
-          body: { assistant_id: assistantId },
+          body: { product_id: assistantId },
         }),
       ),
     onSuccess: () =>

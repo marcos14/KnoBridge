@@ -203,10 +203,10 @@ export function chatStore({
   const handlers = [
     http.get(CONVERSATIONS, ({ request }) => page(request, conversations)),
     http.post(CONVERSATIONS, async ({ request }) => {
-      const { assistant_id: assistantId } = (await request.json()) as { assistant_id: string };
+      const { product_id: assistantId } = (await request.json()) as { product_id: string };
       const conversation = makeConversation({
         id: `00000000-0000-4000-8000-${String(990 + created.length).padStart(12, "0")}`,
-        assistant_id: assistantId,
+        product_id: assistantId,
         title: null,
       });
       conversations = [conversation, ...conversations];

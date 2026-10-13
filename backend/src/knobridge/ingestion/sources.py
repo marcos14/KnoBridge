@@ -61,8 +61,14 @@ from knobridge.ingestion.source_check import (
     check_connection,
 )
 from knobridge.ingestion.source_config import PUSH_SOURCE_KINDS, SourceKind, parse_source_config
+from knobridge.ingestion.source_levels import (
+    change_source_level,
+    default_min_level,
+    require_level_admin,
+)
 from knobridge.ingestion.source_listing import SourceFilter, page_sources
 from knobridge.ingestion.sync import SyncStarter
+from knobridge.levels.level import ResponseLevel
 
 
 class SourceNameTakenError(ConflictError):
@@ -96,6 +102,8 @@ class SourceSettings:
     schedule_cron: str | None = None
     schedule_enabled: bool = False
     active: bool = True
+    # ``None``: the default of the kind.
+    min_level: ResponseLevel | None = None
 
 
 @dataclass(frozen=True)
@@ -111,6 +119,8 @@ class SourceChanges:
     schedule_cron_given: bool = False
     schedule_enabled: bool | None = None
     active: bool | None = None
+    # Recomputes the chunks' levels at once, without reindexing (``source_levels.py``).
+    min_level: ResponseLevel | None = None
 
 
 def normalized_config(kind: SourceKind, data: Mapping[str, object]) -> dict[str, JSONValue]:
@@ -208,10 +218,16 @@ class SourceService:
         actor_id: uuid.UUID,
         settings: SourceSettings,
         ip: str | None,
+        can_set_level: bool = False,
     ) -> SourceView:
+        """Create a source; a minimum level other than the kind's default needs
+        ``can_set_level`` (owner or admin)."""
         config = await self._config(db, workspace_id, settings.kind, settings.config, None)
         _check_no_globs(settings.kind, settings.include_globs, settings.exclude_globs)
         cron = validate_schedule(settings.schedule_cron, enabled=settings.schedule_enabled)
+        min_level = settings.min_level or default_min_level(settings.kind)
+        if min_level is not default_min_level(settings.kind):
+            require_level_admin(can_set_level)
         await self._lock_collection(db, workspace_id, settings.collection_id)
         source = Source(
             workspace_id=workspace_id,
@@ -224,6 +240,7 @@ class SourceService:
             schedule_cron=cron,
             schedule_enabled=settings.schedule_enabled,
             active=settings.active,
+            min_level=min_level,
         )
         db.add(source)
         await self._flush(db)
@@ -238,6 +255,7 @@ class SourceService:
                 "name": source.name,
                 "kind": source.kind.value,
                 "collection_id": str(source.collection_id),
+                "min_level": source.min_level.value,
             },
             ip=ip,
         )
@@ -254,10 +272,17 @@ class SourceService:
         source_id: uuid.UUID,
         changes: SourceChanges,
         ip: str | None,
+        can_set_level: bool = False,
     ) -> SourceView:
-        """Apply the given fields; audited only when something actually changes."""
+        """Apply the given fields; audited only when something actually changes. A new
+        minimum level needs ``can_set_level`` (owner or admin)."""
         source = await self._get(db, workspace_id, source_id)
         _check_no_globs(source.kind, changes.include_globs or (), changes.exclude_globs or ())
+        if changes.min_level is not None and changes.min_level is not source.min_level:
+            require_level_admin(can_set_level)
+            await change_source_level(
+                db, self._audit, source=source, level=changes.min_level, actor_id=actor_id, ip=ip
+            )
         had_schedule = desired_schedule(source) is not None
         wanted: dict[str, object] = {
             "name": changes.name,

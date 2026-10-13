@@ -175,7 +175,7 @@ describe("ChatPage", () => {
         firstRead = true;
         const untitled = makeConversation({
           id: NEW_CONVERSATION_ID,
-          assistant_id: ASSISTANT_ID,
+          product_id: ASSISTANT_ID,
           title: null,
         });
         await held;

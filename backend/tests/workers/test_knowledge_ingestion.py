@@ -39,6 +39,7 @@ from knobridge.ingestion.models import (
 from knobridge.ingestion.runs import RunLifecycle, RunScope
 from knobridge.ingestion.source_config import SourceKind
 from knobridge.ingestion.sync import start_sync
+from knobridge.levels.level import ResponseLevel
 from knobridge.llm.pricing import EmbeddingPriceTable
 
 pytestmark = pytest.mark.integration
@@ -291,6 +292,49 @@ def test_approved_item_reindexed_as_revisado(app_database_url: str) -> None:
 
         assert run.documents_changed == 1
         assert {str(chunk.meta["confidence"]) for chunk in await _chunks(world)} == {"revisado"}
+
+    _scenario(app_database_url, body)
+
+
+async def _chunk_levels(world: KnowledgeWorld) -> list[tuple[list[str], ResponseLevel]]:
+    return [
+        ([str(heading) for heading in chunk.meta["headings"]], chunk.min_level)  # type: ignore[union-attr]
+        for chunk in await _chunks(world)
+    ]
+
+
+def test_inferred_item_is_for_support_and_its_evidence_never_for_the_end_user(
+    app_database_url: str,
+) -> None:
+    title = "Nota fiscal exige CNPJ do cliente"
+
+    async def body(world: KnowledgeWorld) -> None:
+        item_id = await _add_rule(world)
+        await _sync(world)
+        inferred_document = (await _documents(world))["src-faturamento.R001"].min_level
+        inferred = await _chunk_levels(world)
+        await _update(
+            world,
+            item_id,
+            review_status=KnowledgeReviewStatus.APPROVED,
+            confidence=KnowledgeConfidence.REVIEWED,
+        )
+        await _sync(world)
+        reviewed_document = (await _documents(world))["src-faturamento.R001"].min_level
+        reviewed = await _chunk_levels(world)
+
+        assert inferred_document is ResponseLevel.SUPPORT
+        assert inferred == [
+            ([title], ResponseLevel.SUPPORT),
+            ([title, "Evidências"], ResponseLevel.SUPPORT),
+        ]
+        # Approved: the rule reaches the end user (the source's level); the evidence, with
+        # paths and code excerpts, stays for support and above.
+        assert reviewed_document is None
+        assert reviewed == [
+            ([title], ResponseLevel.END_USER),
+            ([title, "Evidências"], ResponseLevel.SUPPORT),
+        ]
 
     _scenario(app_database_url, body)
 

@@ -287,7 +287,7 @@ describe("CollectionDetail search", () => {
     expect(commit).toHaveTextContent("commit abcdef1");
     expect(commit).toHaveTextContent("Fusão 0,0161 · Vetorial — · Texto 0,250");
     expect(recorder.bodies).toEqual([
-      { query: "como fechar o caixa", limit: 10, min_similarity: 0.35 },
+      { query: "como fechar o caixa", limit: 10, min_similarity: 0.35, level: "product_dev" },
     ]);
   });
 
@@ -303,7 +303,7 @@ describe("CollectionDetail search", () => {
       await screen.findByText(/Nenhum trecho passou do limiar de similaridade \(0,80\)/),
     ).toHaveRole("status");
     expect(recorder.bodies).toEqual([
-      { query: "previsão do tempo", limit: 10, min_similarity: 0.8 },
+      { query: "previsão do tempo", limit: 10, min_similarity: 0.8, level: "product_dev" },
     ]);
   });
 

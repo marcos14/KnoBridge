@@ -114,6 +114,27 @@ describe("UsagePage report", () => {
     expect(within(note).getByText("3 respostas do chat sem preço")).toBeVisible();
   });
 
+  it("test_usage_without_embedding_totals_shows_dashes", async () => {
+    // A report filtered by product or level leaves the embeddings out (`null`).
+    const totals = makeUsageTotals({
+      embedding_tokens: null,
+      embedding_cost_usd: null,
+      runs: null,
+      unpriced_runs: null,
+      unpriced_answers: 0,
+    });
+    record((group) => makeUsageReport(group, { totals }));
+    await renderUsage();
+
+    const section = screen.getByRole("region", { name: "Totais do período" });
+    expect(figures(within(section).getByRole("region", { name: "Embeddings" }))).toEqual([
+      ["Tokens", "—"],
+      ["Custo", "—"],
+      ["Execuções", "—"],
+    ]);
+    expect(screen.queryByRole("note", { name: "Custo parcial" })).not.toBeInTheDocument();
+  });
+
   it("test_usage_without_unpriced_items_has_no_warning", async () => {
     record((group) => makeUsageReport(group, { totals: makeUsageTotals({ unpriced_answers: 0 }) }));
     await renderUsage();
@@ -197,9 +218,9 @@ describe("UsagePage report", () => {
 
   it("test_usage_marks_rows_with_partial_cost", async () => {
     record();
-    await renderUsage(`${PATH}?group=assistant`, "Uso por Assistente");
+    await renderUsage(`${PATH}?group=product`, "Uso por Produto");
 
-    const table = screen.getByRole("table", { name: "Uso por Assistente" });
+    const table = screen.getByRole("table", { name: "Uso por Produto" });
     const marks = within(table).getAllByRole("img", {
       name: "Custo parcial: há itens sem preço neste grupo",
     });
@@ -325,7 +346,8 @@ describe("UsagePage filters", () => {
   it.each<[string, UsageGroup, string]>([
     ["Fonte", "source", "Uso por Fonte"],
     ["Coleção", "collection", "Uso por Coleção"],
-    ["Assistente", "assistant", "Uso por Assistente"],
+    ["Produto", "product", "Uso por Produto"],
+    ["Nível", "level", "Uso por Nível"],
     ["Canal", "channel", "Uso por Canal"],
     ["Chave de API", "api_key", "Uso por Chave de API"],
     ["Modelo", "model", "Uso por Modelo"],

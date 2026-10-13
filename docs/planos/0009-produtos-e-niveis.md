@@ -42,10 +42,10 @@ fases:
         commit: 3aabe2a
       - id: F2.2
         titulo: Chat por produto e nível (busca filtrada pelo nível, instruções e modelo do nível)
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-13
-        concluida_em: null
+        concluida_em: 2026-10-13
         commit: null
       - id: F2.3
         titulo: Cards de desenvolvimento por push (tipo card na API de entrada, conector interno e citação)
@@ -223,6 +223,13 @@ decisoes:
     decisao: "F2.3: cards reaproveitam o pacote tickets/ (push.py com TICKETS e CARDS; card_wire.py e card_markdown.py), mesma caixa ticket_inbox e token kbi_; token de fonte do outro tipo dá 409 source_kind_mismatch nos envios e 404 em upload, prévia e resumo; marcadores [RELATOR] e [RESPONSAVEL_n]; card inválido guardado falha com card_invalid; reindexar fonte de cards é recusado; auditoria source.cards_uploaded; as telas da fonte de cards (criar, integração, upload, prévia) entram na F3.2 e a citação de card na F3.3 (lacuna apontada pelo agente; generalizam as telas de chamados, sem escopo novo)"
     motivo: "mesmo mecanismo dos chamados, sem duplicar código"
     alternativas: "pacote cards/ separado; deixar a fonte de cards só pela API"
+    adr: null
+  - id: D18
+    data: 2026-10-13
+    por: agente
+    decisao: "F2.2: conversa criada com product_id e level opcional (sem level = máximo de quem cria); a cada pergunta, antes do embedding: produto ativo (409 product_inactive), nível até o máximo atual (403 level_not_allowed) e nível configurado (409 level_not_configured); filtro de chunks.min_level no SQL dos dois braços sem statement a mais; prompt = instruções do nível (ou padrão) + texto do produto + regras fixas, com credencial, modelo e temperatura do nível; citação knowledge em end_user com evidence null; lote grava documents/chunks.min_level (código em pasta = product_dev, inferido = support, seção de evidências sempre trecho próprio support); só owner/admin muda o nível mínimo da fonte (recalcula trechos sem reindexar, auditado); uso com group_by product e level; checklist provider, collection, source, levels, product, chat; migração 0019 remove credential_id, model e temperature de products; pacote assistants/ removido (F2.4 troca os imports transitórios Product as Assistant)"
+    motivo: "contrato da F1.1; garantia de nível no banco"
+    alternativas: "filtro depois da busca; manter assistants/"
     adr: null
 pendencias_usuario: []
 ---
@@ -480,6 +487,7 @@ Nenhuma.
 - 2026-10-13 — F2.1 concluída: produtos no lugar dos assistentes, configuração dos níveis do workspace, nível por membro e produto e convites com níveis; gates do agente: backend 2513 passed com 99,88%, frontend 1437; orquestrador: ruff, pyright e AGENTS na integração
 - 2026-10-13 — F2.3 concluída: cards de desenvolvimento por push (API e upload), conector interno cards, Markdown e chunking do card e citação kind card, integrados sobre a F2.1; backend 2621 passed com 99% de cobertura, frontend 1438
 - 2026-10-13 — F2.2 iniciada (agente em worktree).
+- 2026-10-13 — F2.2 concluída: chat por produto e nível com filtro de nível mínimo no SQL da busca (teste prova que trecho acima do nível nunca chega ao LLM), modelo, temperatura e instruções do nível, ingestão gravando o nível, nível mínimo da fonte editável, uso por produto e nível e migração 0019; gates do agente: backend 2676 passed com 99,88%, frontend 1440; orquestrador: ruff, pyright e AGENTS na integração
 
 ## 8. Encerramento
 

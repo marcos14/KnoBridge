@@ -18,7 +18,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from knobridge.apikeys.auth import ApiKeyIdentity
 from knobridge.apikeys.models import ApiKey
-from knobridge.assistants.models import Assistant
 from knobridge.conversations.models import (
     Conversation,
     ConversationChannel,
@@ -28,7 +27,7 @@ from knobridge.conversations.models import (
 from knobridge.conversations.service import get_key_conversation
 from knobridge.conversations.stale import effective_status
 from knobridge.core.errors import NotFoundError
-from knobridge.levels.level import ResponseLevel
+from knobridge.products.models import Product as Assistant
 
 # ``conversations`` points at ``api_keys`` by name: loading the key model here keeps the
 # metadata complete wherever this module writes conversations.
@@ -75,8 +74,8 @@ async def create_key_conversation(
         api_key_id=identity.api_key_id,
         title=None,
         channel=ConversationChannel.API,
-        # Every source, as before plan 0009; the level comes from the request in F2.4.
-        level=ResponseLevel.PRODUCT_DEV,
+        # The key's maximum; the request picks a level in F2.4 of plan 0009.
+        level=identity.max_level,
     )
     db.add(conversation)
     await db.flush()

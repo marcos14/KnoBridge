@@ -161,6 +161,7 @@ def add_conversation(
     world: UsageWorld,
     *,
     assistant_id: uuid.UUID | None = None,
+    level: ResponseLevel = ResponseLevel.PRODUCT_DEV,
     api_key_id: uuid.UUID | None = None,
     created_at: datetime | None = None,
 ) -> uuid.UUID:
@@ -173,7 +174,7 @@ def add_conversation(
                 user_id=None if api_key_id else world.users[0].id,
                 api_key_id=api_key_id,
                 channel=ConversationChannel.API if api_key_id else ConversationChannel.PANEL,
-                level=ResponseLevel.PRODUCT_DEV,
+                level=level,
             )
             if created_at is not None:
                 conversation.created_at = conversation.updated_at = created_at

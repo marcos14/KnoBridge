@@ -15,8 +15,8 @@ from sqlalchemy import ColumnElement, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from knobridge.apikeys.auth import ApiKeyIdentity
-from knobridge.assistants.models import Assistant
 from knobridge.core.errors import NotFoundError
+from knobridge.products.models import Product as Assistant
 
 MODEL_NOT_FOUND = "model_not_found"
 

@@ -11,9 +11,10 @@ from retrieval_support import ChunkSpec, Db, Space, credential_service, run_db
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from fakes.embedding_provider import RecordingEmbeddingFactory
-from knobridge.assistants.models import Assistant, AssistantCollection, AssistantTone
 from knobridge.conversations.retrieval import RetrievalQuery, Source
 from knobridge.core.db import scoped_session
+from knobridge.levels.level import ResponseLevel
+from knobridge.products.models import Product, ProductCollection, ProductTone
 from knobridge.retrieval.retriever import HybridRetriever
 from knobridge.retrieval.search import (
     DEFAULT_LIMIT,
@@ -39,24 +40,21 @@ async def _assistant(
     min_similarity: float = DEFAULT_MIN_SIMILARITY,
 ) -> uuid.UUID:
     async with scoped_session(db.factory, workspace_id=space.workspace_id, user_id=None) as s:
-        assistant = Assistant(
+        assistant = Product(
             workspace_id=space.workspace_id,
             name=f"A {uuid.uuid4().hex[:8]}",
             description="",
-            system_prompt="",
-            credential_id=space.credential_id,
-            model="fake-model",
-            temperature=0.2,
+            instructions="",
             language="pt-BR",
-            tone=AssistantTone.NEUTRAL,
+            tone=ProductTone.NEUTRAL,
             no_source_message="Não sei.",
             min_similarity=min_similarity,
         )
         s.add(assistant)
         await s.flush()
         s.add_all(
-            AssistantCollection(
-                workspace_id=space.workspace_id, assistant_id=assistant.id, collection_id=cid
+            ProductCollection(
+                workspace_id=space.workspace_id, product_id=assistant.id, collection_id=cid
             )
             for cid in collection_ids
         )
@@ -70,6 +68,7 @@ async def _retrieve(
     query: str = QUERY,
     *,
     retriever: HybridRetriever | None = None,
+    level: ResponseLevel = ResponseLevel.PRODUCT_DEV,
 ) -> Sequence[Source]:
     used = retriever or HybridRetriever(SearchService(credential_service()))
     async with scoped_session(db.factory, workspace_id=space.workspace_id, user_id=None) as s:
@@ -77,7 +76,8 @@ async def _retrieve(
             s,
             RetrievalQuery(
                 workspace_id=space.workspace_id,
-                assistant_id=assistant_id,
+                product_id=assistant_id,
+                level=level,
                 user_id=uuid.uuid4(),
                 text=query,
             ),
@@ -166,6 +166,7 @@ class _VanishingSearch(SearchService):
         query: str,
         limit: int = DEFAULT_LIMIT,
         min_similarity: float = DEFAULT_MIN_SIMILARITY,
+        level: ResponseLevel = ResponseLevel.PRODUCT_DEV,
     ) -> list[SearchHit]:
         raise CollectionNotFoundError
 

@@ -31,6 +31,8 @@ def sse_frame(event: ChatEvent) -> bytes:
             payload = {
                 "message_id": str(event.message_id),
                 "user_message_id": str(event.user_message_id),
+                "product_id": None if event.product_id is None else str(event.product_id),
+                "level": None if event.level is None else event.level.value,
                 "citations": event.citations,
             }
         case DeltaEvent():

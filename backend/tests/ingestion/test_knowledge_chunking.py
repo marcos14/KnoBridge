@@ -135,3 +135,26 @@ def test_large_knowledge_section_is_split_without_line_numbers() -> None:
     assert len(chunks) > 1
     assert all("start_line" not in chunk.meta for chunk in chunks)
     assert all(chunk.meta["evidence"] == _evidence(1) for chunk in chunks)
+
+
+def test_evidence_section_is_its_own_chunk_for_support_and_above() -> None:
+    body, evidence = _chunks(RULE, _evidence(1))
+
+    assert "min_level" not in body.meta
+    assert evidence.meta["min_level"] == "support"
+    assert "Evidências" not in body.display
+    assert evidence.display.startswith("## Evidências")
+
+
+def test_large_evidence_section_keeps_the_level_in_every_part() -> None:
+    entries = "\n".join(
+        f"{n}. `src/f{n}.ts:{n}-{n + 1}` com o excerto da regra de faturamento" for n in range(300)
+    )
+
+    chunks = _chunks(f"# Regra\n\nTexto curto.\n\n## Evidências\n\n{entries}\n", _evidence(1))
+
+    body, *parts = chunks
+    assert "min_level" not in body.meta
+    assert len(parts) > 1
+    assert all(part.meta["min_level"] == "support" for part in parts)
+    assert all("Texto curto." not in part.display for part in parts)

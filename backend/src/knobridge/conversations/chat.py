@@ -6,7 +6,7 @@ A turn has two phases, so no database transaction stays open while the LLM answe
    which commits before the response starts: it asks the retriever for sources (after the
    access checks, before locking the conversation: the retriever embeds the question over
    the network), saves the user message and saves the assistant message. Without sources it
-   saves the assistant's "no source" message as the final answer (status ``no_source``, no
+   saves the product's "no source" message as the final answer (status ``no_source``, no
    citations) and the LLM is never called. With sources it saves a ``streaming``
    placeholder with the citations.
 2. ``stream`` yields the events of the answer. On the LLM path it calls the provider outside
@@ -29,6 +29,7 @@ import anyio
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from knobridge.conversations.access import Owner, Reader, check_turn, get_owned_conversation
 from knobridge.conversations.models import (
     Conversation,
     Message,
@@ -36,18 +37,12 @@ from knobridge.conversations.models import (
     MessageStatus,
 )
 from knobridge.conversations.prompt import (
-    AssistantProfile,
+    AnswerProfile,
     HistoryItem,
     build_messages,
     title_from_question,
 )
 from knobridge.conversations.retrieval import RetrievalQuery, Retriever, citation
-from knobridge.conversations.service import (
-    Owner,
-    Reader,
-    get_active_assistant,
-    get_owned_conversation,
-)
 from knobridge.conversations.stale import interrupt_stale_streaming
 from knobridge.conversations.turn import (
     ChatEvent,
@@ -63,6 +58,7 @@ from knobridge.core.clock import Clock
 from knobridge.core.db import scoped_session
 from knobridge.core.errors import KnoBridgeError
 from knobridge.core.logging import get_logger, log_context
+from knobridge.levels.level import ResponseLevel
 from knobridge.llm.chat_pricing import ChatPriceTable
 from knobridge.llm.credentials import ProviderCredentialService
 from knobridge.llm.errors import LLMProviderError
@@ -120,19 +116,25 @@ class ChatService:
         """Save the question and the answer's starting point (phase 1, see module doc).
 
         ``reader`` is the person who owns the conversation or, in the public API, the key
-        that owns it; both messages take the conversation's channel.
+        that owns it; both messages take the conversation's channel, product and level.
+        Before anything else (and before the embedding), the product must be active and the
+        conversation's level within the asker's current maximum and configured
+        (``access.check_turn``): an admin may have lowered the maximum since it started.
         """
         started_at = self._clock.now()
         conversation = await get_owned_conversation(db, workspace_id, conversation_id, reader)
         user_id = reader.user_id if isinstance(reader, Reader) else None
-        assistant = await get_active_assistant(db, workspace_id, conversation.assistant_id)
+        level = conversation.level
+        access = await check_turn(db, workspace_id, conversation.product_id, level, reader)
+        product, settings = access.product, access.settings
         # Retrieval embeds the question over the network: done after the access checks but
         # before locking the conversation, so concurrent questions do not queue behind it.
         sources = await self._retriever.retrieve(
             db,
             RetrievalQuery(
                 workspace_id=workspace_id,
-                assistant_id=assistant.id,
+                product_id=product.id,
+                level=level,
                 user_id=user_id,
                 text=question,
             ),
@@ -161,7 +163,7 @@ class ChatService:
                 conversation,
                 position + 1,
                 MessageRole.ASSISTANT,
-                assistant.no_source_message,
+                product.no_source_message,
                 status=MessageStatus.NO_SOURCE,
             )
             answer.latency_ms = self._elapsed_ms(started_at)
@@ -177,22 +179,29 @@ class ChatService:
                 started_at=started_at,
                 fallback=answer.content,
                 latency_ms=answer.latency_ms,
-                ticket_requests_enabled=assistant.ticket_webhook_configured,
+                ticket_requests_enabled=product.ticket_webhook_configured,
                 settled=True,
+                product_id=product.id,
+                level=level,
             )
-        citations = [citation(index, source) for index, source in enumerate(sources, start=1)]
-        credential = await self._credential(db, workspace_id, assistant.credential_id)
-        profile = AssistantProfile(
-            system_prompt=assistant.system_prompt,
-            language=assistant.language,
-            tone=assistant.tone,
-            no_source_message=assistant.no_source_message,
+        # An end-user answer never shows a knowledge item's evidence (code paths and excerpts).
+        with_evidence = level is not ResponseLevel.END_USER
+        citations = [
+            citation(index, source, with_evidence=with_evidence)
+            for index, source in enumerate(sources, start=1)
+        ]
+        profile = AnswerProfile(
+            level_instructions=settings.instructions,
+            product_instructions=product.instructions,
+            language=product.language,
+            tone=product.tone,
+            no_source_message=product.no_source_message,
         )
         answer = self._message(
             conversation, position + 1, MessageRole.ASSISTANT, "", status=MessageStatus.STREAMING
         )
         answer.citations = list(citations)
-        answer.model = assistant.model
+        answer.model = settings.model
         db.add(answer)
         await db.flush()
         return PreparedTurn(
@@ -204,12 +213,14 @@ class ChatService:
             citations=citations,
             started_at=started_at,
             llm=LLMCall(
-                open_provider=self._opener(credential),
-                model=assistant.model,
+                open_provider=self._opener(settings.credential),
+                model=settings.model,
                 messages=build_messages(profile, sources, history, question),
-                params=ChatParams(temperature=assistant.temperature),
+                params=ChatParams(temperature=settings.temperature),
             ),
-            ticket_requests_enabled=assistant.ticket_webhook_configured,
+            ticket_requests_enabled=product.ticket_webhook_configured,
+            product_id=product.id,
+            level=level,
         )
 
     def stream(self, turn: PreparedTurn) -> AsyncGenerator[ChatEvent]:
@@ -233,7 +244,7 @@ class ChatService:
 
     async def _stream_fallback(self, turn: PreparedTurn) -> AsyncGenerator[ChatEvent]:
         assert turn.fallback is not None  # noqa: S101 - set together with llm=None by prepare
-        yield CitationsEvent(turn.message_id, turn.user_message_id, [])
+        yield CitationsEvent(turn.message_id, turn.user_message_id, [], turn.product_id, turn.level)
         yield DeltaEvent(turn.fallback)
         yield DoneEvent(
             message_id=turn.message_id,
@@ -246,7 +257,9 @@ class ChatService:
         )
 
     async def _stream_llm(self, turn: PreparedTurn, call: LLMCall) -> AsyncGenerator[ChatEvent]:
-        yield CitationsEvent(turn.message_id, turn.user_message_id, turn.citations)
+        yield CitationsEvent(
+            turn.message_id, turn.user_message_id, turn.citations, turn.product_id, turn.level
+        )
         parts: list[str] = []
         usage = ChatUsage(input_tokens=None, output_tokens=None)
         # Stays INTERRUPTED unless the provider finished or failed (client disconnect).
@@ -384,20 +397,6 @@ class ChatService:
             .limit(self._history_window)
         )
         return [HistoryItem(role=row.role, content=row.content) for row in reversed(rows.all())]
-
-    @staticmethod
-    async def _credential(
-        db: AsyncSession, workspace_id: uuid.UUID, credential_id: uuid.UUID
-    ) -> ProviderCredential:
-        # The composite foreign key guarantees it exists in the same workspace.
-        return (
-            await db.scalars(
-                select(ProviderCredential).where(
-                    ProviderCredential.workspace_id == workspace_id,
-                    ProviderCredential.id == credential_id,
-                )
-            )
-        ).one()
 
     @staticmethod
     def _message(

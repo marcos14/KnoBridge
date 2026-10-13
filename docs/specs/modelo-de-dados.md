@@ -1,6 +1,8 @@
 # Modelo de dados
 
-> v1.0 · 2026-10-13 · Em uso (planos 0002 a 0005, 0008 e 0009)
+> v1.1 · 2026-10-13 · Em uso (planos 0002 a 0005, 0008 e 0009)
+>
+> **Mudanças da v1.1**: migração `0019` (plano 0009, F2.2): `products` perde `credential_id`, `model` e `temperature` (a resposta usa os do nível da conversa, em [`workspace_levels`](#workspace_levels)); o lote de ingestão passa a gravar `documents.min_level` e `chunks.min_level` (o maior entre fonte, documento e trecho) e a mudança do nível de uma fonte recalcula `chunks.min_level` sem reindexar ([indexacao.md](indexacao.md#nível-mínimo)).
 >
 > **Mudanças da v1.0**: migração `0018` (plano 0009, F1.2; [ADR 0008](../adr/0008-produtos-e-niveis.md), contrato em [produtos-e-niveis.md](produtos-e-niveis.md)): `assistants` vira [`products`](#products) com os mesmos ids (`system_prompt` vira `instructions`) e `assistant_collections` vira [`product_collections`](#product_collections); `conversations.product_id`, `ticket_requests.product_id` e `api_keys.product_ids` no lugar dos `assistant_*`, com os mesmos valores; tabelas novas [`workspace_levels`](#workspace_levels) e [`member_product_levels`](#member_product_levels); `level` em `conversations` e `messages` (que ganha também `product_id`), `max_level` em `api_keys`; nível mínimo em `sources`, `documents` e `chunks` ([Nível mínimo no índice](#nível-mínimo-no-índice)); `invitations.product_levels`; `sources.kind` aceita `cards`, `documents.kind` e `run_items.document_kind` aceitam `card` ([cards.md](cards.md)).
 >
@@ -134,15 +136,11 @@ erDiagram
         varchar key_last4 "exibição ****1234"
     }
     workspaces ||--o{ products : "configura"
-    provider_credentials ||--o{ products : "usada por (transitório)"
     products {
         uuid id PK "o do assistente de origem"
         uuid workspace_id FK
         varchar name "único por workspace; sem :nível no fim"
         text instructions "texto extra do produto"
-        uuid credential_id FK "transitório"
-        varchar model "transitório"
-        float temperature "transitório"
         varchar language "pt-BR"
         varchar tone "neutral | formal | friendly"
         text no_source_message "nunca vazia"
@@ -612,11 +610,11 @@ Chave de API de um provedor de LLM, por workspace (plano 0002, F4.1), em [`backe
 | `key_ciphertext` | `text` | `v<versão da chave>.<base64url(nonce ‖ cifrado ‖ tag)>`. Recifrado a cada troca de chave. |
 | `key_last4` | `varchar(4)` | Últimos 4 caracteres da chave (que tem no mínimo 8), para exibição. |
 
-Único extra `uq_provider_credentials_workspace_id_id` (`workspace_id`, `id`), alvo das FKs compostas de `products` (colunas transitórias), `collections` e `workspace_levels`. Credencial em uso por um produto, uma coleção ou um nível não pode ser excluída (409 `provider_in_use`).
+Único extra `uq_provider_credentials_workspace_id_id` (`workspace_id`, `id`), alvo das FKs compostas de `collections` e `workspace_levels`. Credencial em uso por uma coleção ou um nível não pode ser excluída (409 `provider_in_use`).
 
 ### `products`
 
-Um produto do workspace: o sistema sobre o qual as pessoas perguntam (plano 0009; [produtos-e-niveis.md](produtos-e-niveis.md#produto)). Até a `0018`, a tabela era `assistants` (plano 0002, F4.3): a migração renomeou a tabela, a coluna `system_prompt` (agora `instructions`), as restrições e as políticas, e manteve os ids, então conversas, chaves, pedidos de chamado e o segredo do webhook continuam valendo ([migração dos assistentes](#migração-dos-assistentes-0018)). Modelo ORM `Product` em `backend/src/knobridge/products/models.py` (o pacote `assistants/` ainda o usa pelo apelido `Assistant` até as rotas de produtos entrarem). Dado de workspace com RLS forçada, com o predicado padrão em políticas separadas: `products_select`, `products_insert`, `products_update` e `products_delete`. A auditoria dos produtos e dos assistentes de antes fica em [produtos-e-niveis.md](produtos-e-niveis.md#auditoria).
+Um produto do workspace: o sistema sobre o qual as pessoas perguntam (plano 0009; [produtos-e-niveis.md](produtos-e-niveis.md#produto)). Até a `0018`, a tabela era `assistants` (plano 0002, F4.3): a migração renomeou a tabela, a coluna `system_prompt` (agora `instructions`), as restrições e as políticas, e manteve os ids, então conversas, chaves, pedidos de chamado e o segredo do webhook continuam valendo ([migração dos assistentes](#migração-dos-assistentes-0018)). Modelo ORM `Product` em `backend/src/knobridge/products/models.py` (o pacote `assistants/` saiu na F2.2 do plano 0009). Dado de workspace com RLS forçada, com o predicado padrão em políticas separadas: `products_select`, `products_insert`, `products_update` e `products_delete`. A auditoria dos produtos e dos assistentes de antes fica em [produtos-e-niveis.md](produtos-e-niveis.md#auditoria).
 
 | Coluna | Tipo | Regras |
 |---|---|---|
@@ -624,7 +622,7 @@ Um produto do workspace: o sistema sobre o qual as pessoas perguntam (plano 0009
 | `name` | `varchar(200)` | Obrigatório; único por workspace (`uq_products_workspace_id_name`). Não termina em `:end_user`, `:support` nem `:product_dev` (`ck_products_name_without_level`), porque o nome é o `model` da API compatível com OpenAI; a `0018` trocou o último `:` desses nomes por ` - ` (com ` (2)`, ` (3)`... se o nome novo já existia). |
 | `description` | `text` | Até 1000 caracteres (validado na API); vazio permitido. |
 | `instructions` | `text` | Texto extra do produto, acrescentado depois das instruções do nível; até 20000 caracteres (validado na API); vazio permitido. Era `system_prompt`. |
-| `credential_id`, `model`, `temperature` | `uuid`, `varchar(200)`, `double precision` | **Transitórios** (plano 0009): a credencial, o modelo e a temperatura do assistente de origem, que o chat ainda lê até passar a ler o nível ([`workspace_levels`](#workspace_levels)); saem numa migração seguinte do mesmo plano. FK composta `(workspace_id, credential_id)` → `provider_credentials (workspace_id, id)` (`fk_products_workspace_id_provider_credentials`), `NO ACTION`; temperatura de 0 a 2 (`ck_products_temperature_range`). |
+| ~~`credential_id`, `model`, `temperature`~~ | | Removidas pela migração `0019` (plano 0009, F2.2): a credencial, o modelo e a temperatura de uma resposta são os do nível da conversa ([`workspace_levels`](#workspace_levels)). O `downgrade` da `0019` devolve a cada produto os do nível `product_dev` do workspace e falha se um workspace com produtos tiver esse nível sem modelo. |
 | `language` | `varchar(35)` | Tag BCP 47 das respostas; padrão da API `pt-BR`. |
 | `tone` | `varchar(32)` | `neutral`, `formal` ou `friendly` (`ck_products_tone`). |
 | `no_source_message` | `text` | Resposta quando não há fonte (regra 8 do AGENTS.md). Nunca vazia (`ck_products_no_source_message_not_empty`): vazio ou nulo na API grava a mensagem padrão em pt-BR, que diz que não sabe e oferece abrir chamado. |
@@ -699,7 +697,7 @@ Numa transação, em modo de sistema (`app.system` local à transação, porque 
 
 ### `conversations`
 
-Conversa de um membro (canal `panel`) ou de uma chave de API (canal `api`, desde a `0017`; [api-publica.md](api-publica.md#conversas-da-api)) sobre um produto, num nível (plano 0002, F4.4; produto e nível desde a `0018`), em [`backend/src/knobridge/conversations/`](../../backend/src/knobridge/conversations/AGENTS.md). Dado de workspace com RLS forçada e uma política padrão (`conversations_workspace`, `USING` e `WITH CHECK`). A privacidade entre membros é regra da aplicação: só o dono envia mensagens e exclui; owner e admin do workspace leem qualquer conversa; os demais recebem 404. Owner e admin também têm a visão administrativa (plano 0002, F4.5: `/v1/workspaces/{id}/admin/conversations`, com contagens por conversa e totais do período, em consultas de número constante de statements). Só a exclusão é auditada (`conversation.deleted`, com `assistant_id` e `message_count`, sem conteúdo).
+Conversa de um membro (canal `panel`) ou de uma chave de API (canal `api`, desde a `0017`; [api-publica.md](api-publica.md#conversas-da-api)) sobre um produto, num nível (plano 0002, F4.4; produto e nível desde a `0018`), em [`backend/src/knobridge/conversations/`](../../backend/src/knobridge/conversations/AGENTS.md). Dado de workspace com RLS forçada e uma política padrão (`conversations_workspace`, `USING` e `WITH CHECK`). A privacidade entre membros é regra da aplicação: só o dono envia mensagens e exclui; owner e admin do workspace leem qualquer conversa; os demais recebem 404. Owner e admin também têm a visão administrativa (plano 0002, F4.5: `/v1/workspaces/{id}/admin/conversations`, com contagens por conversa e totais do período, em consultas de número constante de statements). Só a exclusão é auditada (`conversation.deleted`, com `product_id`, `level` e `message_count`, sem conteúdo; até a F2.1 do plano 0009, `assistant_id` e `message_count`).
 
 | Coluna | Tipo | Regras |
 |---|---|---|

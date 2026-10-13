@@ -41,7 +41,7 @@ class MonthCostOut(BaseModel):
     partial: bool
 
 
-ChecklistKey = Literal["provider", "collection", "source", "assistant", "chat"]
+ChecklistKey = Literal["provider", "collection", "source", "levels", "product", "chat"]
 
 
 class ChecklistItemOut(BaseModel):

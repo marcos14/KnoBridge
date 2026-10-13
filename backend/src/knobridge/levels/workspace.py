@@ -12,7 +12,6 @@ instructions.
 from __future__ import annotations
 
 import uuid
-from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
@@ -83,13 +82,15 @@ class LevelChanges:
 
 
 @dataclass(frozen=True)
-class LevelModel:
-    """The credential, model and temperature an answer of a level uses."""
+class AnswerSettings:
+    """What an answer of a level uses: the credential, model and temperature, and the
+    instructions (the workspace's text, or the KnoBridge default)."""
 
     level: ResponseLevel
-    credential_id: uuid.UUID
+    credential: ProviderCredential
     model: str
     temperature: float
+    instructions: str
 
 
 def _invalid(field: str, message: str) -> ValidationError:
@@ -99,26 +100,46 @@ def _invalid(field: str, message: str) -> ValidationError:
     )
 
 
-async def first_configured_level(
-    db: AsyncSession, *, workspace_id: uuid.UUID, levels: Sequence[ResponseLevel]
-) -> LevelModel:
-    """The model of the first configured level among ``levels`` (in the given order);
-    409 ``level_not_configured`` with the first one when none is."""
-    rows = {
-        row.level: row
-        for row in await db.scalars(
-            select(WorkspaceLevel).where(
-                WorkspaceLevel.workspace_id == workspace_id, WorkspaceLevel.level.in_(levels)
+def not_configured(level: ResponseLevel) -> LevelNotConfiguredError:
+    return LevelNotConfiguredError(
+        "The level has no provider and model in this workspace.",
+        details={"level": level.value},
+    )
+
+
+async def answer_settings(
+    db: AsyncSession, *, workspace_id: uuid.UUID, level: ResponseLevel
+) -> AnswerSettings:
+    """The configuration of ``level`` with its credential (one query); 409
+    ``level_not_configured`` when the level has no credential and model (the inner join
+    finds no row: credential and model are set or cleared together)."""
+    row = (
+        await db.execute(
+            select(WorkspaceLevel, WorkspaceLevel.model, ProviderCredential)
+            .join(
+                ProviderCredential,
+                (ProviderCredential.workspace_id == WorkspaceLevel.workspace_id)
+                & (ProviderCredential.id == WorkspaceLevel.credential_id),
+            )
+            .where(
+                WorkspaceLevel.workspace_id == workspace_id,
+                WorkspaceLevel.level == level,
+                WorkspaceLevel.model.is_not(None),
             )
         )
-    }
-    for level in levels:
-        row = rows.get(level)
-        if row is not None and row.credential_id is not None and row.model is not None:
-            return LevelModel(level, row.credential_id, row.model, row.temperature)
-    raise LevelNotConfiguredError(
-        "The level has no provider and model in this workspace.",
-        details={"level": levels[0].value},
+    ).one_or_none()
+    if row is None:
+        raise not_configured(level)
+    settings, model, credential = row
+    assert model is not None  # noqa: S101 - filtered by the query above
+    return AnswerSettings(
+        level=level,
+        credential=credential,
+        model=model,
+        temperature=settings.temperature,
+        instructions=(
+            default_instructions(level) if settings.instructions is None else settings.instructions
+        ),
     )
 
 

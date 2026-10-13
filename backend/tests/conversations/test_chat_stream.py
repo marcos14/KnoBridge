@@ -46,6 +46,7 @@ from knobridge.core.clock import FrozenClock
 from knobridge.core.db import scoped_session
 from knobridge.llm.models import ProviderKind
 from knobridge.llm.provider import LLMProvider
+from knobridge.tenancy.models import Role
 
 pytestmark = pytest.mark.integration
 
@@ -77,7 +78,7 @@ async def _prepare(factory: SessionFactory, chat: ChatService, seeded: Seeded) -
             db,
             workspace_id=seeded.workspace_id,
             conversation_id=seeded.conversation_id,
-            reader=Reader(user_id=seeded.user_id, can_read_all=False),
+            reader=Reader(user_id=seeded.user_id, can_read_all=False, role=Role.OWNER),
             question="Como fecho o caixa?",
         )
 

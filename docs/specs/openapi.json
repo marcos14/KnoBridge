@@ -67,15 +67,6 @@
             ],
             "title": "Api Key Name"
           },
-          "assistant_id": {
-            "format": "uuid",
-            "title": "Assistant Id",
-            "type": "string"
-          },
-          "assistant_name": {
-            "title": "Assistant Name",
-            "type": "string"
-          },
           "channel": {
             "$ref": "#/components/schemas/ConversationChannel"
           },
@@ -101,12 +92,24 @@
             ],
             "title": "Last Message At"
           },
+          "level": {
+            "$ref": "#/components/schemas/ResponseLevel"
+          },
           "message_count": {
             "title": "Message Count",
             "type": "integer"
           },
           "messages": {
             "$ref": "#/components/schemas/AdminMessagePage"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "product_name": {
+            "title": "Product Name",
+            "type": "string"
           },
           "thumbs_down": {
             "title": "Thumbs Down",
@@ -171,8 +174,9 @@
           "id",
           "title",
           "channel",
-          "assistant_id",
-          "assistant_name",
+          "product_id",
+          "product_name",
+          "level",
           "user_id",
           "user_name",
           "user_email",
@@ -214,15 +218,6 @@
             ],
             "title": "Api Key Name"
           },
-          "assistant_id": {
-            "format": "uuid",
-            "title": "Assistant Id",
-            "type": "string"
-          },
-          "assistant_name": {
-            "title": "Assistant Name",
-            "type": "string"
-          },
           "channel": {
             "$ref": "#/components/schemas/ConversationChannel"
           },
@@ -248,9 +243,21 @@
             ],
             "title": "Last Message At"
           },
+          "level": {
+            "$ref": "#/components/schemas/ResponseLevel"
+          },
           "message_count": {
             "title": "Message Count",
             "type": "integer"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "product_name": {
+            "title": "Product Name",
+            "type": "string"
           },
           "thumbs_down": {
             "title": "Thumbs Down",
@@ -315,8 +322,9 @@
           "id",
           "title",
           "channel",
-          "assistant_id",
-          "assistant_name",
+          "product_id",
+          "product_name",
+          "level",
           "user_id",
           "user_name",
           "user_email",
@@ -974,6 +982,7 @@
           "source.tested",
           "source.sync.started",
           "source.sync.cancelled",
+          "source.min_level_changed",
           "source.reindex.started",
           "source.ingest_token_rotated",
           "source.tickets_uploaded",
@@ -1778,7 +1787,8 @@
               "provider",
               "collection",
               "source",
-              "assistant",
+              "levels",
+              "product",
               "chat"
             ],
             "title": "Key",
@@ -2379,25 +2389,30 @@
       },
       "ConversationCreate": {
         "properties": {
-          "assistant_id": {
+          "level": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResponseLevel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "product_id": {
             "format": "uuid",
-            "title": "Assistant Id",
+            "title": "Product Id",
             "type": "string"
           }
         },
         "required": [
-          "assistant_id"
+          "product_id"
         ],
         "title": "ConversationCreate",
         "type": "object"
       },
       "ConversationDetail": {
         "properties": {
-          "assistant_id": {
-            "format": "uuid",
-            "title": "Assistant Id",
-            "type": "string"
-          },
           "channel": {
             "$ref": "#/components/schemas/ConversationChannel"
           },
@@ -2411,8 +2426,20 @@
             "title": "Id",
             "type": "string"
           },
+          "level": {
+            "$ref": "#/components/schemas/ResponseLevel"
+          },
           "messages": {
             "$ref": "#/components/schemas/MessagePage"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "product_name": {
+            "title": "Product Name",
+            "type": "string"
           },
           "ticket_requests_enabled": {
             "default": false,
@@ -2443,7 +2470,9 @@
         },
         "required": [
           "id",
-          "assistant_id",
+          "product_id",
+          "product_name",
+          "level",
           "user_id",
           "title",
           "channel",
@@ -2456,11 +2485,6 @@
       },
       "ConversationOut": {
         "properties": {
-          "assistant_id": {
-            "format": "uuid",
-            "title": "Assistant Id",
-            "type": "string"
-          },
           "channel": {
             "$ref": "#/components/schemas/ConversationChannel"
           },
@@ -2472,6 +2496,18 @@
           "id": {
             "format": "uuid",
             "title": "Id",
+            "type": "string"
+          },
+          "level": {
+            "$ref": "#/components/schemas/ResponseLevel"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "product_name": {
+            "title": "Product Name",
             "type": "string"
           },
           "title": {
@@ -2498,7 +2534,9 @@
         },
         "required": [
           "id",
-          "assistant_id",
+          "product_id",
+          "product_name",
+          "level",
           "user_id",
           "title",
           "channel",
@@ -9079,6 +9117,10 @@
       },
       "SearchRequest": {
         "properties": {
+          "level": {
+            "$ref": "#/components/schemas/ResponseLevel",
+            "default": "product_dev"
+          },
           "limit": {
             "default": 10,
             "maximum": 50.0,
@@ -9509,6 +9551,16 @@
           "kind": {
             "$ref": "#/components/schemas/SourceKind"
           },
+          "min_level": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResponseLevel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "name": {
             "maxLength": 200,
             "minLength": 1,
@@ -9610,6 +9662,13 @@
               }
             ]
           },
+          "min_level": {
+            "$ref": "#/components/schemas/ResponseLevel"
+          },
+          "min_level_is_default": {
+            "title": "Min Level Is Default",
+            "type": "boolean"
+          },
           "name": {
             "title": "Name",
             "type": "string"
@@ -9658,6 +9717,8 @@
           "schedule_cron",
           "schedule_enabled",
           "active",
+          "min_level",
+          "min_level_is_default",
           "next_run_at",
           "document_count",
           "last_run",
@@ -9810,6 +9871,16 @@
               }
             ],
             "title": "Include Globs"
+          },
+          "min_level": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResponseLevel"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "name": {
             "anyOf": [
@@ -11218,7 +11289,8 @@
         "enum": [
           "source",
           "collection",
-          "assistant",
+          "product",
+          "level",
           "channel",
           "api_key",
           "model",
@@ -11250,7 +11322,7 @@
             "type": "array"
           },
           "totals": {
-            "$ref": "#/components/schemas/UsageTotalsOut"
+            "$ref": "#/components/schemas/UsageReportTotalsOut"
           }
         },
         "required": [
@@ -11261,6 +11333,93 @@
           "rows"
         ],
         "title": "UsageReportOut",
+        "type": "object"
+      },
+      "UsageReportTotalsOut": {
+        "description": "The totals of a report; the embedding columns are null when it is filtered by product\nor level (embeddings belong to neither).",
+        "properties": {
+          "answers": {
+            "title": "Answers",
+            "type": "integer"
+          },
+          "chat_cost_usd": {
+            "title": "Chat Cost Usd",
+            "type": "number"
+          },
+          "chat_input_tokens": {
+            "title": "Chat Input Tokens",
+            "type": "integer"
+          },
+          "chat_output_tokens": {
+            "title": "Chat Output Tokens",
+            "type": "integer"
+          },
+          "cost_usd": {
+            "title": "Cost Usd",
+            "type": "number"
+          },
+          "embedding_cost_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Embedding Cost Usd"
+          },
+          "embedding_tokens": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Embedding Tokens"
+          },
+          "runs": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Runs"
+          },
+          "unpriced_answers": {
+            "title": "Unpriced Answers",
+            "type": "integer"
+          },
+          "unpriced_runs": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unpriced Runs"
+          }
+        },
+        "required": [
+          "embedding_tokens",
+          "embedding_cost_usd",
+          "runs",
+          "unpriced_runs",
+          "chat_input_tokens",
+          "chat_output_tokens",
+          "chat_cost_usd",
+          "answers",
+          "unpriced_answers",
+          "cost_usd"
+        ],
+        "title": "UsageReportTotalsOut",
         "type": "object"
       },
       "UsageRowOut": {
@@ -11392,64 +11551,6 @@
           "cost_usd"
         ],
         "title": "UsageRowOut",
-        "type": "object"
-      },
-      "UsageTotalsOut": {
-        "properties": {
-          "answers": {
-            "title": "Answers",
-            "type": "integer"
-          },
-          "chat_cost_usd": {
-            "title": "Chat Cost Usd",
-            "type": "number"
-          },
-          "chat_input_tokens": {
-            "title": "Chat Input Tokens",
-            "type": "integer"
-          },
-          "chat_output_tokens": {
-            "title": "Chat Output Tokens",
-            "type": "integer"
-          },
-          "cost_usd": {
-            "title": "Cost Usd",
-            "type": "number"
-          },
-          "embedding_cost_usd": {
-            "title": "Embedding Cost Usd",
-            "type": "number"
-          },
-          "embedding_tokens": {
-            "title": "Embedding Tokens",
-            "type": "integer"
-          },
-          "runs": {
-            "title": "Runs",
-            "type": "integer"
-          },
-          "unpriced_answers": {
-            "title": "Unpriced Answers",
-            "type": "integer"
-          },
-          "unpriced_runs": {
-            "title": "Unpriced Runs",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "embedding_tokens",
-          "embedding_cost_usd",
-          "runs",
-          "unpriced_runs",
-          "chat_input_tokens",
-          "chat_output_tokens",
-          "chat_cost_usd",
-          "answers",
-          "unpriced_answers",
-          "cost_usd"
-        ],
-        "title": "UsageTotalsOut",
         "type": "object"
       },
       "UserCounts": {
@@ -13150,7 +13251,7 @@
             "description": "Conversation not found for this key, or its assistant left the key's scope."
           },
           "409": {
-            "description": "The assistant is inactive (`assistant_inactive`)."
+            "description": "The product is inactive (`product_inactive`) or the level of the conversation has no model (`level_not_configured`)."
           },
           "413": {
             "description": "Body above 64 KiB (`payload_too_large`)."
@@ -14238,7 +14339,7 @@
     },
     "/v1/workspaces/{workspace_id}/admin/conversations": {
       "get": {
-        "description": "The conversations of every member and API key, most recently active first.\n\nFilters: assistant, user, channel (``panel`` or ``api``), API key, creation period\n``[created_from, created_to)`` and ``negative_feedback`` (only conversations with at least\none thumbs down).",
+        "description": "The conversations of every member and API key, most recently active first.\n\nFilters: product, level, user, channel (``panel`` or ``api``), API key, creation period\n``[created_from, created_to)`` and ``negative_feedback`` (only conversations with at least\none thumbs down).",
         "operationId": "list_workspace_conversations_v1_workspaces__workspace_id__admin_conversations_get",
         "parameters": [
           {
@@ -14253,7 +14354,7 @@
           },
           {
             "in": "query",
-            "name": "assistant_id",
+            "name": "product_id",
             "required": false,
             "schema": {
               "anyOf": [
@@ -14265,7 +14366,23 @@
                   "type": "null"
                 }
               ],
-              "title": "Assistant Id"
+              "title": "Product Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "level",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ResponseLevel"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Level"
             }
           },
           {
@@ -15392,7 +15509,7 @@
     },
     "/v1/workspaces/{workspace_id}/collections/{collection_id}/search": {
       "post": {
-        "description": "The chunks of the collection that best answer ``query``, best first; may be empty.",
+        "description": "The chunks of the collection that best answer ``query`` at ``level``, best first; may\nbe empty.",
         "operationId": "search_collection_v1_workspaces__workspace_id__collections__collection_id__search_post",
         "parameters": [
           {
@@ -15441,7 +15558,7 @@
             "description": "No live session (standard error shape)."
           },
           "403": {
-            "description": "Workspace suspended or CSRF failure (`csrf_failed`)."
+            "description": "Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
           },
           "404": {
             "description": "Workspace or collection not found, or caller is not a member."
@@ -15533,7 +15650,7 @@
     },
     "/v1/workspaces/{workspace_id}/conversations": {
       "get": {
-        "description": "The caller's own conversations, most recently active first.",
+        "description": "The caller's own conversations, most recently active first; ``product_id`` and\n``level`` narrow them.",
         "operationId": "list_conversations_v1_workspaces__workspace_id__conversations_get",
         "parameters": [
           {
@@ -15544,6 +15661,39 @@
               "format": "uuid",
               "title": "Workspace Id",
               "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "product_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Product Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "level",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ResponseLevel"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Level"
             }
           },
           {
@@ -15607,7 +15757,7 @@
         ]
       },
       "post": {
-        "description": "Start a conversation with an active assistant of the workspace.",
+        "description": "Start a conversation about an active product, at ``level`` (omitted: the caller's\nmaximum level in the product).",
         "operationId": "create_conversation_v1_workspaces__workspace_id__conversations_post",
         "parameters": [
           {
@@ -15646,13 +15796,13 @@
             "description": "No live session (standard error shape)."
           },
           "403": {
-            "description": "Not the owner of the conversation (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
+            "description": "Not the owner of the conversation (`forbidden`), level above the caller's maximum in the product (`level_not_allowed`, with `details.requested_level`, `details.max_level` and `details.reason`), workspace suspended or CSRF failure (`csrf_failed`)."
           },
           "404": {
-            "description": "Workspace or conversation not found, or not visible to the caller."
+            "description": "Workspace or product not found, or (for a viewer) the product is inactive."
           },
           "409": {
-            "description": "The assistant is inactive (`assistant_inactive`)."
+            "description": "The product is inactive (`product_inactive`) or the level has no provider and model in the workspace (`level_not_configured`, `details.level`)."
           },
           "422": {
             "content": {
@@ -15813,7 +15963,7 @@
     },
     "/v1/workspaces/{workspace_id}/conversations/{conversation_id}/messages": {
       "post": {
-        "description": "Ask the assistant; the answer streams as Server-Sent Events.\n\nThe question and the answer's starting point are saved (and committed) before the stream\nstarts; access errors and an inactive assistant answer with the standard JSON error.",
+        "description": "Ask about the conversation's product at its level; the answer streams as Server-Sent\nEvents.\n\nThe question and the answer's starting point are saved (and committed) before the stream\nstarts; access errors, an inactive product and a level above the caller's current maximum\nor without a model answer with the standard JSON error.",
         "operationId": "send_message_v1_workspaces__workspace_id__conversations__conversation_id__messages_post",
         "parameters": [
           {
@@ -15862,13 +16012,13 @@
             "description": "No live session (standard error shape)."
           },
           "403": {
-            "description": "Not the owner of the conversation (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
+            "description": "Not the owner of the conversation (`forbidden`), level above the caller's maximum in the product (`level_not_allowed`, with `details.requested_level`, `details.max_level` and `details.reason`), workspace suspended or CSRF failure (`csrf_failed`)."
           },
           "404": {
             "description": "Workspace or conversation not found, or not visible to the caller."
           },
           "409": {
-            "description": "The assistant is inactive (`assistant_inactive`)."
+            "description": "The product is inactive (`product_inactive`) or the level has no provider and model in the workspace (`level_not_configured`, `details.level`)."
           },
           "422": {
             "content": {
@@ -16020,7 +16170,7 @@
             "description": "Conversation or message not found, or not visible to the caller."
           },
           "409": {
-            "description": "Assistant inactive (`assistant_inactive`), webhook without URL or secret (`ticket_webhook_not_configured`) or a request already exists for the answer (`ticket_request_exists`, with `details.ticket_request_id`)."
+            "description": "Product inactive (`product_inactive`), webhook without URL or secret (`ticket_webhook_not_configured`) or a request already exists for the answer (`ticket_request_exists`, with `details.ticket_request_id`)."
           },
           "422": {
             "description": "Invalid body, or the message is not a `completed` or `no_source` answer (`validation_error`)."
@@ -16089,7 +16239,7 @@
             "description": "Conversation or message not found, or not visible to the caller."
           },
           "409": {
-            "description": "Assistant inactive (`assistant_inactive`), webhook without URL or secret (`ticket_webhook_not_configured`) or a request already exists for the answer (`ticket_request_exists`, with `details.ticket_request_id`)."
+            "description": "Product inactive (`product_inactive`), webhook without URL or secret (`ticket_webhook_not_configured`) or a request already exists for the answer (`ticket_request_exists`, with `details.ticket_request_id`)."
           },
           "422": {
             "description": "Invalid body, or the message is not a `completed` or `no_source` answer (`validation_error`)."
@@ -17400,7 +17550,7 @@
             "description": "Workspace or product not found, or caller is not a member."
           },
           "409": {
-            "description": "Name already used in the workspace (`product_name_taken`) or, on create, no level of the workspace has a model (`level_not_configured`)."
+            "description": "Name already used in the workspace (`product_name_taken`)."
           },
           "422": {
             "description": "Invalid body, name ending in `:<level>` (`product_name_invalid`), collection not in the workspace (`product_collection_invalid`), or webhook URL refused (`webhook_url_invalid`, `webhook_destination_blocked`, with `details.reason`)."
@@ -17584,7 +17734,7 @@
             "description": "Workspace or product not found, or caller is not a member."
           },
           "409": {
-            "description": "Name already used in the workspace (`product_name_taken`) or, on create, no level of the workspace has a model (`level_not_configured`)."
+            "description": "Name already used in the workspace (`product_name_taken`)."
           },
           "422": {
             "description": "Invalid body, name ending in `:<level>` (`product_name_invalid`), collection not in the workspace (`product_collection_invalid`), or webhook URL refused (`webhook_url_invalid`, `webhook_destination_blocked`, with `details.reason`)."
@@ -18719,6 +18869,22 @@
           },
           {
             "in": "query",
+            "name": "min_level",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ResponseLevel"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Min Level"
+            }
+          },
+          {
+            "in": "query",
             "name": "last_run_status",
             "required": false,
             "schema": {
@@ -18852,7 +19018,7 @@
             "description": "No live session (standard error shape)."
           },
           "403": {
-            "description": "Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
+            "description": "Role below editor, or an editor setting a minimum level other than the kind's default or changing it (`forbidden`, `details.required_role` = `admin`); workspace suspended or CSRF failure (`csrf_failed`)."
           },
           "404": {
             "description": "Workspace or source (`source_not_found`) not found, or caller is not a member."
@@ -19037,7 +19203,7 @@
             "description": "No live session (standard error shape)."
           },
           "403": {
-            "description": "Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
+            "description": "Role below editor, or an editor setting a minimum level other than the kind's default or changing it (`forbidden`, `details.required_role` = `admin`); workspace suspended or CSRF failure (`csrf_failed`)."
           },
           "404": {
             "description": "Workspace or source (`source_not_found`) not found, or caller is not a member."
@@ -20735,7 +20901,7 @@
     },
     "/v1/workspaces/{workspace_id}/usage": {
       "get": {
-        "description": "Usage of ``[from, to)`` (default: the 30 days before now), grouped by ``group_by``.",
+        "description": "Usage of ``[from, to)`` (default: the 30 days before now), grouped by ``group_by``;\n``product_id`` and ``level`` narrow the chat answers (and leave the embeddings out).",
         "operationId": "get_usage_v1_workspaces__workspace_id__usage_get",
         "parameters": [
           {
@@ -20789,6 +20955,39 @@
               ],
               "title": "To"
             }
+          },
+          {
+            "in": "query",
+            "name": "product_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Product Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "level",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ResponseLevel"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Level"
+            }
           }
         ],
         "responses": {
@@ -20812,7 +21011,7 @@
             "description": "Workspace not found or caller is not a member."
           },
           "422": {
-            "description": "Invalid query, a period whose start is not before its end (validation_error) or longer than 366 days (usage_period_too_long)."
+            "description": "Invalid query, a period whose start is not before its end (validation_error), `product_id` or `level` with `group_by` `source` or `collection` (validation_error) or a period longer than 366 days (usage_period_too_long)."
           }
         },
         "summary": "Get Usage",
@@ -20823,7 +21022,7 @@
     },
     "/v1/workspaces/{workspace_id}/usage.csv": {
       "get": {
-        "description": "The same report as CSV, with a last ``total`` line.",
+        "description": "The same report as CSV, with a last ``total`` line (``-<level>`` in the file name when\nfiltered by level).",
         "operationId": "get_usage_csv_v1_workspaces__workspace_id__usage_csv_get",
         "parameters": [
           {
@@ -20877,6 +21076,39 @@
               ],
               "title": "To"
             }
+          },
+          {
+            "in": "query",
+            "name": "product_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Product Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "level",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ResponseLevel"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Level"
+            }
           }
         ],
         "responses": {
@@ -20896,7 +21128,7 @@
             "description": "Workspace not found or caller is not a member."
           },
           "422": {
-            "description": "Invalid query, a period whose start is not before its end (validation_error) or longer than 366 days (usage_period_too_long)."
+            "description": "Invalid query, a period whose start is not before its end (validation_error), `product_id` or `level` with `group_by` `source` or `collection` (validation_error) or a period longer than 366 days (usage_period_too_long)."
           }
         },
         "summary": "Get Usage Csv",

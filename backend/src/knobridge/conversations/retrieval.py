@@ -1,9 +1,10 @@
 """The ``Retriever`` the chat asks for sources before calling the LLM.
 
-Production uses ``retrieval.retriever.HybridRetriever`` (hybrid search over the assistant's
-collections, ``docs/01-visao-do-projeto.md`` section 7.4). When it finds nothing, the answer
-is the assistant's "no source" message without calling the LLM (rule 8 of AGENTS.md: no
-answer without a source). Tests inject a fake through ``api.deps.get_retriever``.
+Production uses ``retrieval.retriever.HybridRetriever`` (hybrid search over the product's
+collections at the level of the conversation, ``docs/01-visao-do-projeto.md`` section 7.4).
+When it finds nothing, the answer is the product's "no source" message without calling the
+LLM (rule 8 of AGENTS.md: no answer without a source). Tests inject a fake through
+``api.deps.get_retriever``.
 """
 
 from __future__ import annotations
@@ -16,6 +17,7 @@ from typing import Protocol
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from knobridge.audit.models import JSONValue
+from knobridge.levels.level import ResponseLevel
 
 # Characters of a source kept in the stored citation (the full text only goes to the LLM).
 SNIPPET_LENGTH = 300
@@ -82,11 +84,13 @@ class Source:
 
 @dataclass(frozen=True)
 class RetrievalQuery:
-    """What to search for and on whose behalf (permissions are filtered by ``user_id``; ``None``
-    for an API key, whose access is its scope over the assistant's collections)."""
+    """What to search for and on whose behalf: in the product's collections, only what a
+    question at ``level`` may read (permissions are filtered by ``user_id``; ``None`` for an
+    API key, whose access is its scope over the products)."""
 
     workspace_id: uuid.UUID
-    assistant_id: uuid.UUID
+    product_id: uuid.UUID
+    level: ResponseLevel
     user_id: uuid.UUID | None
     text: str
 
@@ -100,8 +104,13 @@ class Retriever(Protocol):
         ...
 
 
-def citation(index: int, source: Source) -> JSONValue:
-    """The JSON stored in ``Message.citations`` for the ``index``-th source (1-based)."""
+def citation(index: int, source: Source, *, with_evidence: bool = True) -> JSONValue:
+    """The JSON stored in ``Message.citations`` for the ``index``-th source (1-based).
+
+    ``with_evidence=False`` (answers at ``end_user``) leaves ``evidence`` ``null``: the
+    evidence of a knowledge item carries code paths and excerpts.
+    """
+    evidence = source.evidence if with_evidence else None
     return {
         "index": index,
         "title": source.title,
@@ -118,7 +127,7 @@ def citation(index: int, source: Source) -> JSONValue:
         "author": source.author,
         "date": source.date,
         "confidence": source.confidence,
-        "evidence": None if source.evidence is None else [_evidence(e) for e in source.evidence],
+        "evidence": None if evidence is None else [_evidence(e) for e in evidence],
         "ticket_number": source.ticket_number,
         "ticket_status": source.ticket_status,
         "ticket_date_kind": source.ticket_date_kind,

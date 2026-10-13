@@ -223,6 +223,7 @@ export function sourceStore(initial: Source[] = [makeSource()], options: SourceS
         schedule_cron: body.schedule_cron ?? null,
         next_run_at: null,
         document_count: 0,
+        min_level: body.min_level ?? undefined,
         last_run: null,
       });
       sources = [...sources, source].sort((a, b) => a.name.localeCompare(b.name));

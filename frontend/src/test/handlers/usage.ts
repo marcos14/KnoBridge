@@ -11,7 +11,15 @@ const CSV = "*/v1/workspaces/:workspaceId/usage.csv";
 /** The grouping a request asked for (`day` when missing or unknown, as a test convenience). */
 function requestedGroup(request: Request): UsageGroup {
   const group = new URL(request.url).searchParams.get("group_by");
-  const groups: UsageGroup[] = ["source", "collection", "assistant", "channel", "api_key", "model"];
+  const groups: UsageGroup[] = [
+    "source",
+    "collection",
+    "product",
+    "level",
+    "channel",
+    "api_key",
+    "model",
+  ];
   return groups.find((item) => item === group) ?? "day";
 }
 

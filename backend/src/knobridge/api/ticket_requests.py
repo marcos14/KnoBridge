@@ -167,7 +167,7 @@ _ERRORS: dict[int | str, dict[str, object]] = {
     },
     404: {"description": "Conversation or message not found, or not visible to the caller."},
     409: {
-        "description": "Assistant inactive (`assistant_inactive`), webhook without URL or "
+        "description": "Product inactive (`product_inactive`), webhook without URL or "
         "secret (`ticket_webhook_not_configured`) or a request already exists for the answer "
         "(`ticket_request_exists`, with `details.ticket_request_id`)."
     },

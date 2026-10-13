@@ -5,32 +5,33 @@ from __future__ import annotations
 
 import pytest
 
-from knobridge.assistants.models import AssistantTone
 from knobridge.conversations.models import MessageRole
 from knobridge.conversations.prompt import (
     TITLE_LENGTH,
-    AssistantProfile,
+    AnswerProfile,
     HistoryItem,
     build_messages,
     instructions,
     numbered_sources,
     title_from_question,
 )
-from knobridge.conversations.retrieval import SNIPPET_LENGTH, Source, citation
+from knobridge.conversations.retrieval import SNIPPET_LENGTH, EvidenceRef, Source, citation
 from knobridge.llm.provider import ChatMessage, ChatRole
+from knobridge.products.models import ProductTone
 
-PROFILE = AssistantProfile(
-    system_prompt="  Você é o suporte do ERP.  ",
+PROFILE = AnswerProfile(
+    level_instructions="  Você atende o suporte.  ",
+    product_instructions="  O produto é o ERP.  ",
     language="es",
-    tone=AssistantTone.FORMAL,
+    tone=ProductTone.FORMAL,
     no_source_message="No sé.",
 )
 
 
-def test_instructions_follow_the_assistant_prompt() -> None:
+def test_instructions_put_the_level_then_the_product_then_the_rules() -> None:
     text = instructions(PROFILE)
 
-    assert text.startswith("Você é o suporte do ERP.\n\nRegras obrigatórias")
+    assert text.startswith("Você atende o suporte.\n\nO produto é o ERP.\n\nRegras obrigatórias")
     assert "Responda no idioma es. Use um tom formal e profissional." in text
     assert "Responda somente com base nas fontes numeradas" in text
     assert "como [1] ou [2][3]" in text
@@ -38,18 +39,33 @@ def test_instructions_follow_the_assistant_prompt() -> None:
     assert "exatamente com esta mensagem e nada mais: No sé." in text
 
 
-def test_instructions_without_system_prompt_have_only_the_rules() -> None:
+def test_instructions_without_product_text_have_the_level_and_the_rules() -> None:
     text = instructions(
-        AssistantProfile(
-            system_prompt=" ",
+        AnswerProfile(
+            level_instructions="Nível.",
+            product_instructions=" ",
             language="pt-BR",
-            tone=AssistantTone.FRIENDLY,
+            tone=ProductTone.FRIENDLY,
             no_source_message="Não sei.",
         )
     )
 
-    assert text.startswith("Regras obrigatórias desta resposta:")
+    assert text.startswith("Nível.\n\nRegras obrigatórias desta resposta:")
     assert "Use um tom amigável e acessível." in text
+
+
+def test_citation_without_evidence_hides_the_knowledge_evidence() -> None:
+    evidence = EvidenceRef(path="src/caixa.ts", start_line=1, end_line=3, symbol=None, excerpt="x")
+    source = Source(title="Regra", content="A regra.", kind="knowledge", evidence=(evidence,))
+
+    hidden, shown = citation(1, source, with_evidence=False), citation(1, source)
+
+    assert isinstance(hidden, dict)
+    assert isinstance(shown, dict)
+    assert hidden["evidence"] is None
+    assert shown["evidence"] == [
+        {"path": "src/caixa.ts", "start_line": 1, "end_line": 3, "symbol": None, "excerpt": "x"}
+    ]
 
 
 def test_numbered_sources_number_from_one() -> None:

@@ -30,6 +30,8 @@ from knobridge.conversations.models import (
     MessageStatus,
 )
 from knobridge.conversations.stats import conversation_stats
+from knobridge.core.errors import ValidationError
+from knobridge.levels.level import ResponseLevel
 from knobridge.tenancy.models import Role
 
 DEFAULT_LIMIT = 50
@@ -52,8 +54,9 @@ class AdminConversationOut(BaseModel):
     # Generated from the first question; null until then.
     title: str | None
     channel: ConversationChannel
-    assistant_id: uuid.UUID
-    assistant_name: str
+    product_id: uuid.UUID
+    product_name: str
+    level: ResponseLevel
     # The member who owns it; null in the ``api`` channel, owned by a key.
     user_id: uuid.UUID | None
     user_name: str | None
@@ -130,8 +133,9 @@ def _conversation_fields(item: AdminConversation) -> dict[str, object]:
         "id": item.id,
         "title": item.title,
         "channel": item.channel,
-        "assistant_id": item.assistant_id,
-        "assistant_name": item.assistant_name,
+        "product_id": item.product_id,
+        "product_name": item.product_name,
+        "level": item.level,
         "user_id": item.user_id,
         "user_name": item.user_name,
         "user_email": item.user_email,
@@ -182,7 +186,10 @@ router = APIRouter(
 @router.get("", responses=_ERRORS)
 async def list_workspace_conversations(
     context: AdminContext,
-    assistant_id: uuid.UUID | None = None,
+    product_id: uuid.UUID | None = None,
+    level: ResponseLevel | None = None,
+    # The filter of v0.3 of the chat spec, replaced by ``product_id``: refused, not ignored.
+    assistant_id: Annotated[str | None, Query(include_in_schema=False)] = None,
     user_id: uuid.UUID | None = None,
     channel: ConversationChannel | None = None,
     api_key_id: uuid.UUID | None = None,
@@ -194,15 +201,27 @@ async def list_workspace_conversations(
 ) -> AdminConversationPageOut:
     """The conversations of every member and API key, most recently active first.
 
-    Filters: assistant, user, channel (``panel`` or ``api``), API key, creation period
+    Filters: product, level, user, channel (``panel`` or ``api``), API key, creation period
     ``[created_from, created_to)`` and ``negative_feedback`` (only conversations with at least
     one thumbs down).
     """
+    if assistant_id is not None:
+        raise ValidationError(
+            "The assistant_id filter was replaced by product_id.",
+            details=[
+                {
+                    "loc": ["query", "assistant_id"],
+                    "msg": "Replaced by product_id.",
+                    "type": "value_error",
+                }
+            ],
+        )
     page = await list_admin_conversations(
         context.db,
         workspace_id=context.workspace_id,
         filters=AdminConversationFilter(
-            assistant_id=assistant_id,
+            product_id=product_id,
+            level=level,
             user_id=user_id,
             channel=channel,
             api_key_id=api_key_id,

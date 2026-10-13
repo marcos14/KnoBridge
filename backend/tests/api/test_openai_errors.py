@@ -31,7 +31,7 @@ from knobridge.core.errors import ForbiddenError, NotFoundError, ValidationError
         ("provider_embeddings_unsupported", 422, (502, "api_error")),
         ("embedding_dimension_mismatch", 502, (502, "api_error")),
         ("workspace_suspended", 403, (403, "permission_error")),
-        ("assistant_inactive", 409, (409, "invalid_request_error")),
+        ("product_inactive", 409, (409, "invalid_request_error")),
         ("internal", 500, (500, "api_error")),
     ],
 )

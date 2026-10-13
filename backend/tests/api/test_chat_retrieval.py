@@ -16,6 +16,7 @@ from search_support import Passage, SearchWorld, add_passages, build_search_worl
 from fakes.embedding_provider import RecordingEmbeddingFactory, RecordingEmbeddingProvider
 from fakes.llm_provider import ScriptedLLMProvider, UnreachableLLMProvider
 from knobridge.ingestion.models import DocumentKind
+from knobridge.levels.level import ResponseLevel
 from knobridge.llm.errors import ProviderUnavailableError
 from knobridge.tenancy.models import Role
 
@@ -131,6 +132,43 @@ def test_chat_with_indexed_source_streams_and_cites(api: ApiEnv, chat: ChatOverr
     answer = messages(api, world.workspace_id, conversation_id)[1]
     assert answer["citations"] == citations
     assert answer["content"] == "Use o relatório Z [1]."
+
+
+def test_chunk_above_the_level_never_reaches_the_llm(api: ApiEnv, chat: ChatOverrides) -> None:
+    """End to end over the real search: the code chunk (``product_dev``) matches the question
+    better than the manual (``end_user``), and still never becomes a citation nor context of
+    an ``end_user`` answer; a ``product_dev`` conversation gets both."""
+    provider = ScriptedLLMProvider()
+    chat.provider(provider)
+    world = build_search_world(api, Role.OWNER)
+    manual_body = "Para o fechamento do caixa, emita o relatório Z no menu Caixa."
+    manual = Passage(
+        manual_body,
+        key="docs/caixa.md",
+        meta={"path": "docs/caixa.md", "display": manual_body},
+        min_level=ResponseLevel.END_USER,
+    )
+    add_passages(api, world, CODE, manual)
+    chat_world = _assistant(api, world, world.collection_id)
+    configure_level(api, world.workspace_id, str(world.provider_id), level="end_user")
+    end_user = start(api, chat_world, level="end_user")
+    product_dev = start(api, chat_world)
+
+    low = events(ask(api, world.workspace_id, end_user, QUESTION))
+    high = events(ask(api, world.workspace_id, product_dev, QUESTION))
+
+    low_citations = cast(list[dict[str, object]], low[0][1]["citations"])
+    high_citations = cast(list[dict[str, object]], high[0][1]["citations"])
+    assert [item["path"] for item in low_citations] == ["docs/caixa.md"]
+    assert {item["path"] for item in high_citations} == {"docs/caixa.md", CODE.key}
+    low_call, high_call = provider.calls
+    low_context = "\n".join(message.content for message in low_call.messages)
+    assert CODE_BODY not in low_context
+    assert "fecharCaixa" not in low_context
+    assert manual_body in low_context
+    assert CODE_BODY in high_call.messages[1].content
+    stored = messages(api, world.workspace_id, end_user)[1]["citations"]
+    assert [item["path"] for item in stored] == ["docs/caixa.md"]  # type: ignore[union-attr]
 
 
 def test_chat_below_threshold_returns_fallback_without_llm_call(

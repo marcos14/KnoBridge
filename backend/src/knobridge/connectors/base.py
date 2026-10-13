@@ -16,6 +16,7 @@ from typing import Protocol
 
 from knobridge.audit.models import JSONValue
 from knobridge.ingestion.models import DocumentKind
+from knobridge.levels.level import ResponseLevel
 
 # Opaque to the engine; must survive a JSON round trip (it is stored as JSONB).
 type Cursor = dict[str, JSONValue]
@@ -64,6 +65,9 @@ class RawDocument:
     # Hash set by a connector whose citation data lives outside ``content`` (the knowledge
     # connector: confidence and evidence), so a change there also reindexes the document.
     digest: str | None = None
+    # The connector's refinement of the document's minimum level (it only raises the
+    # source's: an inferred knowledge item is ``support``); ``None``: no refinement.
+    min_level: ResponseLevel | None = None
 
     @property
     def content_hash(self) -> str:

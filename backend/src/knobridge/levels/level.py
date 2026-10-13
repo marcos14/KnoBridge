@@ -18,7 +18,7 @@ class ResponseLevel(StrEnum):
     PRODUCT_DEV = "product_dev"
 
 
-# Temperature of the answers of a level (and, until the chat reads the levels, of a product).
+# Temperature of the answers of a level.
 MIN_TEMPERATURE = 0.0
 MAX_TEMPERATURE = 2.0
 DEFAULT_TEMPERATURE = 0.2
@@ -27,3 +27,14 @@ DEFAULT_TEMPERATURE = 0.2
 def level_rank(level: ResponseLevel) -> int:
     """``end_user`` = 0, ``support`` = 1, ``product_dev`` = 2."""
     return list(ResponseLevel).index(level)
+
+
+def levels_up_to(level: ResponseLevel) -> tuple[ResponseLevel, ...]:
+    """The levels a question at ``level`` may read: from ``end_user`` up to ``level``."""
+    return tuple(ResponseLevel)[: level_rank(level) + 1]
+
+
+def highest(*levels: ResponseLevel | None) -> ResponseLevel:
+    """The highest of the given levels (``None`` ignored); ``end_user`` when none is given."""
+    given = [level for level in levels if level is not None]
+    return max(given, key=level_rank, default=ResponseLevel.END_USER)

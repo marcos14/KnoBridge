@@ -29,6 +29,7 @@ from knobridge.core.crypto import SecretBox
 from knobridge.core.db import create_session_factory, scoped_session, system_session
 from knobridge.ingestion.models import Chunk, Collection, Document, DocumentKind, Source
 from knobridge.ingestion.source_config import SourceKind
+from knobridge.levels.level import ResponseLevel
 from knobridge.llm.credentials import CREDENTIALS_KEY_INFO, ProviderCredentialService
 from knobridge.llm.factory import EmbeddingProviderFactory, create_embedding_provider
 from knobridge.llm.fake_embeddings import fake_vector
@@ -65,6 +66,8 @@ class ChunkSpec:
     key: str = "docs/manual.md"
     position: int = 0
     meta: dict[str, JSONValue] = field(default_factory=lambda: {})
+    # Effective minimum level of the chunk (the database default, the most restrictive).
+    min_level: ResponseLevel = ResponseLevel.PRODUCT_DEV
     # Model recorded on the chunk; ``None`` = the collection's.
     model: str | None = None
 
@@ -144,6 +147,7 @@ class Db:
                     content_hash=HASH,
                     embedding_model=spec.model or collection.embedding_model,
                     embedding=fake_vector(spec.content),
+                    min_level=spec.min_level,
                 )
                 db.add(chunk)
                 await db.flush()
@@ -160,6 +164,7 @@ class Db:
         min_similarity: float = DEFAULT_MIN_SIMILARITY,
         factory: EmbeddingProviderFactory = create_embedding_provider,
         scope: uuid.UUID | None = None,
+        level: ResponseLevel = ResponseLevel.PRODUCT_DEV,
     ) -> list[SearchHit]:
         """Run the service; ``scope`` opens the session on another workspace (RLS tests)."""
         service = SearchService(credential_service(), factory)
@@ -172,6 +177,7 @@ class Db:
                 query=query,
                 limit=limit,
                 min_similarity=min_similarity,
+                level=level,
             )
 
     @contextmanager

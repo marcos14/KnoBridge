@@ -17,7 +17,7 @@ from collections.abc import Callable, Sequence
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from knobridge.connectors.base import Connector, DocumentRef
+from knobridge.connectors.base import Connector, DocumentRef, RawDocument
 from knobridge.connectors.errors import ConnectorError, SourceUnavailableError
 from knobridge.core.clock import Clock
 from knobridge.core.logging import get_logger
@@ -25,10 +25,12 @@ from knobridge.ingestion.chunking import chunk_document
 from knobridge.ingestion.connectors import ConnectorFactory
 from knobridge.ingestion.errors import IngestionError
 from knobridge.ingestion.models import Collection, RunErrorStage, RunItem, RunItemChange
-from knobridge.ingestion.parsing import parse_document
+from knobridge.ingestion.parsing import ParsedDocument, ParsedKind, parse_document
 from knobridge.ingestion.runs import RunScope, load_collection, load_source, workspace_session
 from knobridge.ingestion.settle import ItemOutcome, Settlement, settle_with
+from knobridge.ingestion.source_config import SourceKind
 from knobridge.ingestion.store import BatchStore, KnownDocument, PreparedDocument
+from knobridge.levels.level import ResponseLevel, highest
 from knobridge.llm.embeddings import EmbeddingProvider
 from knobridge.llm.factory import EmbeddingProviderFactory, embedding_provider_for
 from knobridge.llm.models import ProviderCredential
@@ -40,6 +42,18 @@ type KeyRevealer = Callable[[ProviderCredential], str]
 
 def _ref(item: RunItem) -> DocumentRef:
     return DocumentRef(item.document_key, item.document_kind)
+
+
+def document_min_level(
+    kind: SourceKind, raw: RawDocument, parsed: ParsedDocument
+) -> ResponseLevel | None:
+    """The refinement of a document's minimum level (``None``: none): the connector's, and
+    ``product_dev`` for code in a folder source, so a folder of documents with code in it
+    never hands code to an end user (``docs/specs/produtos-e-niveis.md``)."""
+    code = kind is SourceKind.FOLDER and parsed.kind is ParsedKind.CODE
+    if not code:
+        return raw.min_level
+    return highest(raw.min_level, ResponseLevel.PRODUCT_DEV)
 
 
 class Indexer:
@@ -87,7 +101,9 @@ class Indexer:
                 )
         prepared: list[PreparedDocument] = []
         for item in upserts:
-            document = await self._prepare(scope, connector, item, known.get(item.document_key))
+            document = await self._prepare(
+                scope, connector, source.kind, item, known.get(item.document_key)
+            )
             if document is not None:
                 prepared.append(document)
         if prepared:
@@ -101,7 +117,12 @@ class Indexer:
         _log.info("ingestion_batch_processed", start=start, items=len(items))
 
     async def _prepare(
-        self, scope: RunScope, connector: Connector, item: RunItem, known: KnownDocument | None
+        self,
+        scope: RunScope,
+        connector: Connector,
+        kind: SourceKind,
+        item: RunItem,
+        known: KnownDocument | None,
     ) -> PreparedDocument | None:
         ref = _ref(item)
         try:
@@ -129,6 +150,7 @@ class Indexer:
             language=parsed.language or raw.language,
             meta=dict(raw.metadata),
             chunks=chunk_document(parsed),
+            min_level=document_min_level(kind, raw, parsed),
         )
 
     async def _fail(

@@ -121,6 +121,27 @@ async def recorded_levels(
     return found
 
 
+async def member_max_level(
+    db: AsyncSession,
+    *,
+    workspace_id: uuid.UUID,
+    product_id: uuid.UUID,
+    user_id: uuid.UUID,
+    role: Role,
+) -> ResponseLevel:
+    """The person's current maximum level in the product (one query): the recorded value or
+    the default of ``role`` (their effective role, which is admin for a superadmin with access,
+    who is not a member and has no recorded value)."""
+    recorded = await db.scalar(
+        select(MemberProductLevel.max_level).where(
+            MemberProductLevel.workspace_id == workspace_id,
+            MemberProductLevel.product_id == product_id,
+            MemberProductLevel.user_id == user_id,
+        )
+    )
+    return recorded or role_default_level(role)
+
+
 async def user_product_levels(
     db: AsyncSession, *, user_id: uuid.UUID, roles: Mapping[uuid.UUID, Role]
 ) -> dict[uuid.UUID, list[UserProductLevel]]:

@@ -13,6 +13,7 @@ from decimal import Decimal
 from knobridge.audit.models import JSONValue
 from knobridge.conversations.models import MessageStatus
 from knobridge.core.errors import KnoBridgeError
+from knobridge.levels.level import ResponseLevel
 from knobridge.llm.provider import ChatMessage, ChatParams, LLMProvider
 
 type Citations = list[JSONValue]
@@ -30,6 +31,9 @@ class CitationsEvent:
     message_id: uuid.UUID
     user_message_id: uuid.UUID
     citations: Citations
+    # The conversation's product and level (chat-sse v0.9).
+    product_id: uuid.UUID | None = None
+    level: ResponseLevel | None = None
 
 
 @dataclass(frozen=True)
@@ -87,7 +91,10 @@ class PreparedTurn:
     fallback: str | None = None
     llm: LLMCall | None = None
     latency_ms: int | None = None
-    # Sent in the ``done`` event: the assistant offers to open a ticket.
+    # Sent in the ``done`` event: the product offers to open a ticket.
     ticket_requests_enabled: bool = False
     # True once the assistant message reached a final status.
     settled: bool = field(default=False)
+    # The conversation's product and level, sent in the ``citations`` event.
+    product_id: uuid.UUID | None = None
+    level: ResponseLevel | None = None

@@ -221,7 +221,10 @@ async def get_public_conversation(
             "description": "Conversation not found for this key, or its assistant left the "
             "key's scope."
         },
-        409: {"description": "The assistant is inactive (`assistant_inactive`)."},
+        409: {
+            "description": "The product is inactive (`product_inactive`) or the level of the "
+            "conversation has no model (`level_not_configured`)."
+        },
         413: {"description": "Body above 64 KiB (`payload_too_large`)."},
     },
 )

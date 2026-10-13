@@ -1,11 +1,14 @@
-"""Conversations with assistants (``/v1/workspaces/{workspace_id}/conversations``).
+"""Conversations about products (``/v1/workspaces/{workspace_id}/conversations``).
 
-Every member chats with the active assistants. A conversation belongs to who created it:
-only the owner sends messages and deletes it; owners and admins of the workspace may read any
-conversation (others get 404). Sending a message answers with Server-Sent Events
-(``citations``, ``delta``..., then ``done`` or ``error``; ``docs/specs/chat-sse.md``). Without
-sources the answer is the assistant's "no source" message, flagged ``no_source``, and the LLM
-is not called (rule 8 of AGENTS.md).
+Every member chats with the active products, at a level up to their maximum in the product
+(``docs/specs/produtos-e-niveis.md``): the level is fixed for the whole conversation and
+checked again at every question (403 ``level_not_allowed``, 409 ``level_not_configured``,
+409 ``product_inactive``). A conversation belongs to who created it: only the owner sends
+messages and deletes it; owners and admins of the workspace may read any conversation (others
+get 404). Sending a message answers with Server-Sent Events (``citations``, ``delta``..., then
+``done`` or ``error``; ``docs/specs/chat-sse.md``). Without sources the answer is the
+product's "no source" message, flagged ``no_source``, and the LLM is not called (rule 8 of
+AGENTS.md).
 """
 
 from __future__ import annotations
@@ -30,14 +33,19 @@ from knobridge.api.ticket_requests import TicketRequestOut, ticket_request_out
 from knobridge.apikeys.models import ApiKey
 from knobridge.conversations.models import (
     FEEDBACK_COMMENT_MAX_LENGTH,
-    Conversation,
     ConversationChannel,
     Feedback,
     FeedbackRating,
     MessageRole,
     MessageStatus,
 )
-from knobridge.conversations.service import MessageView, Reader
+from knobridge.conversations.service import (
+    ConversationFilter,
+    ConversationView,
+    MessageView,
+    Reader,
+)
+from knobridge.levels.level import ResponseLevel
 from knobridge.security.csrf import require_csrf
 from knobridge.tenancy.models import Role
 from knobridge.tenancy.rbac import role_at_least
@@ -74,7 +82,18 @@ _WRITE_ERRORS: dict[int | str, dict[str, object]] = {
         "or CSRF failure (`csrf_failed`)."
     },
 }
-_INACTIVE = {409: {"description": "The assistant is inactive (`assistant_inactive`)."}}
+_LEVEL_ERRORS: dict[int | str, dict[str, object]] = {
+    403: {
+        "description": "Not the owner of the conversation (`forbidden`), level above the "
+        "caller's maximum in the product (`level_not_allowed`, with `details.requested_level`, "
+        "`details.max_level` and `details.reason`), workspace suspended or CSRF failure "
+        "(`csrf_failed`)."
+    },
+    409: {
+        "description": "The product is inactive (`product_inactive`) or the level has no "
+        "provider and model in the workspace (`level_not_configured`, `details.level`)."
+    },
+}
 _SSE_DESCRIPTION = (
     "Server-Sent Events: `citations` (sources and message ids), `delta` (text, repeated), then "
     "`done` or `error`; each `data` is a JSON object (see `docs/specs/chat-sse.md`)."
@@ -82,12 +101,18 @@ _SSE_DESCRIPTION = (
 
 
 class ConversationCreate(BaseModel):
-    assistant_id: uuid.UUID
+    product_id: uuid.UUID
+    # Omitted: the caller's maximum level in the product.
+    level: ResponseLevel | None = None
 
 
 class ConversationOut(BaseModel):
     id: uuid.UUID
-    assistant_id: uuid.UUID
+    product_id: uuid.UUID
+    # The product's current name.
+    product_name: str
+    # Fixed for the whole conversation: the sources, instructions and model of every answer.
+    level: ResponseLevel
     user_id: uuid.UUID
     # Generated from the first question; null until then.
     title: str | None
@@ -204,16 +229,22 @@ class FeedbackIn(BaseModel):
     comment: Comment = ""
 
 
-def _reader(context: WorkspaceContext) -> Reader:
+def reader_of(context: WorkspaceContext) -> Reader:
+    """The caller as a reader of conversations, with their effective role."""
     return Reader(
-        user_id=context.current.user.id, can_read_all=role_at_least(context.role, Role.ADMIN)
+        user_id=context.current.user.id,
+        can_read_all=role_at_least(context.role, Role.ADMIN),
+        role=context.role,
     )
 
 
-def _conversation_fields(conversation: Conversation) -> dict[str, object]:
+def _conversation_fields(view: ConversationView) -> dict[str, object]:
+    conversation = view.conversation
     return {
         "id": conversation.id,
-        "assistant_id": conversation.assistant_id,
+        "product_id": conversation.product_id,
+        "product_name": view.product_name,
+        "level": conversation.level,
         "user_id": conversation.user_id,
         "title": conversation.title,
         "channel": conversation.channel,
@@ -256,35 +287,48 @@ router = APIRouter(prefix="/workspaces/{workspace_id}/conversations", tags=["con
     "",
     status_code=HTTPStatus.CREATED,
     dependencies=[Depends(require_csrf)],
-    responses={**_WRITE_ERRORS, **_INACTIVE},
+    responses={
+        **_WRITE_ERRORS,
+        **_LEVEL_ERRORS,
+        404: {
+            "description": "Workspace or product not found, or (for a viewer) the product is "
+            "inactive."
+        },
+    },
 )
 async def create_conversation(
     body: ConversationCreate,
     context: WorkspaceContextDep,
     conversations: ConversationServiceDep,
 ) -> ConversationOut:
-    """Start a conversation with an active assistant of the workspace."""
-    conversation = await conversations.create(
+    """Start a conversation about an active product, at ``level`` (omitted: the caller's
+    maximum level in the product)."""
+    view = await conversations.create(
         context.db,
         workspace_id=context.workspace_id,
-        user_id=context.current.user.id,
-        assistant_id=body.assistant_id,
+        reader=reader_of(context),
+        product_id=body.product_id,
+        level=body.level,
     )
-    return ConversationOut.model_validate(_conversation_fields(conversation))
+    return ConversationOut.model_validate(_conversation_fields(view))
 
 
 @router.get("", responses=_ERRORS)
 async def list_conversations(
     context: WorkspaceContextDep,
     conversations: ConversationServiceDep,
+    product_id: uuid.UUID | None = None,
+    level: ResponseLevel | None = None,
     limit: Annotated[int, Query(ge=1, le=MAX_LIMIT)] = DEFAULT_LIMIT,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> ConversationPage:
-    """The caller's own conversations, most recently active first."""
+    """The caller's own conversations, most recently active first; ``product_id`` and
+    ``level`` narrow them."""
     items, total = await conversations.list_mine(
         context.db,
         workspace_id=context.workspace_id,
         user_id=context.current.user.id,
+        filters=ConversationFilter(product_id=product_id, level=level),
         limit=limit,
         offset=offset,
     )
@@ -305,14 +349,14 @@ async def get_conversation(
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> ConversationDetail:
     """A conversation with its messages in order (owner, or owner/admin of the workspace)."""
-    reader = _reader(context)
-    conversation = await conversations.get(
+    reader = reader_of(context)
+    view = await conversations.get(
         context.db,
         workspace_id=context.workspace_id,
         conversation_id=conversation_id,
         reader=reader,
     )
-    views, total = await conversations.list_messages(
+    messages, total = await conversations.list_messages(
         context.db,
         workspace_id=context.workspace_id,
         conversation_id=conversation_id,
@@ -321,17 +365,17 @@ async def get_conversation(
         offset=offset,
     )
     requests = await requests_by_message(
-        context.db, context.workspace_id, [view.message.id for view in views]
+        context.db, context.workspace_id, [item.message.id for item in messages]
     )
     enabled = await ticket_requests_enabled(
-        context.db, context.workspace_id, conversation.assistant_id
+        context.db, context.workspace_id, view.conversation.product_id
     )
     return ConversationDetail.model_validate(
         {
-            **_conversation_fields(conversation),
+            **_conversation_fields(view),
             "ticket_requests_enabled": enabled,
             "messages": MessagePage(
-                items=[_message_out(view, requests.get(view.message.id)) for view in views],
+                items=[_message_out(item, requests.get(item.message.id)) for item in messages],
                 total=total,
                 limit=limit,
                 offset=offset,
@@ -357,7 +401,7 @@ async def delete_conversation(
         context.db,
         workspace_id=context.workspace_id,
         conversation_id=conversation_id,
-        reader=_reader(context),
+        reader=reader_of(context),
         ip=ip,
     )
 
@@ -373,7 +417,7 @@ async def delete_conversation(
             "content": {SSE_MEDIA_TYPE: {"schema": {"type": "string"}}},
         },
         **_WRITE_ERRORS,
-        **_INACTIVE,
+        **_LEVEL_ERRORS,
     },
 )
 async def send_message(
@@ -382,16 +426,18 @@ async def send_message(
     context: WorkspaceContextDep,
     chat: ChatServiceDep,
 ) -> ChatEventStream:
-    """Ask the assistant; the answer streams as Server-Sent Events.
+    """Ask about the conversation's product at its level; the answer streams as Server-Sent
+    Events.
 
     The question and the answer's starting point are saved (and committed) before the stream
-    starts; access errors and an inactive assistant answer with the standard JSON error.
+    starts; access errors, an inactive product and a level above the caller's current maximum
+    or without a model answer with the standard JSON error.
     """
     turn = await chat.prepare(
         context.db,
         workspace_id=context.workspace_id,
         conversation_id=conversation_id,
-        reader=_reader(context),
+        reader=reader_of(context),
         question=body.content,
     )
     return ChatEventStream(chat.stream(turn), on_close=lambda: chat.settle(turn))
@@ -422,7 +468,7 @@ async def set_feedback(
         workspace_id=context.workspace_id,
         conversation_id=conversation_id,
         message_id=message_id,
-        reader=_reader(context),
+        reader=reader_of(context),
         rating=body.rating,
         comment=body.comment,
     )

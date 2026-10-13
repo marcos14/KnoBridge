@@ -11,7 +11,8 @@ describe("pendingSteps", () => {
 
     expect(steps).toEqual([
       { key: "collection", to: `/w/${WORKSPACE_ID}/collections` },
-      { key: "assistant", to: `/w/${WORKSPACE_ID}/assistants` },
+      { key: "levels", to: `/w/${WORKSPACE_ID}/settings` },
+      { key: "product", to: `/w/${WORKSPACE_ID}/assistants` },
       { key: "chat", to: `/w/${WORKSPACE_ID}/chat` },
     ]);
   });
@@ -23,19 +24,20 @@ describe("pendingSteps", () => {
       ["provider", false],
       ["collection", false],
       ["source", false],
-      ["assistant", false],
+      ["levels", false],
+      ["product", false],
       ["chat", true],
     ]);
   });
 
-  it("test_pending_steps_editor_gets_every_link", () => {
+  it("test_pending_steps_editor_gets_every_link_but_the_levels", () => {
     const steps = pendingSteps(makeChecklist(), WORKSPACE_ID, "editor");
 
-    expect(steps.every(({ to }) => to !== undefined)).toBe(true);
+    expect(steps.filter(({ to }) => to === undefined).map(({ key }) => key)).toEqual(["levels"]);
   });
 
   it("test_pending_steps_is_empty_when_everything_is_done", () => {
-    const all = makeChecklist(["provider", "collection", "source", "assistant", "chat"]);
+    const all = makeChecklist(["provider", "collection", "source", "levels", "product", "chat"]);
 
     expect(pendingSteps(all, WORKSPACE_ID, "owner")).toEqual([]);
   });

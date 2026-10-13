@@ -25,6 +25,7 @@ from knobridge.api.deps import (
     get_retriever,
 )
 from knobridge.conversations.retrieval import Source
+from knobridge.levels.level import ResponseLevel
 from knobridge.llm.provider import LLMProvider
 from knobridge.tenancy.models import Role
 
@@ -65,9 +66,12 @@ def build_world(api: ApiEnv, *roles: Role, **assistant: object) -> World:
     )
     assert provider.status_code == 201, provider.text
     provider_id: str = provider.json()["id"]
-    # The model belongs to the level (the product copies it, plan 0009); written straight in
-    # the database because the first user may be an editor.
-    seed_level(api, workspace_id, provider_id, model=str(assistant.pop("model", "fake-model")))
+    # The model belongs to each level of the workspace; written straight in the database
+    # because the first user may be an editor. Every level answers, so members of any role
+    # can chat at their default level.
+    model = str(assistant.pop("model", "fake-model"))
+    for level in ResponseLevel:
+        seed_level(api, workspace_id, provider_id, level=level, model=model)
     body: dict[str, object] = {
         "name": "Suporte",
         "instructions": "Você ajuda com o ERP.",
@@ -85,11 +89,16 @@ def conversations_path(workspace_id: uuid.UUID, conversation_id: str | None = No
     return base if conversation_id is None else f"{base}/{conversation_id}"
 
 
-def start(api: ApiEnv, world: World, assistant_id: str | None = None) -> str:
+def start(
+    api: ApiEnv, world: World, assistant_id: str | None = None, *, level: str | None = None
+) -> str:
+    """A conversation about the world's product (or ``assistant_id``), at ``level`` (omitted:
+    the caller's maximum)."""
+    body: dict[str, object] = {"product_id": assistant_id or world.assistant_id}
+    if level is not None:
+        body["level"] = level
     response = api.client.post(
-        conversations_path(world.workspace_id),
-        json={"assistant_id": assistant_id or world.assistant_id},
-        headers=api.csrf_headers(),
+        conversations_path(world.workspace_id), json=body, headers=api.csrf_headers()
     )
     assert response.status_code == 201, response.text
     conversation_id: str = response.json()["id"]

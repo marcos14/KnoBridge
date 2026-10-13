@@ -26,7 +26,17 @@ function TotalsCard({
   totals: Totals;
 }) {
   const { i18n } = useTranslation();
-  const isCost = (key: keyof Totals) => key.endsWith("cost_usd");
+
+  /** The figure, or a dash when it does not apply (embeddings of a product or level report). */
+  function figure(key: keyof Totals): string {
+    const amount = totals[key];
+    if (amount === null) {
+      return "—";
+    }
+    return key.endsWith("cost_usd")
+      ? formatUsd(amount, i18n.language)
+      : formatCount(amount, i18n.language);
+  }
 
   return (
     <section aria-label={title} className="flex flex-col gap-2 rounded-md border p-3">
@@ -35,11 +45,7 @@ function TotalsCard({
         {figures.map(({ key, label }) => (
           <div key={key} className="flex flex-col gap-0.5">
             <dt className="text-muted-foreground text-xs">{label}</dt>
-            <dd className="text-lg font-semibold tabular-nums">
-              {isCost(key)
-                ? formatUsd(totals[key], i18n.language)
-                : formatCount(totals[key], i18n.language)}
-            </dd>
+            <dd className="text-lg font-semibold tabular-nums">{figure(key)}</dd>
           </div>
         ))}
       </dl>
@@ -70,7 +76,9 @@ export function UsageTotals({ report, busy }: UsageTotalsProps) {
   const { totals } = report;
   const start = formatDate(new Date(report.period_start), i18n.language, "UTC");
   const end = formatDate(new Date(Date.parse(report.period_end) - 1), i18n.language, "UTC");
-  const partial = totals.unpriced_runs > 0 || totals.unpriced_answers > 0;
+  // Runs are null when the report leaves the embeddings out (filtered by product or level).
+  const unpricedRuns = totals.unpriced_runs ?? 0;
+  const partial = unpricedRuns > 0 || totals.unpriced_answers > 0;
 
   return (
     <section aria-label={t("usage.totals.label")} aria-busy={busy} className="flex flex-col gap-3">
@@ -107,9 +115,7 @@ export function UsageTotals({ report, busy }: UsageTotalsProps) {
             <p className="font-medium">{t("usage.partial.title")}</p>
             <p>{t("usage.partial.description")}</p>
             <ul className="list-disc pl-5">
-              {totals.unpriced_runs > 0 && (
-                <li>{t("usage.partial.runs", { count: totals.unpriced_runs })}</li>
-              )}
+              {unpricedRuns > 0 && <li>{t("usage.partial.runs", { count: unpricedRuns })}</li>}
               {totals.unpriced_answers > 0 && (
                 <li>{t("usage.partial.answers", { count: totals.unpriced_answers })}</li>
               )}

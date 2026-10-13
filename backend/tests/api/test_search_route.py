@@ -47,7 +47,7 @@ def failing_embeddings(api: ApiEnv) -> Generator[RecordingEmbeddingProvider]:
 
 
 def test_search_endpoint_returns_scored_chunks_with_citation(api: ApiEnv) -> None:
-    world = build_search_world(api, Role.OWNER, Role.VIEWER)
+    world = build_search_world(api, Role.OWNER, Role.EDITOR)
     (chunk_id,) = add_passages(api, world, CODE)
     api.login(world.users[1])
 
@@ -82,6 +82,43 @@ def test_search_endpoint_returns_scored_chunks_with_citation(api: ApiEnv) -> Non
         "snippet": "// O fechamento de caixa exige o relatório Z\nexport function fecharCaixa() {}",
         "meta": CODE.meta,
     }
+
+
+def test_search_endpoint_refuses_a_viewer(api: ApiEnv) -> None:
+    """A viewer asks at ``end_user`` in the chat; here it would read every chunk."""
+    world = build_search_world(api, Role.OWNER, Role.VIEWER)
+    add_passages(api, world, CODE)
+    api.login(world.users[1])
+
+    response = api.client.post(
+        search_path(world.workspace_id, world.collection_id),
+        json={"query": QUERY},
+        headers=api.csrf_headers(),
+    )
+
+    assert response.status_code == 403
+    assert response.json()["error"]["code"] == "forbidden"
+    assert response.json()["error"]["details"] == {"required_role": "editor"}
+
+
+def test_search_endpoint_filters_by_level(api: ApiEnv) -> None:
+    world = build_search_world(api, Role.EDITOR)
+    add_passages(api, world, CODE)
+
+    def keys(body: dict[str, object]) -> list[object]:
+        response = api.client.post(
+            search_path(world.workspace_id, world.collection_id),
+            json={"query": QUERY, **body},
+            headers=api.csrf_headers(),
+        )
+        assert response.status_code == 200, response.text
+        return [item["document"]["key"] for item in response.json()["results"]]
+
+    # The passage is code: ``product_dev`` (the default, every chunk) only.
+    assert keys({}) == ["src/caixa/fechamento.ts"]
+    assert keys({"level": "product_dev"}) == ["src/caixa/fechamento.ts"]
+    assert keys({"level": "support"}) == []
+    assert keys({"level": "end_user"}) == []
 
 
 def test_search_endpoint_returns_empty_for_unrelated_question(api: ApiEnv) -> None:

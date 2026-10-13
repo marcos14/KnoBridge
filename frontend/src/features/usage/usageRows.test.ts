@@ -32,7 +32,8 @@ describe("usageColumns", () => {
       "answers",
       "cost_usd",
     ];
-    expect(usageColumns("assistant")).toEqual(chat);
+    expect(usageColumns("product")).toEqual(chat);
+    expect(usageColumns("level")).toEqual(chat);
     expect(usageColumns("channel")).toEqual(chat);
     expect(usageColumns("api_key")).toEqual(chat);
   });

@@ -888,7 +888,7 @@ export interface paths {
          * List Workspace Conversations
          * @description The conversations of every member and API key, most recently active first.
          *
-         *     Filters: assistant, user, channel (``panel`` or ``api``), API key, creation period
+         *     Filters: product, level, user, channel (``panel`` or ``api``), API key, creation period
          *     ``[created_from, created_to)`` and ``negative_feedback`` (only conversations with at least
          *     one thumbs down).
          */
@@ -1082,7 +1082,8 @@ export interface paths {
         put?: never;
         /**
          * Search Collection
-         * @description The chunks of the collection that best answer ``query``, best first; may be empty.
+         * @description The chunks of the collection that best answer ``query`` at ``level``, best first; may
+         *     be empty.
          */
         post: operations["search_collection_v1_workspaces__workspace_id__collections__collection_id__search_post"];
         delete?: never;
@@ -1120,13 +1121,15 @@ export interface paths {
         };
         /**
          * List Conversations
-         * @description The caller's own conversations, most recently active first.
+         * @description The caller's own conversations, most recently active first; ``product_id`` and
+         *     ``level`` narrow them.
          */
         get: operations["list_conversations_v1_workspaces__workspace_id__conversations_get"];
         put?: never;
         /**
          * Create Conversation
-         * @description Start a conversation with an active assistant of the workspace.
+         * @description Start a conversation about an active product, at ``level`` (omitted: the caller's
+         *     maximum level in the product).
          */
         post: operations["create_conversation_v1_workspaces__workspace_id__conversations_post"];
         delete?: never;
@@ -1170,10 +1173,12 @@ export interface paths {
         put?: never;
         /**
          * Send Message
-         * @description Ask the assistant; the answer streams as Server-Sent Events.
+         * @description Ask about the conversation's product at its level; the answer streams as Server-Sent
+         *     Events.
          *
          *     The question and the answer's starting point are saved (and committed) before the stream
-         *     starts; access errors and an inactive assistant answer with the standard JSON error.
+         *     starts; access errors, an inactive product and a level above the caller's current maximum
+         *     or without a model answer with the standard JSON error.
          */
         post: operations["send_message_v1_workspaces__workspace_id__conversations__conversation_id__messages_post"];
         delete?: never;
@@ -2207,7 +2212,8 @@ export interface paths {
         };
         /**
          * Get Usage
-         * @description Usage of ``[from, to)`` (default: the 30 days before now), grouped by ``group_by``.
+         * @description Usage of ``[from, to)`` (default: the 30 days before now), grouped by ``group_by``;
+         *     ``product_id`` and ``level`` narrow the chat answers (and leave the embeddings out).
          */
         get: operations["get_usage_v1_workspaces__workspace_id__usage_get"];
         put?: never;
@@ -2227,7 +2233,8 @@ export interface paths {
         };
         /**
          * Get Usage Csv
-         * @description The same report as CSV, with a last ``total`` line.
+         * @description The same report as CSV, with a last ``total`` line (``-<level>`` in the file name when
+         *     filtered by level).
          */
         get: operations["get_usage_csv_v1_workspaces__workspace_id__usage_csv_get"];
         put?: never;
@@ -2260,13 +2267,6 @@ export interface components {
             api_key_id: string | null;
             /** Api Key Name */
             api_key_name: string | null;
-            /**
-             * Assistant Id
-             * Format: uuid
-             */
-            assistant_id: string;
-            /** Assistant Name */
-            assistant_name: string;
             channel: components["schemas"]["ConversationChannel"];
             /**
              * Created At
@@ -2280,9 +2280,17 @@ export interface components {
             id: string;
             /** Last Message At */
             last_message_at: string | null;
+            level: components["schemas"]["ResponseLevel"];
             /** Message Count */
             message_count: number;
             messages: components["schemas"]["AdminMessagePage"];
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
+            /** Product Name */
+            product_name: string;
             /** Thumbs Down */
             thumbs_down: number;
             /** Thumbs Up */
@@ -2307,13 +2315,6 @@ export interface components {
             api_key_id: string | null;
             /** Api Key Name */
             api_key_name: string | null;
-            /**
-             * Assistant Id
-             * Format: uuid
-             */
-            assistant_id: string;
-            /** Assistant Name */
-            assistant_name: string;
             channel: components["schemas"]["ConversationChannel"];
             /**
              * Created At
@@ -2327,8 +2328,16 @@ export interface components {
             id: string;
             /** Last Message At */
             last_message_at: string | null;
+            level: components["schemas"]["ResponseLevel"];
             /** Message Count */
             message_count: number;
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
+            /** Product Name */
+            product_name: string;
             /** Thumbs Down */
             thumbs_down: number;
             /** Thumbs Up */
@@ -2554,7 +2563,7 @@ export interface components {
          * AuditAction
          * @enum {string}
          */
-        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "superadmin.workspace_entered" | "superadmin.workspace_exited" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted" | "provider.tested" | "assistant.created" | "assistant.updated" | "assistant.deleted" | "assistant.ticket_webhook_secret_rotated" | "assistant.ticket_webhook_tested" | "product.created" | "product.updated" | "product.deleted" | "product.ticket_webhook_secret_rotated" | "product.ticket_webhook_tested" | "workspace_level.updated" | "member_level.updated" | "conversation.deleted" | "ticket_request.created" | "collection.created" | "collection.updated" | "collection.deleted" | "source.created" | "source.updated" | "source.deleted" | "source.tested" | "source.sync.started" | "source.sync.cancelled" | "source.reindex.started" | "source.ingest_token_rotated" | "source.tickets_uploaded" | "source.cards_uploaded" | "runner.created" | "runner.updated" | "runner.revoked" | "runner.deleted" | "harness_job.cancelled" | "harness_job.enqueued" | "harness_module.created" | "harness_module.updated" | "knowledge_item.updated" | "api_key.created" | "api_key.updated" | "api_key.revoked";
+        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "superadmin.workspace_entered" | "superadmin.workspace_exited" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted" | "provider.tested" | "assistant.created" | "assistant.updated" | "assistant.deleted" | "assistant.ticket_webhook_secret_rotated" | "assistant.ticket_webhook_tested" | "product.created" | "product.updated" | "product.deleted" | "product.ticket_webhook_secret_rotated" | "product.ticket_webhook_tested" | "workspace_level.updated" | "member_level.updated" | "conversation.deleted" | "ticket_request.created" | "collection.created" | "collection.updated" | "collection.deleted" | "source.created" | "source.updated" | "source.deleted" | "source.tested" | "source.sync.started" | "source.sync.cancelled" | "source.min_level_changed" | "source.reindex.started" | "source.ingest_token_rotated" | "source.tickets_uploaded" | "source.cards_uploaded" | "runner.created" | "runner.updated" | "runner.revoked" | "runner.deleted" | "harness_job.cancelled" | "harness_job.enqueued" | "harness_module.created" | "harness_module.updated" | "knowledge_item.updated" | "api_key.created" | "api_key.updated" | "api_key.revoked";
         /** AuditEventOut */
         AuditEventOut: {
             /** Action */
@@ -2786,7 +2795,7 @@ export interface components {
              * Key
              * @enum {string}
              */
-            key: "provider" | "collection" | "source" | "assistant" | "chat";
+            key: "provider" | "collection" | "source" | "levels" | "product" | "chat";
         };
         /**
          * CitationEvidenceOut
@@ -2955,19 +2964,15 @@ export interface components {
         ConversationChannel: "panel" | "api";
         /** ConversationCreate */
         ConversationCreate: {
+            level?: components["schemas"]["ResponseLevel"] | null;
             /**
-             * Assistant Id
+             * Product Id
              * Format: uuid
              */
-            assistant_id: string;
+            product_id: string;
         };
         /** ConversationDetail */
         ConversationDetail: {
-            /**
-             * Assistant Id
-             * Format: uuid
-             */
-            assistant_id: string;
             channel: components["schemas"]["ConversationChannel"];
             /**
              * Created At
@@ -2979,7 +2984,15 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            level: components["schemas"]["ResponseLevel"];
             messages: components["schemas"]["MessagePage"];
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
+            /** Product Name */
+            product_name: string;
             /**
              * Ticket Requests Enabled
              * @default false
@@ -3000,11 +3013,6 @@ export interface components {
         };
         /** ConversationOut */
         ConversationOut: {
-            /**
-             * Assistant Id
-             * Format: uuid
-             */
-            assistant_id: string;
             channel: components["schemas"]["ConversationChannel"];
             /**
              * Created At
@@ -3016,6 +3024,14 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            level: components["schemas"]["ResponseLevel"];
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
+            /** Product Name */
+            product_name: string;
             /** Title */
             title: string | null;
             /**
@@ -5445,6 +5461,8 @@ export interface components {
         };
         /** SearchRequest */
         SearchRequest: {
+            /** @default product_dev */
+            level: components["schemas"]["ResponseLevel"];
             /**
              * Limit
              * @default 10
@@ -5612,6 +5630,7 @@ export interface components {
             /** Include Globs */
             include_globs?: string[];
             kind: components["schemas"]["SourceKind"];
+            min_level?: components["schemas"]["ResponseLevel"] | null;
             /** Name */
             name: string;
             /** Schedule Cron */
@@ -5658,6 +5677,9 @@ export interface components {
             include_globs: string[];
             kind: components["schemas"]["SourceKind"];
             last_run: components["schemas"]["RunOut"] | null;
+            min_level: components["schemas"]["ResponseLevel"];
+            /** Min Level Is Default */
+            min_level_is_default: boolean;
             /** Name */
             name: string;
             /** Next Run At */
@@ -5718,6 +5740,7 @@ export interface components {
             exclude_globs?: string[] | null;
             /** Include Globs */
             include_globs?: string[] | null;
+            min_level?: components["schemas"]["ResponseLevel"] | null;
             /** Name */
             name?: string | null;
             /** Schedule Cron */
@@ -6197,7 +6220,7 @@ export interface components {
          * UsageGroup
          * @enum {string}
          */
-        UsageGroup: "source" | "collection" | "assistant" | "channel" | "api_key" | "model" | "day";
+        UsageGroup: "source" | "collection" | "product" | "level" | "channel" | "api_key" | "model" | "day";
         /** UsageReportOut */
         UsageReportOut: {
             group_by: components["schemas"]["UsageGroup"];
@@ -6213,7 +6236,34 @@ export interface components {
             period_start: string;
             /** Rows */
             rows: components["schemas"]["UsageRowOut"][];
-            totals: components["schemas"]["UsageTotalsOut"];
+            totals: components["schemas"]["UsageReportTotalsOut"];
+        };
+        /**
+         * UsageReportTotalsOut
+         * @description The totals of a report; the embedding columns are null when it is filtered by product
+         *     or level (embeddings belong to neither).
+         */
+        UsageReportTotalsOut: {
+            /** Answers */
+            answers: number;
+            /** Chat Cost Usd */
+            chat_cost_usd: number;
+            /** Chat Input Tokens */
+            chat_input_tokens: number;
+            /** Chat Output Tokens */
+            chat_output_tokens: number;
+            /** Cost Usd */
+            cost_usd: number;
+            /** Embedding Cost Usd */
+            embedding_cost_usd: number | null;
+            /** Embedding Tokens */
+            embedding_tokens: number | null;
+            /** Runs */
+            runs: number | null;
+            /** Unpriced Answers */
+            unpriced_answers: number;
+            /** Unpriced Runs */
+            unpriced_runs: number | null;
         };
         /** UsageRowOut */
         UsageRowOut: {
@@ -6241,29 +6291,6 @@ export interface components {
             unpriced_answers: number | null;
             /** Unpriced Runs */
             unpriced_runs: number | null;
-        };
-        /** UsageTotalsOut */
-        UsageTotalsOut: {
-            /** Answers */
-            answers: number;
-            /** Chat Cost Usd */
-            chat_cost_usd: number;
-            /** Chat Input Tokens */
-            chat_input_tokens: number;
-            /** Chat Output Tokens */
-            chat_output_tokens: number;
-            /** Cost Usd */
-            cost_usd: number;
-            /** Embedding Cost Usd */
-            embedding_cost_usd: number;
-            /** Embedding Tokens */
-            embedding_tokens: number;
-            /** Runs */
-            runs: number;
-            /** Unpriced Answers */
-            unpriced_answers: number;
-            /** Unpriced Runs */
-            unpriced_runs: number;
         };
         /** UserCounts */
         UserCounts: {
@@ -7482,7 +7509,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description The assistant is inactive (`assistant_inactive`). */
+            /** @description The product is inactive (`product_inactive`) or the level of the conversation has no model (`level_not_configured`). */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -8697,7 +8724,8 @@ export interface operations {
     list_workspace_conversations_v1_workspaces__workspace_id__admin_conversations_get: {
         parameters: {
             query?: {
-                assistant_id?: string | null;
+                product_id?: string | null;
+                level?: components["schemas"]["ResponseLevel"] | null;
                 user_id?: string | null;
                 channel?: components["schemas"]["ConversationChannel"] | null;
                 api_key_id?: string | null;
@@ -9479,7 +9507,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Workspace suspended or CSRF failure (`csrf_failed`). */
+            /** @description Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -9586,6 +9614,8 @@ export interface operations {
     list_conversations_v1_workspaces__workspace_id__conversations_get: {
         parameters: {
             query?: {
+                product_id?: string | null;
+                level?: components["schemas"]["ResponseLevel"] | null;
                 limit?: number;
                 offset?: number;
             };
@@ -9669,21 +9699,21 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Not the owner of the conversation (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            /** @description Not the owner of the conversation (`forbidden`), level above the caller's maximum in the product (`level_not_allowed`, with `details.requested_level`, `details.max_level` and `details.reason`), workspace suspended or CSRF failure (`csrf_failed`). */
             403: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            /** @description Workspace or conversation not found, or not visible to the caller. */
+            /** @description Workspace or product not found, or (for a viewer) the product is inactive. */
             404: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            /** @description The assistant is inactive (`assistant_inactive`). */
+            /** @description The product is inactive (`product_inactive`) or the level has no provider and model in the workspace (`level_not_configured`, `details.level`). */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -9840,7 +9870,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Not the owner of the conversation (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            /** @description Not the owner of the conversation (`forbidden`), level above the caller's maximum in the product (`level_not_allowed`, with `details.requested_level`, `details.max_level` and `details.reason`), workspace suspended or CSRF failure (`csrf_failed`). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -9854,7 +9884,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description The assistant is inactive (`assistant_inactive`). */
+            /** @description The product is inactive (`product_inactive`) or the level has no provider and model in the workspace (`level_not_configured`, `details.level`). */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -9974,7 +10004,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Assistant inactive (`assistant_inactive`), webhook without URL or secret (`ticket_webhook_not_configured`) or a request already exists for the answer (`ticket_request_exists`, with `details.ticket_request_id`). */
+            /** @description Product inactive (`product_inactive`), webhook without URL or secret (`ticket_webhook_not_configured`) or a request already exists for the answer (`ticket_request_exists`, with `details.ticket_request_id`). */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -10036,7 +10066,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Assistant inactive (`assistant_inactive`), webhook without URL or secret (`ticket_webhook_not_configured`) or a request already exists for the answer (`ticket_request_exists`, with `details.ticket_request_id`). */
+            /** @description Product inactive (`product_inactive`), webhook without URL or secret (`ticket_webhook_not_configured`) or a request already exists for the answer (`ticket_request_exists`, with `details.ticket_request_id`). */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -11001,7 +11031,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Name already used in the workspace (`product_name_taken`) or, on create, no level of the workspace has a model (`level_not_configured`). */
+            /** @description Name already used in the workspace (`product_name_taken`). */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -11167,7 +11197,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Name already used in the workspace (`product_name_taken`) or, on create, no level of the workspace has a model (`level_not_configured`). */
+            /** @description Name already used in the workspace (`product_name_taken`). */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -12008,6 +12038,7 @@ export interface operations {
                 collection_id?: string | null;
                 kind?: components["schemas"]["SourceKind"] | null;
                 active?: boolean | null;
+                min_level?: components["schemas"]["ResponseLevel"] | null;
                 last_run_status?: components["schemas"]["LastRunFilter"] | null;
                 sort?: "name" | "-name" | "created_at" | "-created_at" | "updated_at" | "-updated_at" | "last_run_at" | "-last_run_at";
                 limit?: number;
@@ -12093,7 +12124,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            /** @description Role below editor, or an editor setting a minimum level other than the kind's default or changing it (`forbidden`, `details.required_role` = `admin`); workspace suspended or CSRF failure (`csrf_failed`). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -12266,7 +12297,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Role below editor (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            /** @description Role below editor, or an editor setting a minimum level other than the kind's default or changing it (`forbidden`, `details.required_role` = `admin`); workspace suspended or CSRF failure (`csrf_failed`). */
             403: {
                 headers: {
                     [name: string]: unknown;
@@ -13568,6 +13599,8 @@ export interface operations {
                 group_by: components["schemas"]["UsageGroup"];
                 from?: string | null;
                 to?: string | null;
+                product_id?: string | null;
+                level?: components["schemas"]["ResponseLevel"] | null;
             };
             header?: never;
             path: {
@@ -13607,7 +13640,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Invalid query, a period whose start is not before its end (validation_error) or longer than 366 days (usage_period_too_long). */
+            /** @description Invalid query, a period whose start is not before its end (validation_error), `product_id` or `level` with `group_by` `source` or `collection` (validation_error) or a period longer than 366 days (usage_period_too_long). */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -13622,6 +13655,8 @@ export interface operations {
                 group_by: components["schemas"]["UsageGroup"];
                 from?: string | null;
                 to?: string | null;
+                product_id?: string | null;
+                level?: components["schemas"]["ResponseLevel"] | null;
             };
             header?: never;
             path: {
@@ -13661,7 +13696,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Invalid query, a period whose start is not before its end (validation_error) or longer than 366 days (usage_period_too_long). */
+            /** @description Invalid query, a period whose start is not before its end (validation_error), `product_id` or `level` with `group_by` `source` or `collection` (validation_error) or a period longer than 366 days (usage_period_too_long). */
             422: {
                 headers: {
                     [name: string]: unknown;

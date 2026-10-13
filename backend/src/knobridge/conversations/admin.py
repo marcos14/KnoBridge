@@ -33,7 +33,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from knobridge.assistants.models import Assistant
 from knobridge.conversations.models import (
     Conversation,
     ConversationChannel,
@@ -44,6 +43,8 @@ from knobridge.conversations.models import (
 )
 from knobridge.conversations.stale import effective_status
 from knobridge.core.errors import NotFoundError, ValidationError
+from knobridge.levels.level import ResponseLevel
+from knobridge.products.models import Product
 from knobridge.tenancy.models import User
 
 # The columns of ``api_keys`` this view reads; the table is RLS-protected like the others.
@@ -75,7 +76,8 @@ def check_period(start: datetime | None, end: datetime | None) -> None:
 class AdminConversationFilter:
     """Optional filters; the period ``[created_from, created_to)`` is on the creation time."""
 
-    assistant_id: uuid.UUID | None = None
+    product_id: uuid.UUID | None = None
+    level: ResponseLevel | None = None
     user_id: uuid.UUID | None = None
     channel: ConversationChannel | None = None
     api_key_id: uuid.UUID | None = None
@@ -91,8 +93,9 @@ class AdminConversation:
     id: uuid.UUID
     title: str | None
     channel: ConversationChannel
-    assistant_id: uuid.UUID
-    assistant_name: str
+    product_id: uuid.UUID
+    product_name: str
+    level: ResponseLevel
     user_id: uuid.UUID | None
     user_name: str | None
     user_email: str | None
@@ -161,7 +164,7 @@ def _rating_count(rating: FeedbackRating) -> ScalarSelect[int]:
     )
 
 
-# ``Any``: a 16-column row; spelling out the tuple type adds nothing over ``_summary``.
+# ``Any``: a 17-column row; spelling out the tuple type adds nothing over ``_summary``.
 def _summary_select() -> Select[*tuple[Any, ...]]:
     """One row per conversation with names and counts (no N+1: correlated subqueries)."""
     message_count = (
@@ -182,8 +185,9 @@ def _summary_select() -> Select[*tuple[Any, ...]]:
             Conversation.id,
             Conversation.title,
             Conversation.channel,
-            Conversation.assistant_id,
-            Assistant.name.label("assistant_name"),
+            Conversation.product_id,
+            Product.name.label("product_name"),
+            Conversation.level,
             Conversation.user_id,
             User.name.label("user_name"),
             User.email.label("user_email"),
@@ -197,9 +201,9 @@ def _summary_select() -> Select[*tuple[Any, ...]]:
             Conversation.updated_at,
         )
         .join(
-            Assistant,
-            (Assistant.workspace_id == Conversation.workspace_id)
-            & (Assistant.id == Conversation.assistant_id),
+            Product,
+            (Product.workspace_id == Conversation.workspace_id)
+            & (Product.id == Conversation.product_id),
         )
         # Exactly one owner per conversation: a member or, in the API channel, a key.
         .outerjoin(User, User.id == Conversation.user_id)
@@ -216,8 +220,9 @@ def _summary(row: Row[*tuple[Any, ...]]) -> AdminConversation:
         id=row.id,
         title=row.title,
         channel=row.channel,
-        assistant_id=row.assistant_id,
-        assistant_name=row.assistant_name,
+        product_id=row.product_id,
+        product_name=row.product_name,
+        level=row.level,
         user_id=row.user_id,
         user_name=row.user_name,
         user_email=row.user_email,
@@ -236,8 +241,10 @@ def _conditions(
     workspace_id: uuid.UUID, filters: AdminConversationFilter
 ) -> list[ColumnElement[bool]]:
     conditions: list[ColumnElement[bool]] = [Conversation.workspace_id == workspace_id]
-    if filters.assistant_id is not None:
-        conditions.append(Conversation.assistant_id == filters.assistant_id)
+    if filters.product_id is not None:
+        conditions.append(Conversation.product_id == filters.product_id)
+    if filters.level is not None:
+        conditions.append(Conversation.level == filters.level)
     if filters.user_id is not None:
         conditions.append(Conversation.user_id == filters.user_id)
     if filters.channel is not None:

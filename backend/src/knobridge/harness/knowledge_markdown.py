@@ -15,6 +15,7 @@ from dataclasses import dataclass
 
 from knobridge.audit.models import JSONValue
 from knobridge.harness.models import KnowledgeItem, KnowledgeItemKind
+from knobridge.ingestion.chunking import KNOWLEDGE_EVIDENCE_HEADING
 
 # Languages of the runner inventory (docs/specs/harness.md, "Inventário e linguagem"); any
 # other extension is ``other`` and its excerpt fence carries no language.
@@ -149,7 +150,7 @@ def _excerpt_block(evidence: Evidence) -> list[str]:
 def _evidence_section(evidence: Sequence[Evidence], *, excerpts: bool) -> list[str]:
     if not evidence:
         return []
-    lines = ["## Evidências", ""]
+    lines = [f"## {KNOWLEDGE_EVIDENCE_HEADING}", ""]
     for number, entry in enumerate(evidence, start=1):
         lines.append(f"{number}. {_location(entry)}")
         if excerpts:

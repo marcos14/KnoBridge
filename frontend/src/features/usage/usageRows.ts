@@ -34,14 +34,15 @@ export const COST_COLUMNS: ReadonlySet<UsageColumn> = new Set([
 
 /**
  * Columns that apply to a grouping (the API sends `null` for the others): embeddings for sources
- * and collections, chat for assistants, channels and keys, both for models and days.
+ * and collections, chat for products, levels, channels and keys, both for models and days.
  */
 export function usageColumns(group: UsageGroup): UsageColumn[] {
   switch (group) {
     case "source":
     case "collection":
       return [...EMBEDDING_COLUMNS, "cost_usd"];
-    case "assistant":
+    case "product":
+    case "level":
     case "channel":
     case "api_key":
       return [...CHAT_COLUMNS, "cost_usd"];

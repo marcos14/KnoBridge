@@ -2,7 +2,7 @@
 
 **Função**: testes de `src/knobridge/levels/`.
 
-**Entra aqui**: `test_level.py` (ordem dos níveis, unitário) e `test_levels_rls.py` (contra Postgres real: `create_workspace_levels`; RLS de `workspace_levels` e `member_product_levels` como dono e não dono, com leitura, alteração e exclusão invisíveis em outro workspace e inserção em workspace alheio recusada; credencial e produto de outro workspace recusados pelas FKs compostas; credencial e modelo juntos; credencial em uso por um nível não exclui; nível gravado some com a membership, o produto ou o workspace).
+**Entra aqui**: `test_level.py` (ordem dos níveis, unitário), `test_policy.py` (teto da pergunta, canal público e o 403 `level_not_allowed`, unitário; com `levels_up_to` e `highest`) e `test_levels_rls.py` (contra Postgres real: `create_workspace_levels`; RLS de `workspace_levels` e `member_product_levels` como dono e não dono, com leitura, alteração e exclusão invisíveis em outro workspace e inserção em workspace alheio recusada; credencial e produto de outro workspace recusados pelas FKs compostas; credencial e modelo juntos; credencial em uso por um nível não exclui; nível gravado some com a membership, o produto ou o workspace).
 **Não entra aqui**: testes de rotas (`tests/api/`), da migração `0018` (`tests/migrations/test_migration_0018.py`).
 
 **Convenções locais**:

@@ -72,12 +72,12 @@ export function WorkspaceConversationView({
             conversation.data.channel === "api"
               ? t("conversations.detail.whoApi", {
                   owner: conversationOwner(conversation.data, t).name,
-                  assistant: conversation.data.assistant_name,
+                  assistant: conversation.data.product_name,
                 })
               : t("conversations.detail.who", {
                   user: conversation.data.user_name,
                   email: conversation.data.user_email,
-                  assistant: conversation.data.assistant_name,
+                  assistant: conversation.data.product_name,
                 })
           }
           userName={conversationOwner(conversation.data, t).name}

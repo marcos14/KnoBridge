@@ -21,7 +21,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from knobridge.apikeys.models import ApiKey
 from knobridge.apikeys.tokens import generate_api_key
-from knobridge.assistants.models import Assistant
 from knobridge.audit.actions import AuditAction
 from knobridge.audit.models import JSONValue
 from knobridge.audit.service import AuditService, AuditTarget
@@ -29,6 +28,7 @@ from knobridge.core.clock import Clock
 from knobridge.core.errors import ConflictError, NotFoundError, ValidationError
 from knobridge.core.listing import text_match
 from knobridge.levels.level import ResponseLevel
+from knobridge.products.models import Product as Assistant
 from knobridge.tenancy.models import User
 
 

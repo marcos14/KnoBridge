@@ -4,11 +4,8 @@ product with the same id).
 
 Workspace data with forced row-level security (``docs/adr/0001-tenancy-e-rls.md``).
 
-Transitional (plan 0009): ``credential_id``, ``model`` and ``temperature`` are the columns of the
-assistant the product came from. The answer's model moves to the level configuration of the
-workspace (``levels/``), and these columns go away when the chat reads it; until then the
-assistant service and the chat keep using them. The same goes for the synonyms ``system_prompt``
-(now ``instructions``) and ``assistant_id`` (now ``product_id``).
+The credential, model and temperature of an answer belong to its level (``levels/``, D6 of plan
+0009): migration ``0019`` dropped the columns the product had kept from the assistant.
 """
 
 from __future__ import annotations
@@ -32,10 +29,9 @@ from sqlalchemy import (
     func,
     text,
 )
-from sqlalchemy.orm import Mapped, mapped_column, synonym
+from sqlalchemy.orm import Mapped, mapped_column
 
 from knobridge.core.models import Base, TimestampMixin, UUIDPrimaryKeyMixin, str_enum
-from knobridge.levels.level import MAX_TEMPERATURE, MIN_TEMPERATURE
 from knobridge.retrieval.search import DEFAULT_MIN_SIMILARITY as SEARCH_MIN_SIMILARITY
 
 DEFAULT_LANGUAGE = "pt-BR"
@@ -69,15 +65,7 @@ class Product(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         UniqueConstraint("workspace_id", "name"),
         # Target of the composite foreign keys of conversations, collections and levels.
         UniqueConstraint("workspace_id", "id"),
-        ForeignKeyConstraint(
-            ["workspace_id", "credential_id"],
-            ["provider_credentials.workspace_id", "provider_credentials.id"],
-        ),
         CheckConstraint(f"name !~ '{NAME_LEVEL_SUFFIX_PATTERN}'", name="name_without_level"),
-        CheckConstraint(
-            f"temperature >= {MIN_TEMPERATURE} AND temperature <= {MAX_TEMPERATURE}",
-            name="temperature_range",
-        ),
         CheckConstraint("length(no_source_message) > 0", name="no_source_message_not_empty"),
         CheckConstraint(
             f"min_similarity >= {MIN_SIMILARITY} AND min_similarity <= {MAX_SIMILARITY}",
@@ -102,11 +90,6 @@ class Product(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     description: Mapped[str] = mapped_column(Text, nullable=False)
     # Extra text of the product, added after the instructions of the level.
     instructions: Mapped[str] = mapped_column(Text, nullable=False)
-    system_prompt: Mapped[str] = synonym("instructions")
-    credential_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
-    # Model identifier as the provider knows it (e.g. ``gpt-4.1-mini``).
-    model: Mapped[str] = mapped_column(String(200), nullable=False)
-    temperature: Mapped[float] = mapped_column(Float, nullable=False)
     # BCP 47 tag of the answers (``pt-BR``).
     language: Mapped[str] = mapped_column(String(35), nullable=False)
     tone: Mapped[ProductTone] = mapped_column(str_enum(ProductTone, "tone"), nullable=False)
@@ -165,7 +148,6 @@ class ProductCollection(Base):
         Uuid, ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
     )
     product_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
-    assistant_id: Mapped[uuid.UUID] = synonym("product_id")
     collection_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.now()

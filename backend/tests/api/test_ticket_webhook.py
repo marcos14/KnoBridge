@@ -19,11 +19,11 @@ from fastapi import FastAPI
 from sqlalchemy import select
 
 from knobridge.api.ticket_webhook import get_outbound_resolver, get_outbound_transport
-from knobridge.assistants.models import Assistant
 from knobridge.core.crypto import SecretBox
 from knobridge.core.db import system_session
 from knobridge.core.logging import configure_logging
 from knobridge.core.outbound import SystemResolver
+from knobridge.products.models import Product as Assistant
 from knobridge.tenancy.models import Role
 from knobridge.tickets.signature import verify_signature
 from knobridge.tickets.webhook_secret import TICKET_WEBHOOK_KEY_INFO, open_webhook_secret

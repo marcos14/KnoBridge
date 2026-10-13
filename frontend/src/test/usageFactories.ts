@@ -94,10 +94,16 @@ export function makeUsageRows(group: UsageGroup): UsageRow[] {
   switch (group) {
     case "day":
       return makeUsageDays();
-    case "assistant":
+    case "product":
       return [
         chatRow(ASSISTANT_ID, "Suporte ERP", 0.0584, 117),
         chatRow(OTHER_ASSISTANT_ID, "Rascunho", 0, 3, 3),
+      ];
+    case "level":
+      return [
+        chatRow("end_user", "end_user", 0, 0),
+        chatRow("support", "support", 0.0084, 20, 3),
+        chatRow("product_dev", "product_dev", 0.05, 100),
       ];
     case "channel":
       return [chatRow("panel", "panel", 0.05, 100), chatRow("api", "api", 0.0084, 20, 3)];

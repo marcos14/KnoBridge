@@ -16,7 +16,6 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
-from knobridge.assistants.models import Assistant, AssistantTone
 from knobridge.conversations.models import (
     Conversation,
     ConversationChannel,
@@ -30,6 +29,8 @@ from knobridge.ingestion.models import Collection, Source
 from knobridge.ingestion.source_config import SourceKind
 from knobridge.levels.level import ResponseLevel
 from knobridge.llm.models import ProviderCredential, ProviderKind
+from knobridge.products.models import Product as Assistant
+from knobridge.products.models import ProductTone as AssistantTone
 from knobridge.tenancy.models import User, Workspace
 from knobridge.tickets.models import (
     IngestToken,
@@ -135,10 +136,7 @@ async def _assistant(db: AsyncSession, workspace_id: uuid.UUID) -> Assistant:
         workspace_id=workspace_id,
         name="Suporte",
         description="",
-        system_prompt="",
-        credential_id=credential.id,
-        model="fake-model",
-        temperature=0.2,
+        instructions="",
         language="pt-BR",
         tone=AssistantTone.NEUTRAL,
         no_source_message="Sem fonte.",

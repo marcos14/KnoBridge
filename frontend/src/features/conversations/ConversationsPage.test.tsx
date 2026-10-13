@@ -186,7 +186,7 @@ describe("ConversationsPage list", () => {
 
     await waitFor(() => {
       expect(last(recorder.listQueries)).toEqual({
-        assistant_id: ASSISTANT_ID,
+        product_id: ASSISTANT_ID,
         user_id: memberId(1),
         created_from: new Date(2026, 9, 1).toISOString(),
         created_to: new Date(2026, 10, 1).toISOString(),

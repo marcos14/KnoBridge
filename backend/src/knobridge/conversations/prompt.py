@@ -10,30 +10,32 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from knobridge.assistants.models import AssistantTone
 from knobridge.conversations.models import MessageRole
 from knobridge.conversations.retrieval import Source
 from knobridge.llm.provider import ChatMessage, ChatRole
+from knobridge.products.models import ProductTone
 
 TITLE_LENGTH = 80
 _ELLIPSIS = "…"
 
 # The fixed rules are in pt-BR, the language of the product's users; the answer language is
-# still the assistant's (``language``), stated explicitly in the rules.
+# still the product's (``language``), stated explicitly in the rules.
 _TONES = {
-    AssistantTone.NEUTRAL: "Use um tom neutro e objetivo.",
-    AssistantTone.FORMAL: "Use um tom formal e profissional.",
-    AssistantTone.FRIENDLY: "Use um tom amigável e acessível.",
+    ProductTone.NEUTRAL: "Use um tom neutro e objetivo.",
+    ProductTone.FORMAL: "Use um tom formal e profissional.",
+    ProductTone.FRIENDLY: "Use um tom amigável e acessível.",
 }
 
 
 @dataclass(frozen=True)
-class AssistantProfile:
-    """The assistant settings that shape the prompt."""
+class AnswerProfile:
+    """What shapes the instructions of an answer: the level's text, the product's extra text
+    and the product's language, tone and "no source" message."""
 
-    system_prompt: str
+    level_instructions: str
+    product_instructions: str
     language: str
-    tone: AssistantTone
+    tone: ProductTone
     no_source_message: str
 
 
@@ -43,8 +45,9 @@ class HistoryItem:
     content: str
 
 
-def instructions(profile: AssistantProfile) -> str:
-    """The fixed rules of every answer, after the assistant's own system prompt."""
+def instructions(profile: AnswerProfile) -> str:
+    """The level's instructions, the product's extra text (when not empty) and then the fixed
+    rules of every answer, which no editable text replaces."""
     rules = "\n".join(
         (
             "Regras obrigatórias desta resposta:",
@@ -65,7 +68,8 @@ def instructions(profile: AssistantProfile) -> str:
             f"- Responda no idioma {profile.language}. {_TONES[profile.tone]}",
         )
     )
-    return "\n\n".join(part for part in (profile.system_prompt.strip(), rules) if part)
+    parts = (profile.level_instructions.strip(), profile.product_instructions.strip(), rules)
+    return "\n\n".join(part for part in parts if part)
 
 
 def source_header(index: int, source: Source) -> str:
@@ -91,7 +95,7 @@ def numbered_sources(sources: Sequence[Source]) -> str:
 
 
 def build_messages(
-    profile: AssistantProfile,
+    profile: AnswerProfile,
     sources: Sequence[Source],
     history: Sequence[HistoryItem],
     question: str,

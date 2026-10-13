@@ -26,7 +26,6 @@ from tickets_support import (
     tickets_source,
 )
 
-from knobridge.assistants.models import Assistant
 from knobridge.conversations.models import Conversation
 from knobridge.core.db import system_session
 from knobridge.ingestion.models import (
@@ -40,6 +39,7 @@ from knobridge.ingestion.models import (
     Source,
 )
 from knobridge.ingestion.source_config import SourceKind
+from knobridge.products.models import Product as Assistant
 from knobridge.tenancy.models import Workspace
 from knobridge.tickets.models import (
     TicketInboxItem,
