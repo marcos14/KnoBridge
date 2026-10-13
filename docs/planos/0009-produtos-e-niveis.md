@@ -13,7 +13,7 @@ branch: plano/0009-produtos-e-niveis
 fases:
   - id: F1
     titulo: Contrato e modelo de dados
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F1.1
         titulo: ADR 0008 e specs de produtos e níveis (e ajustes em chat, API pública, chamados, indexação e autenticação)
@@ -28,16 +28,16 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-13
         concluida_em: 2026-10-13
-        commit: null
+        commit: cd7a78c
   - id: F2
     titulo: Servidor
-    status: pendente
+    status: em_execucao
     subfases:
       - id: F2.1
         titulo: Produtos, configuração dos níveis do workspace e nível de cada membro por produto
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-13
         concluida_em: null
         commit: null
       - id: F2.2
@@ -49,9 +49,9 @@ fases:
         commit: null
       - id: F2.3
         titulo: Cards de desenvolvimento por push (tipo card na API de entrada, conector interno e citação)
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-13
         concluida_em: null
         commit: null
       - id: F2.4
@@ -341,6 +341,8 @@ Convenções para todas as subfases: código em inglês, docs em pt-BR; regras 1
   - modelo e credencial do nível;
   - custo e uso com produto e nível;
   - nível mínimo por documento no conhecimento do harness (revisado ou inferido) e padrões por tipo de fonte.
+  - o lote de ingestão grava `min_level` (fonte, documento e trecho) e o chunking nunca junta a seção de evidências com outra;
+  - migração `0019` que remove as colunas transitórias `credential_id`, `model` e `temperature` de `products` (o downgrade devolve o modelo do nível `product_dev`; D15).
 - **Contexto necessário**: AGENTS de `conversations/`, `retrieval/`, `ingestion/` e `harness/`; `retrieval/search.py`; `conversations/chat.py` e `prompt.py`; spec de produtos e chat.
 - **Critérios de aceite**:
   - teste de que um chunk acima do nível nunca chega ao contexto, nos dois braços e na fusão;
@@ -457,6 +459,8 @@ Nenhuma.
 - 2026-10-13 — F1.1 concluída: ADR 0008, specs produtos-e-niveis.md e cards.md, ajustes em chat, chat-sse, api-publica, chamados, indexação, autenticação e uso-e-custos, visão v0.6; links e checagens verdes
 - 2026-10-13 — F1.2 iniciada (agente em worktree).
 - 2026-10-13 — F1.2 concluída: migração 0018 (assistentes viram produtos com o mesmo id, níveis do workspace e do membro, nível em conversas, mensagens e chaves, nível mínimo em fontes, documentos e trechos), RLS e teste com dados semeados; gates do agente: backend 2451 passed com 99,89%; orquestrador: ruff, pyright e AGENTS na integração
+- 2026-10-13 — F2.1 iniciada (agente em worktree).
+- 2026-10-13 — F2.3 iniciada (agente em worktree).
 
 ## 8. Encerramento
 
