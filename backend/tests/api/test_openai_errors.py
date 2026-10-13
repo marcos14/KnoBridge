@@ -61,6 +61,23 @@ def test_model_not_found_points_at_model() -> None:
     }
 
 
+def test_level_errors_point_at_model() -> None:
+    not_allowed = classify("level_not_allowed", 403, "Above.")
+    not_configured = classify("level_not_configured", 409, "No model.")
+
+    assert (not_allowed.status, not_allowed.type, not_allowed.param) == (
+        403,
+        "permission_error",
+        "model",
+    )
+    # 400, not 409: the OpenAI SDKs retry a 409 on their own.
+    assert (not_configured.status, not_configured.type, not_configured.param) == (
+        400,
+        "invalid_request_error",
+        "model",
+    )
+
+
 def test_invalid_api_key_keeps_www_authenticate() -> None:
     error = from_domain_error(invalid_api_key())
 

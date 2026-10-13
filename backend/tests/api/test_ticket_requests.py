@@ -139,7 +139,7 @@ def test_create_writes_pending_request_and_starts_delivery(
     assert (out["attempts"], out["external_ticket_id"], out["external_url"]) == (0, None, None)
     assert (out["error_code"], out["delivered_at"]) == (None, None)
     assert out["message_id"] == asked.answer_id
-    assert out["assistant_id"] == asked.world.assistant_id
+    assert out["product_id"] == asked.world.assistant_id
     assert out["conversation_id"] == asked.conversation_id
     (started,) = overrides.starter.started
     assert (str(started.request_id), started.workspace_id) == (out["id"], asked.world.workspace_id)
@@ -151,7 +151,8 @@ def test_create_writes_pending_request_and_starts_delivery(
     assert sent["event"] == "ticket.requested"
     assert (sent["version"], sent["id"]) == (1, out["id"])
     assert sent["created_at"] == START.isoformat().replace("+00:00", "Z")
-    assert sent["assistant"] == {"id": asked.world.assistant_id, "name": "Suporte"}
+    product = {"id": asked.world.assistant_id, "name": "Suporte"}
+    assert (sent["product"], sent["level"], sent["assistant"]) == (product, "product_dev", product)
     assert sent["workspace"]["id"] == str(asked.world.workspace_id)
     assert sent["conversation"] == {
         "id": asked.conversation_id,
@@ -178,7 +179,7 @@ def test_create_is_audited_without_content(api: ApiEnv, overrides: RequestOverri
         {
             "conversation_id": asked.conversation_id,
             "message_id": asked.answer_id,
-            "assistant_id": asked.world.assistant_id,
+            "product_id": asked.world.assistant_id,
         }
     ]
     assert request_id

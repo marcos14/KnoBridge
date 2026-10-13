@@ -39,7 +39,10 @@ def _extra(model_extra: dict[str, object] | None) -> dict[str, object]:
     return cast(dict[str, object], model_extra["knobridge"])
 
 
-def test_models_list_the_active_assistants_of_the_scope(api: ApiEnv) -> None:
+_LEVELS = ["", ":end_user", ":support", ":product_dev"]
+
+
+def test_models_list_the_active_products_of_the_scope(api: ApiEnv) -> None:
     env = key_world(api)
     other = add_assistant(api, env.world, "Financeiro")
     add_assistant(api, env.world, "Inativo", active=False)
@@ -48,16 +51,27 @@ def test_models_list_the_active_assistants_of_the_scope(api: ApiEnv) -> None:
     by_name = env.sdk.models.retrieve("Financeiro")
     by_id = env.sdk.models.retrieve(env.world.assistant_id)
 
-    assert [model.id for model in listed.data] == ["Financeiro", "Suporte"]
-    first = listed.data[0]
+    assert [model.id for model in listed.data] == [
+        f"{name}{level}" for name in ("Financeiro", "Suporte") for level in _LEVELS
+    ]
+    first, end_user = listed.data[:2]
     assert (first.object, first.owned_by) == ("model", "knobridge")
     assert first.created > 0
     assert _extra(first.model_extra) == {
-        "assistant_id": other,
+        "product_id": other,
+        "level": "product_dev",
+        "level_explicit": False,
+        "description": "Assistente Financeiro",
+    }
+    assert _extra(end_user.model_extra) == {
+        "product_id": other,
+        "level": "end_user",
+        "level_explicit": True,
         "description": "Assistente Financeiro",
     }
     assert by_name.id == "Financeiro"
-    assert by_id.id == "Suporte"
+    assert by_id.id == env.world.assistant_id
+    assert _extra(by_id.model_extra)["product_id"] == env.world.assistant_id
     with pytest.raises(NotFoundError) as missing:
         env.sdk.models.retrieve("Inativo")
     assert missing.value.code == "model_not_found"
@@ -69,7 +83,9 @@ def test_models_respect_the_key_scope(api: ApiEnv) -> None:
     _, scoped = create_key(api, env.world.workspace_id, [env.world.assistant_id])
     client = sdk(api, scoped)
 
-    assert [model.id for model in client.models.list().data] == ["Suporte"]
+    assert [model.id for model in client.models.list().data] == [
+        f"Suporte{level}" for level in _LEVELS
+    ]
     with pytest.raises(NotFoundError):
         client.models.retrieve(extra)
 
@@ -100,6 +116,7 @@ def test_completion_with_sources(api: ApiEnv, chat: ChatOverrides) -> None:
     extra = _extra(completion.model_extra)
     assert extra["conversation_id"] == str(conversation.id)
     assert extra["message_id"] == str(answer.id)
+    assert (extra["product_id"], extra["level"]) == (env.world.assistant_id, "product_dev")
     assert extra["status"] == "completed"
     assert extra["cost_usd"] is None
     citations = cast(list[dict[str, object]], extra["citations"])
@@ -203,6 +220,7 @@ def test_completion_streams_through_the_sdk(api: ApiEnv, chat: ChatOverrides) ->
     assert {chunk.id for chunk in chunks} == {f"chatcmpl-{stored[1].id.hex}"}
     first = _extra(chunks[0].model_extra)
     assert first["conversation_id"] == str(conversation.id)
+    assert (first["product_id"], first["level"]) == (env.world.assistant_id, "product_dev")
     assert len(cast(list[object], first["citations"])) == 2
     assert chunks[0].choices[0].delta.role == "assistant"
     text = "".join(chunk.choices[0].delta.content or "" for chunk in chunks if chunk.choices)

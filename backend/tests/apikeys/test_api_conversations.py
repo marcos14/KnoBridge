@@ -195,7 +195,7 @@ def test_admin_list_counts_api_conversations_with_their_key(app_database_url: st
         async with system_session(factory) as db:
             panel = Conversation(
                 workspace_id=seeded.workspace_id,
-                assistant_id=seeded.assistant_id,
+                product_id=seeded.assistant_id,
                 user_id=seeded.user_id,
                 channel=ConversationChannel.PANEL,
                 level=ResponseLevel.PRODUCT_DEV,

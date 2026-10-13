@@ -1,4 +1,4 @@
-"""Delivery of a ticket request to the assistant's webhook (docs/specs/chamados.md, "Resposta
+"""Delivery of a ticket request to the product's webhook (docs/specs/chamados.md, "Resposta
 esperada e retentativas").
 
 ``TicketDelivery.deliver`` is one attempt, run by the activity of the
@@ -40,7 +40,7 @@ from knobridge.core.outbound import (
     OutboundResponse,
     OutboundUrlInvalid,
 )
-from knobridge.products.models import Product as Assistant
+from knobridge.products.models import Product
 from knobridge.tickets.models import (
     ERROR_MAX_LENGTH,
     EXTERNAL_ID_MAX_LENGTH,
@@ -65,7 +65,7 @@ class DeliveryOutcome(StrEnum):
     DELIVERED = "delivered"
     FAILED = "failed"
     RETRY = "retry"
-    # The request no longer exists (its conversation, message or assistant was deleted).
+    # The request no longer exists (its conversation, message or product was deleted).
     GONE = "gone"
 
 
@@ -223,11 +223,11 @@ class TicketDelivery:
         async with scoped_session(self._factory, workspace_id=workspace_id, user_id=None) as db:
             row = (
                 await db.execute(
-                    select(TicketRequest, Assistant)
+                    select(TicketRequest, Product)
                     .join(
-                        Assistant,
-                        (Assistant.workspace_id == TicketRequest.workspace_id)
-                        & (Assistant.id == TicketRequest.assistant_id),
+                        Product,
+                        (Product.workspace_id == TicketRequest.workspace_id)
+                        & (Product.id == TicketRequest.product_id),
                     )
                     .where(
                         TicketRequest.workspace_id == workspace_id,
@@ -238,15 +238,15 @@ class TicketDelivery:
             ).one_or_none()
             if row is None:
                 return DeliveryOutcome.GONE
-            request, assistant = row
+            request, product = row
             if request.status is not TicketRequestStatus.PENDING:
                 return DeliveryOutcome(request.status.value)
             body = request.body
             assert body is not None  # noqa: S101 - CHECK body_when_pending
             request.attempts += 1
             return _Attempt(
-                url=assistant.ticket_webhook_url,
-                secret=open_webhook_secret(self._box, assistant),
+                url=product.ticket_webhook_url,
+                secret=open_webhook_secret(self._box, product),
                 body=body.encode("utf-8"),
             )
 

@@ -26,7 +26,7 @@ describe("restCurlExample", () => {
       'CONVERSATION_ID=$(curl -s -X POST "https://kb.example.test/v1/conversations" \\',
     );
     expect(curl).toContain('  -H "Authorization: Bearer $KNOBRIDGE_API_KEY" \\');
-    expect(curl).toContain(`  -d '{"assistant_id":"${ASSISTANT.id}"}' | jq -r .id)`);
+    expect(curl).toContain(`  -d '{"product_id":"${ASSISTANT.id}"}' | jq -r .id)`);
     expect(curl).toContain(
       'curl -s -X POST "https://kb.example.test/v1/conversations/$CONVERSATION_ID/messages" \\',
     );

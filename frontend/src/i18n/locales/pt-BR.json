@@ -2459,7 +2459,7 @@
     "runner_repository_in_use": "Já existe uma fonte para esse repositório nesse runner.",
     "runner_revoked": "Este runner foi revogado e não pode ser reativado.",
     "api_key_name_taken": "Já existe uma chave de API com esse nome.",
-    "api_key_assistant_invalid": "Algum assistente escolhido não existe mais. Confira a lista e tente de novo.",
+    "api_key_product_invalid": "Algum produto escolhido não existe mais. Confira a lista e tente de novo.",
     "api_key_revoked": "Esta chave foi revogada e não pode mais ser alterada.",
     "module_key_taken": "Já existe um módulo com essa chave nesta fonte.",
     "module_not_found": "Módulo não encontrado. A lista foi atualizada.",

@@ -5,7 +5,8 @@ Runs in the caller's workspace-scoped session (``WorkspaceContext.db``); owners 
 prefix and the SHA-256 are stored. Revoking is final, idempotent and takes effect on the key's
 next request; keys are never deleted. Audit metadata carries the name, ``key_prefix`` (keys
 holding ``api_key``, ``token`` or ``secret`` are refused by the audit service), the scope and
-the changed fields, never the key nor its hash.
+the changed fields, never the key nor its hash. Every key has a product scope and a
+maximum level (``docs/specs/api-publica.md``, "Chaves: escopo e nível máximo").
 """
 
 from __future__ import annotations
@@ -28,7 +29,7 @@ from knobridge.core.clock import Clock
 from knobridge.core.errors import ConflictError, NotFoundError, ValidationError
 from knobridge.core.listing import text_match
 from knobridge.levels.level import ResponseLevel
-from knobridge.products.models import Product as Assistant
+from knobridge.products.models import Product
 from knobridge.tenancy.models import User
 
 
@@ -40,8 +41,8 @@ class ApiKeyRevokedError(ConflictError):
     code = "api_key_revoked"
 
 
-class ApiKeyAssistantInvalidError(ValidationError):
-    code = "api_key_assistant_invalid"
+class ApiKeyProductInvalidError(ValidationError):
+    code = "api_key_product_invalid"
 
 
 class ApiKeyStatus(StrEnum):
@@ -67,14 +68,14 @@ class IssuedApiKey:
     key: str  # plain value: shown once to the user, never stored or logged
 
 
-# ``scope`` of an edit: leave it as is, or set it (``None`` = every assistant).
+# ``scope`` of an edit: leave it as is, or set it (``None`` = every product).
 @dataclass(frozen=True)
 class ScopeChange:
-    assistant_ids: Sequence[uuid.UUID] | None
+    product_ids: Sequence[uuid.UUID] | None
 
 
-def _scope_out(assistant_ids: Sequence[uuid.UUID] | None) -> JSONValue:
-    return None if assistant_ids is None else [str(item) for item in assistant_ids]
+def _scope_out(product_ids: Sequence[uuid.UUID] | None) -> JSONValue:
+    return None if product_ids is None else [str(item) for item in product_ids]
 
 
 class ApiKeyService:
@@ -133,20 +134,20 @@ class ApiKeyService:
         workspace_id: uuid.UUID,
         actor_id: uuid.UUID,
         name: str,
-        assistant_ids: Sequence[uuid.UUID] | None,
+        product_ids: Sequence[uuid.UUID] | None,
+        max_level: ResponseLevel,
         ip: str | None,
     ) -> IssuedApiKey:
         await self._ensure_name_free(db, workspace_id, name)
-        await self._ensure_assistants(db, workspace_id, assistant_ids)
+        await self._ensure_products(db, workspace_id, product_ids)
         generated = generate_api_key()
         key = ApiKey(
             workspace_id=workspace_id,
             name=name,
             key_prefix=generated.prefix,
             key_hash=generated.hash,
-            assistant_ids=None if assistant_ids is None else list(assistant_ids),
-            # Every source, as before plan 0009; chosen on creation from F2.4 on.
-            max_level=ResponseLevel.PRODUCT_DEV,
+            product_ids=None if product_ids is None else list(product_ids),
+            max_level=max_level,
             created_by=actor_id,
         )
         db.add(key)
@@ -157,7 +158,11 @@ class ApiKeyService:
             key,
             actor_id,
             ip,
-            {"key_prefix": key.key_prefix, "assistant_ids": _scope_out(key.assistant_ids)},
+            {
+                "key_prefix": key.key_prefix,
+                "product_ids": _scope_out(key.product_ids),
+                "max_level": key.max_level.value,
+            },
         )
         view = await self.get(db, workspace_id=workspace_id, api_key_id=key.id)
         return IssuedApiKey(view=view, key=generated.value)
@@ -172,8 +177,11 @@ class ApiKeyService:
         name: str | None,
         scope: ScopeChange | None,
         ip: str | None,
+        max_level: ResponseLevel | None = None,
     ) -> ApiKeyView:
-        """Rename and/or change the scope (``scope=None``: unchanged); a revoked key is 409."""
+        """Rename, change the scope (``scope=None``: unchanged) and/or the maximum level
+        (``None``: unchanged); a revoked key is 409. A lower level holds from the key's next
+        request, in its open conversations too."""
         key = (await self.get(db, workspace_id=workspace_id, api_key_id=api_key_id)).key
         if key.revoked_at is not None:
             raise ApiKeyRevokedError("A revoked API key cannot be changed.")
@@ -182,10 +190,13 @@ class ApiKeyService:
             await self._ensure_name_free(db, workspace_id, name)
             key.name = name
             fields.append("name")
-        if scope is not None and _scope_changed(key.assistant_ids, scope.assistant_ids):
-            await self._ensure_assistants(db, workspace_id, scope.assistant_ids)
-            key.assistant_ids = None if scope.assistant_ids is None else list(scope.assistant_ids)
-            fields.append("assistant_ids")
+        if scope is not None and _scope_changed(key.product_ids, scope.product_ids):
+            await self._ensure_products(db, workspace_id, scope.product_ids)
+            key.product_ids = None if scope.product_ids is None else list(scope.product_ids)
+            fields.append("product_ids")
+        if max_level is not None and max_level != key.max_level:
+            key.max_level = max_level
+            fields.append("max_level")
         if fields:
             await self._flush(db)
             await self._record(
@@ -240,24 +251,24 @@ class ApiKeyService:
             raise ApiKeyNameTakenError("An API key with this name already exists.")
 
     @staticmethod
-    async def _ensure_assistants(
-        db: AsyncSession, workspace_id: uuid.UUID, assistant_ids: Sequence[uuid.UUID] | None
+    async def _ensure_products(
+        db: AsyncSession, workspace_id: uuid.UUID, product_ids: Sequence[uuid.UUID] | None
     ) -> None:
-        """Every id of the scope is an assistant of the workspace (422 with the others)."""
-        if assistant_ids is None:
+        """Every id of the scope is a product of the workspace (422 with the others)."""
+        if product_ids is None:
             return
         found = set(
             await db.scalars(
-                select(Assistant.id).where(
-                    Assistant.workspace_id == workspace_id, Assistant.id.in_(assistant_ids)
+                select(Product.id).where(
+                    Product.workspace_id == workspace_id, Product.id.in_(product_ids)
                 )
             )
         )
-        invalid = [str(item) for item in assistant_ids if item not in found]
+        invalid = [str(item) for item in product_ids if item not in found]
         if invalid:
-            raise ApiKeyAssistantInvalidError(
-                "Every assistant of the scope must belong to the workspace.",
-                details={"assistant_ids": invalid},
+            raise ApiKeyProductInvalidError(
+                "Every product of the scope must belong to the workspace.",
+                details={"product_ids": invalid},
             )
 
     @staticmethod

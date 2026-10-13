@@ -2,7 +2,7 @@
 
 Runs in a session scoped to the key's workspace, without ``app.user_id``. A conversation made
 through the API has ``channel = api``, ``api_key_id`` = the key and no user; only that key
-reads it and asks in it. An assistant that does not exist, is inactive or is outside the key's
+reads it and asks in it. A product that does not exist, is inactive or is outside the key's
 scope reads as missing (404), never as forbidden: the key does not learn what it cannot use.
 The turn itself is the panel's (``conversations.chat.ChatService``) with an ``ApiKeyReader``.
 """
@@ -24,10 +24,11 @@ from knobridge.conversations.models import (
     Message,
     MessageStatus,
 )
-from knobridge.conversations.service import get_key_conversation
+from knobridge.conversations.service import check_turn, get_key_conversation
 from knobridge.conversations.stale import effective_status
 from knobridge.core.errors import NotFoundError
-from knobridge.products.models import Product as Assistant
+from knobridge.levels.level import ResponseLevel
+from knobridge.products.models import Product
 
 # ``conversations`` points at ``api_keys`` by name: loading the key model here keeps the
 # metadata complete wherever this module writes conversations.
@@ -43,39 +44,46 @@ class KeyMessage:
     status: MessageStatus
 
 
-async def get_scoped_assistant(
-    db: AsyncSession, identity: ApiKeyIdentity, assistant_id: uuid.UUID
-) -> Assistant:
-    """The assistant, if it exists in the key's workspace, is active and is in its scope."""
-    assistant = None
-    if identity.in_scope(assistant_id):
-        assistant = (
+async def get_scoped_product(
+    db: AsyncSession, identity: ApiKeyIdentity, product_id: uuid.UUID
+) -> Product:
+    """The product, if it exists in the key's workspace, is active and is in its scope."""
+    product = None
+    if identity.in_scope(product_id):
+        product = (
             await db.scalars(
-                select(Assistant).where(
-                    Assistant.workspace_id == identity.workspace_id,
-                    Assistant.id == assistant_id,
-                    Assistant.active.is_(True),
+                select(Product).where(
+                    Product.workspace_id == identity.workspace_id,
+                    Product.id == product_id,
+                    Product.active.is_(True),
                 )
             )
         ).one_or_none()
-    if assistant is None:
-        raise NotFoundError("Assistant not found.")
-    return assistant
+    if product is None:
+        raise NotFoundError("Product not found.")
+    return product
 
 
 async def create_key_conversation(
-    db: AsyncSession, identity: ApiKeyIdentity, assistant_id: uuid.UUID
+    db: AsyncSession,
+    identity: ApiKeyIdentity,
+    product_id: uuid.UUID,
+    level: ResponseLevel | None = None,
 ) -> Conversation:
-    await get_scoped_assistant(db, identity, assistant_id)
+    """A conversation of the key with the product at ``level`` (``None``: the key's maximum):
+    404 for a product the key cannot see, 403 ``level_not_allowed`` above the key's maximum,
+    409 ``level_not_configured`` for a level without a model, in this order."""
+    await get_scoped_product(db, identity, product_id)
+    chosen = level or identity.max_level
+    await check_turn(db, identity.workspace_id, product_id, chosen, identity.reader)
     conversation = Conversation(
         workspace_id=identity.workspace_id,
-        assistant_id=assistant_id,
+        product_id=product_id,
         user_id=None,
         api_key_id=identity.api_key_id,
         title=None,
         channel=ConversationChannel.API,
-        # The key's maximum; the request picks a level in F2.4 of plan 0009.
-        level=identity.max_level,
+        level=chosen,
     )
     db.add(conversation)
     await db.flush()
@@ -87,7 +95,7 @@ async def get_conversation(
     db: AsyncSession, identity: ApiKeyIdentity, conversation_id: uuid.UUID
 ) -> Conversation:
     """The key's own conversation (404 for another key's, another workspace's or one whose
-    assistant left the scope)."""
+    product left the scope)."""
     return await get_key_conversation(db, identity.workspace_id, conversation_id, identity.reader)
 
 

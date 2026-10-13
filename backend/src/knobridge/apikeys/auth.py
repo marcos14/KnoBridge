@@ -45,23 +45,24 @@ def invalid_api_key() -> InvalidApiKeyError:
 
 @dataclass(frozen=True)
 class ApiKeyIdentity:
-    """The key a valid request carries: its workspace and its assistant scope."""
+    """The key a valid request carries: its workspace, its product scope and its maximum level."""
 
     api_key_id: uuid.UUID
     workspace_id: uuid.UUID
     key_prefix: str
-    # ``None``: every active assistant of the workspace.
-    assistant_ids: frozenset[uuid.UUID] | None
+    # ``None``: every active product of the workspace.
+    product_ids: frozenset[uuid.UUID] | None
     # The highest level the key's questions may ask.
-    max_level: ResponseLevel = ResponseLevel.PRODUCT_DEV
+    max_level: ResponseLevel
 
-    def in_scope(self, assistant_id: uuid.UUID) -> bool:
-        return self.assistant_ids is None or assistant_id in self.assistant_ids
+    def in_scope(self, product_id: uuid.UUID) -> bool:
+        return self.product_ids is None or product_id in self.product_ids
 
     @property
     def reader(self) -> ApiKeyReader:
+        # The REST API and the OpenAI-compatible API are not public channels.
         return ApiKeyReader(
-            api_key_id=self.api_key_id, product_ids=self.assistant_ids, max_level=self.max_level
+            api_key_id=self.api_key_id, product_ids=self.product_ids, max_level=self.max_level
         )
 
 
@@ -85,12 +86,12 @@ async def authenticate_api_key(db: AsyncSession, *, key: str) -> ApiKeyIdentity:
     status = await db.scalar(select(Workspace.status).where(Workspace.id == stored.workspace_id))
     if status != WorkspaceStatus.ACTIVE:
         raise ForbiddenError("Workspace is suspended.", code="workspace_suspended")
-    scope = None if stored.assistant_ids is None else frozenset(stored.assistant_ids)
+    scope = None if stored.product_ids is None else frozenset(stored.product_ids)
     return ApiKeyIdentity(
         api_key_id=stored.id,
         workspace_id=stored.workspace_id,
         key_prefix=prefix,
-        assistant_ids=scope,
+        product_ids=scope,
         max_level=stored.max_level,
     )
 

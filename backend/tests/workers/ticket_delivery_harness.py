@@ -141,7 +141,7 @@ async def _seed(factory: SessionFactory) -> Ids:
         assistant.ticket_webhook_secret_ciphertext = seal_webhook_secret(BOX, assistant, SECRET)
         conversation = Conversation(
             workspace_id=workspace.id,
-            assistant_id=assistant.id,
+            product_id=assistant.id,
             user_id=user.id,
             channel=ConversationChannel.PANEL,
             level=ResponseLevel.PRODUCT_DEV,
@@ -176,7 +176,7 @@ async def _seed(factory: SessionFactory) -> Ids:
             workspace_id=workspace.id,
             conversation_id=conversation.id,
             message_id=answer.id,
-            assistant_id=assistant.id,
+            product_id=assistant.id,
             user_id=user.id,
             status=TicketRequestStatus.PENDING,
             body=BODY,

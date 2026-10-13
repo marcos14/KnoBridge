@@ -4,14 +4,14 @@ import { z } from "zod";
 import type { ApiKey, ApiKeyChanges, ApiKeyInput } from "@/lib/api/apiKeys";
 import { NAME_MAX_LENGTH } from "@/lib/schemas";
 
-/** Most assistants a key's scope may list (`ApiKeyCreate.assistant_ids`). */
+/** Most assistants a key's scope may list (`ApiKeyCreate.product_ids`). */
 export const API_KEY_SCOPE_MAX = 100;
 
 export type ApiKeyScope = "all" | "selected";
 
 export interface ApiKeyFormValues {
   name: string;
-  /** `all`: every active assistant, also the ones created later (`assistant_ids: null`). */
+  /** `all`: every active assistant, also the ones created later (`product_ids: null`). */
   scope: ApiKeyScope;
   assistantIds: string[];
 }
@@ -54,8 +54,8 @@ export function apiKeyFormDefaults(apiKey?: ApiKey): ApiKeyFormValues {
   }
   return {
     name: apiKey.name,
-    scope: apiKey.assistant_ids === null ? "all" : "selected",
-    assistantIds: apiKey.assistant_ids ?? [],
+    scope: apiKey.product_ids === null ? "all" : "selected",
+    assistantIds: apiKey.product_ids ?? [],
   };
 }
 
@@ -63,9 +63,20 @@ function scopeOf(values: ApiKeyFormValues): string[] | null {
   return values.scope === "all" ? null : values.assistantIds;
 }
 
+/**
+ * Maximum level of a key created here (`ApiKeyCreate.max_level`, required by the API). Until the
+ * form lets the admin choose it (plan 0009, F3.3), new keys keep the reach keys always had: every
+ * source, as the migrated keys.
+ */
+export const API_KEY_DEFAULT_MAX_LEVEL = "product_dev" satisfies ApiKeyInput["max_level"];
+
 /** Body of `POST .../api-keys`. */
 export function toApiKeyInput(values: ApiKeyFormValues): ApiKeyInput {
-  return { name: values.name.trim(), assistant_ids: scopeOf(values) };
+  return {
+    name: values.name.trim(),
+    product_ids: scopeOf(values),
+    max_level: API_KEY_DEFAULT_MAX_LEVEL,
+  };
 }
 
 function sameScope(current: string[] | null, next: string[] | null): boolean {
@@ -84,8 +95,8 @@ export function toApiKeyChanges(apiKey: ApiKey, values: ApiKeyFormValues): ApiKe
     changes.name = name;
   }
   const scope = scopeOf(values);
-  if (!sameScope(apiKey.assistant_ids, scope)) {
-    changes.assistant_ids = scope;
+  if (!sameScope(apiKey.product_ids, scope)) {
+    changes.product_ids = scope;
   }
   return Object.keys(changes).length === 0 ? null : changes;
 }

@@ -25,6 +25,7 @@ from knobridge.conversations.turn import (
     DoneEvent,
     PreparedTurn,
 )
+from knobridge.levels.level import ResponseLevel
 from knobridge.llm.provider import ChatMessage, ChatRole
 
 MAX_MESSAGES = 200
@@ -79,7 +80,11 @@ class OpenAIChatCompletionRequest(_Lenient):
 
 
 class OpenAIModelExtra(BaseModel):
-    assistant_id: uuid.UUID
+    product_id: uuid.UUID
+    # The level the entry answers at (without a level in ``id``, the key's maximum).
+    level: ResponseLevel
+    # Whether the level is in ``id``.
+    level_explicit: bool
     description: str
 
 
@@ -118,6 +123,9 @@ class OpenAIUsage(BaseModel):
 class OpenAICompletionExtra(BaseModel):
     conversation_id: uuid.UUID
     message_id: uuid.UUID
+    # The product and the effective level of the answer.
+    product_id: uuid.UUID
+    level: ResponseLevel
     # ``completed`` or ``no_source``.
     status: MessageStatus
     citations: list[CitationOut]
@@ -257,6 +265,8 @@ class CompletionStream:
     created: int
     model: str
     conversation_id: uuid.UUID
+    product_id: uuid.UUID
+    level: ResponseLevel
     append_sources: bool
     include_usage: bool
     # The saved answer's estimated cost, read once the outcome is written.
@@ -302,6 +312,8 @@ class CompletionStream:
                             "knobridge": {
                                 "conversation_id": str(self.conversation_id),
                                 "message_id": str(event.message_id),
+                                "product_id": str(self.product_id),
+                                "level": self.level.value,
                                 "citations": citations,
                             }
                         },

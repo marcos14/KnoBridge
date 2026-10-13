@@ -170,7 +170,7 @@ def add_conversation(
             conversation = Conversation(
                 id=uuid.uuid4(),
                 workspace_id=world.workspace_id,
-                assistant_id=assistant_id or world.assistant_id,
+                product_id=assistant_id or world.assistant_id,
                 user_id=None if api_key_id else world.users[0].id,
                 api_key_id=api_key_id,
                 channel=ConversationChannel.API if api_key_id else ConversationChannel.PANEL,

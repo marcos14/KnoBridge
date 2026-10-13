@@ -41,9 +41,14 @@ def sdk(api: ApiEnv, key: str) -> OpenAI:
     )
 
 
-def key_world(api: ApiEnv, assistant_ids: list[str] | None = None, **assistant: object) -> KeyWorld:
+def key_world(
+    api: ApiEnv,
+    product_ids: list[str] | None = None,
+    max_level: str = "product_dev",
+    **assistant: object,
+) -> KeyWorld:
     world = build_world(api, Role.OWNER, no_source_message=NO_SOURCE, **assistant)
-    api_key_id, key = create_key(api, world.workspace_id, assistant_ids)
+    api_key_id, key = create_key(api, world.workspace_id, product_ids, max_level)
     return KeyWorld(world, api_key_id, key, sdk(api, key))
 
 

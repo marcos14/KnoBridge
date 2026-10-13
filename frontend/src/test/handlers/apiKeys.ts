@@ -39,7 +39,7 @@ export function apiKeyActionFails(action: ApiKeyAction, status: number, code: st
 
 /**
  * Keys that really change, with the backend's rules: `POST` adds one and returns
- * `API_KEY_SECRET` (409 `api_key_name_taken`, 422 `api_key_assistant_invalid` for an id that is
+ * `API_KEY_SECRET` (409 `api_key_name_taken`, 422 `api_key_product_invalid` for an id that is
  * not one of `assistantIds`), `PATCH` changes name and scope (409 `api_key_revoked` on a revoked
  * key; empty body 422), revoke is idempotent. `created`, `changes` and `revoked` keep what was
  * asked.
@@ -65,14 +65,15 @@ export function apiKeyStore(
       if (apiKeys.some((item) => item.name === body.name)) {
         return apiErrorResponse(409, "api_key_name_taken");
       }
-      if (invalidScope(body.assistant_ids)) {
-        return apiErrorResponse(422, "api_key_assistant_invalid");
+      if (invalidScope(body.product_ids)) {
+        return apiErrorResponse(422, "api_key_product_invalid");
       }
       const apiKey = makeApiKey({
         id: `00000000-0000-4000-8000-${String(990 + created.length).padStart(12, "0")}`,
         name: body.name,
         key_prefix: "ab12cd34",
-        assistant_ids: body.assistant_ids ?? null,
+        product_ids: body.product_ids ?? null,
+        max_level: body.max_level,
         created_at: REVOKED_AT,
         last_used_at: null,
       });
@@ -99,14 +100,13 @@ export function apiKeyStore(
       if (apiKeys.some((item) => item.id !== apiKeyId && item.name === body.name)) {
         return apiErrorResponse(409, "api_key_name_taken");
       }
-      if (invalidScope(body.assistant_ids)) {
-        return apiErrorResponse(422, "api_key_assistant_invalid");
+      if (invalidScope(body.product_ids)) {
+        return apiErrorResponse(422, "api_key_product_invalid");
       }
       const updated: ApiKey = {
         ...apiKey,
         name: body.name ?? apiKey.name,
-        assistant_ids:
-          "assistant_ids" in body ? (body.assistant_ids ?? null) : apiKey.assistant_ids,
+        product_ids: "product_ids" in body ? (body.product_ids ?? null) : apiKey.product_ids,
       };
       replace(updated);
       changes.push({ apiKeyId, body });

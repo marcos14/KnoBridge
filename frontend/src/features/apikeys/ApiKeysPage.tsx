@@ -61,7 +61,7 @@ function LastUsed({ value }: { value: string | null }) {
 
 function Scope({ apiKey, assistants }: { apiKey: ApiKey; assistants: Product[] | undefined }) {
   const { t } = useTranslation();
-  const ids = apiKey.assistant_ids;
+  const ids = apiKey.product_ids;
   if (ids === null) {
     return <span>{t("apiKeys.scope.all")}</span>;
   }

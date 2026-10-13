@@ -39,7 +39,7 @@ function useRefreshApiKeys(workspaceId: string) {
 
 /**
  * `POST /v1/workspaces/{id}/api-keys` (201): the key and its `kbk_` secret, the only time the
- * secret is ever returned. 409 `api_key_name_taken`; 422 `api_key_assistant_invalid`.
+ * secret is ever returned. 409 `api_key_name_taken`; 422 `api_key_product_invalid`.
  */
 export function useCreateApiKey(workspaceId: string) {
   const refresh = useRefreshApiKeys(workspaceId);
@@ -61,7 +61,7 @@ export interface ApiKeyUpdate {
 }
 
 /**
- * `PATCH /v1/workspaces/{id}/api-keys/{api_key_id}`: name and/or scope (`assistant_ids: null` is
+ * `PATCH /v1/workspaces/{id}/api-keys/{api_key_id}`: name and/or scope (`product_ids: null` is
  * every assistant). 409 `api_key_name_taken` or `api_key_revoked`.
  */
 export function useUpdateApiKey(workspaceId: string) {

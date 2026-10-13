@@ -211,7 +211,7 @@ export function makeTicketRequest(overrides: Partial<TicketRequest> = {}): Ticke
     id: TICKET_REQUEST_ID,
     conversation_id: CONVERSATION_ID,
     message_id: messageId(2),
-    assistant_id: PRODUCT_ID,
+    product_id: PRODUCT_ID,
     status: "pending",
     attempts: 0,
     external_ticket_id: null,

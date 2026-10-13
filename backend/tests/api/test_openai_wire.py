@@ -36,10 +36,12 @@ from knobridge.conversations.turn import (
     LLMCall,
     PreparedTurn,
 )
+from knobridge.levels.level import ResponseLevel
 from knobridge.llm.provider import ChatMessage, ChatParams, ChatRole
 
 MESSAGE_ID = uuid.UUID("11111111-1111-1111-1111-111111111111")
 CONVERSATION_ID = uuid.UUID("22222222-2222-2222-2222-222222222222")
+PRODUCT_ID = uuid.UUID("33333333-3333-3333-3333-333333333333")
 CITATIONS: Citations = [
     {"index": 1, "title": "docs/caixa.md", "uri": "docs/caixa.md#L1-L5"},
     {"index": 2, "title": "Sangria", "uri": None},
@@ -231,6 +233,8 @@ def _stream(*, append_sources: bool = True, include_usage: bool = False) -> Comp
         created=1791800000,
         model="Suporte",
         conversation_id=CONVERSATION_ID,
+        product_id=PRODUCT_ID,
+        level=ResponseLevel.SUPPORT,
         append_sources=append_sources,
         include_usage=include_usage,
         cost=_cost,
@@ -294,6 +298,8 @@ def test_stream_frames_with_footer_and_usage() -> None:
             "knobridge": {
                 "conversation_id": str(CONVERSATION_ID),
                 "message_id": str(MESSAGE_ID),
+                "product_id": str(PRODUCT_ID),
+                "level": "support",
                 "citations": CITATIONS,
             },
         },

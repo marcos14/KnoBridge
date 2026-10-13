@@ -56,10 +56,10 @@ fases:
         commit: 6773c35
       - id: F2.4
         titulo: API pública e webhook por produto e nível (chaves com produtos e nível máximo, model produto:nível, canal público só usuário final)
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-13
-        concluida_em: null
+        concluida_em: 2026-10-13
         commit: null
   - id: F3
     titulo: Painel
@@ -78,7 +78,7 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-13
         concluida_em: 2026-10-13
-        commit: null
+        commit: f7ad260
       - id: F3.3
         titulo: Chat com produto e nível, Conversas e Uso e custos por produto e nível, chaves de API por produto
         status: pendente
@@ -244,6 +244,13 @@ decisoes:
     decisao: "F3.2: Membros com a aba Níveis por produto (uma coluna por produto, padrão do papel ou nível explícito, PUT por par, quem tem papel maior fica só leitura); convite com nível opcional por produto; Fontes com nível mínimo na lista, filtro, detalhe e formulário (POST/PATCH só mandam min_level quando difere do padrão ou mudou, para o editor seguir salvando; aviso quando a fonte tem documentos); fonte de cards criada e editada no painel com Integração, Upload, Prévia e Indexação, generalizando features/sources/tickets em features/sources/push"
     motivo: "telas sem duplicar as de chamados"
     alternativas: "diálogo por membro; tela de cards separada"
+    adr: null
+  - id: D21
+    data: 2026-10-13
+    por: agente
+    decisao: "F2.4: chaves com product_ids e max_level obrigatório (painel cria com product_dev até o seletor da F3.3); REST com product_id (assistant_id sinônimo obsoleto) e level opcional = máximo da chave; ordem 404 produto fora da chave, 403 level_not_allowed, 409 level_not_configured (400 na rota OpenAI, param model); model <produto>[:<nível>] por nome ou id e /v1/models com o produto puro mais produto:nível até o máximo; regra do canal público em ApiKeyReader.public_channel com o teto de levels/policy.py; webhook do produto com product e level no evento (assistant mantido, obsoleto) e auditoria product.ticket_webhook_*; ações assistant.ticket_webhook_* ficam no catálogo para exibir eventos antigos; sinônimos transitórios assistant_id/assistant_ids removidos dos modelos"
+    motivo: "contrato api-publica v0.2"
+    alternativas: "chave do painel em end_user já agora (quebraria o E2E e as fontes de código)"
     adr: null
 pendencias_usuario: []
 ---
@@ -506,6 +513,7 @@ Nenhuma.
 - 2026-10-13 — F2.4 iniciada (agente em worktree).
 - 2026-10-13 — F3.2 iniciada (agente em worktree).
 - 2026-10-13 — F3.2 concluída: nível por produto em Membros e convites, nível mínimo nas Fontes e telas da fonte de cards; frontend 1527 passed, 98,7% branches
+- 2026-10-13 — F2.4 concluída: API pública e webhook por produto e nível, integrada sobre a F3.2; backend 2705 passed com 99% de cobertura, frontend 1527
 
 ## 8. Encerramento
 

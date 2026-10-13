@@ -1,10 +1,11 @@
 """API keys of a workspace (``/v1/workspaces/{workspace_id}/api-keys``), managed from the panel.
 
 Owners and admins only (403 ``forbidden`` below). Creating returns the key ``kbk_<prefix>_…``
-once; no route shows it again, nor its hash. ``PATCH`` changes name and/or scope (omitted field
-stays; ``assistant_ids: null`` is every assistant again; empty body is 422); a revoked key does
-not change (409 ``api_key_revoked``). ``POST .../revoke`` is final and idempotent. Contract in
-``docs/specs/api-publica.md``; logic in ``apikeys/service.py``.
+once; no route shows it again, nor its hash. Creating requires ``max_level``, the highest
+level the key asks at. ``PATCH`` changes name, scope and/or level (omitted field stays;
+``product_ids: null`` is every product again; ``max_level: null`` and an empty body are 422); a
+revoked key does not change (409 ``api_key_revoked``). ``POST .../revoke`` is final and
+idempotent. Contract in ``docs/specs/api-publica.md``; logic in ``apikeys/service.py``.
 """
 
 from __future__ import annotations
@@ -19,7 +20,7 @@ from pydantic import AfterValidator, BaseModel, Field, StringConstraints, model_
 
 from knobridge.api.deps import ClientIpDep, ClockDep, WorkspaceContext, require_role
 from knobridge.api.listing import SearchQuery
-from knobridge.apikeys.models import MAX_SCOPED_ASSISTANTS, NAME_MAX_LENGTH
+from knobridge.apikeys.models import MAX_SCOPED_PRODUCTS, NAME_MAX_LENGTH
 from knobridge.apikeys.service import (
     ApiKeyFilter,
     ApiKeyService,
@@ -27,6 +28,7 @@ from knobridge.apikeys.service import (
     ApiKeyView,
     ScopeChange,
 )
+from knobridge.levels.level import ResponseLevel
 from knobridge.security.csrf import require_csrf
 from knobridge.tenancy.models import Role
 
@@ -42,13 +44,13 @@ Name = Annotated[
 
 def _no_repeats(ids: list[uuid.UUID]) -> list[uuid.UUID]:
     if len(set(ids)) != len(ids):
-        raise ValueError("assistant_ids must not repeat an assistant")
+        raise ValueError("product_ids must not repeat a product")
     return ids
 
 
-AssistantIds = Annotated[
+ProductIds = Annotated[
     list[uuid.UUID],
-    Field(min_length=1, max_length=MAX_SCOPED_ASSISTANTS),
+    Field(min_length=1, max_length=MAX_SCOPED_PRODUCTS),
     AfterValidator(_no_repeats),
 ]
 
@@ -66,30 +68,35 @@ _WRITE_ERRORS: dict[int | str, dict[str, object]] = {
 }
 _INVALID = {
     422: {
-        "description": "Invalid body (`validation_error`) or an assistant of the scope outside "
-        "the workspace (`api_key_assistant_invalid`, `details.assistant_ids`)."
+        "description": "Invalid body (`validation_error`, also without `max_level`) or a "
+        "product of the scope outside the workspace (`api_key_product_invalid`, "
+        "`details.product_ids`)."
     }
 }
 
 
 class ApiKeyCreate(BaseModel):
     name: Name
-    # ``null``: every active assistant of the workspace, including future ones.
-    assistant_ids: AssistantIds | None = None
+    # ``null``: every active product of the workspace, including future ones.
+    product_ids: ProductIds | None = None
+    # Required, with no default: whoever creates the key picks its ceiling on purpose.
+    max_level: ResponseLevel
 
 
 class ApiKeyUpdate(BaseModel):
-    """Fields to change; omitted fields stay, ``assistant_ids: null`` is every assistant."""
+    """Fields to change; omitted fields stay, ``product_ids: null`` is every product."""
 
     name: Name | None = None
-    assistant_ids: AssistantIds | None = None
+    product_ids: ProductIds | None = None
+    max_level: ResponseLevel | None = None
 
     @model_validator(mode="after")
     def _not_empty(self) -> ApiKeyUpdate:
         if not self.model_fields_set:
-            raise ValueError("send name and/or assistant_ids")
-        if "name" in self.model_fields_set and self.name is None:
-            raise ValueError("name cannot be null")
+            raise ValueError("send name, product_ids and/or max_level")
+        for field in ("name", "max_level"):
+            if field in self.model_fields_set and getattr(self, field) is None:
+                raise ValueError(f"{field} cannot be null")
         return self
 
 
@@ -98,7 +105,8 @@ class ApiKeyOut(BaseModel):
     name: str
     # The 8 public characters; the panel shows ``kbk_<prefix>_…``.
     key_prefix: str
-    assistant_ids: list[uuid.UUID] | None
+    product_ids: list[uuid.UUID] | None
+    max_level: ResponseLevel
     created_by: uuid.UUID | None
     created_by_name: str | None
     created_at: datetime
@@ -125,7 +133,8 @@ def _out(view: ApiKeyView) -> ApiKeyOut:
         id=key.id,
         name=key.name,
         key_prefix=key.key_prefix,
-        assistant_ids=None if key.assistant_ids is None else list(key.assistant_ids),
+        product_ids=None if key.product_ids is None else list(key.product_ids),
+        max_level=key.max_level,
         created_by=key.created_by,
         created_by_name=view.created_by_name,
         created_at=key.created_at,
@@ -183,7 +192,8 @@ async def create_api_key(
         workspace_id=context.workspace_id,
         actor_id=context.current.user.id,
         name=body.name,
-        assistant_ids=body.assistant_ids,
+        product_ids=body.product_ids,
+        max_level=body.max_level,
         ip=ip,
     )
     return ApiKeyCreated(api_key=_out(issued.view), key=issued.key)
@@ -208,8 +218,8 @@ async def update_api_key(
     keys: ApiKeyServiceDep,
     ip: ClientIpDep,
 ) -> ApiKeyOut:
-    """Rename and/or change the scope; the key itself never changes."""
-    scope = ScopeChange(body.assistant_ids) if "assistant_ids" in body.model_fields_set else None
+    """Rename, change the scope and/or the maximum level; the key itself never changes."""
+    scope = ScopeChange(body.product_ids) if "product_ids" in body.model_fields_set else None
     view = await keys.update(
         context.db,
         workspace_id=context.workspace_id,
@@ -217,6 +227,7 @@ async def update_api_key(
         api_key_id=api_key_id,
         name=body.name,
         scope=scope,
+        max_level=body.max_level,
         ip=ip,
     )
     return _out(view)

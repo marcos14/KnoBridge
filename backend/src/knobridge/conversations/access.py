@@ -22,7 +22,7 @@ from knobridge.conversations.models import Conversation
 from knobridge.core.errors import ConflictError, ForbiddenError, NotFoundError
 from knobridge.levels.level import ResponseLevel
 from knobridge.levels.members import member_max_level
-from knobridge.levels.policy import CeilingReason, check_level
+from knobridge.levels.policy import CeilingReason, ceiling, check_level
 from knobridge.levels.workspace import AnswerSettings, answer_settings
 from knobridge.products.models import Product
 from knobridge.tenancy.models import Role
@@ -48,12 +48,14 @@ class ApiKeyReader:
 
     ``product_ids`` is the key's scope (``None``: every product): a conversation whose
     product left the scope reads as missing (404), like one of another key. ``max_level`` caps
-    the level of its questions.
+    the level of its questions; on a public channel (where whoever asks is not identified, as
+    the future widget) the cap is ``end_user`` whatever the key's (``levels/policy.py``).
     """
 
     api_key_id: uuid.UUID
     product_ids: frozenset[uuid.UUID] | None
-    max_level: ResponseLevel = ResponseLevel.PRODUCT_DEV
+    max_level: ResponseLevel
+    public_channel: bool = False
 
 
 # Who may ask in a conversation: the person who owns it, or the API key that owns it.
@@ -96,7 +98,8 @@ async def max_level_of(
 ) -> tuple[ResponseLevel, CeilingReason]:
     """The current maximum level of who asks in the product, and whose limit it is."""
     if isinstance(owner, ApiKeyReader):
-        return owner.max_level, CeilingReason.API_KEY
+        limit = ceiling(owner.max_level, CeilingReason.API_KEY, public_channel=owner.public_channel)
+        return limit.level, limit.reason
     level = await member_max_level(
         db,
         workspace_id=workspace_id,

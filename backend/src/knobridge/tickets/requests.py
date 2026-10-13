@@ -1,10 +1,10 @@
 """Ticket requests from the chat (docs/specs/chamados.md, "Pedido no chat").
 
 Only the owner of a conversation asks, about an assistant answer that is ``completed`` or
-``no_source``, to an active assistant whose webhook has a URL and a secret; one request per
+``no_source``, to an active product whose webhook has a URL and a secret; one request per
 answer. ``preview`` gathers what would be sent (question, requester, last messages and a
-summary written by the assistant's model, falling back to the question) without writing
-anything. ``create`` writes the request ``pending`` with the exact body of the
+summary written by the model of the conversation's level, falling back to the question)
+without writing anything. ``create`` writes the request ``pending`` with the exact body of the
 ``ticket.requested`` event, built once and resent byte for byte; the caller starts the
 delivery after the commit (``tickets/delivery.py``).
 
@@ -78,7 +78,7 @@ class TicketRequestDraft:
 @dataclass(frozen=True)
 class _Target:
     conversation: Conversation
-    assistant: Product
+    product: Product
     answer: Message
     question: str
     requester: Requester
@@ -186,6 +186,7 @@ class TicketRequestService:
         )
         workspace_name = await db.scalar(select(Workspace.name).where(Workspace.id == workspace_id))
         request_id = uuid.uuid4()
+        product = {"id": str(target.product.id), "name": target.product.name}
         body = encode_body(
             {
                 "event": REQUESTED_EVENT,
@@ -193,7 +194,10 @@ class TicketRequestService:
                 "id": str(request_id),
                 "created_at": instant(self._clock.now()),
                 "workspace": {"id": str(workspace_id), "name": workspace_name},
-                "assistant": {"id": str(target.assistant.id), "name": target.assistant.name},
+                "product": product,
+                "level": target.conversation.level.value,
+                # Repeats ``product``; obsolete since chamados.md v0.2.
+                "assistant": product,
                 "conversation": {
                     "id": str(conversation_id),
                     "url": conversation_url(self._public_base_url, workspace_id, conversation_id),
@@ -216,7 +220,7 @@ class TicketRequestService:
             workspace_id=workspace_id,
             conversation_id=conversation_id,
             message_id=message_id,
-            assistant_id=target.assistant.id,
+            product_id=target.product.id,
             user_id=reader.user_id,
             status=TicketRequestStatus.PENDING,
             attempts=0,
@@ -234,7 +238,7 @@ class TicketRequestService:
             metadata={
                 "conversation_id": str(conversation_id),
                 "message_id": str(message_id),
-                "assistant_id": str(target.assistant.id),
+                "product_id": str(target.product.id),
             },
             ip=ip,
         )
@@ -280,9 +284,9 @@ class TicketRequestService:
         )
         require_owner(conversation, reader)
         answer = await self._answer(db, conversation, message_id)
-        assistant = await get_active_product(db, workspace_id, conversation.product_id)
-        if not assistant.ticket_webhook_configured:
-            raise TicketWebhookNotConfiguredError("The assistant has no webhook URL or secret.")
+        product = await get_active_product(db, workspace_id, conversation.product_id)
+        if not product.ticket_webhook_configured:
+            raise TicketWebhookNotConfiguredError("The product has no webhook URL or secret.")
         existing = await db.scalar(
             select(TicketRequest.id).where(
                 TicketRequest.workspace_id == workspace_id, TicketRequest.message_id == message_id
@@ -308,7 +312,7 @@ class TicketRequestService:
         ).one()
         return _Target(
             conversation=conversation,
-            assistant=assistant,
+            product=product,
             answer=answer,
             question=question,
             requester=Requester(name=user.name, email=user.email),

@@ -1,4 +1,4 @@
-"""The ticket webhook of an assistant: its URL rules, its ``kbw_`` signing secret and the test
+"""The ticket webhook of a product: its URL rules, its ``kbw_`` signing secret and the test
 event (docs/specs/chamados.md, "Abrir chamado (webhook de saída)").
 
 The secret is generated here, shown once and stored only as ciphertext
@@ -33,7 +33,7 @@ from knobridge.core.outbound import (
     OutboundResponse,
     OutboundUrlInvalid,
 )
-from knobridge.products.models import Product as Assistant
+from knobridge.products.models import Product
 from knobridge.tenancy.models import Workspace
 from knobridge.tickets.signature import SIGNATURE_HEADER, signature_header
 from knobridge.tickets.webhook_secret import open_webhook_secret, seal_webhook_secret
@@ -161,25 +161,23 @@ class TicketWebhookService:
         *,
         workspace_id: uuid.UUID,
         actor_id: uuid.UUID,
-        assistant_id: uuid.UUID,
+        product_id: uuid.UUID,
         ip: str | None,
     ) -> IssuedWebhookSecret:
         """Generate the signing secret, replacing the current one at once."""
-        assistant = await _assistant(db, workspace_id, assistant_id, lock=True)
+        product = await _product(db, workspace_id, product_id, lock=True)
         secret = generate_webhook_secret()
         now = self._clock.now()
-        assistant.ticket_webhook_secret_ciphertext = seal_webhook_secret(
-            self._box, assistant, secret
-        )
-        assistant.ticket_webhook_secret_created_at = now
+        product.ticket_webhook_secret_ciphertext = seal_webhook_secret(self._box, product, secret)
+        product.ticket_webhook_secret_created_at = now
         await db.flush()
         await self._audit.record(
             db,
-            action=AuditAction.ASSISTANT_TICKET_WEBHOOK_SECRET_ROTATED,
+            action=AuditAction.PRODUCT_TICKET_WEBHOOK_SECRET_ROTATED,
             workspace_id=workspace_id,
             actor_user_id=actor_id,
-            target=AuditTarget("assistant", str(assistant.id)),
-            metadata={"name": assistant.name},
+            target=AuditTarget("product", str(product.id)),
+            metadata={"name": product.name},
             ip=ip,
         )
         return IssuedWebhookSecret(secret=secret, created_at=now)
@@ -190,16 +188,16 @@ class TicketWebhookService:
         *,
         workspace_id: uuid.UUID,
         actor_id: uuid.UUID,
-        assistant_id: uuid.UUID,
+        product_id: uuid.UUID,
         ip: str | None,
     ) -> WebhookTestResult:
         """Send one signed ``ticket.test`` event, without retries, and report the outcome
         (audited either way). 409 ``ticket_webhook_not_configured`` without URL or secret."""
-        assistant = await _assistant(db, workspace_id, assistant_id, lock=False)
-        url = assistant.ticket_webhook_url
-        secret = open_webhook_secret(self._box, assistant)
+        product = await _product(db, workspace_id, product_id, lock=False)
+        url = product.ticket_webhook_url
+        secret = open_webhook_secret(self._box, product)
         if url is None or secret is None:
-            raise TicketWebhookNotConfiguredError("The assistant has no webhook URL or secret.")
+            raise TicketWebhookNotConfiguredError("The product has no webhook URL or secret.")
         workspace_name = await db.scalar(select(Workspace.name).where(Workspace.id == workspace_id))
         delivery_id = uuid.uuid4()
         now = self._clock.now()
@@ -210,18 +208,20 @@ class TicketWebhookService:
                 "id": str(delivery_id),
                 "created_at": _instant(now),
                 "workspace": {"id": str(workspace_id), "name": workspace_name},
-                "assistant": {"id": str(assistant.id), "name": assistant.name},
+                "product": {"id": str(product.id), "name": product.name},
+                # Repeats ``product``; obsolete since chamados.md v0.2.
+                "assistant": {"id": str(product.id), "name": product.name},
             }
         )
         result = await self._attempt(url, secret, delivery_id, body, int(now.timestamp()))
         await self._audit.record(
             db,
-            action=AuditAction.ASSISTANT_TICKET_WEBHOOK_TESTED,
+            action=AuditAction.PRODUCT_TICKET_WEBHOOK_TESTED,
             workspace_id=workspace_id,
             actor_user_id=actor_id,
-            target=AuditTarget("assistant", str(assistant.id)),
+            target=AuditTarget("product", str(product.id)),
             metadata={
-                "name": assistant.name,
+                "name": product.name,
                 "ok": result.ok,
                 "status": result.status,
                 "error_code": result.error_code,
@@ -231,7 +231,7 @@ class TicketWebhookService:
         _log.info(
             "ticket_webhook_tested",
             workspace_id=str(workspace_id),
-            assistant_id=str(assistant.id),
+            product_id=str(product.id),
             ok=result.ok,
             status=result.status,
             error_code=result.error_code,
@@ -265,15 +265,13 @@ class TicketWebhookService:
         return WebhookTestResult(delivery_id, False, response.status, "webhook_rejected")
 
 
-async def _assistant(
-    db: AsyncSession, workspace_id: uuid.UUID, assistant_id: uuid.UUID, *, lock: bool
-) -> Assistant:
-    query = select(Assistant).where(
-        Assistant.workspace_id == workspace_id, Assistant.id == assistant_id
-    )
+async def _product(
+    db: AsyncSession, workspace_id: uuid.UUID, product_id: uuid.UUID, *, lock: bool
+) -> Product:
+    query = select(Product).where(Product.workspace_id == workspace_id, Product.id == product_id)
     if lock:
         query = query.with_for_update()
-    assistant = (await db.scalars(query)).one_or_none()
-    if assistant is None:
-        raise NotFoundError("Assistant not found.")
-    return assistant
+    product = (await db.scalars(query)).one_or_none()
+    if product is None:
+        raise NotFoundError("Product not found.")
+    return product

@@ -35,7 +35,13 @@ _PROVIDER_MESSAGES = {
     "chat_failed": "The assistant failed to answer.",
 }
 _PROVIDER_FAILED = "The model provider failed to answer."
-_PARAMS = {"model_not_found": "model"}
+_PARAMS = {
+    "model_not_found": "model",
+    "level_not_allowed": "model",
+    "level_not_configured": "model",
+}
+# 400, not 409: the OpenAI SDKs retry a 409 on their own.
+_AS_BAD_REQUEST = {"level_not_configured"}
 
 
 @dataclass(frozen=True)
@@ -81,7 +87,9 @@ def classify(code: str, status: int, message: str) -> OpenAIError:
     if code.startswith(("provider_", "embedding_")):
         return OpenAIError(502, _PROVIDER_MESSAGES.get(code, _PROVIDER_FAILED), API_ERROR, code)
     if status == HTTPStatus.FORBIDDEN:
-        return OpenAIError(status, message, "permission_error", code)
+        return OpenAIError(status, message, "permission_error", code, _PARAMS.get(code))
+    if code in _AS_BAD_REQUEST:
+        status = HTTPStatus.BAD_REQUEST
     type_ = INVALID_REQUEST if status < HTTPStatus.INTERNAL_SERVER_ERROR else API_ERROR
     return OpenAIError(status, message, type_, code, _PARAMS.get(code))
 

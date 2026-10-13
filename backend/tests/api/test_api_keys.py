@@ -1,6 +1,6 @@
 """API key routes of the panel: create with the key shown once, hashed storage, roles, CSRF,
-scope validation, edit, idempotent revocation, listing filters, audit without the key and
-workspace isolation."""
+scope and maximum level validation, edit, idempotent revocation, listing filters, audit without
+the key and workspace isolation."""
 
 from __future__ import annotations
 
@@ -40,7 +40,8 @@ def test_create_api_key_returns_key_once(api: ApiEnv) -> None:
         "id": created["id"],
         "name": "ERP",
         "key_prefix": match.group(1),
-        "assistant_ids": [world.assistant_id],
+        "product_ids": [world.assistant_id],
+        "max_level": "product_dev",
         "created_by": str(world.users[0].id),
         "created_by_name": "Test User",
         "created_at": created["created_at"],
@@ -60,14 +61,14 @@ def test_api_key_stored_hashed(api: ApiEnv) -> None:
 
     stored = stored_key(api, api_key_id)
     assert stored.key_hash == hashlib.sha256(key.encode()).hexdigest()
-    assert stored.assistant_ids is None
+    assert stored.product_ids is None
     assert key not in (stored.key_hash, stored.key_prefix)
 
 
 def test_create_api_key_audited_without_key(api: ApiEnv) -> None:
     world = build_world(api, Role.OWNER)
 
-    response = post_key(api, world.workspace_id, "Bot", [world.assistant_id])
+    response = post_key(api, world.workspace_id, "Bot", [world.assistant_id], "support")
 
     key = response.json()["key"]
     assert _key_events(api, world.workspace_id) == [
@@ -76,7 +77,8 @@ def test_create_api_key_audited_without_key(api: ApiEnv) -> None:
             {
                 "name": "Bot",
                 "key_prefix": key.split("_")[1],
-                "assistant_ids": [world.assistant_id],
+                "product_ids": [world.assistant_id],
+                "max_level": "support",
             },
         )
     ]
@@ -129,7 +131,7 @@ def test_create_api_key_name_taken(api: ApiEnv) -> None:
     assert error(response) == (409, "api_key_name_taken")
 
 
-def test_create_api_key_rejects_assistant_outside_workspace(api: ApiEnv) -> None:
+def test_create_api_key_rejects_product_outside_workspace(api: ApiEnv) -> None:
     world = build_world(api, Role.OWNER)
     other = build_world(api, Role.OWNER)
     api.login(world.users[0])
@@ -139,22 +141,22 @@ def test_create_api_key_rejects_assistant_outside_workspace(api: ApiEnv) -> None
         api, world.workspace_id, None, [world.assistant_id, other.assistant_id, unknown]
     )
 
-    assert error(response) == (422, "api_key_assistant_invalid")
-    assert response.json()["error"]["details"] == {"assistant_ids": [other.assistant_id, unknown]}
+    assert error(response) == (422, "api_key_product_invalid")
+    assert response.json()["error"]["details"] == {"product_ids": [other.assistant_id, unknown]}
 
 
 @pytest.mark.parametrize(
-    "assistant_ids",
+    "product_ids",
     [[], "repeat", [str(uuid.uuid4()) for _ in range(101)]],
     ids=["empty", "repeated", "above-100"],
 )
-def test_create_api_key_validates_scope_shape(api: ApiEnv, assistant_ids: object) -> None:
+def test_create_api_key_validates_scope_shape(api: ApiEnv, product_ids: object) -> None:
     world = build_world(api, Role.OWNER)
-    ids = [world.assistant_id, world.assistant_id] if assistant_ids == "repeat" else assistant_ids
+    ids = [world.assistant_id, world.assistant_id] if product_ids == "repeat" else product_ids
 
     response = api.client.post(
         keys_path(world.workspace_id),
-        json={"name": "Escopo", "assistant_ids": ids},
+        json={"name": "Escopo", "product_ids": ids, "max_level": "end_user"},
         headers=api.csrf_headers(),
     )
 
@@ -167,25 +169,30 @@ def test_update_api_key_renames_and_changes_scope(api: ApiEnv) -> None:
 
     renamed = api.client.patch(
         keys_path(world.workspace_id, api_key_id),
-        json={"name": "Novo nome", "assistant_ids": [world.assistant_id]},
+        json={"name": "Novo nome", "product_ids": [world.assistant_id]},
         headers=api.csrf_headers(),
     )
     back_to_all = api.client.patch(
         keys_path(world.workspace_id, api_key_id),
-        json={"assistant_ids": None},
+        json={"product_ids": None, "max_level": "end_user"},
         headers=api.csrf_headers(),
     )
 
     assert renamed.status_code == 200
-    assert (renamed.json()["name"], renamed.json()["assistant_ids"]) == (
+    assert (renamed.json()["name"], renamed.json()["product_ids"]) == (
         "Novo nome",
         [world.assistant_id],
     )
     assert back_to_all.status_code == 200
-    assert (back_to_all.json()["name"], back_to_all.json()["assistant_ids"]) == ("Novo nome", None)
+    changed = back_to_all.json()
+    assert (changed["name"], changed["product_ids"], changed["max_level"]) == (
+        "Novo nome",
+        None,
+        "end_user",
+    )
     updates = [d for a, d in _key_events(api, world.workspace_id) if a == "api_key.updated"]
-    assert {"name": "Novo nome", "fields": ["name", "assistant_ids"]} in updates
-    assert {"name": "Novo nome", "fields": ["assistant_ids"]} in updates
+    assert {"name": "Novo nome", "fields": ["name", "product_ids"]} in updates
+    assert {"name": "Novo nome", "fields": ["product_ids", "max_level"]} in updates
     assert len(updates) == 2
 
 
@@ -196,7 +203,7 @@ def test_update_api_key_without_changes_is_not_audited(api: ApiEnv) -> None:
 
     same = api.client.patch(
         keys_path(world.workspace_id, api_key_id),
-        json={"name": "Igual", "assistant_ids": [world.assistant_id]},
+        json={"name": "Igual", "product_ids": [world.assistant_id], "max_level": "product_dev"},
         headers=api.csrf_headers(),
     )
 
@@ -214,17 +221,49 @@ def test_update_api_key_validation(api: ApiEnv) -> None:
 
     empty = api.client.patch(path, json={}, headers=headers)
     null_name = api.client.patch(path, json={"name": None}, headers=headers)
+    null_level = api.client.patch(path, json={"max_level": None}, headers=headers)
+    bad_level = api.client.patch(path, json={"max_level": "root"}, headers=headers)
     name_taken = api.client.patch(path, json={"name": taken}, headers=headers)
-    bad_scope = api.client.patch(path, json={"assistant_ids": [str(uuid.uuid4())]}, headers=headers)
+    bad_scope = api.client.patch(path, json={"product_ids": [str(uuid.uuid4())]}, headers=headers)
     missing = api.client.patch(
         keys_path(world.workspace_id, str(uuid.uuid4())), json={"name": "Z"}, headers=headers
     )
 
     assert error(empty) == (422, "validation_error")
     assert error(null_name) == (422, "validation_error")
+    assert error(null_level) == (422, "validation_error")
+    assert error(bad_level) == (422, "validation_error")
     assert error(name_taken) == (409, "api_key_name_taken")
-    assert error(bad_scope) == (422, "api_key_assistant_invalid")
+    assert error(bad_scope) == (422, "api_key_product_invalid")
     assert error(missing) == (404, "not_found")
+
+
+def test_create_api_key_requires_max_level(api: ApiEnv) -> None:
+    world = build_world(api, Role.OWNER)
+
+    missing = api.client.post(
+        keys_path(world.workspace_id), json={"name": "Sem nível"}, headers=api.csrf_headers()
+    )
+    unknown = api.client.post(
+        keys_path(world.workspace_id),
+        json={"name": "Nível errado", "max_level": "admin"},
+        headers=api.csrf_headers(),
+    )
+
+    assert error(missing) == (422, "validation_error")
+    assert error(unknown) == (422, "validation_error")
+    assert api.client.get(keys_path(world.workspace_id)).json()["total"] == 0
+
+
+@pytest.mark.parametrize("level", ["end_user", "support", "product_dev"])
+def test_create_api_key_stores_the_max_level(api: ApiEnv, level: str) -> None:
+    world = build_world(api, Role.OWNER)
+
+    response = post_key(api, world.workspace_id, "Nível", max_level=level)
+
+    assert response.status_code == 201
+    assert response.json()["api_key"]["max_level"] == level
+    assert stored_key(api, response.json()["api_key"]["id"]).max_level == level
 
 
 def test_revoke_api_key_is_idempotent_and_final(api: ApiEnv) -> None:

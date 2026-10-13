@@ -142,7 +142,7 @@ async def rotate_ticket_webhook_secret(
         context.db,
         workspace_id=context.workspace_id,
         actor_id=context.current.user.id,
-        assistant_id=product_id,
+        product_id=product_id,
         ip=ip,
     )
     return TicketWebhookSecretOut(secret=issued.secret, created_at=issued.created_at)
@@ -171,7 +171,7 @@ async def test_ticket_webhook(
         context.db,
         workspace_id=context.workspace_id,
         actor_id=context.current.user.id,
-        assistant_id=product_id,
+        product_id=product_id,
         ip=ip,
     )
     error = None

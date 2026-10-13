@@ -52,12 +52,12 @@ class AuditAction(StrEnum):
     ASSISTANT_CREATED = "assistant.created"
     ASSISTANT_UPDATED = "assistant.updated"
     ASSISTANT_DELETED = "assistant.deleted"
-    # Ticket webhook: signing secret generated or replaced (never the secret) and test event
-    # sent (outcome only: ok, HTTP status, error code).
+    # Their ticket webhook, retired the same way (the product's below replaced them).
     ASSISTANT_TICKET_WEBHOOK_SECRET_ROTATED = "assistant.ticket_webhook_secret_rotated"  # noqa: S105
     ASSISTANT_TICKET_WEBHOOK_TESTED = "assistant.ticket_webhook_tested"
     # Products (names, collection ids and changed fields; never the instructions nor the
-    # webhook URL) and their ticket webhook (as the assistant's above).
+    # webhook URL) and their ticket webhook: signing secret generated or replaced (name only,
+    # never the secret) and test event sent (outcome only: ok, HTTP status, error code).
     PRODUCT_CREATED = "product.created"
     PRODUCT_UPDATED = "product.updated"
     PRODUCT_DELETED = "product.deleted"
@@ -69,7 +69,7 @@ class AuditAction(StrEnum):
     MEMBER_LEVEL_UPDATED = "member_level.updated"
     # Conversations: only the deletion is audited (no content: ids and counts only).
     CONVERSATION_DELETED = "conversation.deleted"
-    # Ticket request sent from an answer (conversation, message and assistant ids; never the
+    # Ticket request sent from an answer (conversation, message and product ids; never the
     # question, the summary or the requester's data).
     TICKET_REQUEST_CREATED = "ticket_request.created"
     # Knowledge index configuration: collections, sources and their runs (names, kinds,

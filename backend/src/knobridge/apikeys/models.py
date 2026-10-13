@@ -25,7 +25,7 @@ from sqlalchemy import (
     Uuid,
 )
 from sqlalchemy.dialects.postgresql import ARRAY
-from sqlalchemy.orm import Mapped, mapped_column, synonym
+from sqlalchemy.orm import Mapped, mapped_column
 
 from knobridge.core.models import Base, TimestampMixin, UUIDPrimaryKeyMixin, str_enum
 from knobridge.levels.level import ResponseLevel
@@ -39,7 +39,7 @@ REFERENCED_MODELS = (Workspace, User)
 NAME_MAX_LENGTH = 200
 KEY_PREFIX_LENGTH = 8
 SHA256_HEX_LENGTH = 64
-MAX_SCOPED_ASSISTANTS = 100
+MAX_SCOPED_PRODUCTS = 100
 
 
 class ApiKey(UUIDPrimaryKeyMixin, TimestampMixin, Base):
@@ -58,7 +58,7 @@ class ApiKey(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         # A scope lists 1 to 100 products and no null; no scope is ``NULL``, never ``{}``.
         CheckConstraint(
             "product_ids IS NULL OR (cardinality(product_ids) BETWEEN 1 AND "
-            f"{MAX_SCOPED_ASSISTANTS} AND array_position(product_ids, NULL) IS NULL)",
+            f"{MAX_SCOPED_PRODUCTS} AND array_position(product_ids, NULL) IS NULL)",
             name="product_ids_size",
         ),
     )
@@ -75,8 +75,6 @@ class ApiKey(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     product_ids: Mapped[list[uuid.UUID] | None] = mapped_column(
         ARRAY(Uuid[uuid.UUID]()), nullable=True, default=None
     )
-    # Transitional name (plan 0009): the key service still says ``assistant_ids``.
-    assistant_ids: Mapped[list[uuid.UUID] | None] = synonym("product_ids")
     # Highest level the key may ask at, in any product of its scope; chosen on creation.
     max_level: Mapped[ResponseLevel] = mapped_column(
         str_enum(ResponseLevel, "max_level"), nullable=False

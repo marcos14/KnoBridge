@@ -1,5 +1,5 @@
 """The public REST API of conversations: conversations of a key with ``channel = api``, the
-assistant scope (404, never 403), rule 8 without calling the LLM, JSON and SSE answers, a
+product scope (404, never 403), rule 8 without calling the LLM, JSON and SSE answers, a
 provider failure as ``status: failed``, ownership by the key and workspace isolation. No real
 provider: the retriever and the provider factory are fakes."""
 
@@ -70,7 +70,9 @@ def test_create_public_conversation(api: ApiEnv) -> None:
     body = response.json()
     assert body == {
         "id": body["id"],
+        "product_id": world.assistant_id,
         "assistant_id": world.assistant_id,
+        "level": "product_dev",
         "title": None,
         "channel": "api",
         "created_at": body["created_at"],
@@ -81,7 +83,7 @@ def test_create_public_conversation(api: ApiEnv) -> None:
     assert conversation.channel is ConversationChannel.API
 
 
-def test_create_public_conversation_hides_assistants_outside_reach(api: ApiEnv) -> None:
+def test_create_public_conversation_hides_products_outside_reach(api: ApiEnv) -> None:
     world = build_world(api, Role.OWNER)
     other = _assistant(api, world.workspace_id, "Outro")
     inactive = _assistant(api, world.workspace_id, "Inativo")
@@ -213,7 +215,7 @@ def test_public_message_errors(api: ApiEnv, chat: ChatOverrides) -> None:
     ).json()["id"]
     api.client.patch(
         keys_path(world.workspace_id, api_key_id),
-        json={"assistant_ids": [world.assistant_id]},
+        json={"product_ids": [world.assistant_id]},
         headers=api.csrf_headers(),
     )
 

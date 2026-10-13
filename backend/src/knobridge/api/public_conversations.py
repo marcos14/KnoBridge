@@ -2,10 +2,12 @@
 
 Only ``Authorization: Bearer kbk_…`` opens these routes: no session cookie, no CSRF. A
 conversation made here has ``channel = api`` and belongs to the key: another key of the same
-workspace gets 404. The turn is the panel's (``ChatService`` with an ``ApiKeyReader``):
-retrieval, rule 8, the history window and the two phases. ``stream: true`` answers with the
-Server-Sent Events of ``docs/specs/chat-sse.md``; ``stream: false`` consumes the turn and
-answers the saved message as JSON (a provider failure is still 200, ``status: failed``).
+workspace gets 404. Each conversation has a product and a level, fixed at creation (without a
+level, the key's maximum; above it, 403 ``level_not_allowed``). The turn is the panel's
+(``ChatService`` with an ``ApiKeyReader``): retrieval, rule 8, the history window and the two
+phases. ``stream: true`` answers with the Server-Sent Events of ``docs/specs/chat-sse.md``;
+``stream: false`` consumes the turn and answers the saved message as JSON (a provider failure
+is still 200, ``status: failed``).
 Contract in ``docs/specs/api-publica.md``; body limits in ``body_limit.py``.
 """
 
@@ -18,7 +20,7 @@ from typing import Annotated
 
 import anyio
 from fastapi import APIRouter, Query, Response
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, model_validator
 
 from knobridge.api.api_key_deps import ApiKeyContextDep, ApiKeyIdentityDep
 from knobridge.api.chat_stream import SSE_MEDIA_TYPE, ChatEventStream
@@ -41,6 +43,7 @@ from knobridge.conversations.models import (
 from knobridge.conversations.turn import PreparedTurn
 from knobridge.core.db import scoped_session
 from knobridge.core.logging import get_logger
+from knobridge.levels.level import ResponseLevel
 
 DEFAULT_MESSAGE_LIMIT = 50
 MAX_MESSAGE_LIMIT = 200
@@ -58,12 +61,37 @@ _SSE_DESCRIPTION = (
 
 
 class PublicConversationCreate(BaseModel):
-    assistant_id: uuid.UUID
+    """The product (``assistant_id`` is its obsolete synonym; send one of the two) and the
+    level (omitted: the key's maximum)."""
+
+    product_id: uuid.UUID | None = None
+    assistant_id: uuid.UUID | None = Field(
+        default=None,
+        description="Obsolete synonym of `product_id`.",
+        json_schema_extra={"deprecated": True},
+    )
+    level: ResponseLevel | None = None
+
+    @model_validator(mode="after")
+    def _one_product(self) -> PublicConversationCreate:
+        if (self.product_id is None) == (self.assistant_id is None):
+            raise ValueError("send exactly one of product_id and assistant_id (obsolete)")
+        return self
+
+    @property
+    def product(self) -> uuid.UUID:
+        # ``_one_product`` guarantees exactly one of the two.
+        return next(item for item in (self.product_id, self.assistant_id) if item is not None)
 
 
 class PublicConversationOut(BaseModel):
     id: uuid.UUID
-    assistant_id: uuid.UUID
+    product_id: uuid.UUID
+    # Repeats ``product_id``; obsolete, leaves in a future version.
+    assistant_id: uuid.UUID = Field(
+        description="Repeats `product_id`; obsolete.", json_schema_extra={"deprecated": True}
+    )
+    level: ResponseLevel
     # Generated from the first question; null until then.
     title: str | None
     channel: ConversationChannel
@@ -114,7 +142,9 @@ class PublicAnswerOut(BaseModel):
 def _conversation_fields(conversation: Conversation) -> dict[str, object]:
     return {
         "id": conversation.id,
-        "assistant_id": conversation.assistant_id,
+        "product_id": conversation.product_id,
+        "assistant_id": conversation.product_id,
+        "level": conversation.level,
         "title": conversation.title,
         "channel": conversation.channel,
         "created_at": conversation.created_at,
@@ -162,15 +192,23 @@ router = APIRouter(prefix="/conversations", tags=["public-api"])
     status_code=HTTPStatus.CREATED,
     responses={
         **_ERRORS,
-        404: {"description": "Assistant missing, inactive or outside the key's scope."},
+        403: {
+            "description": "Workspace of the key suspended (`workspace_suspended`) or a level "
+            "above the key's maximum (`level_not_allowed`)."
+        },
+        404: {"description": "Product missing, inactive or outside the key's scope."},
+        409: {"description": "The level has no model in the workspace (`level_not_configured`)."},
         413: {"description": "Body above 4 KiB (`payload_too_large`)."},
     },
 )
 async def create_public_conversation(
     body: PublicConversationCreate, context: ApiKeyContextDep
 ) -> PublicConversationOut:
-    """Start a conversation of the key with an active assistant of its scope."""
-    conversation = await create_key_conversation(context.db, context.identity, body.assistant_id)
+    """Start a conversation of the key with an active product of its scope, at a level up to
+    the key's maximum (omitted: the maximum)."""
+    conversation = await create_key_conversation(
+        context.db, context.identity, body.product, body.level
+    )
     return PublicConversationOut.model_validate(_conversation_fields(conversation))
 
 
@@ -217,8 +255,12 @@ async def get_public_conversation(
             "content": {SSE_MEDIA_TYPE: {"schema": {"type": "string"}}},
         },
         **_ERRORS,
+        403: {
+            "description": "Workspace of the key suspended (`workspace_suspended`) or the key's "
+            "maximum level is now below the conversation's (`level_not_allowed`)."
+        },
         404: {
-            "description": "Conversation not found for this key, or its assistant left the "
+            "description": "Conversation not found for this key, or its product left the "
             "key's scope."
         },
         409: {
@@ -236,7 +278,7 @@ async def send_public_message(
     chat: ChatServiceDep,
     clock: ClockDep,
 ) -> Response | PublicAnswerOut:
-    """Ask the assistant. The question and the answer's starting point are committed before
+    """Ask the product. The question and the answer's starting point are committed before
     the answer starts; access and state errors answer with the standard JSON error."""
     workspace_id = identity.workspace_id
     async with scoped_session(factory, workspace_id=workspace_id, user_id=None) as db:

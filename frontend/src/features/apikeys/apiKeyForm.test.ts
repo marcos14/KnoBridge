@@ -50,7 +50,7 @@ describe("apiKeyFormDefaults", () => {
 
   it("test_api_key_form_defaults_read_the_scope_of_an_existing_key", () => {
     expect(apiKeyFormDefaults(makeApiKey())).toMatchObject({ scope: "all", assistantIds: [] });
-    expect(apiKeyFormDefaults(makeApiKey({ assistant_ids: [PRODUCT_ID] }))).toEqual({
+    expect(apiKeyFormDefaults(makeApiKey({ product_ids: [PRODUCT_ID] }))).toEqual({
       name: "portal-cliente",
       scope: "selected",
       assistantIds: [PRODUCT_ID],
@@ -62,16 +62,17 @@ describe("toApiKeyInput", () => {
   it("test_to_api_key_input_trims_the_name_and_maps_the_scope", () => {
     expect(toApiKeyInput({ name: " portal ", scope: "all", assistantIds: [PRODUCT_ID] })).toEqual({
       name: "portal",
-      assistant_ids: null,
+      product_ids: null,
+      max_level: "product_dev",
     });
     expect(
       toApiKeyInput({ name: "portal", scope: "selected", assistantIds: [PRODUCT_ID] }),
-    ).toEqual({ name: "portal", assistant_ids: [PRODUCT_ID] });
+    ).toEqual({ name: "portal", product_ids: [PRODUCT_ID], max_level: "product_dev" });
   });
 });
 
 describe("toApiKeyChanges", () => {
-  const scoped = makeApiKey({ assistant_ids: [PRODUCT_ID, OTHER_PRODUCT_ID] });
+  const scoped = makeApiKey({ product_ids: [PRODUCT_ID, OTHER_PRODUCT_ID] });
 
   it("test_to_api_key_changes_is_null_when_nothing_changed", () => {
     expect(
@@ -100,23 +101,23 @@ describe("toApiKeyChanges", () => {
         scope: "selected",
         assistantIds: [PRODUCT_ID],
       }),
-    ).toEqual({ assistant_ids: [PRODUCT_ID] });
+    ).toEqual({ product_ids: [PRODUCT_ID] });
     expect(
       toApiKeyChanges(scoped, {
         name: "portal-cliente",
         scope: "selected",
         assistantIds: [PRODUCT_ID, "other"],
       }),
-    ).toEqual({ assistant_ids: [PRODUCT_ID, "other"] });
+    ).toEqual({ product_ids: [PRODUCT_ID, "other"] });
     expect(
       toApiKeyChanges(scoped, { name: "portal-cliente", scope: "all", assistantIds: [] }),
-    ).toEqual({ assistant_ids: null });
+    ).toEqual({ product_ids: null });
     expect(
       toApiKeyChanges(makeApiKey(), {
         name: "portal-cliente",
         scope: "selected",
         assistantIds: [PRODUCT_ID],
       }),
-    ).toEqual({ assistant_ids: [PRODUCT_ID] });
+    ).toEqual({ product_ids: [PRODUCT_ID] });
   });
 });

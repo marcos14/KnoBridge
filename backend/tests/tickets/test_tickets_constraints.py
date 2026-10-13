@@ -295,7 +295,7 @@ def test_ticket_request_parent_of_other_workspace_refused(
             elif parent == "message":
                 request.message_id = await add_answer(db, other.workspace_id, other.conversation_id)
             else:
-                request.assistant_id = other.assistant_id
+                request.product_id = other.assistant_id
             db.add(request)
             await db.flush()
 

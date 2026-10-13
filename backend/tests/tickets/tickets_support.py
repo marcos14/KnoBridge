@@ -115,7 +115,7 @@ def pending_request(seeded: Seeded, message_id: uuid.UUID) -> TicketRequest:
         workspace_id=seeded.workspace_id,
         conversation_id=seeded.conversation_id,
         message_id=message_id,
-        assistant_id=seeded.assistant_id,
+        product_id=seeded.assistant_id,
         user_id=seeded.user_id,
         status=TicketRequestStatus.PENDING,
         body='{"event":"ticket.requested","version":1}',
@@ -202,7 +202,7 @@ async def seed(factory: SessionFactory) -> Seeded:
         source = tickets_source(workspace.id, collection_id)
         conversation = Conversation(
             workspace_id=workspace.id,
-            assistant_id=assistant.id,
+            product_id=assistant.id,
             user_id=user.id,
             channel=ConversationChannel.PANEL,
             level=ResponseLevel.PRODUCT_DEV,

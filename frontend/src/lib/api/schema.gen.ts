@@ -359,7 +359,8 @@ export interface paths {
         put?: never;
         /**
          * Create Chat Completion
-         * @description Ask an assistant in a new conversation of the key, as OpenAI's Chat Completions.
+         * @description Ask a product, at the level of ``model``, in a new conversation of the key, as OpenAI's
+         *     Chat Completions.
          */
         post: operations["create_chat_completion_v1_chat_completions_post"];
         delete?: never;
@@ -379,7 +380,8 @@ export interface paths {
         put?: never;
         /**
          * Create Public Conversation
-         * @description Start a conversation of the key with an active assistant of its scope.
+         * @description Start a conversation of the key with an active product of its scope, at a level up to
+         *     the key's maximum (omitted: the maximum).
          */
         post: operations["create_public_conversation_v1_conversations_post"];
         delete?: never;
@@ -419,7 +421,7 @@ export interface paths {
         put?: never;
         /**
          * Send Public Message
-         * @description Ask the assistant. The question and the answer's starting point are committed before
+         * @description Ask the product. The question and the answer's starting point are committed before
          *     the answer starts; access and state errors answer with the standard JSON error.
          */
         post: operations["send_public_message_v1_conversations__conversation_id__messages_post"];
@@ -646,7 +648,8 @@ export interface paths {
         };
         /**
          * List Models
-         * @description The active assistants of the key's scope, by name.
+         * @description The combinations the key may ask: per active product of its scope, by name, the product
+         *     alone (the key's maximum level) and then ``<product>:<level>`` up to that maximum.
          */
         get: operations["list_models_v1_models_get"];
         put?: never;
@@ -666,7 +669,8 @@ export interface paths {
         };
         /**
          * Get Model
-         * @description One model, by the assistant's exact name or id.
+         * @description One model, in any form ``model`` accepts (product name or id, with or without a level),
+         *     with ``id`` equal to the value asked.
          */
         get: operations["get_model_v1_models__model__get"];
         put?: never;
@@ -986,7 +990,7 @@ export interface paths {
         head?: never;
         /**
          * Update Api Key
-         * @description Rename and/or change the scope; the key itself never changes.
+         * @description Rename, change the scope and/or the maximum level; the key itself never changes.
          */
         patch: operations["update_api_key_v1_workspaces__workspace_id__api_keys__api_key_id__patch"];
         trace?: never;
@@ -2495,10 +2499,11 @@ export interface components {
         };
         /** ApiKeyCreate */
         ApiKeyCreate: {
-            /** Assistant Ids */
-            assistant_ids?: string[] | null;
+            max_level: components["schemas"]["ResponseLevel"];
             /** Name */
             name: string;
+            /** Product Ids */
+            product_ids?: string[] | null;
         };
         /** ApiKeyCreated */
         ApiKeyCreated: {
@@ -2508,8 +2513,6 @@ export interface components {
         };
         /** ApiKeyOut */
         ApiKeyOut: {
-            /** Assistant Ids */
-            assistant_ids: string[] | null;
             /**
              * Created At
              * Format: date-time
@@ -2528,8 +2531,11 @@ export interface components {
             key_prefix: string;
             /** Last Used At */
             last_used_at: string | null;
+            max_level: components["schemas"]["ResponseLevel"];
             /** Name */
             name: string;
+            /** Product Ids */
+            product_ids: string[] | null;
             /** Revoked At */
             revoked_at: string | null;
         };
@@ -2551,13 +2557,14 @@ export interface components {
         ApiKeyStatus: "active" | "revoked";
         /**
          * ApiKeyUpdate
-         * @description Fields to change; omitted fields stay, ``assistant_ids: null`` is every assistant.
+         * @description Fields to change; omitted fields stay, ``product_ids: null`` is every product.
          */
         ApiKeyUpdate: {
-            /** Assistant Ids */
-            assistant_ids?: string[] | null;
+            max_level?: components["schemas"]["ResponseLevel"] | null;
             /** Name */
             name?: string | null;
+            /** Product Ids */
+            product_ids?: string[] | null;
         };
         /**
          * AuditAction
@@ -4118,11 +4125,17 @@ export interface components {
             conversation_id: string;
             /** Cost Usd */
             cost_usd: number | null;
+            level: components["schemas"]["ResponseLevel"];
             /**
              * Message Id
              * Format: uuid
              */
             message_id: string;
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
             status: components["schemas"]["MessageStatus"];
         };
         /** OpenAIContentPart */
@@ -4161,13 +4174,16 @@ export interface components {
         };
         /** OpenAIModelExtra */
         OpenAIModelExtra: {
-            /**
-             * Assistant Id
-             * Format: uuid
-             */
-            assistant_id: string;
             /** Description */
             description: string;
+            level: components["schemas"]["ResponseLevel"];
+            /** Level Explicit */
+            level_explicit: boolean;
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
         };
         /** OpenAIModelList */
         OpenAIModelList: {
@@ -4491,19 +4507,29 @@ export interface components {
              */
             user_message_id: string;
         };
-        /** PublicConversationCreate */
+        /**
+         * PublicConversationCreate
+         * @description The product (``assistant_id`` is its obsolete synonym; send one of the two) and the
+         *     level (omitted: the key's maximum).
+         */
         PublicConversationCreate: {
             /**
              * Assistant Id
-             * Format: uuid
+             * @deprecated
+             * @description Obsolete synonym of `product_id`.
              */
-            assistant_id: string;
+            assistant_id?: string | null;
+            level?: components["schemas"]["ResponseLevel"] | null;
+            /** Product Id */
+            product_id?: string | null;
         };
         /** PublicConversationDetail */
         PublicConversationDetail: {
             /**
              * Assistant Id
              * Format: uuid
+             * @deprecated
+             * @description Repeats `product_id`; obsolete.
              */
             assistant_id: string;
             channel: components["schemas"]["ConversationChannel"];
@@ -4517,7 +4543,13 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            level: components["schemas"]["ResponseLevel"];
             messages: components["schemas"]["PublicMessagePage"];
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
             /** Title */
             title: string | null;
             /**
@@ -4531,6 +4563,8 @@ export interface components {
             /**
              * Assistant Id
              * Format: uuid
+             * @deprecated
+             * @description Repeats `product_id`; obsolete.
              */
             assistant_id: string;
             channel: components["schemas"]["ConversationChannel"];
@@ -4544,6 +4578,12 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            level: components["schemas"]["ResponseLevel"];
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
             /** Title */
             title: string | null;
             /**
@@ -5993,11 +6033,6 @@ export interface components {
         };
         /** TicketRequestOut */
         TicketRequestOut: {
-            /**
-             * Assistant Id
-             * Format: uuid
-             */
-            assistant_id: string;
             /** Attempts */
             attempts: number;
             /**
@@ -6028,6 +6063,11 @@ export interface components {
              * Format: uuid
              */
             message_id: string;
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
             status: components["schemas"]["TicketRequestStatus"];
         };
         /** TicketRequestPreviewIn */
@@ -7280,7 +7320,7 @@ export interface operations {
                     "text/event-stream": string;
                 };
             };
-            /** @description Invalid body, refused parameter or messages (OpenAI error shape). */
+            /** @description Invalid body, refused parameter or messages, or a level without a model (`level_not_configured`) (OpenAI error shape). */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -7294,14 +7334,14 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Workspace of the key suspended (`workspace_suspended`). */
+            /** @description Workspace of the key suspended (`workspace_suspended`) or a level above the key's maximum (`level_not_allowed`). */
             403: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            /** @description Assistant missing, inactive or outside the key's scope (`model_not_found`). */
+            /** @description Product missing, inactive or outside the key's scope (`model_not_found`). */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -7376,15 +7416,22 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Workspace of the key suspended (`workspace_suspended`). */
+            /** @description Workspace of the key suspended (`workspace_suspended`) or a level above the key's maximum (`level_not_allowed`). */
             403: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            /** @description Assistant missing, inactive or outside the key's scope. */
+            /** @description Product missing, inactive or outside the key's scope. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The level has no model in the workspace (`level_not_configured`). */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7495,14 +7542,14 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Workspace of the key suspended (`workspace_suspended`). */
+            /** @description Workspace of the key suspended (`workspace_suspended`) or the key's maximum level is now below the conversation's (`level_not_allowed`). */
             403: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            /** @description Conversation not found for this key, or its assistant left the key's scope. */
+            /** @description Conversation not found for this key, or its product left the key's scope. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -8048,7 +8095,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Assistant missing, inactive or outside the key's scope (`model_not_found`). */
+            /** @description Product missing, inactive or outside the key's scope (`model_not_found`). */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -8084,14 +8131,14 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Workspace of the key suspended (`workspace_suspended`). */
+            /** @description Workspace of the key suspended (`workspace_suspended`) or a level above the key's maximum (`level_not_allowed`). */
             403: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content?: never;
             };
-            /** @description Assistant missing, inactive or outside the key's scope (`model_not_found`). */
+            /** @description Product missing, inactive or outside the key's scope (`model_not_found`). */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -8999,7 +9046,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Invalid body (`validation_error`) or an assistant of the scope outside the workspace (`api_key_assistant_invalid`, `details.assistant_ids`). */
+            /** @description Invalid body (`validation_error`, also without `max_level`) or a product of the scope outside the workspace (`api_key_product_invalid`, `details.product_ids`). */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -9061,7 +9108,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Invalid body (`validation_error`) or an assistant of the scope outside the workspace (`api_key_assistant_invalid`, `details.assistant_ids`). */
+            /** @description Invalid body (`validation_error`, also without `max_level`) or a product of the scope outside the workspace (`api_key_product_invalid`, `details.product_ids`). */
             422: {
                 headers: {
                     [name: string]: unknown;

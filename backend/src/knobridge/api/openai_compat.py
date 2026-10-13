@@ -1,7 +1,8 @@
 """The OpenAI-compatible API (``GET /v1/models``, ``POST /v1/chat/completions``), opened by an
 API key (``docs/specs/api-publica.md``, "API compatível com OpenAI").
 
-Each assistant of the key's scope is a model. Every completion creates a new ``channel = api``
+A model is a product of the key's scope, optionally with a level (``<product>[:<level>]``;
+without a level, the key's maximum). Every completion creates a new ``channel = api``
 conversation of the key that saves only the question (the last user message) and the answer;
 the client's earlier messages are context for the LLM, never sources. The turn is the panel's
 (``ChatService`` with an ``ApiKeyReader``): retrieval, rule 8 and the two phases. Errors leave
@@ -35,16 +36,15 @@ from knobridge.api.openai_wire import (
     usage_of,
     with_history,
 )
-from knobridge.apikeys.assistants import find_key_assistant, list_key_assistants
 from knobridge.apikeys.auth import ApiKeyIdentity
 from knobridge.apikeys.conversations import create_key_conversation, get_message
+from knobridge.apikeys.products import KeyModel, key_models, list_key_products, resolve_model
 from knobridge.conversations.chat import ChatService
 from knobridge.conversations.turn import ErrorEvent, PreparedTurn
 from knobridge.core.clock import Clock
 from knobridge.core.db import scoped_session
 from knobridge.core.errors import KnoBridgeError
 from knobridge.core.logging import get_logger
-from knobridge.products.models import Product as Assistant
 
 _log = get_logger(__name__)
 
@@ -52,7 +52,14 @@ _ERRORS: dict[int | str, dict[str, object]] = {
     401: {"description": "Missing, malformed, unknown or revoked key (`invalid_api_key`)."},
     403: {"description": "Workspace of the key suspended (`workspace_suspended`)."},
     404: {
-        "description": "Assistant missing, inactive or outside the key's scope (`model_not_found`)."
+        "description": "Product missing, inactive or outside the key's scope (`model_not_found`)."
+    },
+}
+_MODEL_ERRORS: dict[int | str, dict[str, object]] = {
+    **_ERRORS,
+    403: {
+        "description": "Workspace of the key suspended (`workspace_suspended`) or a level above "
+        "the key's maximum (`level_not_allowed`)."
     },
 }
 _COMPLETION_ERRORS: dict[int | str, dict[str, object]] = {
@@ -61,8 +68,11 @@ _COMPLETION_ERRORS: dict[int | str, dict[str, object]] = {
         "ending in `data: [DONE]`. With `stream: false`, the completion as JSON.",
         "content": {SSE_MEDIA_TYPE: {"schema": {"type": "string"}}},
     },
-    400: {"description": "Invalid body, refused parameter or messages (OpenAI error shape)."},
-    **_ERRORS,
+    400: {
+        "description": "Invalid body, refused parameter or messages, or a level without a model "
+        "(`level_not_configured`) (OpenAI error shape)."
+    },
+    **_MODEL_ERRORS,
     413: {"description": "Body above 1 MiB (`payload_too_large`)."},
     429: {"description": "Provider rate limit (`provider_rate_limited`)."},
     502: {"description": "The provider failed (`provider_*`, `embedding_*`)."},
@@ -72,25 +82,37 @@ _COMPLETION_ERRORS: dict[int | str, dict[str, object]] = {
 router = APIRouter(tags=["openai-compatible"], route_class=OpenAIRoute)
 
 
-def _model_out(assistant: Assistant) -> OpenAIModel:
+def _model_out(model: KeyModel, model_id: str | None = None) -> OpenAIModel:
+    product = model.product
+    if model_id is None:
+        model_id = f"{product.name}:{model.level}" if model.level_explicit else product.name
     return OpenAIModel(
-        id=assistant.name,
-        created=int(assistant.created_at.timestamp()),
-        knobridge=OpenAIModelExtra(assistant_id=assistant.id, description=assistant.description),
+        id=model_id,
+        created=int(product.created_at.timestamp()),
+        knobridge=OpenAIModelExtra(
+            product_id=product.id,
+            level=model.level,
+            level_explicit=model.level_explicit,
+            description=product.description,
+        ),
     )
 
 
 @router.get("/models", responses=_ERRORS)
 async def list_models(context: ApiKeyContextDep) -> OpenAIModelList:
-    """The active assistants of the key's scope, by name."""
-    assistants = await list_key_assistants(context.db, context.identity)
-    return OpenAIModelList(data=[_model_out(assistant) for assistant in assistants])
+    """The combinations the key may ask: per active product of its scope, by name, the product
+    alone (the key's maximum level) and then ``<product>:<level>`` up to that maximum."""
+    products = await list_key_products(context.db, context.identity)
+    return OpenAIModelList(
+        data=[_model_out(model) for model in key_models(context.identity, products)]
+    )
 
 
-@router.get("/models/{model:path}", responses=_ERRORS)
+@router.get("/models/{model:path}", responses=_MODEL_ERRORS)
 async def get_model(model: str, context: ApiKeyContextDep) -> OpenAIModel:
-    """One model, by the assistant's exact name or id."""
-    return _model_out(await find_key_assistant(context.db, context.identity, model))
+    """One model, in any form ``model`` accepts (product name or id, with or without a level),
+    with ``id`` equal to the value asked."""
+    return _model_out(await resolve_model(context.db, context.identity, model), model)
 
 
 async def _prepare(
@@ -99,18 +121,21 @@ async def _prepare(
     identity: ApiKeyIdentity,
     model: str,
     asked: AskedQuestion,
-) -> PreparedTurn:
+) -> tuple[KeyModel, PreparedTurn]:
     """A new conversation of the key with the question saved (rolled back on any error)."""
     async with scoped_session(factory, workspace_id=identity.workspace_id, user_id=None) as db:
-        assistant = await find_key_assistant(db, identity, model)
-        conversation = await create_key_conversation(db, identity, assistant.id)
-        return await chat.prepare(
+        resolved = await resolve_model(db, identity, model)
+        conversation = await create_key_conversation(
+            db, identity, resolved.product.id, resolved.level
+        )
+        turn = await chat.prepare(
             db,
             workspace_id=identity.workspace_id,
             conversation_id=conversation.id,
             reader=identity.reader,
             question=asked.question,
         )
+        return resolved, turn
 
 
 async def _consume(chat: ChatService, turn: PreparedTurn) -> ErrorEvent | None:
@@ -132,8 +157,10 @@ async def _consume(chat: ChatService, turn: PreparedTurn) -> ErrorEvent | None:
 class _SavedAnswer:
     """Reads the saved answer of a turn in its own short transaction."""
 
-    def __init__(self, factory: SessionFactoryDep, clock: Clock, turn: PreparedTurn) -> None:
-        self._factory, self._clock, self._turn = factory, clock, turn
+    def __init__(
+        self, factory: SessionFactoryDep, clock: Clock, turn: PreparedTurn, model: KeyModel
+    ) -> None:
+        self._factory, self._clock, self._turn, self._model = factory, clock, turn, model
 
     async def read(self) -> tuple[str, OpenAICompletionExtra, int | None, int | None]:
         turn = self._turn
@@ -150,6 +177,8 @@ class _SavedAnswer:
         extra = OpenAICompletionExtra(
             conversation_id=turn.conversation_id,
             message_id=message.id,
+            product_id=self._model.product.id,
+            level=self._model.level,
             status=view.status,
             citations=[CitationOut.model_validate(item) for item in message.citations],
             cost_usd=None if message.cost_usd is None else float(message.cost_usd),
@@ -169,10 +198,11 @@ async def create_chat_completion(
     chat: ChatServiceDep,
     clock: ClockDep,
 ) -> Response | OpenAIChatCompletion:
-    """Ask an assistant in a new conversation of the key, as OpenAI's Chat Completions."""
+    """Ask a product, at the level of ``model``, in a new conversation of the key, as OpenAI's
+    Chat Completions."""
     refuse_parameters(body)
     asked = map_messages(body.messages)
-    turn = await _prepare(chat, factory, identity, body.model, asked)
+    resolved, turn = await _prepare(chat, factory, identity, body.model, asked)
     with_history(turn, asked.history)
     _log.info(
         "openai_completion_received",
@@ -185,13 +215,15 @@ async def create_chat_completion(
     completion_id = f"chatcmpl-{turn.message_id.hex}"
     created = int(turn.started_at.timestamp())
     append_sources = body.knobridge is None or body.knobridge.append_sources
-    saved = _SavedAnswer(factory, clock, turn)
+    saved = _SavedAnswer(factory, clock, turn, resolved)
     if body.stream:
         stream = CompletionStream(
             completion_id=completion_id,
             created=created,
             model=body.model,
             conversation_id=turn.conversation_id,
+            product_id=resolved.product.id,
+            level=resolved.level,
             append_sources=append_sources,
             include_usage=body.stream_options is not None and body.stream_options.include_usage,
             cost=saved.cost,

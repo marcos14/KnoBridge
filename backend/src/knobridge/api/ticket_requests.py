@@ -4,8 +4,8 @@ Under ``/v1/workspaces/{workspace_id}/conversations/{conversation_id}/ticket-req
 session and CSRF on the writes:
 
 - ``POST .../preview``: what would be sent about an answer (question, summary written by the
-  assistant's model or the question when it fails, requester and last messages); writes
-  nothing.
+  model of the conversation's level or the question when it fails, requester and last
+  messages); writes nothing.
 - ``POST ...``: the request with the summary the user confirmed; 202 with it ``pending``. The
   delivery workflow starts after the commit (``BackgroundTasks``); with Temporal down the
   request stays ``pending`` and the worker starts it when it comes up.
@@ -111,7 +111,7 @@ class TicketRequestOut(BaseModel):
     id: uuid.UUID
     conversation_id: uuid.UUID
     message_id: uuid.UUID
-    assistant_id: uuid.UUID
+    product_id: uuid.UUID
     status: TicketRequestStatus
     attempts: int
     external_ticket_id: str | None
@@ -128,7 +128,7 @@ def ticket_request_out(request: TicketRequest) -> TicketRequestOut:
         id=request.id,
         conversation_id=request.conversation_id,
         message_id=request.message_id,
-        assistant_id=request.assistant_id,
+        product_id=request.product_id,
         status=request.status,
         attempts=request.attempts,
         external_ticket_id=request.external_ticket_id,

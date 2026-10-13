@@ -31,7 +31,7 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column, synonym
+from sqlalchemy.orm import Mapped, mapped_column
 
 from knobridge.audit.models import JSONValue
 from knobridge.conversations.models import Conversation, Message
@@ -212,8 +212,6 @@ class TicketRequest(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     # The assistant answer the request is about.
     message_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     product_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
-    # Transitional name (plan 0009): the request service still says ``assistant_id``.
-    assistant_id: Mapped[uuid.UUID] = synonym("product_id")
     # Who asked (the owner of the conversation).
     user_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=False

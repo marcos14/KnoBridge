@@ -26,20 +26,28 @@ def post_key(
     api: ApiEnv,
     workspace_id: uuid.UUID,
     name: str | None = None,
-    assistant_ids: list[str] | None = None,
+    product_ids: list[str] | None = None,
+    max_level: str = "product_dev",
 ) -> httpx.Response:
     return api.client.post(
         keys_path(workspace_id),
-        json={"name": name or f"Integração {uuid.uuid4().hex[:8]}", "assistant_ids": assistant_ids},
+        json={
+            "name": name or f"Integração {uuid.uuid4().hex[:8]}",
+            "product_ids": product_ids,
+            "max_level": max_level,
+        },
         headers=api.csrf_headers(),
     )
 
 
 def create_key(
-    api: ApiEnv, workspace_id: uuid.UUID, assistant_ids: list[str] | None = None
+    api: ApiEnv,
+    workspace_id: uuid.UUID,
+    product_ids: list[str] | None = None,
+    max_level: str = "product_dev",
 ) -> tuple[str, str]:
     """``(api_key id, key)`` of a new key created by the logged-in owner or admin."""
-    response = post_key(api, workspace_id, assistant_ids=assistant_ids)
+    response = post_key(api, workspace_id, product_ids=product_ids, max_level=max_level)
     assert response.status_code == 201, response.text
     body = response.json()
     return body["api_key"]["id"], body["key"]
@@ -55,14 +63,17 @@ def bearer(key: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {key}"}
 
 
-def start_public(api: ApiEnv, key: str, assistant_id: str) -> httpx.Response:
-    return api.client.post(
-        "/v1/conversations", json={"assistant_id": assistant_id}, headers=bearer(key)
-    )
+def start_public(
+    api: ApiEnv, key: str, product_id: str, level: str | None = None
+) -> httpx.Response:
+    body = {"product_id": product_id}
+    if level is not None:
+        body["level"] = level
+    return api.client.post("/v1/conversations", json=body, headers=bearer(key))
 
 
-def start_public_id(api: ApiEnv, key: str, assistant_id: str) -> str:
-    response = start_public(api, key, assistant_id)
+def start_public_id(api: ApiEnv, key: str, product_id: str, level: str | None = None) -> str:
+    response = start_public(api, key, product_id, level)
     assert response.status_code == 201, response.text
     conversation_id: str = response.json()["id"]
     return conversation_id

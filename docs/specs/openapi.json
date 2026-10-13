@@ -705,7 +705,16 @@
       },
       "ApiKeyCreate": {
         "properties": {
-          "assistant_ids": {
+          "max_level": {
+            "$ref": "#/components/schemas/ResponseLevel"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "product_ids": {
             "anyOf": [
               {
                 "items": {
@@ -720,17 +729,12 @@
                 "type": "null"
               }
             ],
-            "title": "Assistant Ids"
-          },
-          "name": {
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Name",
-            "type": "string"
+            "title": "Product Ids"
           }
         },
         "required": [
-          "name"
+          "name",
+          "max_level"
         ],
         "title": "ApiKeyCreate",
         "type": "object"
@@ -754,21 +758,6 @@
       },
       "ApiKeyOut": {
         "properties": {
-          "assistant_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "format": "uuid",
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Assistant Ids"
-          },
           "created_at": {
             "format": "date-time",
             "title": "Created At",
@@ -818,9 +807,27 @@
             ],
             "title": "Last Used At"
           },
+          "max_level": {
+            "$ref": "#/components/schemas/ResponseLevel"
+          },
           "name": {
             "title": "Name",
             "type": "string"
+          },
+          "product_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Ids"
           },
           "revoked_at": {
             "anyOf": [
@@ -839,7 +846,8 @@
           "id",
           "name",
           "key_prefix",
-          "assistant_ids",
+          "product_ids",
+          "max_level",
           "created_by",
           "created_by_name",
           "created_at",
@@ -889,9 +897,32 @@
         "type": "string"
       },
       "ApiKeyUpdate": {
-        "description": "Fields to change; omitted fields stay, ``assistant_ids: null`` is every assistant.",
+        "description": "Fields to change; omitted fields stay, ``product_ids: null`` is every product.",
         "properties": {
-          "assistant_ids": {
+          "max_level": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResponseLevel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "product_ids": {
             "anyOf": [
               {
                 "items": {
@@ -906,20 +937,7 @@
                 "type": "null"
               }
             ],
-            "title": "Assistant Ids"
-          },
-          "name": {
-            "anyOf": [
-              {
-                "maxLength": 200,
-                "minLength": 1,
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
+            "title": "Product Ids"
           }
         },
         "title": "ApiKeyUpdate",
@@ -5414,9 +5432,17 @@
             ],
             "title": "Cost Usd"
           },
+          "level": {
+            "$ref": "#/components/schemas/ResponseLevel"
+          },
           "message_id": {
             "format": "uuid",
             "title": "Message Id",
+            "type": "string"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
             "type": "string"
           },
           "status": {
@@ -5426,6 +5452,8 @@
         "required": [
           "conversation_id",
           "message_id",
+          "product_id",
+          "level",
           "status",
           "citations",
           "cost_usd"
@@ -5523,18 +5551,27 @@
       },
       "OpenAIModelExtra": {
         "properties": {
-          "assistant_id": {
-            "format": "uuid",
-            "title": "Assistant Id",
-            "type": "string"
-          },
           "description": {
             "title": "Description",
+            "type": "string"
+          },
+          "level": {
+            "$ref": "#/components/schemas/ResponseLevel"
+          },
+          "level_explicit": {
+            "title": "Level Explicit",
+            "type": "boolean"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
             "type": "string"
           }
         },
         "required": [
-          "assistant_id",
+          "product_id",
+          "level",
+          "level_explicit",
           "description"
         ],
         "title": "OpenAIModelExtra",
@@ -6436,22 +6473,53 @@
         "type": "object"
       },
       "PublicConversationCreate": {
+        "description": "The product (``assistant_id`` is its obsolete synonym; send one of the two) and the\nlevel (omitted: the key's maximum).",
         "properties": {
           "assistant_id": {
-            "format": "uuid",
-            "title": "Assistant Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "deprecated": true,
+            "description": "Obsolete synonym of `product_id`.",
+            "title": "Assistant Id"
+          },
+          "level": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResponseLevel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "product_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Id"
           }
         },
-        "required": [
-          "assistant_id"
-        ],
         "title": "PublicConversationCreate",
         "type": "object"
       },
       "PublicConversationDetail": {
         "properties": {
           "assistant_id": {
+            "deprecated": true,
+            "description": "Repeats `product_id`; obsolete.",
             "format": "uuid",
             "title": "Assistant Id",
             "type": "string"
@@ -6469,8 +6537,16 @@
             "title": "Id",
             "type": "string"
           },
+          "level": {
+            "$ref": "#/components/schemas/ResponseLevel"
+          },
           "messages": {
             "$ref": "#/components/schemas/PublicMessagePage"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
           },
           "title": {
             "anyOf": [
@@ -6491,7 +6567,9 @@
         },
         "required": [
           "id",
+          "product_id",
           "assistant_id",
+          "level",
           "title",
           "channel",
           "created_at",
@@ -6504,6 +6582,8 @@
       "PublicConversationOut": {
         "properties": {
           "assistant_id": {
+            "deprecated": true,
+            "description": "Repeats `product_id`; obsolete.",
             "format": "uuid",
             "title": "Assistant Id",
             "type": "string"
@@ -6519,6 +6599,14 @@
           "id": {
             "format": "uuid",
             "title": "Id",
+            "type": "string"
+          },
+          "level": {
+            "$ref": "#/components/schemas/ResponseLevel"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
             "type": "string"
           },
           "title": {
@@ -6540,7 +6628,9 @@
         },
         "required": [
           "id",
+          "product_id",
           "assistant_id",
+          "level",
           "title",
           "channel",
           "created_at",
@@ -10645,11 +10735,6 @@
       },
       "TicketRequestOut": {
         "properties": {
-          "assistant_id": {
-            "format": "uuid",
-            "title": "Assistant Id",
-            "type": "string"
-          },
           "attempts": {
             "title": "Attempts",
             "type": "integer"
@@ -10719,6 +10804,11 @@
             "title": "Message Id",
             "type": "string"
           },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
           "status": {
             "$ref": "#/components/schemas/TicketRequestStatus"
           }
@@ -10727,7 +10817,7 @@
           "id",
           "conversation_id",
           "message_id",
-          "assistant_id",
+          "product_id",
           "status",
           "attempts",
           "external_ticket_id",
@@ -13000,7 +13090,7 @@
     },
     "/v1/chat/completions": {
       "post": {
-        "description": "Ask an assistant in a new conversation of the key, as OpenAI's Chat Completions.",
+        "description": "Ask a product, at the level of ``model``, in a new conversation of the key, as OpenAI's\nChat Completions.",
         "operationId": "create_chat_completion_v1_chat_completions_post",
         "requestBody": {
           "content": {
@@ -13029,16 +13119,16 @@
             "description": "With `stream: true`, `chat.completion.chunk` lines (`data: {...}`) ending in `data: [DONE]`. With `stream: false`, the completion as JSON."
           },
           "400": {
-            "description": "Invalid body, refused parameter or messages (OpenAI error shape)."
+            "description": "Invalid body, refused parameter or messages, or a level without a model (`level_not_configured`) (OpenAI error shape)."
           },
           "401": {
             "description": "Missing, malformed, unknown or revoked key (`invalid_api_key`)."
           },
           "403": {
-            "description": "Workspace of the key suspended (`workspace_suspended`)."
+            "description": "Workspace of the key suspended (`workspace_suspended`) or a level above the key's maximum (`level_not_allowed`)."
           },
           "404": {
-            "description": "Assistant missing, inactive or outside the key's scope (`model_not_found`)."
+            "description": "Product missing, inactive or outside the key's scope (`model_not_found`)."
           },
           "413": {
             "description": "Body above 1 MiB (`payload_too_large`)."
@@ -13071,7 +13161,7 @@
     },
     "/v1/conversations": {
       "post": {
-        "description": "Start a conversation of the key with an active assistant of its scope.",
+        "description": "Start a conversation of the key with an active product of its scope, at a level up to\nthe key's maximum (omitted: the maximum).",
         "operationId": "create_public_conversation_v1_conversations_post",
         "requestBody": {
           "content": {
@@ -13098,10 +13188,13 @@
             "description": "Missing, malformed, unknown or revoked key (`invalid_api_key`)."
           },
           "403": {
-            "description": "Workspace of the key suspended (`workspace_suspended`)."
+            "description": "Workspace of the key suspended (`workspace_suspended`) or a level above the key's maximum (`level_not_allowed`)."
           },
           "404": {
-            "description": "Assistant missing, inactive or outside the key's scope."
+            "description": "Product missing, inactive or outside the key's scope."
+          },
+          "409": {
+            "description": "The level has no model in the workspace (`level_not_configured`)."
           },
           "413": {
             "description": "Body above 4 KiB (`payload_too_large`)."
@@ -13201,7 +13294,7 @@
     },
     "/v1/conversations/{conversation_id}/messages": {
       "post": {
-        "description": "Ask the assistant. The question and the answer's starting point are committed before\nthe answer starts; access and state errors answer with the standard JSON error.",
+        "description": "Ask the product. The question and the answer's starting point are committed before\nthe answer starts; access and state errors answer with the standard JSON error.",
         "operationId": "send_public_message_v1_conversations__conversation_id__messages_post",
         "parameters": [
           {
@@ -13245,10 +13338,10 @@
             "description": "Missing, malformed, unknown or revoked key (`invalid_api_key`)."
           },
           "403": {
-            "description": "Workspace of the key suspended (`workspace_suspended`)."
+            "description": "Workspace of the key suspended (`workspace_suspended`) or the key's maximum level is now below the conversation's (`level_not_allowed`)."
           },
           "404": {
-            "description": "Conversation not found for this key, or its assistant left the key's scope."
+            "description": "Conversation not found for this key, or its product left the key's scope."
           },
           "409": {
             "description": "The product is inactive (`product_inactive`) or the level of the conversation has no model (`level_not_configured`)."
@@ -13718,7 +13811,7 @@
     },
     "/v1/models": {
       "get": {
-        "description": "The active assistants of the key's scope, by name.",
+        "description": "The combinations the key may ask: per active product of its scope, by name, the product\nalone (the key's maximum level) and then ``<product>:<level>`` up to that maximum.",
         "operationId": "list_models_v1_models_get",
         "responses": {
           "200": {
@@ -13738,7 +13831,7 @@
             "description": "Workspace of the key suspended (`workspace_suspended`)."
           },
           "404": {
-            "description": "Assistant missing, inactive or outside the key's scope (`model_not_found`)."
+            "description": "Product missing, inactive or outside the key's scope (`model_not_found`)."
           }
         },
         "summary": "List Models",
@@ -13749,7 +13842,7 @@
     },
     "/v1/models/{model}": {
       "get": {
-        "description": "One model, by the assistant's exact name or id.",
+        "description": "One model, in any form ``model`` accepts (product name or id, with or without a level),\nwith ``id`` equal to the value asked.",
         "operationId": "get_model_v1_models__model__get",
         "parameters": [
           {
@@ -13777,10 +13870,10 @@
             "description": "Missing, malformed, unknown or revoked key (`invalid_api_key`)."
           },
           "403": {
-            "description": "Workspace of the key suspended (`workspace_suspended`)."
+            "description": "Workspace of the key suspended (`workspace_suspended`) or a level above the key's maximum (`level_not_allowed`)."
           },
           "404": {
-            "description": "Assistant missing, inactive or outside the key's scope (`model_not_found`)."
+            "description": "Product missing, inactive or outside the key's scope (`model_not_found`)."
           },
           "422": {
             "content": {
@@ -14851,7 +14944,7 @@
             "description": "Name already used in the workspace (`api_key_name_taken`)."
           },
           "422": {
-            "description": "Invalid body (`validation_error`) or an assistant of the scope outside the workspace (`api_key_assistant_invalid`, `details.assistant_ids`)."
+            "description": "Invalid body (`validation_error`, also without `max_level`) or a product of the scope outside the workspace (`api_key_product_invalid`, `details.product_ids`)."
           }
         },
         "summary": "Create Api Key",
@@ -14862,7 +14955,7 @@
     },
     "/v1/workspaces/{workspace_id}/api-keys/{api_key_id}": {
       "patch": {
-        "description": "Rename and/or change the scope; the key itself never changes.",
+        "description": "Rename, change the scope and/or the maximum level; the key itself never changes.",
         "operationId": "update_api_key_v1_workspaces__workspace_id__api_keys__api_key_id__patch",
         "parameters": [
           {
@@ -14920,7 +15013,7 @@
             "description": "Name already used (`api_key_name_taken`) or the key is revoked (`api_key_revoked`)."
           },
           "422": {
-            "description": "Invalid body (`validation_error`) or an assistant of the scope outside the workspace (`api_key_assistant_invalid`, `details.assistant_ids`)."
+            "description": "Invalid body (`validation_error`, also without `max_level`) or a product of the scope outside the workspace (`api_key_product_invalid`, `details.product_ids`)."
           }
         },
         "summary": "Update Api Key",

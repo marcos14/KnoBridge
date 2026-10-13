@@ -104,9 +104,7 @@ describe("ApiKeysPage list", () => {
   });
 
   it("test_api_keys_page_scope_of_deleted_assistants_says_none", async () => {
-    server.use(
-      apiKeysAs([makeApiKey({ assistant_ids: ["00000000-0000-4000-8000-00000000dead"] })]),
-    );
+    server.use(apiKeysAs([makeApiKey({ product_ids: ["00000000-0000-4000-8000-00000000dead"] })]));
     await renderApiKeys();
 
     expect(
@@ -187,7 +185,9 @@ describe("ApiKeysPage create", () => {
     await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
 
     dialog = await screen.findByRole("dialog", { name: "Chave chatbot-site criada" });
-    expect(store.created).toEqual([{ name: "chatbot-site", assistant_ids: null }]);
+    expect(store.created).toEqual([
+      { name: "chatbot-site", product_ids: null, max_level: "product_dev" },
+    ]);
     expect(within(dialog).getByText(API_KEY_SECRET)).toBeInTheDocument();
     expect(within(dialog).getByText(/variável de ambiente KNOBRIDGE_API_KEY/)).toBeInTheDocument();
 
@@ -232,7 +232,9 @@ describe("ApiKeysPage create", () => {
     await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
 
     expect(await screen.findByRole("dialog", { name: "Chave erp criada" })).toBeInTheDocument();
-    expect(store.created).toEqual([{ name: "erp", assistant_ids: [PRODUCT_ID] }]);
+    expect(store.created).toEqual([
+      { name: "erp", product_ids: [PRODUCT_ID], max_level: "product_dev" },
+    ]);
   });
 
   it("test_create_api_key_with_taken_name_shows_the_error", async () => {
@@ -313,7 +315,7 @@ describe("ApiKeysPage edit", () => {
     expect(store.changes).toEqual([
       {
         apiKeyId: SCOPED_API_KEY_ID,
-        body: { name: "erp", assistant_ids: [PRODUCT_ID, OTHER_PRODUCT_ID] },
+        body: { name: "erp", product_ids: [PRODUCT_ID, OTHER_PRODUCT_ID] },
       },
     ]);
     await waitFor(() => {
@@ -337,7 +339,7 @@ describe("ApiKeysPage edit", () => {
     await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
 
     expect(await screen.findByText("A chave integracao-erp foi salva.")).toBeInTheDocument();
-    expect(store.changes).toEqual([{ apiKeyId: SCOPED_API_KEY_ID, body: { assistant_ids: null } }]);
+    expect(store.changes).toEqual([{ apiKeyId: SCOPED_API_KEY_ID, body: { product_ids: null } }]);
   });
 
   it("test_edit_api_key_without_changes_sends_nothing", async () => {
@@ -449,7 +451,7 @@ describe("ApiKeysPage examples", () => {
 
     const examples = screen.getByRole("region", { name: "Como usar" });
     expect(await within(examples).findByText(/Nenhum assistente ativo/)).toBeInTheDocument();
-    expect(examples).toHaveTextContent('"assistant_id":"<id-do-assistente>"');
+    expect(examples).toHaveTextContent('"product_id":"<id-do-assistente>"');
     expect(examples).toHaveTextContent('model="<nome do assistente>"');
   });
 

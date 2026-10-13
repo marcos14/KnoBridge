@@ -32,7 +32,7 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column, synonym
+from sqlalchemy.orm import Mapped, mapped_column
 
 from knobridge.audit.models import JSONValue
 from knobridge.core.models import Base, TimestampMixin, UUIDPrimaryKeyMixin, str_enum
@@ -100,8 +100,6 @@ class Conversation(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         Uuid, ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
     )
     product_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
-    # Transitional name (plan 0009): the chat still says ``assistant_id``.
-    assistant_id: Mapped[uuid.UUID] = synonym("product_id")
     # Fixed for the whole conversation: the sources, instructions and model of every answer.
     level: Mapped[ResponseLevel] = mapped_column(str_enum(ResponseLevel, "level"), nullable=False)
     # Who talks to the product in the panel (the owner); ``None`` in an API conversation.

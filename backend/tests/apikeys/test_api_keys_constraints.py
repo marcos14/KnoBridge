@@ -41,7 +41,7 @@ def test_api_key_defaults_to_every_assistant_and_not_revoked(app_database_url: s
 
     key = run_db(app_database_url, scenario)
 
-    assert key.assistant_ids is None
+    assert key.product_ids is None
     assert key.last_used_at is None
     assert key.revoked_at is None
 
@@ -99,9 +99,9 @@ def test_api_key_name_repeats_across_workspaces(app_database_url: str) -> None:
         ("key_prefix", "ABCD1234", "ck_api_keys_key_prefix_format"),
         ("key_prefix", "abc123", "ck_api_keys_key_prefix_format"),
         ("key_hash", "z" * 64, "ck_api_keys_key_hash_format"),
-        ("assistant_ids", [], "ck_api_keys_product_ids_size"),
-        ("assistant_ids", [uuid.uuid4() for _ in range(101)], "ck_api_keys_product_ids_size"),
-        ("assistant_ids", [uuid.uuid4(), None], "ck_api_keys_product_ids_size"),
+        ("product_ids", [], "ck_api_keys_product_ids_size"),
+        ("product_ids", [uuid.uuid4() for _ in range(101)], "ck_api_keys_product_ids_size"),
+        ("product_ids", [uuid.uuid4(), None], "ck_api_keys_product_ids_size"),
     ],
 )
 def test_api_key_checks_refuse_invalid_values(
@@ -120,11 +120,11 @@ def test_api_key_accepts_a_scope_of_one_hundred_assistants(app_database_url: str
     async def scenario(factory: SessionFactory) -> int:
         seeded = await seed(factory)
         async with system_session(factory) as db:
-            key = new_key(seeded.workspace_id, assistant_ids=[uuid.uuid4() for _ in range(100)])
+            key = new_key(seeded.workspace_id, product_ids=[uuid.uuid4() for _ in range(100)])
             db.add(key)
             await db.flush()
             await db.refresh(key)
-            return len(key.assistant_ids or [])
+            return len(key.product_ids or [])
 
     assert run_db(app_database_url, scenario) == 100
 

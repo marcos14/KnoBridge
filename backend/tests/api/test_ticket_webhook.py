@@ -1,4 +1,4 @@
-"""Ticket webhook of an assistant: the URL saved under the SSRF rules (fake resolver), the
+"""Ticket webhook of a product: the URL saved under the SSRF rules (fake resolver), the
 ``kbw_`` secret shown once and stored encrypted, the signed test event (mock transport, verified
 by a test receiver), roles, CSRF, audit, logs and isolation."""
 
@@ -264,7 +264,7 @@ def test_generate_secret_again_replaces_it(api: ApiEnv, hooks: Hooks) -> None:
 def test_generate_secret_audited_without_secret(api: ApiEnv, hooks: Hooks) -> None:
     world, secret = _configured(api, hooks)
 
-    events = _events(api, world, "assistant.ticket_webhook_secret_rotated")
+    events = _events(api, world, "product.ticket_webhook_secret_rotated")
 
     assert events == [{"name": "Suporte"}]
     assert all(secret not in json.dumps(d) for _, d in api.workspace_audit(world.workspace_id))
@@ -317,6 +317,7 @@ def test_send_test_event_signed_and_pinned(api: ApiEnv, hooks: Hooks) -> None:
         "id": body["delivery_id"],
         "created_at": "2026-10-10T12:00:00Z",
         "workspace": {"id": str(world.workspace_id), "name": event["workspace"]["name"]},
+        "product": {"id": world.assistant_id, "name": "Suporte"},
         "assistant": {"id": world.assistant_id, "name": "Suporte"},
     }
     assert isinstance(event["workspace"]["name"], str)
@@ -383,7 +384,7 @@ def test_send_test_audited_with_outcome(api: ApiEnv, hooks: Hooks) -> None:
 
     _test(api, world)
 
-    events = _events(api, world, "assistant.ticket_webhook_tested")
+    events = _events(api, world, "product.ticket_webhook_tested")
     assert events == [
         {"name": "Suporte", "ok": False, "status": 503, "error_code": "webhook_rejected"}
     ]

@@ -50,7 +50,7 @@ def new_key(
     *,
     prefix: str | None = None,
     name: str | None = None,
-    assistant_ids: list[uuid.UUID] | None = None,
+    product_ids: list[uuid.UUID] | None = None,
     created_by: uuid.UUID | None = None,
 ) -> ApiKey:
     key_prefix = prefix or secrets.token_hex(4)
@@ -60,7 +60,7 @@ def new_key(
         name=name or f"Integração {uuid.uuid4().hex[:8]}",
         key_prefix=key_prefix,
         key_hash=hashlib.sha256(key.encode()).hexdigest(),
-        assistant_ids=assistant_ids,
+        product_ids=product_ids,
         created_by=created_by,
         max_level=ResponseLevel.PRODUCT_DEV,
     )
@@ -69,7 +69,7 @@ def new_key(
 def api_conversation(seeded: Seeded, key_id: uuid.UUID | None = None) -> Conversation:
     return Conversation(
         workspace_id=seeded.workspace_id,
-        assistant_id=seeded.assistant_id,
+        product_id=seeded.assistant_id,
         user_id=None,
         api_key_id=key_id or seeded.key_id,
         channel=ConversationChannel.API,
@@ -100,7 +100,7 @@ async def seed(factory: SessionFactory) -> Seeded:
         db.add_all([workspace, user])
         await db.flush()
         assistant = await _assistant(db, workspace.id)
-        key = new_key(workspace.id, assistant_ids=[assistant.id], created_by=user.id)
+        key = new_key(workspace.id, product_ids=[assistant.id], created_by=user.id)
         db.add(key)
         await db.flush()
         seeded = Seeded(

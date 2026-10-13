@@ -26,7 +26,7 @@ export function restCurlExample(serverUrl: string, assistant: ExampleAssistant):
   const base = apiBaseUrl(serverUrl);
   const auth = `  -H "Authorization: Bearer $${API_KEY_VARIABLE}" \\`;
   const json = '  -H "Content-Type: application/json" \\';
-  const create = JSON.stringify({ assistant_id: assistant.id });
+  const create = JSON.stringify({ product_id: assistant.id });
   const ask = JSON.stringify({ content: EXAMPLE_QUESTION, stream: false });
   return [
     "# Requires jq. The answer comes in message.content and the sources in message.citations.",
