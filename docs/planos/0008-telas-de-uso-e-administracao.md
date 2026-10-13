@@ -31,7 +31,7 @@ fases:
         commit: 81496da
   - id: F2
     titulo: Servidor
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F2.1
         titulo: Setup que cria o primeiro workspace e superadmin entrando num workspace como admin auditado
@@ -60,7 +60,7 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
         concluida_em: 2026-10-12
-        commit: null
+        commit: b908303
       - id: F2.5
         titulo: Ações e listagens que faltam no backend (reindexar fonte, sincronizar a coleção, duplicar assistente, busca e ordenação)
         status: concluida
@@ -70,20 +70,20 @@ fases:
         commit: 80a245f
   - id: F3
     titulo: Painel
-    status: pendente
+    status: em_execucao
     subfases:
       - id: F3.1
         titulo: Primeiro acesso com workspace, Início com painel e primeiros passos, painel da instância e entrar no workspace
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-12
         concluida_em: null
         commit: null
       - id: F3.2
         titulo: Tela de uso e custos
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-12
         concluida_em: null
         commit: null
       - id: F3.3
@@ -449,6 +449,8 @@ Nenhuma.
 - 2026-10-12 — F2.3 concluída: chaves de API (CRUD, revogação, escopo por assistente) e a API REST de conversa com channel api; gates do agente: backend 2258 passed com 99,88%, frontend 1240; orquestrador: ruff, pyright e AGENTS na integração
 - 2026-10-12 — F2.2 concluída: custo estimado por resposta, uso e custos com CSV, painel do workspace com checklist e painel e saúde da instância, integrados sobre a F2.3; backend 2350 passed na rodada completa (a única falha, descrição do OpenAPI com acento, foi corrigida e o teste passa), frontend 1240
 - 2026-10-12 — F2.4 concluída: API compatível com OpenAI (/v1/models e /v1/chat/completions com e sem streaming, citações em knobridge, erros no formato OpenAI) testada com o SDK oficial, integrada sobre a F2.2; backend 2420 passed com 99% de cobertura, frontend 1240
+- 2026-10-12 — F3.1 iniciada (agente em worktree).
+- 2026-10-12 — F3.2 iniciada (agente em worktree).
 
 ## 8. Encerramento
 
