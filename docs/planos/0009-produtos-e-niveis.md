@@ -31,7 +31,7 @@ fases:
         commit: cd7a78c
   - id: F2
     titulo: Servidor
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F2.1
         titulo: Produtos, configuração dos níveis do workspace e nível de cada membro por produto
@@ -60,7 +60,7 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-13
         concluida_em: 2026-10-13
-        commit: null
+        commit: f67f049
   - id: F3
     titulo: Painel
     status: pendente
@@ -81,9 +81,9 @@ fases:
         commit: f7ad260
       - id: F3.3
         titulo: Chat com produto e nível, Conversas e Uso e custos por produto e nível, chaves de API por produto
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-13
         concluida_em: null
         commit: null
   - id: F4
@@ -514,6 +514,7 @@ Nenhuma.
 - 2026-10-13 — F3.2 iniciada (agente em worktree).
 - 2026-10-13 — F3.2 concluída: nível por produto em Membros e convites, nível mínimo nas Fontes e telas da fonte de cards; frontend 1527 passed, 98,7% branches
 - 2026-10-13 — F2.4 concluída: API pública e webhook por produto e nível, integrada sobre a F3.2; backend 2705 passed com 99% de cobertura, frontend 1527
+- 2026-10-13 — F3.3 iniciada (agente em worktree).
 
 ## 8. Encerramento
 
