@@ -238,6 +238,13 @@ decisoes:
     motivo: "padrão de token mostrado uma vez e exemplos que não vazam a chave"
     alternativas: "URL igual à chave interna da área"
     adr: null
+  - id: D19
+    data: 2026-10-12
+    por: agente
+    decisao: "F4.1: E2E da stack com access.spec.ts (primeiro acesso numa stack limpa) e api.spec.ts (Entrar do superadmin, chave de API usada pelo SDK openai em Node com e sem stream, citações em knobridge, 401 com chave errada, Uso e custos por canal); openai 7.32.0 como devDependency do frontend; docker-compose.yml repassa KNOBRIDGE_CHAT_PRICES; o E2E revelou duas lacunas corrigidas num commit seguinte da F4.1: corrida em request_sync (pendente sem execução nova quando o workflow anterior ainda fecha) e conversas da API fora da visão administrativa (prometidas em chat.md v0.3)"
+    motivo: "provar o fluxo inteiro e não deixar teste instável nem promessa de spec sem implementação"
+    alternativas: "registrar como pendência para outro plano"
+    adr: null
 pendencias_usuario: []
 ---
 
