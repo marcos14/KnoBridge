@@ -40,13 +40,13 @@ export function apiKeyActionFails(action: ApiKeyAction, status: number, code: st
 /**
  * Keys that really change, with the backend's rules: `POST` adds one and returns
  * `API_KEY_SECRET` (409 `api_key_name_taken`, 422 `api_key_product_invalid` for an id that is
- * not one of `assistantIds`), `PATCH` changes name and scope (409 `api_key_revoked` on a revoked
- * key; empty body 422), revoke is idempotent. `created`, `changes` and `revoked` keep what was
- * asked.
+ * not one of `productIds`), `PATCH` changes name, scope and maximum level (409
+ * `api_key_revoked` on a revoked key; empty body 422), revoke is idempotent. `created`, `changes`
+ * and `revoked` keep what was asked.
  */
 export function apiKeyStore(
   initial: ApiKey[] = makeApiKeys(),
-  assistantIds: string[] = makeProducts().map(({ id }) => id),
+  productIds: string[] = makeProducts().map(({ id }) => id),
 ) {
   let apiKeys = [...initial];
   const created: ApiKeyInput[] = [];
@@ -54,7 +54,7 @@ export function apiKeyStore(
   const revoked: string[] = [];
   const find = (id: string) => apiKeys.find((item) => item.id === id);
   const invalidScope = (ids: string[] | null | undefined) =>
-    (ids ?? []).some((id) => !assistantIds.includes(id));
+    (ids ?? []).some((id) => !productIds.includes(id));
   const replace = (updated: ApiKey) => {
     apiKeys = apiKeys.map((item) => (item.id === updated.id ? updated : item));
   };
@@ -107,6 +107,7 @@ export function apiKeyStore(
         ...apiKey,
         name: body.name ?? apiKey.name,
         product_ids: "product_ids" in body ? (body.product_ids ?? null) : apiKey.product_ids,
+        max_level: body.max_level ?? apiKey.max_level,
       };
       replace(updated);
       changes.push({ apiKeyId, body });

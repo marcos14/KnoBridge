@@ -1,3 +1,5 @@
+import type { ResponseLevel } from "@/lib/api/levels";
+
 /**
  * Copyable examples of the public API (`docs/specs/api-publica.md`, "Exemplos"). The key is
  * never in them: they read it from this environment variable, so it stays out of the shell
@@ -5,10 +7,14 @@
  */
 export const API_KEY_VARIABLE = "KNOBRIDGE_API_KEY";
 
-/** The assistant the examples talk to: its id for the REST API, its name as the OpenAI model. */
-export interface ExampleAssistant {
+/**
+ * What the examples talk to: the product (its id for the REST API, its name in the OpenAI
+ * `model`) and the level, sent as `level` to the REST API and as `<produto>:<nível>` to the SDKs.
+ */
+export interface ExampleTarget {
   id: string;
   name: string;
+  level: ResponseLevel;
 }
 
 const EXAMPLE_QUESTION = "Como fecho o caixa?";
@@ -18,18 +24,24 @@ export function apiBaseUrl(serverUrl: string): string {
   return `${serverUrl.replace(/\/+$/, "")}/v1`;
 }
 
+/** The OpenAI `model` of a product in a level: `<produto>:<nível>`. */
+export function exampleModel(target: ExampleTarget): string {
+  return `${target.name}:${target.level}`;
+}
+
 /**
- * `curl` of the KnoBridge REST API: create a conversation, then ask and print the answer with its
- * citations. `jq` reads the conversation id.
+ * `curl` of the KnoBridge REST API: create a conversation in the product and level, then ask and
+ * print the answer with its citations. `jq` reads the conversation id.
  */
-export function restCurlExample(serverUrl: string, assistant: ExampleAssistant): string {
+export function restCurlExample(serverUrl: string, target: ExampleTarget): string {
   const base = apiBaseUrl(serverUrl);
   const auth = `  -H "Authorization: Bearer $${API_KEY_VARIABLE}" \\`;
   const json = '  -H "Content-Type: application/json" \\';
-  const create = JSON.stringify({ product_id: assistant.id });
+  const create = JSON.stringify({ product_id: target.id, level: target.level });
   const ask = JSON.stringify({ content: EXAMPLE_QUESTION, stream: false });
   return [
     "# Requires jq. The answer comes in message.content and the sources in message.citations.",
+    "# Without level, the conversation uses the key's maximum level.",
     `CONVERSATION_ID=$(curl -s -X POST "${base}/conversations" \\`,
     auth,
     json,
@@ -43,7 +55,7 @@ export function restCurlExample(serverUrl: string, assistant: ExampleAssistant):
 }
 
 /** Python with the official OpenAI SDK, reading the citations from the `knobridge` field. */
-export function openAiPythonExample(serverUrl: string, assistant: ExampleAssistant): string {
+export function openAiPythonExample(serverUrl: string, target: ExampleTarget): string {
   return [
     "import os",
     "",
@@ -51,7 +63,7 @@ export function openAiPythonExample(serverUrl: string, assistant: ExampleAssista
     "",
     `client = OpenAI(base_url="${apiBaseUrl(serverUrl)}", api_key=os.environ["${API_KEY_VARIABLE}"])`,
     "answer = client.chat.completions.create(",
-    `    model=${JSON.stringify(assistant.name)},`,
+    `    model=${JSON.stringify(exampleModel(target))},  # product:level; without :level, the key's maximum`,
     `    messages=[{"role": "user", "content": ${JSON.stringify(EXAMPLE_QUESTION)}}],`,
     ")",
     "print(answer.choices[0].message.content)",
@@ -62,7 +74,7 @@ export function openAiPythonExample(serverUrl: string, assistant: ExampleAssista
 }
 
 /** JavaScript (ES module) with the official OpenAI SDK, reading the `knobridge` field. */
-export function openAiJavaScriptExample(serverUrl: string, assistant: ExampleAssistant): string {
+export function openAiJavaScriptExample(serverUrl: string, target: ExampleTarget): string {
   return [
     'import OpenAI from "openai";',
     "",
@@ -71,7 +83,7 @@ export function openAiJavaScriptExample(serverUrl: string, assistant: ExampleAss
     `  apiKey: process.env.${API_KEY_VARIABLE},`,
     "});",
     "const answer = await client.chat.completions.create({",
-    `  model: ${JSON.stringify(assistant.name)},`,
+    `  model: ${JSON.stringify(exampleModel(target))}, // product:level; without :level, the key's maximum`,
     `  messages: [{ role: "user", content: ${JSON.stringify(EXAMPLE_QUESTION)} }],`,
     "});",
     "console.log(answer.choices[0].message.content);",

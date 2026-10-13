@@ -10,6 +10,7 @@ import { isApiErrorCode } from "@/lib/api/client";
 import type { Citation } from "@/lib/api/conversations";
 import { useWorkspaceConversation, type WorkspaceMessage } from "@/lib/api/workspaceConversations";
 import { formatDateTime } from "@/lib/intl";
+import { levelLabel } from "@/lib/responseLevels";
 
 import { conversationOwner } from "./conversationOwner";
 import { FeedbackList } from "./FeedbackList";
@@ -72,12 +73,14 @@ export function WorkspaceConversationView({
             conversation.data.channel === "api"
               ? t("conversations.detail.whoApi", {
                   owner: conversationOwner(conversation.data, t).name,
-                  assistant: conversation.data.product_name,
+                  product: conversation.data.product_name,
+                  level: levelLabel(conversation.data.level, t),
                 })
               : t("conversations.detail.who", {
                   user: conversation.data.user_name,
                   email: conversation.data.user_email,
-                  assistant: conversation.data.product_name,
+                  product: conversation.data.product_name,
+                  level: levelLabel(conversation.data.level, t),
                 })
           }
           userName={conversationOwner(conversation.data, t).name}

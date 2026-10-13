@@ -19,7 +19,9 @@ const citation = {
 
 const conversation = {
   id: CONVERSATION_ID,
-  assistant_id: ASSISTANT_ID,
+  product_id: ASSISTANT_ID,
+  product_name: "Suporte ERP",
+  level: "end_user",
   user_id: "00000000-0000-4000-8000-000000000001",
   channel: "panel",
   title: "Como fecho o caixa?",

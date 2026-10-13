@@ -17,7 +17,7 @@ import {
   useSetMemberLevel,
 } from "@/lib/api/memberLevels";
 import { hasListCriteria, sortLabelKey } from "@/lib/listSearch";
-import { defaultMaxLevel } from "@/lib/responseLevels";
+import { defaultMaxLevel, levelLabel } from "@/lib/responseLevels";
 import { canHandleRole, ROLES } from "@/lib/roles";
 
 import { DEFAULT_LEVEL, type LevelChoice, MemberLevelSelect } from "./MemberLevelSelect";
@@ -49,7 +49,7 @@ export function MemberLevelsList({ workspaceId, actorRole }: MemberLevelsListPro
   useOffsetClamp(search.offset, MEMBERS_PAGE_SIZE, page.data?.total, setOffset);
   const setLevel = useSetMemberLevel(workspaceId);
   const criteria = hasListCriteria(search);
-  const levelName = (level: ResponseLevel) => t(`workspaceSettings.levels.names.${level}`);
+  const levelName = (level: ResponseLevel) => levelLabel(level, t);
 
   function onChange(member: MemberLevels, product: ProductRef, choice: LevelChoice) {
     setNotice(null);

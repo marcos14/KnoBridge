@@ -5,7 +5,7 @@ import type { Citation } from "@/lib/api/conversations";
 import { makeCitation } from "@/test/factories";
 import { makeKnowledgeCitation } from "@/test/knowledgeFactories";
 import { renderWithProviders } from "@/test/renderWithProviders";
-import { makeTicketCitation } from "@/test/ticketFactories";
+import { makeCardCitation, makeTicketCitation } from "@/test/ticketFactories";
 
 import { CitationSheet } from "./CitationSheet";
 
@@ -200,6 +200,58 @@ describe("CitationSheet", () => {
     expect(within(panel).queryByText("Chamado")).not.toBeInTheDocument();
     expect(within(panel).queryByText("Status")).not.toBeInTheDocument();
     expect(within(panel).queryByText("Resolvido em")).not.toBeInTheDocument();
+    expect(within(panel).queryByRole("link")).not.toBeInTheDocument();
+  });
+
+  it("test_citation_sheet_shows_card_with_type_status_sprint_date_and_link", async () => {
+    const panel = await openSheet(makeCardCitation());
+
+    expect(panel).toHaveAccessibleName("[1] Fechamento do caixa trava com sangria pendente");
+    expect(detail(panel, "Card")).toBe("PROJ-123");
+    expect(detail(panel, "Tipo")).toBe("Bug");
+    expect(detail(panel, "Status")).toBe("Concluído");
+    expect(detail(panel, "Sprint")).toBe("Sprint 42");
+    expect(detail(panel, "Concluído em")).toBe("3 de out. de 2026");
+    expect(
+      within(panel).getByText(
+        "Liberar o fechamento quando a sangria do turno anterior estiver concluída.",
+      ).tagName,
+    ).toBe("BLOCKQUOTE");
+    const link = within(panel).getByRole("link", { name: "Abrir o card no sistema de origem" });
+    expect(link).toHaveAttribute("href", "https://cards.example.test/browse/PROJ-123");
+    expect(link).toHaveAttribute("rel", "noopener noreferrer");
+    expect(within(panel).queryByText("card:proj-123")).not.toBeInTheDocument();
+  });
+
+  it("test_citation_sheet_shows_card_in_progress_updated_without_link", async () => {
+    const panel = await openSheet(
+      makeCardCitation({
+        card_status: "in_progress",
+        card_date_kind: "updated",
+        url: "javascript:alert(1)",
+      }),
+    );
+
+    expect(detail(panel, "Status")).toBe("Em andamento");
+    expect(detail(panel, "Atualizado em")).toBe("3 de out. de 2026");
+    expect(within(panel).queryByRole("link")).not.toBeInTheDocument();
+  });
+
+  it("test_citation_sheet_shows_card_saved_without_its_fields", async () => {
+    const panel = await openSheet(
+      makeCardCitation({
+        card_number: null,
+        card_type: null,
+        card_status: null,
+        card_sprint: null,
+        date: null,
+        url: null,
+      }),
+    );
+
+    for (const label of ["Card", "Tipo", "Status", "Sprint", "Concluído em"]) {
+      expect(within(panel).queryByText(label)).not.toBeInTheDocument();
+    }
     expect(within(panel).queryByRole("link")).not.toBeInTheDocument();
   });
 

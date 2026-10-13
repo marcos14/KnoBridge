@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-query";
 
 import { apiClient, unwrap } from "./client";
+import type { ResponseLevel } from "./levels";
 import type { components } from "./schema.gen";
 
 export type Conversation = components["schemas"]["ConversationOut"];
@@ -36,21 +37,32 @@ function conversationListQueryKey(workspaceId: string) {
   return [...conversationsQueryKey(workspaceId), "list"] as const;
 }
 
+/** Filters of the caller's conversations: one product and/or one level. */
+export interface ConversationListFilters {
+  productId?: string;
+  level?: ResponseLevel;
+}
+
 /**
  * The caller's own conversations, most recently active first, `CONVERSATIONS_PAGE_SIZE` at a
- * time. `conversations` flattens the loaded pages without repeats (a conversation that moves to
- * the top between two pages would otherwise show twice).
+ * time, optionally of one product and/or level. `conversations` flattens the loaded pages without
+ * repeats (a conversation that moves to the top between two pages would otherwise show twice).
  */
-export function useConversations(workspaceId: string) {
+export function useConversations(workspaceId: string, filters: ConversationListFilters = {}) {
   const query = useInfiniteQuery({
-    queryKey: conversationListQueryKey(workspaceId),
+    queryKey: [...conversationListQueryKey(workspaceId), filters],
     initialPageParam: 0,
     queryFn: async ({ pageParam, signal }) =>
       unwrap(
         await apiClient.GET("/v1/workspaces/{workspace_id}/conversations", {
           params: {
             path: { workspace_id: workspaceId },
-            query: { limit: CONVERSATIONS_PAGE_SIZE, offset: pageParam },
+            query: {
+              product_id: filters.productId,
+              level: filters.level,
+              limit: CONVERSATIONS_PAGE_SIZE,
+              offset: pageParam,
+            },
           },
           signal,
         }),
@@ -99,15 +111,24 @@ export function useConversation(workspaceId: string, conversationId: string) {
   });
 }
 
-/** `POST /v1/workspaces/{id}/conversations` (201); 403 `level_not_allowed`, 409 `product_inactive` or `level_not_configured`. */
+/** A new conversation: its product and the level it keeps from start to end. */
+export interface NewConversationInput {
+  productId: string;
+  level: ResponseLevel;
+}
+
+/**
+ * `POST /v1/workspaces/{id}/conversations` (201) in a product and level; 403 `level_not_allowed`
+ * (above the member's maximum), 409 `product_inactive` or `level_not_configured`.
+ */
 export function useCreateConversation(workspaceId: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (assistantId: string) =>
+    mutationFn: async ({ productId, level }: NewConversationInput) =>
       unwrap(
         await apiClient.POST("/v1/workspaces/{workspace_id}/conversations", {
           params: { path: { workspace_id: workspaceId } },
-          body: { product_id: assistantId },
+          body: { product_id: productId, level },
         }),
       ),
     onSuccess: () =>

@@ -9,7 +9,8 @@ export const REVOKED_API_KEY_ID = "00000000-0000-4000-8000-0000000003a3";
 export const API_KEY_SECRET = "kbk_ab12cd34_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 
 /**
- * One item of `GET .../api-keys`: by default "portal-cliente", every assistant, created by Ana
+ * One item of `GET .../api-keys`: by default "portal-cliente", every product up to
+ * `product_dev`, created by Ana
  * and used one hour before `TEST_NOW`.
  */
 export function makeApiKey(overrides: Partial<ApiKey> = {}): ApiKey {
@@ -29,8 +30,8 @@ export function makeApiKey(overrides: Partial<ApiKey> = {}): ApiKey {
 }
 
 /**
- * The default keys, by name: antiga (revoked), integracao-erp (only Suporte ERP, never used,
- * creator deleted) and portal-cliente (every assistant).
+ * The default keys, by name: antiga (revoked), integracao-erp (only Suporte ERP up to `support`, never used,
+ * creator deleted) and portal-cliente (every product).
  */
 export function makeApiKeys(): ApiKey[] {
   return [
@@ -45,6 +46,7 @@ export function makeApiKeys(): ApiKey[] {
       name: "integracao-erp",
       key_prefix: "ie56cd78",
       product_ids: [PRODUCT_ID],
+      max_level: "support",
       created_by: null,
       created_by_name: null,
       last_used_at: null,

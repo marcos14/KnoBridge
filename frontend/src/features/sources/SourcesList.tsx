@@ -13,6 +13,7 @@ import { translateApiError } from "@/i18n/apiErrors";
 import { useCollections } from "@/lib/api/collections";
 import { RESPONSE_LEVELS } from "@/lib/api/levels";
 import { type Source, type SourceKind, useDeleteSource, useSourcePage } from "@/lib/api/sources";
+import { levelLabel } from "@/lib/responseLevels";
 import {
   booleanFilter,
   hasListCriteria,
@@ -331,7 +332,7 @@ export function SourcesList({ workspaceId, canManage, canManageLevel }: SourcesL
             allLabel: t("sources.allMinLevels"),
             options: RESPONSE_LEVELS.map((level) => ({
               value: level,
-              label: t(`workspaceSettings.levels.names.${level}`),
+              label: levelLabel(level, t),
             })),
           },
         ]}

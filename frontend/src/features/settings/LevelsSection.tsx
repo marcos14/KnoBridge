@@ -31,6 +31,7 @@ import { useUpdateWorkspaceLevel, useWorkspaceLevels, type WorkspaceLevel } from
 import { type Provider, useProviders } from "@/lib/api/providers";
 import { chatModelSuggestions } from "@/lib/chatModels";
 import { formatUsd } from "@/lib/numberFormat";
+import { levelLabel } from "@/lib/responseLevels";
 
 import {
   isDefaultInstructions,
@@ -121,7 +122,7 @@ interface LevelCardProps {
 function LevelCard({ workspaceId, level, providers }: LevelCardProps) {
   const { t, i18n } = useTranslation();
   const titleId = useId();
-  const name = t(`workspaceSettings.levels.names.${level.level}`);
+  const name = levelLabel(level.level, t);
   const update = useUpdateWorkspaceLevel(workspaceId);
   const schema = useMemo(() => levelFormSchema(t), [t]);
   const form = useForm<LevelFormValues>({

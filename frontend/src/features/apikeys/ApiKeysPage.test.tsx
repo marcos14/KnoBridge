@@ -37,7 +37,7 @@ import { ApiKeysPage } from "./ApiKeysPage";
 
 const PATH = `/w/${WORKSPACE_ID}/api-keys`;
 const TABLE = "Chaves de API do workspace";
-const ASSISTANTS = "*/v1/workspaces/:workspaceId/products";
+const PRODUCTS = "*/v1/workspaces/:workspaceId/products";
 
 type User = ReturnType<typeof userEvent.setup>;
 
@@ -72,7 +72,7 @@ async function openEdit(user: User, name: string) {
 }
 
 async function chooseSelected(user: User, dialog: HTMLElement) {
-  await user.click(within(dialog).getByRole("radio", { name: "Só os assistentes escolhidos" }));
+  await user.click(within(dialog).getByRole("radio", { name: "Só os produtos escolhidos" }));
 }
 
 describe("ApiKeysPage list", () => {
@@ -81,7 +81,7 @@ describe("ApiKeysPage list", () => {
 
     const portal = rowOf("portal-cliente");
     expect(within(portal).getByText("kbk_pc12ab34_…")).toBeInTheDocument();
-    expect(within(portal).getByText("Todos os assistentes")).toBeInTheDocument();
+    expect(within(portal).getByText("Todos os produtos")).toBeInTheDocument();
     expect(within(portal).getByText("por Ana Teste")).toBeInTheDocument();
     expect(within(portal).getByText("há 1 hora")).toBeInTheDocument();
     expect(within(portal).getByText("Ativa")).toBeInTheDocument();
@@ -96,21 +96,31 @@ describe("ApiKeysPage list", () => {
     expect(within(revoked).queryByRole("button")).not.toBeInTheDocument();
   });
 
-  it("test_api_keys_page_scope_without_the_assistants_list_shows_a_count", async () => {
+  it("test_api_keys_page_lists_the_maximum_level", async () => {
+    await renderApiKeys();
+
+    expect(
+      within(screen.getByRole("table", { name: TABLE })).getByRole("columnheader", {
+        name: "Nível máximo",
+      }),
+    ).toBeInTheDocument();
+    expect(within(rowOf("portal-cliente")).getByText("Desenvolvimento e produto")).toBeVisible();
+    expect(within(rowOf("integracao-erp")).getByText("Suporte")).toBeVisible();
+  });
+
+  it("test_api_keys_page_scope_without_the_products_list_shows_a_count", async () => {
     server.use(productsServerError);
     await renderApiKeys();
 
-    expect(within(rowOf("integracao-erp")).getByText("1 assistente")).toBeInTheDocument();
+    expect(within(rowOf("integracao-erp")).getByText("1 produto")).toBeInTheDocument();
   });
 
-  it("test_api_keys_page_scope_of_deleted_assistants_says_none", async () => {
+  it("test_api_keys_page_scope_of_deleted_products_says_none", async () => {
     server.use(apiKeysAs([makeApiKey({ product_ids: ["00000000-0000-4000-8000-00000000dead"] })]));
     await renderApiKeys();
 
     expect(
-      within(rowOf("portal-cliente")).getByText(
-        "Nenhum assistente (os escolhidos foram excluídos)",
-      ),
+      within(rowOf("portal-cliente")).getByText("Nenhum produto (os escolhidos foram excluídos)"),
     ).toBeInTheDocument();
   });
 
@@ -119,7 +129,7 @@ describe("ApiKeysPage list", () => {
     await renderApiKeys();
 
     expect(
-      screen.getByText("Nenhuma chave criada. Crie uma para chamar os assistentes pela API."),
+      screen.getByText("Nenhuma chave criada. Crie uma para chamar os produtos pela API."),
     ).toBeInTheDocument();
   });
 
@@ -186,7 +196,7 @@ describe("ApiKeysPage create", () => {
 
     dialog = await screen.findByRole("dialog", { name: "Chave chatbot-site criada" });
     expect(store.created).toEqual([
-      { name: "chatbot-site", product_ids: null, max_level: "product_dev" },
+      { name: "chatbot-site", product_ids: null, max_level: "end_user" },
     ]);
     expect(within(dialog).getByText(API_KEY_SECRET)).toBeInTheDocument();
     expect(within(dialog).getByText(/variável de ambiente KNOBRIDGE_API_KEY/)).toBeInTheDocument();
@@ -208,7 +218,7 @@ describe("ApiKeysPage create", () => {
     expect(screen.queryByText(API_KEY_SECRET)).not.toBeInTheDocument();
   });
 
-  it("test_create_api_key_with_chosen_assistants_sends_the_scope", async () => {
+  it("test_create_api_key_with_chosen_products_sends_the_scope", async () => {
     const user = userEvent.setup();
     const store = apiKeyStore([]);
     server.use(...store.handlers);
@@ -217,13 +227,11 @@ describe("ApiKeysPage create", () => {
     const dialog = await openCreate(user);
     await user.type(within(dialog).getByLabelText("Nome"), "erp");
     await chooseSelected(user, dialog);
-    const list = await within(dialog).findByRole("list", { name: "Assistentes da chave" });
+    const list = await within(dialog).findByRole("list", { name: "Produtos da chave" });
     expect(within(list).getByLabelText("Rascunho (inativo)")).toBeInTheDocument();
 
     await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
-    expect(
-      await within(dialog).findByText("Escolha pelo menos um assistente."),
-    ).toBeInTheDocument();
+    expect(await within(dialog).findByText("Escolha pelo menos um produto.")).toBeInTheDocument();
     expect(store.created).toEqual([]);
 
     await user.click(within(list).getByLabelText("Suporte ERP"));
@@ -233,7 +241,31 @@ describe("ApiKeysPage create", () => {
 
     expect(await screen.findByRole("dialog", { name: "Chave erp criada" })).toBeInTheDocument();
     expect(store.created).toEqual([
-      { name: "erp", product_ids: [PRODUCT_ID], max_level: "product_dev" },
+      { name: "erp", product_ids: [PRODUCT_ID], max_level: "end_user" },
+    ]);
+  });
+
+  it("test_create_api_key_starts_at_end_user_and_sends_the_chosen_level", async () => {
+    const user = userEvent.setup();
+    const store = apiKeyStore([]);
+    server.use(...store.handlers);
+    await renderApiKeys();
+
+    const dialog = await openCreate(user);
+    const levels = within(dialog).getByRole("radiogroup", { name: "Nível máximo" });
+    expect(within(levels).getByRole("radio", { name: "Usuário final" })).toBeChecked();
+    expect(within(levels).getByRole("radio", { name: "Suporte" })).toHaveAccessibleDescription(
+      /^Equipe de suporte/,
+    );
+    await user.type(within(dialog).getByLabelText("Nome"), "suporte-interno");
+    await user.click(within(levels).getByRole("radio", { name: "Suporte" }));
+    await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
+
+    expect(
+      await screen.findByRole("dialog", { name: "Chave suporte-interno criada" }),
+    ).toBeInTheDocument();
+    expect(store.created).toEqual([
+      { name: "suporte-interno", product_ids: null, max_level: "support" },
     ]);
   });
 
@@ -263,10 +295,10 @@ describe("ApiKeysPage create", () => {
     expect(await within(dialog).findByRole("button", { name: "Enviando…" })).toBeDisabled();
   });
 
-  it("test_create_api_key_scope_while_assistants_load", async () => {
+  it("test_create_api_key_scope_while_products_load", async () => {
     const user = userEvent.setup();
     server.use(
-      http.get(ASSISTANTS, async () => {
+      http.get(PRODUCTS, async () => {
         await delay("infinite");
         return HttpResponse.json(null);
       }),
@@ -276,10 +308,10 @@ describe("ApiKeysPage create", () => {
     const dialog = await openCreate(user);
     await chooseSelected(user, dialog);
 
-    expect(within(dialog).getByText("Carregando assistentes…")).toHaveRole("status");
+    expect(within(dialog).getByText("Carregando produtos…")).toHaveRole("status");
   });
 
-  it("test_create_api_key_scope_without_assistants", async () => {
+  it("test_create_api_key_scope_without_products", async () => {
     const user = userEvent.setup();
     server.use(productsAs([]));
     await renderApiKeys();
@@ -287,7 +319,7 @@ describe("ApiKeysPage create", () => {
     const dialog = await openCreate(user);
     await chooseSelected(user, dialog);
 
-    expect(within(dialog).getByText("Nenhum assistente no workspace.")).toBeInTheDocument();
+    expect(within(dialog).getByText("Nenhum produto no workspace.")).toBeInTheDocument();
   });
 });
 
@@ -300,9 +332,7 @@ describe("ApiKeysPage edit", () => {
 
     const dialog = await openEdit(user, "integracao-erp");
     expect(within(dialog).getByLabelText("Nome")).toHaveValue("integracao-erp");
-    expect(
-      within(dialog).getByRole("radio", { name: "Só os assistentes escolhidos" }),
-    ).toBeChecked();
+    expect(within(dialog).getByRole("radio", { name: "Só os produtos escolhidos" })).toBeChecked();
     expect(within(dialog).getByLabelText("Suporte ERP")).toBeChecked();
 
     await user.clear(within(dialog).getByLabelText("Nome"));
@@ -323,7 +353,7 @@ describe("ApiKeysPage edit", () => {
     });
   });
 
-  it("test_edit_api_key_back_to_every_assistant", async () => {
+  it("test_edit_api_key_back_to_every_product", async () => {
     const user = userEvent.setup();
     const store = apiKeyStore();
     server.use(...store.handlers);
@@ -332,7 +362,7 @@ describe("ApiKeysPage edit", () => {
     const dialog = await openEdit(user, "integracao-erp");
     await user.click(
       within(dialog).getByRole("radio", {
-        name: "Todos os assistentes ativos, inclusive os criados depois",
+        name: "Todos os produtos ativos, inclusive os criados depois",
       }),
     );
     expect(within(dialog).queryByRole("list")).not.toBeInTheDocument();
@@ -340,6 +370,27 @@ describe("ApiKeysPage edit", () => {
 
     expect(await screen.findByText("A chave integracao-erp foi salva.")).toBeInTheDocument();
     expect(store.changes).toEqual([{ apiKeyId: SCOPED_API_KEY_ID, body: { product_ids: null } }]);
+  });
+
+  it("test_edit_api_key_changes_the_maximum_level", async () => {
+    const user = userEvent.setup();
+    const store = apiKeyStore();
+    server.use(...store.handlers);
+    await renderApiKeys();
+
+    const dialog = await openEdit(user, "integracao-erp");
+    const levels = within(dialog).getByRole("radiogroup", { name: "Nível máximo" });
+    expect(within(levels).getByRole("radio", { name: "Suporte" })).toBeChecked();
+    await user.click(within(levels).getByRole("radio", { name: "Usuário final" }));
+    await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
+
+    expect(await screen.findByText("A chave integracao-erp foi salva.")).toBeInTheDocument();
+    expect(store.changes).toEqual([
+      { apiKeyId: SCOPED_API_KEY_ID, body: { max_level: "end_user" } },
+    ]);
+    await waitFor(() => {
+      expect(within(rowOf("integracao-erp")).getByText("Usuário final")).toBeVisible();
+    });
   });
 
   it("test_edit_api_key_without_changes_sends_nothing", async () => {
@@ -369,14 +420,14 @@ describe("ApiKeysPage edit", () => {
     );
   });
 
-  it("test_edit_api_key_scope_when_assistants_fail_to_load", async () => {
+  it("test_edit_api_key_scope_when_products_fail_to_load", async () => {
     const user = userEvent.setup();
     server.use(productsServerError);
     await renderApiKeys();
 
     const dialog = await openEdit(user, "integracao-erp");
 
-    expect(await within(dialog).findByText("Não foi possível carregar os assistentes.")).toHaveRole(
+    expect(await within(dialog).findByText("Não foi possível carregar os produtos.")).toHaveRole(
       "alert",
     );
   });
@@ -420,12 +471,14 @@ describe("ApiKeysPage revoke", () => {
 });
 
 describe("ApiKeysPage examples", () => {
-  it("test_api_key_examples_use_this_server_and_the_first_active_assistant_without_the_key", async () => {
+  it("test_api_key_examples_use_this_server_and_the_first_active_product_without_the_key", async () => {
     const user = userEvent.setup();
     await renderApiKeys();
 
     const examples = screen.getByRole("region", { name: "Como usar" });
-    expect(within(examples).getByText(/Exemplos com o assistente Suporte ERP/)).toBeInTheDocument();
+    expect(
+      within(examples).getByText(/Exemplos com o produto Suporte ERP no nível Usuário final/),
+    ).toBeInTheDocument();
     const curl = within(examples).getByRole("region", { name: "curl (API REST)" });
     expect(curl).toHaveTextContent(`${window.location.origin}/v1/conversations`);
     expect(curl).toHaveTextContent(PRODUCT_ID);
@@ -433,7 +486,7 @@ describe("ApiKeysPage examples", () => {
       name: "Python (SDK oficial da OpenAI)",
     });
     expect(python).toHaveTextContent(`base_url="${window.location.origin}/v1"`);
-    expect(python).toHaveTextContent('model="Suporte ERP"');
+    expect(python).toHaveTextContent('model="Suporte ERP:end_user"');
     const js = within(examples).getByRole("region", {
       name: "JavaScript (SDK oficial da OpenAI)",
     });
@@ -445,14 +498,31 @@ describe("ApiKeysPage examples", () => {
     await expect(navigator.clipboard.readText()).resolves.toMatch(/^import OpenAI from "openai";/);
   });
 
-  it("test_api_key_examples_without_an_active_assistant_use_placeholders", async () => {
+  it("test_api_key_examples_without_an_active_product_use_placeholders", async () => {
     server.use(productsAs([makeProduct({ active: false })]));
     await renderApiKeys();
 
     const examples = screen.getByRole("region", { name: "Como usar" });
-    expect(await within(examples).findByText(/Nenhum assistente ativo/)).toBeInTheDocument();
-    expect(examples).toHaveTextContent('"product_id":"<id-do-assistente>"');
-    expect(examples).toHaveTextContent('model="<nome do assistente>"');
+    expect(await within(examples).findByText(/Nenhum produto ativo/)).toBeInTheDocument();
+    expect(examples).toHaveTextContent('"product_id":"<id-do-produto>","level":"end_user"');
+    expect(examples).toHaveTextContent('model="<nome do produto>:end_user"');
+  });
+
+  it("test_api_key_examples_follow_the_chosen_level", async () => {
+    const user = userEvent.setup();
+    await renderApiKeys();
+    const examples = screen.getByRole("region", { name: "Como usar" });
+
+    await user.click(within(examples).getByRole("combobox", { name: "Nível dos exemplos" }));
+    await user.click(await screen.findByRole("option", { name: "Suporte" }));
+
+    expect(within(examples).getByText(/no nível Suporte;/)).toBeInTheDocument();
+    expect(within(examples).getByRole("region", { name: "curl (API REST)" })).toHaveTextContent(
+      `{"product_id":"${PRODUCT_ID}","level":"support"}`,
+    );
+    expect(
+      within(examples).getByRole("region", { name: "JavaScript (SDK oficial da OpenAI)" }),
+    ).toHaveTextContent('model: "Suporte ERP:support"');
   });
 
   it("test_api_key_examples_report_copy_failure", async () => {

@@ -8,6 +8,7 @@ import type {
   Message,
   MessageStatus,
 } from "@/lib/api/conversations";
+import type { components } from "@/lib/api/schema.gen";
 import type { TicketRequest, TicketRequestPreview } from "@/lib/api/ticketRequests";
 
 import {
@@ -112,9 +113,38 @@ export function controlledStream() {
   };
 }
 
-/** GET /v1/workspaces/{id}/conversations listing `conversations` (default: two). */
+/** Body of `POST .../conversations`. */
+export type ConversationInput = components["schemas"]["ConversationCreate"];
+
+/** The conversations matching the `product_id` and `level` filters of the request, as the API. */
+function filterConversations(request: Request, conversations: readonly Conversation[]) {
+  const params = new URL(request.url).searchParams;
+  const productId = params.get("product_id");
+  const level = params.get("level");
+  return conversations.filter(
+    (item) =>
+      (productId === null || item.product_id === productId) &&
+      (level === null || item.level === level),
+  );
+}
+
+/** GET /v1/workspaces/{id}/conversations listing `conversations` (default: two), filtered. */
 export function conversationsAs(conversations: Conversation[] = makeConversations()) {
-  return http.get(CONVERSATIONS, ({ request }) => page(request, conversations));
+  return http.get(CONVERSATIONS, ({ request }) =>
+    page(request, filterConversations(request, conversations)),
+  );
+}
+
+/** GET /v1/workspaces/{id}/conversations recording each query string (`queries`). */
+export function conversationsRecorder(conversations: Conversation[] = makeConversations()) {
+  const queries: string[] = [];
+  return {
+    queries,
+    handler: http.get(CONVERSATIONS, ({ request }) => {
+      queries.push(new URL(request.url).search);
+      return page(request, filterConversations(request, conversations));
+    }),
+  };
 }
 
 /** GET /v1/workspaces/{id}/conversations/{conversation_id} answering `detail`. */
@@ -159,7 +189,7 @@ export function chatStore({
 }: ChatStoreOptions = {}) {
   let conversations = [...initial];
   const threads = new Map<string, Message[]>(Object.entries(initialMessages));
-  const created: string[] = [];
+  const created: ConversationInput[] = [];
   const deleted: string[] = [];
   const questions: { conversationId: string; content: string }[] = [];
   const feedback: { messageId: string; body: FeedbackInput }[] = [];
@@ -201,16 +231,20 @@ export function chatStore({
   };
 
   const handlers = [
-    http.get(CONVERSATIONS, ({ request }) => page(request, conversations)),
+    http.get(CONVERSATIONS, ({ request }) =>
+      page(request, filterConversations(request, conversations)),
+    ),
     http.post(CONVERSATIONS, async ({ request }) => {
-      const { product_id: assistantId } = (await request.json()) as { product_id: string };
+      const body = (await request.json()) as ConversationInput;
       const conversation = makeConversation({
         id: `00000000-0000-4000-8000-${String(990 + created.length).padStart(12, "0")}`,
-        product_id: assistantId,
+        product_id: body.product_id,
+        // Without a level the server uses the member's maximum; the default member is an owner.
+        level: body.level ?? "product_dev",
         title: null,
       });
       conversations = [conversation, ...conversations];
-      created.push(assistantId);
+      created.push(body);
       return HttpResponse.json<Conversation>(conversation, { status: 201 });
     }),
     http.get(CONVERSATION, ({ params }) => {
@@ -320,8 +354,8 @@ export function savedAnswer(
 }
 
 /** POST .../conversations refused with `status` and `code`. */
-export function createConversationFails(status: number, code: string) {
-  return http.post(CONVERSATIONS, () => apiErrorResponse(status, code));
+export function createConversationFails(status: number, code: string, details: unknown = null) {
+  return http.post(CONVERSATIONS, () => apiErrorResponse(status, code, details));
 }
 
 /** GET .../conversations failing on the server (500). */

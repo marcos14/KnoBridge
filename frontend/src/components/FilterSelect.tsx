@@ -20,6 +20,9 @@ interface FilterSelectProps {
   options: readonly FilterOption[];
   onValueChange: (value: string) => void;
   className?: string;
+  disabled?: boolean;
+  /** Id of the text that explains the filter (for example, why it is disabled). */
+  describedBy?: string;
 }
 
 /**
@@ -30,13 +33,27 @@ interface FilterSelectProps {
  * shows the chosen label itself. Trade-off: typing letters on the closed trigger does nothing;
  * Enter, Space and the arrows open the list, where type-ahead works.
  */
-export function FilterSelect({ id, value, options, onValueChange, className }: FilterSelectProps) {
+export function FilterSelect({
+  id,
+  value,
+  options,
+  onValueChange,
+  className,
+  disabled,
+  describedBy,
+}: FilterSelectProps) {
   const [open, setOpen] = useState(false);
   const chosen = options.find((option) => option.value === value);
 
   return (
-    <Select value={value} onValueChange={onValueChange} open={open} onOpenChange={setOpen}>
-      <SelectTrigger id={id} className={className}>
+    <Select
+      value={value}
+      onValueChange={onValueChange}
+      open={open}
+      onOpenChange={setOpen}
+      disabled={disabled}
+    >
+      <SelectTrigger id={id} className={className} aria-describedby={describedBy}>
         <SelectValue>{chosen?.label}</SelectValue>
       </SelectTrigger>
       {open && (

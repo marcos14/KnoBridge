@@ -1306,6 +1306,14 @@
       "withExtra": "Comentários incluídos.",
       "withoutExtra": "Comentários fora.",
       "markdown": "Markdown do card"
+    },
+    "types": {
+      "feature": "Funcionalidade",
+      "bug": "Bug",
+      "task": "Tarefa",
+      "story": "História",
+      "epic": "Épico",
+      "other": "Outro"
     }
   },
   "harness": {
@@ -1711,23 +1719,24 @@
   },
   "apiKeys": {
     "title": "Chaves de API",
-    "description": "Chaves para sistemas externos conversarem com os assistentes pela API REST ou pela API compatível com OpenAI. Cada chave vale para todos os assistentes ativos ou só para os escolhidos.",
+    "description": "Chaves para sistemas externos conversarem com os produtos pela API REST ou pela API compatível com OpenAI. Cada chave vale para todos os produtos ativos ou só para os escolhidos, até um nível máximo de resposta.",
     "create": "Nova chave",
     "tableLabel": "Chaves de API do workspace",
     "columns": {
       "name": "Nome",
       "scope": "Escopo",
+      "maxLevel": "Nível máximo",
       "created": "Criada em",
       "lastUsed": "Último uso",
       "status": "Estado",
       "actions": "Ações"
     },
     "scope": {
-      "all": "Todos os assistentes",
-      "count_zero": "Nenhum assistente",
-      "count_one": "{{count}} assistente",
-      "count_other": "{{count}} assistentes",
-      "none": "Nenhum assistente (os escolhidos foram excluídos)"
+      "all": "Todos os produtos",
+      "count_zero": "Nenhum produto",
+      "count_one": "{{count}} produto",
+      "count_other": "{{count}} produtos",
+      "none": "Nenhum produto (os escolhidos foram excluídos)"
     },
     "status": {
       "active": "Ativa",
@@ -1735,7 +1744,7 @@
     },
     "createdBy": "por {{name}}",
     "neverUsed": "Nunca usada",
-    "empty": "Nenhuma chave criada. Crie uma para chamar os assistentes pela API.",
+    "empty": "Nenhuma chave criada. Crie uma para chamar os produtos pela API.",
     "loading": "Carregando chaves…",
     "loadFailed": "Não foi possível carregar as chaves.",
     "retry": "Tentar novamente",
@@ -1750,25 +1759,27 @@
     "form": {
       "createTitle": "Nova chave de API",
       "editTitle": "Editar a chave {{name}}",
-      "description": "Dê um nome que identifique quem usa a chave e escolha os assistentes que ela alcança. A chave aparece uma única vez, logo depois de criar.",
+      "description": "Dê um nome que identifique quem usa a chave e escolha os produtos que ela alcança e o nível máximo das respostas. A chave aparece uma única vez, logo depois de criar.",
       "name": "Nome",
       "nameHint": "Ex.: portal do cliente ou integração do ERP.",
-      "scope": "Assistentes",
+      "scope": "Produtos",
       "scopes": {
-        "all": "Todos os assistentes ativos, inclusive os criados depois",
-        "selected": "Só os assistentes escolhidos"
+        "all": "Todos os produtos ativos, inclusive os criados depois",
+        "selected": "Só os produtos escolhidos"
       },
-      "assistants": "Assistentes da chave",
-      "assistantsLoading": "Carregando assistentes…",
-      "assistantsLoadFailed": "Não foi possível carregar os assistentes.",
-      "assistantsEmpty": "Nenhum assistente no workspace.",
-      "inactiveAssistant": "{{name}} (inativo)",
+      "products": "Produtos da chave",
+      "productsLoading": "Carregando produtos…",
+      "productsLoadFailed": "Não foi possível carregar os produtos.",
+      "productsEmpty": "Nenhum produto no workspace.",
+      "inactiveProduct": "{{name}} (inativo)",
+      "maxLevel": "Nível máximo",
+      "maxLevelHint": "A chave pergunta neste nível ou abaixo, em qualquer produto do escopo. Sem nível na requisição, vale este.",
       "submit": "Salvar",
       "cancel": "Cancelar",
       "validation": {
         "nameRequired": "Informe o nome da chave.",
-        "assistantsRequired": "Escolha pelo menos um assistente.",
-        "tooManyAssistants": "Escolha no máximo {{max}} assistentes."
+        "productsRequired": "Escolha pelo menos um produto.",
+        "tooManyProducts": "Escolha no máximo {{max}} produtos."
       }
     },
     "secret": {
@@ -1781,18 +1792,19 @@
     "examples": {
       "title": "Como usar",
       "description": "Os exemplos leem a chave da variável de ambiente {{variable}}. As fontes citadas vêm no campo knobridge da resposta.",
-      "assistant": "Exemplos com o assistente {{name}}; troque pelo nome de outro assistente do escopo da chave.",
-      "noAssistant": "Nenhum assistente ativo: troque os marcadores pelo id e pelo nome do assistente.",
-      "assistantIdPlaceholder": "<id-do-assistente>",
-      "assistantNamePlaceholder": "<nome do assistente>",
+      "product": "Exemplos com o produto {{name}} no nível {{level}}; troque pelo nome de outro produto do escopo da chave e por um nível até o máximo dela.",
+      "noProduct": "Nenhum produto ativo: troque os marcadores pelo id e pelo nome do produto.",
+      "productIdPlaceholder": "<id-do-produto>",
+      "productNamePlaceholder": "<nome do produto>",
+      "level": "Nível dos exemplos",
       "curl": {
         "title": "curl (API REST)",
-        "hint": "Cria uma conversa e faz uma pergunta. A resposta traz o texto e as citações.",
+        "hint": "Cria uma conversa no produto e no nível escolhidos e faz uma pergunta. A resposta traz o texto e as citações.",
         "copy": "Copiar exemplo curl"
       },
       "python": {
         "title": "Python (SDK oficial da OpenAI)",
-        "hint": "O modelo é o nome do assistente. Instale com pip install openai.",
+        "hint": "O modelo é produto:nível; só com o nome do produto, vale o nível máximo da chave. Instale com pip install openai.",
         "copy": "Copiar exemplo Python"
       },
       "javascript": {
@@ -1806,7 +1818,7 @@
     "title": "Chat",
     "retry": "Tentar de novo",
     "newTitle": "Nova conversa",
-    "newDescription": "Escolha o assistente e faça a sua pergunta. As respostas citam as fontes usadas.",
+    "newDescription": "Escolha o produto e o nível de resposta e faça a sua pergunta. As respostas citam as fontes usadas.",
     "list": {
       "label": "Suas conversas",
       "new": "Nova conversa",
@@ -1818,25 +1830,22 @@
       "delete": "Excluir",
       "deleteLabel": "Excluir a conversa {{title}}",
       "deleteTitle": "Excluir conversa?",
-      "deleteDescription": "A conversa \"{{title}}\" será excluída com todas as mensagens e avaliações. Isso não pode ser desfeito."
-    },
-    "assistants": {
-      "label": "Assistente",
-      "loading": "Carregando assistentes…",
-      "loadFailed": "Não foi possível carregar os assistentes.",
-      "noneTitle": "Nenhum assistente disponível",
-      "noneManager": "Ainda não há assistente ativo neste workspace. Crie ou ative um assistente para começar a conversar.",
-      "noneMember": "Ainda não há assistente ativo neste workspace. Peça a um administrador que configure um.",
-      "goToAssistants": "Configurar assistentes",
-      "noCollections": "Este assistente ainda não usa nenhuma coleção: responderá sempre sem fonte."
+      "deleteDescription": "A conversa \"{{title}}\" será excluída com todas as mensagens e avaliações. Isso não pode ser desfeito.",
+      "filters": "Filtros das conversas",
+      "product": "Produto das conversas",
+      "allProducts": "Todos os produtos",
+      "level": "Nível das conversas",
+      "allLevels": "Todos os níveis",
+      "summary": "{{product}} · {{level}}",
+      "emptyFiltered": "Nenhuma conversa com estes filtros."
     },
     "conversation": {
       "label": "Conversa",
       "loading": "Carregando conversa…",
       "loadFailed": "Não foi possível carregar a conversa.",
       "notFound": "Conversa não encontrada",
-      "assistant": "Assistente: {{name}}",
-      "openTicket": "Abrir chamado da conversa"
+      "openTicket": "Abrir chamado da conversa",
+      "product": "Produto: {{name}}"
     },
     "thread": {
       "label": "Mensagens da conversa"
@@ -1898,7 +1907,14 @@
       "ticketStatus": "Status",
       "resolvedAt": "Resolvido em",
       "updatedAt": "Atualizado em",
-      "openTicket": "Abrir o chamado no sistema de origem"
+      "openTicket": "Abrir o chamado no sistema de origem",
+      "card": "Card",
+      "cardNumber": "Card {{number}}",
+      "cardType": "Tipo",
+      "cardStatus": "Status",
+      "sprint": "Sprint",
+      "doneAt": "Concluído em",
+      "openCard": "Abrir o card no sistema de origem"
     },
     "citationLabel": "Fonte {{index}}: {{title}}",
     "composer": {
@@ -1920,6 +1936,29 @@
       "commentTooLong": "O comentário pode ter até {{max}} caracteres.",
       "saveComment": "Salvar comentário",
       "cancel": "Cancelar"
+    },
+    "products": {
+      "label": "Produto",
+      "loading": "Carregando produtos…",
+      "loadFailed": "Não foi possível carregar os produtos.",
+      "noneTitle": "Nenhum produto disponível",
+      "noneManager": "Ainda não há produto ativo neste workspace. Crie ou ative um produto para começar a conversar.",
+      "noneMember": "Ainda não há produto ativo neste workspace. Peça a um administrador que configure um.",
+      "goToProducts": "Configurar produtos",
+      "noCollections": "Este produto ainda não usa nenhuma coleção: responderá sempre sem fonte."
+    },
+    "levels": {
+      "label": "Nível de resposta",
+      "hint": "O nível fica fixo na conversa: para mudar, abra outra conversa.",
+      "unavailable": "Indisponível: o seu nível máximo neste produto é {{max}}.",
+      "badge": "Nível: {{level}}",
+      "aboveMax": "O seu nível máximo neste produto agora é {{max}}: esta conversa, no nível {{level}}, não aceita novas perguntas. Abra uma nova conversa."
+    },
+    "errors": {
+      "levelNotAllowed": "O seu nível máximo neste produto é {{max}} e esta conversa está no nível {{requested}}. Abra uma nova conversa num nível permitido.",
+      "levelNotConfigured": "O nível {{level}} ainda não foi configurado neste workspace: peça a um admin que escolha a credencial e o modelo dele em Configurações.",
+      "levelNotConfiguredUnknown": "Este nível ainda não foi configurado neste workspace: peça a um admin que escolha a credencial e o modelo dele em Configurações.",
+      "productInactive": "Este produto foi desativado e não aceita novas conversas nem perguntas."
     }
   },
   "conversations": {
@@ -1940,8 +1979,10 @@
     },
     "filters": {
       "label": "Filtros das conversas",
-      "assistant": "Assistente",
-      "allAssistants": "Todos os assistentes",
+      "product": "Produto",
+      "allProducts": "Todos os produtos",
+      "level": "Nível",
+      "allLevels": "Todos os níveis",
       "user": "Usuário",
       "allUsers": "Todos os usuários",
       "channel": "Canal",
@@ -1959,7 +2000,8 @@
     "columns": {
       "title": "Conversa",
       "user": "Usuário",
-      "assistant": "Assistente",
+      "product": "Produto",
+      "level": "Nível",
       "messages": "Mensagens",
       "feedback": "Avaliações",
       "lastActivity": "Última atividade"
@@ -1972,7 +2014,7 @@
     "apiOwner": "API · {{key}}",
     "apiOwnerUnnamed": "API",
     "apiOwnerHint": "Chave de API",
-    "unknownAssistant": "Assistente {{id}}",
+    "unknownProduct": "Produto {{id}}",
     "empty": "Nenhuma conversa ainda.",
     "emptyFiltered": "Nenhuma conversa corresponde aos filtros.",
     "loading": "Carregando conversas…",
@@ -1983,8 +2025,8 @@
       "loading": "Carregando conversa…",
       "loadFailed": "Não foi possível carregar a conversa.",
       "notFound": "Conversa não encontrada",
-      "who": "{{user}} ({{email}}) com {{assistant}}",
-      "whoApi": "{{owner}} com {{assistant}}",
+      "who": "{{user}} ({{email}}) em {{product}}, nível {{level}}",
+      "whoApi": "{{owner}} em {{product}}, nível {{level}}",
       "startedAt": "Iniciada em {{when}}",
       "readOnly": "Somente leitura. As avaliações são dos membros.",
       "threadLabel": "Mensagens da conversa",
@@ -2010,7 +2052,13 @@
       "period": "Período",
       "from": "De",
       "to": "Até",
-      "group": "Agrupar por"
+      "group": "Agrupar por",
+      "product": "Produto",
+      "allProducts": "Todos os produtos",
+      "level": "Nível",
+      "allLevels": "Todos os níveis",
+      "chatOnly": "Os filtros de produto e nível valem só para o chat: agrupando por fonte ou coleção, eles ficam desligados.",
+      "filteredNote": "Filtrado por produto ou nível: só o chat entra na conta, porque embeddings não pertencem a um produto nem a um nível."
     },
     "presets": {
       "thisMonth": "Este mês",
@@ -2483,6 +2531,8 @@
     "member_level_product_invalid": "Um dos produtos não existe mais neste workspace. Recarregue a página.",
     "invite_product_invalid": "Um dos produtos escolhidos não existe mais neste workspace.",
     "card_too_large": "O card passa de 1 MiB.",
-    "source_kind_mismatch": "O token é de outro tipo de fonte."
+    "source_kind_mismatch": "O token é de outro tipo de fonte.",
+    "level_not_allowed": "O nível pedido está acima do nível máximo permitido.",
+    "product_inactive": "Este produto está inativo e não aceita novas conversas nem mensagens."
   }
 }

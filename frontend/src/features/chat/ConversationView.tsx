@@ -4,16 +4,19 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 
 import { FormAlert } from "@/components/FormAlert";
+import { LevelBadge } from "@/components/LevelBadge";
 import { Button } from "@/components/ui/button";
-import { translateApiError } from "@/i18n/apiErrors";
-import { isApiErrorCode } from "@/lib/api/client";
-import { useProducts } from "@/lib/api/products";
 import type { ChatStream } from "@/lib/api/chatStream";
+import { isApiErrorCode } from "@/lib/api/client";
 import { type Citation, useConversation } from "@/lib/api/conversations";
+import { useProducts } from "@/lib/api/products";
 import { usePreviewTicketRequest } from "@/lib/api/ticketRequests";
+import { isLevelAbove, levelLabel } from "@/lib/responseLevels";
 
+import { chatErrorMessage } from "./chatErrors";
 import { ticketCandidate } from "./chatForm";
 import { Composer } from "./Composer";
+
 import { MessageList } from "./MessageList";
 import { NoCollectionsHint } from "./NoCollectionsHint";
 import { TicketRequestDialog } from "./TicketRequestDialog";
@@ -34,7 +37,7 @@ export function ConversationView({
 }: ConversationViewProps) {
   const { t } = useTranslation();
   const conversation = useConversation(workspaceId, conversationId);
-  const assistants = useProducts(workspaceId);
+  const products = useProducts(workspaceId);
   const [ticketFor, setTicketFor] = useState<string | null>(null);
   const preview = usePreviewTicketRequest(workspaceId);
   const streaming = stream.pending !== null;
@@ -42,7 +45,7 @@ export function ConversationView({
   const send = (content: string) => stream.send(conversationId, content);
   const failure =
     stream.failure?.conversationId === conversationId
-      ? translateApiError(stream.failure.error, t)
+      ? chatErrorMessage(stream.failure.error, t)
       : null;
 
   if (conversation.isPending) {
@@ -82,8 +85,10 @@ export function ConversationView({
   }
 
   const detail = conversation.data;
-  const assistant = assistants.data?.find((item) => item.id === detail.product_id);
-  // The detail says whether the assistant offers tickets; after each answer it is reloaded, so it
+  const product = products.data?.find((item) => item.id === detail.product_id);
+  // The level stays with the conversation; an admin may have lowered the member's maximum since.
+  const maxLevel = product?.my_max_level;
+  // The detail says whether the product offers tickets; after each answer it is reloaded, so it
   // carries the same `ticket_requests_enabled` as the stream's `done` event.
   const openTicket =
     detail.ticket_requests_enabled && !streaming
@@ -102,11 +107,12 @@ export function ConversationView({
           <h2 className="truncate text-lg font-semibold">
             {detail.title ?? t("chat.list.untitled")}
           </h2>
-          {assistant !== undefined && (
+          <div className="flex flex-wrap items-center gap-2">
             <p className="text-muted-foreground text-xs">
-              {t("chat.conversation.assistant", { name: assistant.name })}
+              {t("chat.conversation.product", { name: detail.product_name })}
             </p>
-          )}
+            <LevelBadge level={detail.level} />
+          </div>
         </div>
         {openTicket !== undefined && candidate !== null && (
           <Button
@@ -147,7 +153,15 @@ export function ConversationView({
         }
       />
       {failure !== null && <FormAlert key={failure} message={failure} />}
-      <NoCollectionsHint assistant={assistant} />
+      {maxLevel !== undefined && isLevelAbove(detail.level, maxLevel) && (
+        <p className="text-muted-foreground text-xs">
+          {t("chat.levels.aboveMax", {
+            max: levelLabel(maxLevel, t),
+            level: levelLabel(detail.level, t),
+          })}
+        </p>
+      )}
+      <NoCollectionsHint product={product} />
       <Composer onSend={send} streaming={streaming} onStop={stream.stop} />
     </div>
   );

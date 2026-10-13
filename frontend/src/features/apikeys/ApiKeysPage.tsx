@@ -12,6 +12,7 @@ import { translateApiError } from "@/i18n/apiErrors";
 import { type ApiKey, useApiKeys, useRevokeApiKey } from "@/lib/api/apiKeys";
 import { type Product, useProducts } from "@/lib/api/products";
 import { formatDateTime, formatRelativeTime } from "@/lib/intl";
+import { levelLabel } from "@/lib/responseLevels";
 import { clampOffset, pageOf } from "@/lib/pagination";
 
 import { ApiKeyDialog } from "./ApiKeyDialog";
@@ -59,17 +60,17 @@ function LastUsed({ value }: { value: string | null }) {
   );
 }
 
-function Scope({ apiKey, assistants }: { apiKey: ApiKey; assistants: Product[] | undefined }) {
+function Scope({ apiKey, products }: { apiKey: ApiKey; products: Product[] | undefined }) {
   const { t } = useTranslation();
   const ids = apiKey.product_ids;
   if (ids === null) {
     return <span>{t("apiKeys.scope.all")}</span>;
   }
-  if (assistants === undefined) {
+  if (products === undefined) {
     return <span>{t("apiKeys.scope.count", { count: ids.length })}</span>;
   }
-  // A deleted assistant leaves the scope without an error (`docs/specs/api-publica.md`).
-  const names = assistants.filter(({ id }) => ids.includes(id)).map(({ name }) => name);
+  // A deleted product leaves the scope without an error (`docs/specs/api-publica.md`).
+  const names = products.filter(({ id }) => ids.includes(id)).map(({ name }) => name);
   if (names.length === 0) {
     return <span className="text-muted-foreground">{t("apiKeys.scope.none")}</span>;
   }
@@ -81,7 +82,7 @@ function ApiKeysList({ workspaceId }: { workspaceId: string }) {
   const [requestedOffset, setRequestedOffset] = useState(0);
   const [feedback, setFeedback] = useState<Feedback>(null);
   const apiKeys = useApiKeys(workspaceId);
-  const assistants = useProducts(workspaceId);
+  const products = useProducts(workspaceId);
   const revoke = useRevokeApiKey(workspaceId);
 
   const showStatus = (message: string) => {
@@ -162,7 +163,12 @@ function ApiKeysList({ workspaceId }: { workspaceId: string }) {
     {
       key: "scope",
       header: t("apiKeys.columns.scope"),
-      cell: (item) => <Scope apiKey={item} assistants={assistants.data} />,
+      cell: (item) => <Scope apiKey={item} products={products.data} />,
+    },
+    {
+      key: "maxLevel",
+      header: t("apiKeys.columns.maxLevel"),
+      cell: (item) => levelLabel(item.max_level, t),
     },
     {
       key: "created",

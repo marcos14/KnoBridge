@@ -268,3 +268,25 @@ export function makeTicketCitation(overrides: Partial<Citation> = {}): Citation 
     ...overrides,
   });
 }
+
+/** Citation `kind: card` (v0.9) of card PROJ-123, a bug done in "Sprint 42", with its link. */
+export function makeCardCitation(overrides: Partial<Citation> = {}): Citation {
+  return makeCitation({
+    title: "Fechamento do caixa trava com sangria pendente",
+    uri: "card:proj-123",
+    snippet: "Liberar o fechamento quando a sangria do turno anterior estiver concluída.",
+    document_id: "doc-card-proj-123",
+    kind: "card",
+    path: null,
+    sha: null,
+    card_number: "PROJ-123",
+    card_type: "bug",
+    card_status: "done",
+    card_sprint: "Sprint 42",
+    // Midday UTC: the same calendar day in any time zone the tests may run in.
+    date: "2026-10-03T12:00:00Z",
+    card_date_kind: "done",
+    url: "https://cards.example.test/browse/PROJ-123",
+    ...overrides,
+  });
+}

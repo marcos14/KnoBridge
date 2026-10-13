@@ -1,6 +1,45 @@
 import { describe, expect, it } from "vitest";
 
-import { defaultMaxLevel, defaultSourceMinLevel, isLevelAbove } from "./responseLevels";
+import { i18n } from "@/i18n";
+
+import {
+  defaultMaxLevel,
+  defaultSourceMinLevel,
+  isLevelAbove,
+  levelAudience,
+  levelLabel,
+  parseLevel,
+} from "./responseLevels";
+
+const t = i18n.t;
+
+describe("parseLevel", () => {
+  it.each([
+    ["end_user", "end_user"],
+    ["support", "support"],
+    ["product_dev", "product_dev"],
+    ["admin", undefined],
+    ["", undefined],
+    [null, undefined],
+    [undefined, undefined],
+  ] as const)("test_parse_level_of_%s_is_%s", (value, expected) => {
+    expect(parseLevel(value)).toBe(expected);
+  });
+});
+
+describe("levelLabel", () => {
+  it.each([
+    ["end_user", "Usuário final"],
+    ["support", "Suporte"],
+    ["product_dev", "Desenvolvimento e produto"],
+  ] as const)("test_level_label_of_%s_is_%s", (level, expected) => {
+    expect(levelLabel(level, t)).toBe(expected);
+  });
+
+  it("test_level_audience_says_who_the_level_is_for", () => {
+    expect(levelAudience("end_user", t)).toMatch(/^Quem usa o sistema/);
+  });
+});
 
 describe("isLevelAbove", () => {
   it.each([

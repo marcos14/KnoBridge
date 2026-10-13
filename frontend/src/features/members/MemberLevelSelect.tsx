@@ -8,6 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RESPONSE_LEVELS, type ResponseLevel } from "@/lib/api/levels";
+import { levelLabel } from "@/lib/responseLevels";
 
 /** The value of the "default of the role" option (no stored level). */
 export const DEFAULT_LEVEL = "default";
@@ -38,7 +39,7 @@ export function MemberLevelSelect({
   disabled,
 }: MemberLevelSelectProps) {
   const { t } = useTranslation();
-  const levelName = (level: ResponseLevel) => t(`workspaceSettings.levels.names.${level}`);
+  const levelName = (level: ResponseLevel) => levelLabel(level, t);
 
   return (
     <Select

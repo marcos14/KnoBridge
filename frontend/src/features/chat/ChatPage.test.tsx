@@ -67,17 +67,19 @@ function composer() {
 }
 
 describe("ChatPage", () => {
-  it("test_chat_viewer_sees_conversations_and_active_assistants", async () => {
+  it("test_chat_viewer_sees_conversations_and_active_products", async () => {
     asRole("viewer");
     useStore();
-    // The API lists only active assistants to viewers.
+    // The API lists only active products to viewers.
     server.use(productsAs([makeProduct()]));
     await openChat();
 
     const list = screen.getByRole("navigation", { name: "Suas conversas" });
-    expect(await within(list).findByRole("link", { name: "Como fecho o caixa?" })).toBeVisible();
-    expect(within(list).getByRole("link", { name: "Emissão de nota fiscal" })).toBeVisible();
-    expect(await screen.findByRole("combobox", { name: "Assistente" })).toHaveTextContent(
+    expect(
+      await within(list).findByRole("link", { name: /^Como fecho o caixa[?] / }),
+    ).toBeVisible();
+    expect(within(list).getByRole("link", { name: /^Emissão de nota fiscal / })).toBeVisible();
+    expect(await screen.findByRole("combobox", { name: "Produto" })).toHaveTextContent(
       "Suporte ERP",
     );
     await waitFor(() => {
@@ -94,14 +96,14 @@ describe("ChatPage", () => {
       }),
     });
     const { user, router } = await openChat();
-    await screen.findByRole("combobox", { name: "Assistente" });
+    await screen.findByRole("combobox", { name: "Produto" });
 
     await user.type(composer(), "Como fecho o caixa?{Enter}");
 
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(`${CHAT}/${NEW_CONVERSATION_ID}`);
     });
-    expect(store.created).toEqual([makeProduct().id]);
+    expect(store.created).toEqual([{ product_id: PRODUCT_ID, level: "product_dev" }]);
     expect(await screen.findByText("O assistente está respondendo…")).toBeVisible();
     expect(screen.getByRole("button", { name: "Parar" })).toBeVisible();
     const [citations, first, second, done] = answerFrames({
@@ -138,7 +140,7 @@ describe("ChatPage", () => {
     // The server saves the question and the start of the answer before the first byte.
     useStore({ reply: () => ({ body: source.stream, saved: savedAnswer("streaming", "") }) });
     const { user } = await openChat();
-    await screen.findByRole("combobox", { name: "Assistente" });
+    await screen.findByRole("combobox", { name: "Produto" });
 
     await user.type(composer(), "Como fecho o caixa?{Enter}");
 
@@ -183,7 +185,7 @@ describe("ChatPage", () => {
       }),
     );
     const { user } = await openChat();
-    await screen.findByRole("combobox", { name: "Assistente" });
+    await screen.findByRole("combobox", { name: "Produto" });
 
     await user.type(composer(), "Como fecho o caixa?{Enter}");
     await waitFor(() => {
@@ -195,7 +197,9 @@ describe("ChatPage", () => {
     });
     const list = screen.getByRole("navigation", { name: "Suas conversas" });
     await waitFor(() => {
-      expect(within(list).getAllByRole("link", { name: "Como fecho o caixa?" })).toHaveLength(2);
+      expect(within(list).getAllByRole("link", { name: /^Como fecho o caixa[?] / })).toHaveLength(
+        2,
+      );
     });
     act(() => {
       release();
@@ -207,7 +211,7 @@ describe("ChatPage", () => {
     expect(screen.queryByRole("heading", { level: 2, name: "Conversa sem título" })).toBeNull();
   });
 
-  it("test_chat_starts_with_the_chosen_assistant", async () => {
+  it("test_chat_starts_with_the_chosen_product", async () => {
     asRole("editor");
     const store = useStore();
     server.use(
@@ -218,27 +222,27 @@ describe("ChatPage", () => {
     );
     const { user } = await openChat();
 
-    await user.click(await screen.findByRole("combobox", { name: "Assistente" }));
+    await user.click(await screen.findByRole("combobox", { name: "Produto" }));
     // The inactive "Rascunho" is not offered.
     expect(screen.queryByRole("option", { name: "Rascunho" })).not.toBeInTheDocument();
     await user.click(await screen.findByRole("option", { name: "Fiscal" }));
     await user.type(composer(), "Nota?{Enter}");
 
     await waitFor(() => {
-      expect(store.created).toEqual([OTHER_PRODUCT_ID]);
+      expect(store.created).toEqual([{ product_id: OTHER_PRODUCT_ID, level: "product_dev" }]);
     });
   });
 
   it("test_chat_create_failure_gives_the_question_back", async () => {
     useStore();
-    server.use(createConversationFails(409, "assistant_inactive"));
+    server.use(createConversationFails(409, "product_inactive"));
     const { user } = await openChat();
-    await screen.findByRole("combobox", { name: "Assistente" });
+    await screen.findByRole("combobox", { name: "Produto" });
 
     await user.type(composer(), "Pergunta{Enter}");
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "Este assistente está inativo e não aceita novas mensagens.",
+      "Este produto foi desativado e não aceita novas conversas nem perguntas.",
     );
     expect(composer()).toHaveValue("Pergunta");
   });
@@ -333,9 +337,9 @@ describe("ChatPage", () => {
   });
 
   const NO_COLLECTIONS_HINT =
-    "Este assistente ainda não usa nenhuma coleção: responderá sempre sem fonte.";
+    "Este produto ainda não usa nenhuma coleção: responderá sempre sem fonte.";
 
-  it("test_chat_hints_when_the_chosen_assistant_has_no_collection", async () => {
+  it("test_chat_hints_when_the_chosen_product_has_no_collection", async () => {
     useStore();
     server.use(
       productsAs([
@@ -345,15 +349,15 @@ describe("ChatPage", () => {
     );
     const { user } = await openChat();
 
-    await screen.findByRole("combobox", { name: "Assistente" });
+    await screen.findByRole("combobox", { name: "Produto" });
     expect(screen.queryByText(NO_COLLECTIONS_HINT)).not.toBeInTheDocument();
-    await user.click(screen.getByRole("combobox", { name: "Assistente" }));
+    await user.click(screen.getByRole("combobox", { name: "Produto" }));
     await user.click(await screen.findByRole("option", { name: "Fiscal" }));
 
     expect(screen.getByText(NO_COLLECTIONS_HINT)).toBeVisible();
   });
 
-  it("test_chat_conversation_hints_when_its_assistant_has_no_collection", async () => {
+  it("test_chat_conversation_hints_when_its_product_has_no_collection", async () => {
     useStore();
     server.use(productsAs([makeProduct({ collection_ids: [] })]));
     await openChat(`${CHAT}/${CONVERSATION_ID}`);
@@ -477,9 +481,9 @@ describe("ChatPage", () => {
     await user.type(composer(), "Posso?{Enter}");
     expect(await screen.findByRole("alert")).toBeVisible();
 
-    await user.click(screen.getByRole("link", { name: "Emissão de nota fiscal" }));
+    await user.click(screen.getByRole("link", { name: /^Emissão de nota fiscal / }));
     await screen.findByRole("heading", { level: 2, name: "Emissão de nota fiscal" });
-    await user.click(screen.getByRole("link", { name: "Como fecho o caixa?" }));
+    await user.click(screen.getByRole("link", { name: /^Como fecho o caixa[?] / }));
 
     expect(await screen.findByText(/Confira os lançamentos/)).toBeVisible();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
@@ -577,7 +581,9 @@ describe("ChatPage", () => {
     });
     expect(store.deleted).toEqual([CONVERSATION_ID]);
     await waitFor(() => {
-      expect(screen.queryByRole("link", { name: "Como fecho o caixa?" })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("link", { name: /^Como fecho o caixa[?] / }),
+      ).not.toBeInTheDocument();
     });
   });
 
@@ -646,7 +652,7 @@ describe("ChatPage", () => {
     await user.type(composer(), "Outra{Enter}");
     await screen.findByRole("button", { name: "Parar" });
 
-    await user.click(screen.getByRole("link", { name: "Emissão de nota fiscal" }));
+    await user.click(screen.getByRole("link", { name: /^Emissão de nota fiscal / }));
 
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "Enviar" })).toBeVisible();
@@ -654,28 +660,26 @@ describe("ChatPage", () => {
     expect(screen.queryByText("Outra")).toBeNull();
   });
 
-  it("test_chat_without_active_assistant_guides_the_member", async () => {
+  it("test_chat_without_active_product_guides_the_member", async () => {
     asRole("viewer");
     useStore();
     server.use(productsAs([]));
     await openChat();
 
-    expect(
-      await screen.findByRole("heading", { name: "Nenhum assistente disponível" }),
-    ).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "Nenhum produto disponível" })).toBeVisible();
     expect(screen.getByText(/Peça a um administrador/)).toBeVisible();
-    expect(screen.queryByRole("link", { name: "Configurar assistentes" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Configurar produtos" })).not.toBeInTheDocument();
   });
 
-  it("test_chat_without_active_assistant_links_managers_to_assistants", async () => {
+  it("test_chat_without_active_product_links_managers_to_products", async () => {
     asRole("editor");
     useStore();
     server.use(productsAs([makeProduct({ active: false })]));
     await openChat();
 
-    expect(await screen.findByRole("link", { name: "Configurar assistentes" })).toHaveAttribute(
+    expect(await screen.findByRole("link", { name: "Configurar produtos" })).toHaveAttribute(
       "href",
-      `/w/${WORKSPACE_ID}/assistants`,
+      `/w/${WORKSPACE_ID}/products`,
     );
   });
 
@@ -684,15 +688,15 @@ describe("ChatPage", () => {
     const { user } = await openChat();
 
     expect(await screen.findByText("Não foi possível carregar as conversas.")).toBeVisible();
-    expect(await screen.findByText("Não foi possível carregar os assistentes.")).toBeVisible();
+    expect(await screen.findByText("Não foi possível carregar os produtos.")).toBeVisible();
     useStore();
     server.use(productsAs());
     for (const button of screen.getAllByRole("button", { name: "Tentar de novo" })) {
       await user.click(button);
     }
 
-    expect(await screen.findByRole("link", { name: "Como fecho o caixa?" })).toBeVisible();
-    expect(await screen.findByRole("combobox", { name: "Assistente" })).toBeVisible();
+    expect(await screen.findByRole("link", { name: /^Como fecho o caixa[?] / })).toBeVisible();
+    expect(await screen.findByRole("combobox", { name: "Produto" })).toBeVisible();
   });
 
   it("test_chat_conversation_load_failure_offers_retry", async () => {
@@ -724,11 +728,11 @@ describe("ChatPage", () => {
     useStore({ conversations: many });
     const { user } = await openChat();
 
-    expect(await screen.findByRole("link", { name: "Conversa sem título" })).toBeVisible();
-    expect(screen.queryByRole("link", { name: "Conversa 50" })).not.toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: /^Conversa sem título / })).toBeVisible();
+    expect(screen.queryByRole("link", { name: /^Conversa 50 / })).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Carregar mais" }));
 
-    expect(await screen.findByRole("link", { name: "Conversa 50" })).toBeVisible();
+    expect(await screen.findByRole("link", { name: /^Conversa 50 / })).toBeVisible();
   });
 
   it("test_chat_empty_list_says_so", async () => {

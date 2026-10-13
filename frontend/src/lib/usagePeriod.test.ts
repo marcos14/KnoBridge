@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  acceptsChatFilters,
   DEFAULT_USAGE_SEARCH,
+  hasChatFilters,
   parseUsageSearch,
   presetDays,
   searchDays,
+  usageChatFilters,
   usagePeriod,
   usageSearchParams,
 } from "./usagePeriod";
@@ -59,6 +62,60 @@ describe("usageSearchParams", () => {
     expect(
       usageSearchParams({ preset: "lastMonth", group: "day", from: "2026-09-01" }).toString(),
     ).toBe("period=lastMonth");
+  });
+});
+
+const PRODUCT = "00000000-0000-4000-8000-0000000000f1";
+
+describe("product and level filters", () => {
+  it("test_parse_usage_search_reads_product_and_level", () => {
+    expect(
+      parseUsageSearch(new URLSearchParams(`group=level&product=${PRODUCT}&level=support`)),
+    ).toEqual({ preset: "thisMonth", group: "level", product: PRODUCT, level: "support" });
+  });
+
+  it("test_parse_usage_search_drops_invalid_filters", () => {
+    expect(parseUsageSearch(new URLSearchParams("product=x&level=admin"))).toEqual(
+      DEFAULT_USAGE_SEARCH,
+    );
+  });
+
+  it("test_parse_usage_search_drops_filters_of_an_embeddings_grouping", () => {
+    expect(
+      parseUsageSearch(new URLSearchParams(`group=source&product=${PRODUCT}&level=support`)),
+    ).toEqual({ preset: "thisMonth", group: "source" });
+  });
+
+  it("test_usage_search_params_write_filters_only_where_they_apply", () => {
+    expect(
+      usageSearchParams({
+        preset: "thisMonth",
+        group: "day",
+        product: PRODUCT,
+        level: "end_user",
+      }).toString(),
+    ).toBe(`product=${PRODUCT}&level=end_user`);
+    expect(
+      usageSearchParams({ preset: "thisMonth", group: "collection", level: "end_user" }).toString(),
+    ).toBe("group=collection");
+  });
+
+  it("test_usage_chat_filters_go_to_the_api_only_where_they_apply", () => {
+    const search = { preset: "thisMonth" as const, product: PRODUCT, level: "support" as const };
+
+    expect(usageChatFilters({ ...search, group: "model" })).toEqual({
+      productId: PRODUCT,
+      level: "support",
+    });
+    expect(usageChatFilters({ ...search, group: "source" })).toEqual({});
+  });
+
+  it("test_accepts_chat_filters_and_has_chat_filters", () => {
+    expect(acceptsChatFilters("day")).toBe(true);
+    expect(acceptsChatFilters("collection")).toBe(false);
+    expect(hasChatFilters(DEFAULT_USAGE_SEARCH)).toBe(false);
+    expect(hasChatFilters({ ...DEFAULT_USAGE_SEARCH, level: "support" })).toBe(true);
+    expect(hasChatFilters({ ...DEFAULT_USAGE_SEARCH, product: PRODUCT })).toBe(true);
   });
 });
 

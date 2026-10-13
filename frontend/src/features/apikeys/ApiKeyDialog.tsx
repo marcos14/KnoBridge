@@ -28,7 +28,9 @@ import {
   useCreateApiKey,
   useUpdateApiKey,
 } from "@/lib/api/apiKeys";
+import { RESPONSE_LEVELS } from "@/lib/api/levels";
 import { useProducts } from "@/lib/api/products";
+import { levelAudience, levelLabel } from "@/lib/responseLevels";
 
 import { API_KEY_VARIABLE } from "./usageExamples";
 import {
@@ -49,8 +51,8 @@ interface ApiKeyDialogProps {
 }
 
 /**
- * Creates a key (name and scope), then shows its secret, returned only by the `POST`, with a
- * copy button; closing the dialog drops the secret for good. With `apiKey`, edits name and scope.
+ * Creates a key (name, products and maximum level), then shows its secret, returned only by the `POST`, with a
+ * copy button; closing the dialog drops the secret for good. With `apiKey`, edits the three.
  */
 export function ApiKeyDialog({ workspaceId, trigger, apiKey, onSaved }: ApiKeyDialogProps) {
   const { t } = useTranslation();
@@ -126,6 +128,7 @@ export function ApiKeyDialog({ workspaceId, trigger, apiKey, onSaved }: ApiKeyDi
                   description={t("apiKeys.form.nameHint")}
                 />
                 <ScopeField workspaceId={workspaceId} control={form.control} />
+                <MaxLevelField control={form.control} />
                 <DialogFooter>
                   <DialogClose asChild>
                     <Button type="button" variant="outline">
@@ -181,58 +184,58 @@ function ScopeField({ workspaceId, control }: ScopeFieldProps) {
           </RadioGroup>
         )}
       />
-      {scope === "selected" && <AssistantsField workspaceId={workspaceId} control={control} />}
+      {scope === "selected" && <ProductsField workspaceId={workspaceId} control={control} />}
     </fieldset>
   );
 }
 
-function AssistantsField({ workspaceId, control }: ScopeFieldProps) {
+function ProductsField({ workspaceId, control }: ScopeFieldProps) {
   const { t } = useTranslation();
   const idPrefix = useId();
-  const assistants = useProducts(workspaceId);
+  const products = useProducts(workspaceId);
 
   return (
     <FormField
       control={control}
-      name="assistantIds"
+      name="productIds"
       render={({ field }) => {
         const selected = field.value;
         const toggle = (id: string, checked: boolean) => {
           field.onChange(checked ? [...selected, id] : selected.filter((item) => item !== id));
         };
         let options: ReactNode;
-        if (assistants.isPending) {
+        if (products.isPending) {
           options = (
             <p role="status" className="text-sm">
-              {t("apiKeys.form.assistantsLoading")}
+              {t("apiKeys.form.productsLoading")}
             </p>
           );
-        } else if (assistants.isError) {
+        } else if (products.isError) {
           options = (
             <p role="alert" className="text-sm">
-              {t("apiKeys.form.assistantsLoadFailed")}
+              {t("apiKeys.form.productsLoadFailed")}
             </p>
           );
-        } else if (assistants.data.length === 0) {
-          options = <p className="text-sm">{t("apiKeys.form.assistantsEmpty")}</p>;
+        } else if (products.data.length === 0) {
+          options = <p className="text-sm">{t("apiKeys.form.productsEmpty")}</p>;
         } else {
           options = (
-            <ul aria-label={t("apiKeys.form.assistants")} className="flex flex-col gap-2 pl-6">
-              {assistants.data.map((assistant) => {
-                const id = `${idPrefix}-${assistant.id}`;
+            <ul aria-label={t("apiKeys.form.products")} className="flex flex-col gap-2 pl-6">
+              {products.data.map((product) => {
+                const id = `${idPrefix}-${product.id}`;
                 return (
-                  <li key={assistant.id} className="flex items-center gap-3">
+                  <li key={product.id} className="flex items-center gap-3">
                     <Checkbox
                       id={id}
-                      checked={selected.includes(assistant.id)}
+                      checked={selected.includes(product.id)}
                       onCheckedChange={(checked) => {
-                        toggle(assistant.id, checked === true);
+                        toggle(product.id, checked === true);
                       }}
                     />
                     <Label htmlFor={id}>
-                      {assistant.active
-                        ? assistant.name
-                        : t("apiKeys.form.inactiveAssistant", { name: assistant.name })}
+                      {product.active
+                        ? product.name
+                        : t("apiKeys.form.inactiveProduct", { name: product.name })}
                     </Label>
                   </li>
                 );
@@ -248,6 +251,53 @@ function AssistantsField({ workspaceId, control }: ScopeFieldProps) {
         );
       }}
     />
+  );
+}
+
+/** The key's maximum level: the three levels in order, each with who it is for. */
+function MaxLevelField({ control }: { control: Control<ApiKeyFormValues> }) {
+  const { t } = useTranslation();
+  const labelId = useId();
+
+  return (
+    <fieldset className="flex flex-col gap-2">
+      <legend id={labelId} className="text-sm font-medium">
+        {t("apiKeys.form.maxLevel")}
+      </legend>
+      <p className="text-muted-foreground text-sm">{t("apiKeys.form.maxLevelHint")}</p>
+      <FormField
+        control={control}
+        name="maxLevel"
+        render={({ field }) => (
+          <RadioGroup
+            aria-labelledby={labelId}
+            value={field.value}
+            onValueChange={field.onChange}
+            className="flex flex-col gap-2"
+          >
+            {RESPONSE_LEVELS.map((level) => {
+              const id = `${labelId}-${level}`;
+              return (
+                <div key={level} className="flex items-start gap-2">
+                  <RadioGroupItem
+                    value={level}
+                    id={id}
+                    aria-describedby={`${id}-hint`}
+                    className="mt-0.5"
+                  />
+                  <div className="flex flex-col gap-0.5">
+                    <Label htmlFor={id}>{levelLabel(level, t)}</Label>
+                    <p id={`${id}-hint`} className="text-muted-foreground text-xs">
+                      {levelAudience(level, t)}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </RadioGroup>
+        )}
+      />
+    </fieldset>
   );
 }
 

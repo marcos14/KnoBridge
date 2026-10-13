@@ -65,13 +65,17 @@ export function AssistantMessage({
               const location =
                 source.type === "ticket" && source.number !== null
                   ? t("chat.citations.ticketNumber", { number: source.number })
-                  : citationLocation(citation);
+                  : source.type === "card" && source.number !== null
+                    ? t("chat.citations.cardNumber", { number: source.number })
+                    : citationLocation(citation);
               const seal =
                 source.type === "knowledge" && source.confidence !== null
                   ? t(`chat.citations.seals.${source.confidence}`)
                   : source.type === "ticket" && source.status !== null
                     ? t(`tickets.status.${source.status}`)
-                    : null;
+                    : source.type === "card" && source.status !== null
+                      ? t(`cards.status.${source.status}`)
+                      : null;
               return (
                 <li key={citation.index}>
                   <Button

@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import type { UsageGroup, UsageRow, UsageTotals } from "@/lib/api/usage";
 import { formatCount, formatUsd } from "@/lib/numberFormat";
+import { levelLabel, parseLevel } from "@/lib/responseLevels";
 
 import {
   COST_COLUMNS,
@@ -28,6 +29,8 @@ import {
 
 interface UsageTableProps {
   group: UsageGroup;
+  /** Filtered by product or level: only the chat is counted, the embedding columns go. */
+  chatOnly: boolean;
   rows: readonly UsageRow[];
   totals: UsageTotals;
   busy: boolean;
@@ -42,11 +45,11 @@ function SortIcon({ direction }: { direction: UsageSort["direction"] | undefined
  * One row per group with the columns that apply to the grouping, sortable by any column (the
  * API's order until a header is clicked), and the period totals in the footer.
  */
-export function UsageTable({ group, rows, totals, busy }: UsageTableProps) {
+export function UsageTable({ group, chatOnly, rows, totals, busy }: UsageTableProps) {
   const { t, i18n } = useTranslation();
   const locale = i18n.language;
   const [sort, setSort] = useState<UsageSort | null>(null);
-  const columns = usageColumns(group);
+  const columns = usageColumns(group, chatOnly);
   const sorted = sortUsageRows(rows, sort);
 
   function value(column: UsageColumn, amount: number | null): string {
@@ -63,7 +66,8 @@ export function UsageTable({ group, rows, totals, busy }: UsageTableProps) {
     if (group === "channel" && (row.key === "panel" || row.key === "api")) {
       return t(`usage.channels.${row.key}`);
     }
-    return row.label;
+    const level = group === "level" ? parseLevel(row.key) : undefined;
+    return level === undefined ? row.label : levelLabel(level, t);
   }
 
   function header(key: UsageSortKey, text: string, className?: string) {

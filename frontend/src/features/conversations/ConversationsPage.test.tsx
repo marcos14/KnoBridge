@@ -106,6 +106,7 @@ describe("ConversationsPage list", () => {
     expect(within(first).getByText("Ana Teste")).toBeVisible();
     expect(within(first).getByText("ana@example.test")).toBeVisible();
     expect(within(first).getByText("Suporte ERP")).toBeVisible();
+    expect(within(first).getByText("Desenvolvimento e produto")).toBeVisible();
     expect(within(first).getByText("4")).toBeVisible();
     expect(within(first).getByLabelText("1 positivas, 1 negativas")).toHaveTextContent(
       "1 👍 · 1 👎",
@@ -178,7 +179,8 @@ describe("ConversationsPage list", () => {
     const recorder = record();
     const { user, router } = await renderConversations();
 
-    await pick(user, "Assistente", "Suporte ERP");
+    await pick(user, "Produto", "Suporte ERP");
+    await pick(user, "Nível", "Suporte");
     await pick(user, "Usuário", "Bruno Lima");
     fireEvent.change(screen.getByLabelText("De"), { target: { value: "2026-10-01" } });
     fireEvent.change(screen.getByLabelText("Até"), { target: { value: "2026-10-31" } });
@@ -187,6 +189,7 @@ describe("ConversationsPage list", () => {
     await waitFor(() => {
       expect(last(recorder.listQueries)).toEqual({
         product_id: PRODUCT_ID,
+        level: "support",
         user_id: memberId(1),
         created_from: new Date(2026, 9, 1).toISOString(),
         created_to: new Date(2026, 10, 1).toISOString(),
@@ -200,7 +203,8 @@ describe("ConversationsPage list", () => {
       created_to: new Date(2026, 10, 1).toISOString(),
     });
     expect(Object.fromEntries(new URLSearchParams(router.state.location.search))).toEqual({
-      assistant: PRODUCT_ID,
+      product: PRODUCT_ID,
+      level: "support",
       user: memberId(1),
       from: "2026-10-01",
       to: "2026-10-31",
@@ -237,10 +241,11 @@ describe("ConversationsPage list", () => {
   it("test_conversations_clearing_one_filter_keeps_the_others", async () => {
     const recorder = record();
     const { user, router } = await renderConversations(
-      `${PATH}?assistant=${PRODUCT_ID}&from=2026-10-01&negative=1`,
+      `${PATH}?product=${PRODUCT_ID}&level=end_user&from=2026-10-01&negative=1`,
     );
 
-    await pick(user, "Assistente", "Todos os assistentes");
+    await pick(user, "Produto", "Todos os produtos");
+    await pick(user, "Nível", "Todos os níveis");
     await user.click(screen.getByRole("checkbox", { name: "Só com 👎" }));
     fireEvent.change(screen.getByLabelText("De"), { target: { value: "" } });
     expect(router.state.location.search).toBe("");

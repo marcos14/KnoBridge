@@ -58,7 +58,11 @@ describe("WorkspaceConversationView", () => {
   it("test_conversation_detail_shows_messages_read_only", async () => {
     await openDetail();
 
-    expect(await screen.findByText("Ana Teste (ana@example.test) com Suporte ERP")).toBeVisible();
+    expect(
+      await screen.findByText(
+        "Ana Teste (ana@example.test) em Suporte ERP, nível Desenvolvimento e produto",
+      ),
+    ).toBeVisible();
     expect(screen.getByText(/Somente leitura/)).toBeVisible();
     expect(within(thread()).getByText("Como fecho o caixa?")).toBeVisible();
     expect(within(thread()).getByText("Fechar").tagName).toBe("STRONG");
@@ -91,7 +95,11 @@ describe("WorkspaceConversationView", () => {
     );
     await openDetail();
 
-    expect(await screen.findByText("API · Integração ERP com Suporte ERP")).toBeVisible();
+    expect(
+      await screen.findByText(
+        "API · Integração ERP em Suporte ERP, nível Desenvolvimento e produto",
+      ),
+    ).toBeVisible();
     expect(within(thread()).getAllByText("Pergunta de API · Integração ERP:")).toHaveLength(2);
   });
 

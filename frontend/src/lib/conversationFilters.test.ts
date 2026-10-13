@@ -8,19 +8,20 @@ import {
   toCreationPeriod,
 } from "./conversationFilters";
 
-const ASSISTANT = "00000000-0000-4000-8000-0000000000f1";
+const PRODUCT = "00000000-0000-4000-8000-0000000000f1";
 const USER = "00000000-0000-4000-8000-000000000101";
 
 describe("conversationFilters", () => {
   it("test_parse_conversation_search_reads_every_filter", () => {
     const params = new URLSearchParams(
-      `assistant=${ASSISTANT}&user=${USER}&channel=api&from=2026-10-01&to=2026-10-31&negative=1` +
-        "&offset=50",
+      `product=${PRODUCT}&level=support&user=${USER}&channel=api&from=2026-10-01&to=2026-10-31` +
+        "&negative=1&offset=50",
     );
 
     expect(parseConversationSearch(params)).toEqual({
       filters: {
-        assistant: ASSISTANT,
+        product: PRODUCT,
+        level: "support",
         user: USER,
         channel: "api",
         from: "2026-10-01",
@@ -33,12 +34,13 @@ describe("conversationFilters", () => {
 
   it("test_parse_conversation_search_drops_values_the_api_refuses", () => {
     const params = new URLSearchParams(
-      "assistant=x&user=ana&channel=slack&from=ontem&to=2026-02-30&negative=sim",
+      "product=x&level=admin&user=ana&channel=slack&from=ontem&to=2026-02-30&negative=sim",
     );
 
     expect(parseConversationSearch(params)).toEqual({
       filters: {
-        assistant: undefined,
+        product: undefined,
+        level: undefined,
         user: undefined,
         channel: undefined,
         from: undefined,
@@ -51,13 +53,20 @@ describe("conversationFilters", () => {
 
   it("test_conversation_search_params_round_trip_and_skip_empty", () => {
     const search = {
-      filters: { assistant: ASSISTANT, from: "2026-10-01", negative: true as const },
+      filters: {
+        product: PRODUCT,
+        level: "end_user" as const,
+        from: "2026-10-01",
+        negative: true as const,
+      },
       offset: 50,
     };
 
     const params = conversationSearchParams(search);
 
-    expect(params.toString()).toBe(`assistant=${ASSISTANT}&from=2026-10-01&negative=1&offset=50`);
+    expect(params.toString()).toBe(
+      `product=${PRODUCT}&level=end_user&from=2026-10-01&negative=1&offset=50`,
+    );
     expect(parseConversationSearch(params).filters).toMatchObject(search.filters);
     expect(conversationSearchParams({ filters: { user: "" }, offset: 0 }).toString()).toBe("");
   });
@@ -66,6 +75,8 @@ describe("conversationFilters", () => {
     const query = toConversationsQuery(
       {
         filters: {
+          product: PRODUCT,
+          level: "product_dev",
           user: USER,
           channel: "panel",
           from: "2026-10-01",
@@ -78,7 +89,8 @@ describe("conversationFilters", () => {
     );
 
     expect(query).toEqual({
-      assistantId: undefined,
+      productId: PRODUCT,
+      level: "product_dev",
       userId: USER,
       channel: "panel",
       createdFrom: new Date(2026, 9, 1).toISOString(),
@@ -97,5 +109,6 @@ describe("conversationFilters", () => {
     expect(hasConversationFilters({})).toBe(false);
     expect(hasConversationFilters({ negative: true })).toBe(true);
     expect(hasConversationFilters({ channel: "api" })).toBe(true);
+    expect(hasConversationFilters({ level: "support" })).toBe(true);
   });
 });

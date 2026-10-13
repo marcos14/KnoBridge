@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { useClock } from "@/hooks/use-clock";
 import { useCurrentWorkspace } from "@/hooks/use-current-workspace";
 import { translateApiError } from "@/i18n/apiErrors";
+import { useProducts } from "@/lib/api/products";
 import { useExportUsage, useUsage, type UsageQuery } from "@/lib/api/usage";
-import { searchDays, usagePeriod } from "@/lib/usagePeriod";
+import { searchDays, usageChatFilters, usagePeriod } from "@/lib/usagePeriod";
 
 import { UsageDayChart } from "./UsageDayChart";
 import { UsageFilterBar } from "./UsageFilterBar";
@@ -20,14 +21,22 @@ function UsageReportView({ workspaceId }: { workspaceId: string }) {
   const clock = useClock();
   const { search, setSearch } = useUsageSearch();
   const now = clock();
-  const query: UsageQuery = { groupBy: search.group, ...usagePeriod(search, now) };
+  const chatFilters = usageChatFilters(search);
+  const query: UsageQuery = { groupBy: search.group, ...usagePeriod(search, now), ...chatFilters };
+  const chatOnly = chatFilters.productId !== undefined || chatFilters.level !== undefined;
   const report = useUsage(workspaceId, query);
   const exportCsv = useExportUsage(workspaceId);
+  const products = useProducts(workspaceId);
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <UsageFilterBar search={search} days={searchDays(search, now)} onChange={setSearch} />
+        <UsageFilterBar
+          search={search}
+          days={searchDays(search, now)}
+          products={(products.data ?? []).map(({ id, name }) => ({ id, name }))}
+          onChange={setSearch}
+        />
         <Button
           type="button"
           variant="outline"
@@ -40,6 +49,9 @@ function UsageReportView({ workspaceId }: { workspaceId: string }) {
           {exportCsv.isPending ? t("usage.exporting") : t("usage.export")}
         </Button>
       </div>
+      {chatOnly && (
+        <p className="text-muted-foreground text-sm">{t("usage.filters.filteredNote")}</p>
+      )}
       {exportCsv.isError && (
         <p role="alert" className="text-destructive text-sm">
           {t("usage.exportFailed", { reason: translateApiError(exportCsv.error, t) })}
@@ -71,6 +83,7 @@ function UsageReportView({ workspaceId }: { workspaceId: string }) {
           <UsageTable
             key={report.data.group_by}
             group={report.data.group_by}
+            chatOnly={chatOnly}
             rows={report.data.rows}
             totals={report.data.totals}
             busy={report.isPlaceholderData}

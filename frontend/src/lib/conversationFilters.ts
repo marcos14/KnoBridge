@@ -1,9 +1,10 @@
 /**
  * Filters of the conversations screen, kept in the URL query string so a filtered view can be
- * shared: `?assistant=<id>&user=<id>&channel=panel|api&from=YYYY-MM-DD&to=YYYY-MM-DD&negative=1
- * &offset=<n>`.
+ * shared: `?product=<id>&level=end_user|support|product_dev&user=<id>&channel=panel|api
+ * &from=YYYY-MM-DD&to=YYYY-MM-DD&negative=1&offset=<n>`.
  */
 
+import type { ResponseLevel } from "@/lib/api/levels";
 import type {
   ConversationChannel,
   CreationPeriod,
@@ -11,10 +12,13 @@ import type {
 } from "@/lib/api/workspaceConversations";
 import { dayPeriod, validDay } from "@/lib/days";
 import { parseOffset } from "@/lib/pagination";
+import { parseLevel } from "@/lib/responseLevels";
 import { isUuid } from "@/lib/uuid";
 
 export interface ConversationFilters {
-  assistant?: string;
+  product?: string;
+  /** The level the conversation was held in (fixed for the whole conversation). */
+  level?: ResponseLevel;
   user?: string;
   /** Where the conversation happened: the panel or the public API (owned by a key). */
   channel?: ConversationChannel;
@@ -40,15 +44,16 @@ export interface ConversationSearch {
 }
 
 /**
- * Filters and offset read from the URL. Values the API would refuse (malformed id or day) are
- * dropped, so a hand-edited link still opens a listing.
+ * Filters and offset read from the URL. Values the API would refuse (malformed id, level or day)
+ * are dropped, so a hand-edited link still opens a listing.
  */
 export function parseConversationSearch(params: URLSearchParams): ConversationSearch {
-  const assistant = params.get("assistant");
+  const product = params.get("product");
   const user = params.get("user");
   return {
     filters: {
-      assistant: isUuid(assistant) ? assistant : undefined,
+      product: isUuid(product) ? product : undefined,
+      level: parseLevel(params.get("level")),
       user: isUuid(user) ? user : undefined,
       channel: parseChannel(params.get("channel")),
       from: validDay(params.get("from")),
@@ -63,7 +68,8 @@ export function parseConversationSearch(params: URLSearchParams): ConversationSe
 export function conversationSearchParams({ filters, offset }: ConversationSearch): URLSearchParams {
   const params = new URLSearchParams();
   const entries: [string, string | undefined][] = [
-    ["assistant", filters.assistant],
+    ["product", filters.product],
+    ["level", filters.level],
     ["user", filters.user],
     ["channel", filters.channel],
     ["from", filters.from],
@@ -93,7 +99,8 @@ export function toConversationsQuery(
   limit: number,
 ): WorkspaceConversationsQuery {
   return {
-    assistantId: filters.assistant,
+    productId: filters.product,
+    level: filters.level,
     userId: filters.user,
     channel: filters.channel,
     ...toCreationPeriod(filters),

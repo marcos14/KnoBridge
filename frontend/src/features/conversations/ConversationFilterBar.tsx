@@ -6,17 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RESPONSE_LEVELS } from "@/lib/api/levels";
 import {
   CONVERSATION_CHANNELS,
   type ConversationFilters,
   hasConversationFilters,
   parseChannel,
 } from "@/lib/conversationFilters";
+import { levelLabel, parseLevel } from "@/lib/responseLevels";
 
 /** Value of the "no filter" item: Radix Select items cannot have an empty value. */
 const ALL = "all";
 
-/** Something a filter offers by id: an assistant or a member. */
+/** Something a filter offers by id: a product or a member. */
 export interface FilterChoice {
   id: string;
   name: string;
@@ -24,7 +26,7 @@ export interface FilterChoice {
 
 interface ConversationFilterBarProps {
   filters: ConversationFilters;
-  assistants: readonly FilterChoice[];
+  products: readonly FilterChoice[];
   users: readonly FilterChoice[];
   onChange: (filters: ConversationFilters) => void;
 }
@@ -37,26 +39,27 @@ function withChosen(choices: readonly FilterChoice[], chosen: string | undefined
 }
 
 /**
- * Assistant, user, channel, creation period and "only 👎" of the conversations; each change
+ * Product, level, user, channel, creation period and "only 👎" of the conversations; each change
  * applies now.
  */
 export function ConversationFilterBar({
   filters,
-  assistants,
+  products,
   users,
   onChange,
 }: ConversationFilterBarProps) {
   const { t } = useTranslation();
-  const assistantId = useId();
+  const productId = useId();
+  const levelId = useId();
   const userId = useId();
   const channelId = useId();
   const fromId = useId();
   const toId = useId();
   const negativeId = useId();
-  const assistantOptions = withChosen(
-    assistants,
-    filters.assistant,
-    t("conversations.unknownAssistant", { id: filters.assistant }),
+  const productOptions = withChosen(
+    products,
+    filters.product,
+    t("conversations.unknownProduct", { id: filters.product }),
   );
   const userOptions = withChosen(
     users,
@@ -72,17 +75,32 @@ export function ConversationFilterBar({
     <fieldset className="flex flex-wrap items-end gap-4">
       <legend className="sr-only">{t("conversations.filters.label")}</legend>
       <div className="flex flex-col gap-2">
-        <Label htmlFor={assistantId}>{t("conversations.filters.assistant")}</Label>
+        <Label htmlFor={productId}>{t("conversations.filters.product")}</Label>
         <FilterSelect
-          id={assistantId}
+          id={productId}
           className="w-full sm:w-56"
-          value={filters.assistant ?? ALL}
+          value={filters.product ?? ALL}
           options={[
-            { value: ALL, label: t("conversations.filters.allAssistants") },
-            ...assistantOptions.map((choice) => ({ value: choice.id, label: choice.name })),
+            { value: ALL, label: t("conversations.filters.allProducts") },
+            ...productOptions.map((choice) => ({ value: choice.id, label: choice.name })),
           ]}
           onValueChange={(value) => {
-            change({ assistant: value === ALL ? undefined : value });
+            change({ product: value === ALL ? undefined : value });
+          }}
+        />
+      </div>
+      <div className="flex flex-col gap-2">
+        <Label htmlFor={levelId}>{t("conversations.filters.level")}</Label>
+        <FilterSelect
+          id={levelId}
+          className="w-full sm:w-56"
+          value={filters.level ?? ALL}
+          options={[
+            { value: ALL, label: t("conversations.filters.allLevels") },
+            ...RESPONSE_LEVELS.map((level) => ({ value: level, label: levelLabel(level, t) })),
+          ]}
+          onValueChange={(value) => {
+            change({ level: parseLevel(value) });
           }}
         />
       </div>

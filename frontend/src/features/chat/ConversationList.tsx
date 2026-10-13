@@ -9,10 +9,14 @@ import { Button } from "@/components/ui/button";
 import { translateApiError } from "@/i18n/apiErrors";
 import {
   type Conversation,
+  type ConversationListFilters,
   useConversations,
   useDeleteConversation,
 } from "@/lib/api/conversations";
+import { levelLabel } from "@/lib/responseLevels";
 import { cn } from "@/lib/utils";
+
+import { ConversationListFilterBar } from "./ConversationListFilterBar";
 
 interface ConversationListProps {
   workspaceId: string;
@@ -27,7 +31,9 @@ interface ConversationListProps {
  */
 export function ConversationList({ workspaceId, onDeleting, onDeleted }: ConversationListProps) {
   const { t } = useTranslation();
-  const list = useConversations(workspaceId);
+  const [filters, setFilters] = useState<ConversationListFilters>({});
+  const list = useConversations(workspaceId, filters);
+  const filtered = filters.productId !== undefined || filters.level !== undefined;
   const remove = useDeleteConversation(workspaceId);
   const [failure, setFailure] = useState<string | null>(null);
 
@@ -52,6 +58,11 @@ export function ConversationList({ workspaceId, onDeleting, onDeleted }: Convers
           {t("chat.list.new")}
         </Link>
       </Button>
+      <ConversationListFilterBar
+        workspaceId={workspaceId}
+        filters={filters}
+        onChange={setFilters}
+      />
       {failure !== null && <FormAlert key={failure} message={failure} />}
       {list.isPending ? (
         <p role="status" className="text-sm">
@@ -74,7 +85,9 @@ export function ConversationList({ workspaceId, onDeleting, onDeleted }: Convers
           </Button>
         </div>
       ) : list.conversations.length === 0 ? (
-        <p className="text-muted-foreground text-sm">{t("chat.list.empty")}</p>
+        <p className="text-muted-foreground text-sm">
+          {filtered ? t("chat.list.emptyFiltered") : t("chat.list.empty")}
+        </p>
       ) : (
         <ul className="flex min-h-0 flex-col gap-1 overflow-y-auto">
           {list.conversations.map((conversation) => {
@@ -85,12 +98,19 @@ export function ConversationList({ workspaceId, onDeleting, onDeleted }: Convers
                   to={`/w/${workspaceId}/chat/${conversation.id}`}
                   className={({ isActive }) =>
                     cn(
-                      "hover:bg-accent min-w-0 flex-1 truncate rounded-md px-2 py-1.5 text-sm",
+                      "hover:bg-accent flex min-w-0 flex-1 flex-col rounded-md px-2 py-1.5 text-sm",
                       isActive && "bg-accent font-medium",
                     )
                   }
                 >
-                  {title}
+                  <span className="truncate">{title}</span>
+                  {/* Keeps title and summary apart in the link's accessible name. */}{" "}
+                  <span className="text-muted-foreground truncate text-xs font-normal">
+                    {t("chat.list.summary", {
+                      product: conversation.product_name,
+                      level: levelLabel(conversation.level, t),
+                    })}
+                  </span>
                 </NavLink>
                 <ConfirmDialog
                   trigger={

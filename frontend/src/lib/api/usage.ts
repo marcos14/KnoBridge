@@ -2,6 +2,7 @@ import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 
 import { attachmentFilename, saveBlob } from "../download";
 import { apiClient, unwrap } from "./client";
+import type { ResponseLevel } from "./levels";
 import type { components } from "./schema.gen";
 
 /** Usage and costs of a workspace (`docs/specs/uso-e-custos.md`), for owners and admins. */
@@ -10,11 +11,16 @@ export type UsageReport = components["schemas"]["UsageReportOut"];
 export type UsageRow = components["schemas"]["UsageRowOut"];
 export type UsageTotals = components["schemas"]["UsageReportTotalsOut"];
 
-/** Grouping and period `[from, to)` (ISO 8601 instants; missing = the API's default). */
+/**
+ * Grouping and period `[from, to)` (ISO 8601 instants; missing = the API's default), and the
+ * product and level that restrict the chat answers (not with `source` or `collection`: 422).
+ */
 export interface UsageQuery {
   groupBy: UsageGroup;
   from?: string;
   to?: string;
+  productId?: string;
+  level?: ResponseLevel;
 }
 
 export function usageQueryKey(workspaceId: string) {
@@ -24,7 +30,13 @@ export function usageQueryKey(workspaceId: string) {
 function usageParams(workspaceId: string, query: UsageQuery) {
   return {
     path: { workspace_id: workspaceId },
-    query: { group_by: query.groupBy, from: query.from, to: query.to },
+    query: {
+      group_by: query.groupBy,
+      from: query.from,
+      to: query.to,
+      product_id: query.productId,
+      level: query.level,
+    },
   };
 }
 

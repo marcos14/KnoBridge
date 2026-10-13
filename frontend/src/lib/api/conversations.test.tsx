@@ -8,9 +8,11 @@ import {
   makeConversationDetail,
   makeMessage,
   messageId,
+  OTHER_CONVERSATION_ID,
+  PRODUCT_ID,
   WORKSPACE_ID,
 } from "@/test/factories";
-import { chatStore, conversationsAs } from "@/test/handlers";
+import { chatStore, conversationsAs, conversationsRecorder } from "@/test/handlers";
 import { renderQueryHook } from "@/test/renderWithProviders";
 import { server } from "@/test/server";
 
@@ -97,6 +99,24 @@ describe("useConversations", () => {
     });
     expect(result.current.hasNextPage).toBe(false);
   });
+
+  it("test_use_conversations_filters_by_product_and_level", async () => {
+    const recorder = conversationsRecorder([
+      makeConversation(),
+      makeConversation({ id: OTHER_CONVERSATION_ID, level: "end_user" }),
+    ]);
+    server.use(recorder.handler);
+    const { result } = renderQueryHook(() =>
+      useConversations(WORKSPACE_ID, { productId: PRODUCT_ID, level: "end_user" }),
+    );
+
+    await waitFor(() => {
+      expect(result.current.conversations.map((item) => item.id)).toEqual([OTHER_CONVERSATION_ID]);
+    });
+    expect(recorder.queries).toEqual([
+      `?product_id=${PRODUCT_ID}&level=end_user&limit=50&offset=0`,
+    ]);
+  });
 });
 
 describe("useConversation", () => {
@@ -146,16 +166,17 @@ describe("useConversation", () => {
 });
 
 describe("conversation mutations", () => {
-  it("test_use_create_conversation_posts_the_assistant", async () => {
+  it("test_use_create_conversation_posts_the_product_and_level", async () => {
     const store = chatStore();
     server.use(...store.handlers);
     const { result } = renderQueryHook(() => useCreateConversation(WORKSPACE_ID));
 
     await act(async () => {
-      await result.current.mutateAsync("assistant-1");
+      const created = await result.current.mutateAsync({ productId: PRODUCT_ID, level: "support" });
+      expect(created.level).toBe("support");
     });
 
-    expect(store.created).toEqual(["assistant-1"]);
+    expect(store.created).toEqual([{ product_id: PRODUCT_ID, level: "support" }]);
   });
 
   it("test_use_delete_conversation_drops_the_cached_detail", async () => {

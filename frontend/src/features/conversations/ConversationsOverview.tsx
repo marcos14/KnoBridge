@@ -16,6 +16,7 @@ import {
   toCreationPeriod,
 } from "@/lib/conversationFilters";
 import { formatDateTime } from "@/lib/intl";
+import { levelLabel } from "@/lib/responseLevels";
 
 import { ConversationFilterBar } from "./ConversationFilterBar";
 import { conversationOwner } from "./conversationOwner";
@@ -36,7 +37,7 @@ export function ConversationsOverview({ workspaceId }: { workspaceId: string }) 
   );
   const stats = useConversationStats(workspaceId, toCreationPeriod(search.filters));
   // Both fill the filters; while they load, a filter from a shared link shows its id.
-  const assistants = useProducts(workspaceId);
+  const products = useProducts(workspaceId);
   const members = useMembers(workspaceId);
 
   const columns: DataTableColumn<WorkspaceConversation>[] = [
@@ -66,9 +67,14 @@ export function ConversationsOverview({ workspaceId }: { workspaceId: string }) 
       },
     },
     {
-      key: "assistant",
-      header: t("conversations.columns.assistant"),
+      key: "product",
+      header: t("conversations.columns.product"),
       cell: (row) => row.product_name,
+    },
+    {
+      key: "level",
+      header: t("conversations.columns.level"),
+      cell: (row) => levelLabel(row.level, t),
     },
     {
       key: "messages",
@@ -109,7 +115,7 @@ export function ConversationsOverview({ workspaceId }: { workspaceId: string }) 
       <ConversationStatsCards stats={stats} />
       <ConversationFilterBar
         filters={search.filters}
-        assistants={(assistants.data ?? []).map(({ id, name }) => ({ id, name }))}
+        products={(products.data ?? []).map(({ id, name }) => ({ id, name }))}
         users={(members.data ?? []).map(({ user_id: id, name }) => ({ id, name }))}
         onChange={setFilters}
       />

@@ -81,10 +81,10 @@ fases:
         commit: f7ad260
       - id: F3.3
         titulo: Chat com produto e nível, Conversas e Uso e custos por produto e nível, chaves de API por produto
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-13
-        concluida_em: null
+        concluida_em: 2026-10-13
         commit: null
   - id: F4
     titulo: Entrega e ensaio
@@ -251,6 +251,13 @@ decisoes:
     decisao: "F2.4: chaves com product_ids e max_level obrigatório (painel cria com product_dev até o seletor da F3.3); REST com product_id (assistant_id sinônimo obsoleto) e level opcional = máximo da chave; ordem 404 produto fora da chave, 403 level_not_allowed, 409 level_not_configured (400 na rota OpenAI, param model); model <produto>[:<nível>] por nome ou id e /v1/models com o produto puro mais produto:nível até o máximo; regra do canal público em ApiKeyReader.public_channel com o teto de levels/policy.py; webhook do produto com product e level no evento (assistant mantido, obsoleto) e auditoria product.ticket_webhook_*; ações assistant.ticket_webhook_* ficam no catálogo para exibir eventos antigos; sinônimos transitórios assistant_id/assistant_ids removidos dos modelos"
     motivo: "contrato api-publica v0.2"
     alternativas: "chave do painel em end_user já agora (quebraria o E2E e as fontes de código)"
+    adr: null
+  - id: D22
+    data: 2026-10-13
+    por: agente
+    decisao: "F3.3: chat com seletor de produto (só ativos) e nível (acima do máximo desabilitado com motivo; padrão = máximo), selo do nível e filtros na lista; citação de card própria; Conversas admin com ?product=&level=; Uso e custos com filtros de produto e nível desligados ao agrupar por fonte ou coleção; chaves com produtos e nível máximo, padrão end_user no painel conforme a spec (chaves existentes mantêm o nível); LevelBadge compartilhado e rótulos em lib/responseLevels.ts"
+    motivo: "spec api-publica: painel pré-seleciona end_user"
+    alternativas: "manter product_dev como padrão do painel"
     adr: null
 pendencias_usuario: []
 ---
@@ -515,6 +522,7 @@ Nenhuma.
 - 2026-10-13 — F3.2 concluída: nível por produto em Membros e convites, nível mínimo nas Fontes e telas da fonte de cards; frontend 1527 passed, 98,7% branches
 - 2026-10-13 — F2.4 concluída: API pública e webhook por produto e nível, integrada sobre a F3.2; backend 2705 passed com 99% de cobertura, frontend 1527
 - 2026-10-13 — F3.3 iniciada (agente em worktree).
+- 2026-10-13 — F3.3 concluída: chat com seletor de produto e nível, citação de card, filtros por produto e nível em Conversas e Uso e custos, chaves com produtos e nível máximo; frontend 1579 passed, 98,72% branches
 
 ## 8. Encerramento
 

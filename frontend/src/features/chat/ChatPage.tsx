@@ -6,7 +6,11 @@ import { CitationSheet } from "@/components/CitationSheet";
 import { useCurrentWorkspace } from "@/hooks/use-current-workspace";
 import type { Role } from "@/lib/api/auth";
 import { useChatStream } from "@/lib/api/chatStream";
-import { type Citation, useCreateConversation } from "@/lib/api/conversations";
+import {
+  type Citation,
+  type NewConversationInput,
+  useCreateConversation,
+} from "@/lib/api/conversations";
 import { hasRole } from "@/lib/roles";
 
 import { ConversationList } from "./ConversationList";
@@ -70,8 +74,8 @@ function ChatWorkspace({ workspaceId, role, conversationId }: ChatWorkspaceProps
   }, [conversationId, streamingId, stop, clearFailure]);
 
   /** Creates the conversation (an API error rejects) and sends the first question to it. */
-  async function start(assistantId: string, content: string) {
-    const created = await create.mutateAsync(assistantId);
+  async function start(conversation: NewConversationInput, content: string) {
+    const created = await create.mutateAsync(conversation);
     await navigate(`/w/${workspaceId}/chat/${created.id}`);
     await stream.send(created.id, content);
   }
@@ -97,7 +101,7 @@ function ChatWorkspace({ workspaceId, role, conversationId }: ChatWorkspaceProps
           {conversationId === undefined ? (
             <NewConversation
               workspaceId={workspaceId}
-              canManageAssistants={hasRole(role, "editor")}
+              canManageProducts={hasRole(role, "editor")}
               onStart={start}
             />
           ) : (

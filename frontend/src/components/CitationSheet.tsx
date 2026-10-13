@@ -94,8 +94,8 @@ export function CitationSheet({ citation, onClose }: CitationSheetProps) {
  * Where the excerpt comes from and the excerpt itself: a file with its path, lines, symbol and the
  * code in a block tagged with its language; a commit with its short SHA; a knowledge item with its
  * trust seal, key and the evidence verified in the code (v0.5); a ticket with its number, status,
- * date and link (v0.6); or, for answers saved
- * before the location fields existed, the excerpt alone as a quote.
+ * date and link (v0.6); a development card with its number, type, status, sprint, date and link
+ * (v0.9); or, for answers saved before the location fields existed, the excerpt alone as a quote.
  */
 function CitationBody({ citation }: { citation: Citation }) {
   const { t, i18n } = useTranslation();
@@ -110,6 +110,9 @@ function CitationBody({ citation }: { citation: Citation }) {
   }
   if (source.type === "ticket") {
     return <TicketBody source={source} snippet={citation.snippet} />;
+  }
+  if (source.type === "card") {
+    return <CardBody source={source} snippet={citation.snippet} />;
   }
   if (source.type === "knowledge") {
     return (
@@ -233,6 +236,67 @@ function TicketBody({
           className="inline-flex items-center gap-1 underline underline-offset-4"
         >
           {t("chat.citations.openTicket")}
+          <ExternalLink aria-hidden="true" className="size-3" />
+        </a>
+      )}
+    </>
+  );
+}
+
+/**
+ * A development card (v0.9): its number, type, status seal (solid once done), sprint, done or
+ * update date, the cited excerpt as a quote and, with an `http(s)` link, the way to open it.
+ */
+function CardBody({
+  source,
+  snippet,
+}: {
+  source: Extract<CitationSource, { type: "card" }>;
+  snippet: string;
+}) {
+  const { t, i18n } = useTranslation();
+  return (
+    <>
+      <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+        {source.number !== null && (
+          <Detail label={t("chat.citations.card")}>{source.number}</Detail>
+        )}
+        {source.cardType !== null && (
+          <Detail label={t("chat.citations.cardType")}>
+            {t(`cards.types.${source.cardType}`)}
+          </Detail>
+        )}
+        {source.status !== null && (
+          <Detail label={t("chat.citations.cardStatus")}>
+            <Badge variant={source.status === "done" ? "default" : "outline"}>
+              {t(`cards.status.${source.status}`)}
+            </Badge>
+          </Detail>
+        )}
+        {source.sprint !== null && (
+          <Detail label={t("chat.citations.sprint")}>{source.sprint}</Detail>
+        )}
+        {source.date !== null && (
+          <Detail
+            label={
+              source.dateKind === "done"
+                ? t("chat.citations.doneAt")
+                : t("chat.citations.updatedAt")
+            }
+          >
+            <span title={source.date}>{citationDate(source.date, i18n.language)}</span>
+          </Detail>
+        )}
+      </dl>
+      <blockquote className="border-l-2 pl-3 whitespace-pre-wrap">{snippet}</blockquote>
+      {source.url !== null && (
+        <a
+          href={source.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1 underline underline-offset-4"
+        >
+          {t("chat.citations.openCard")}
           <ExternalLink aria-hidden="true" className="size-3" />
         </a>
       )}

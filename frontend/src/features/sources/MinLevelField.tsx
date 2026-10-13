@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/select";
 import { RESPONSE_LEVELS, type ResponseLevel } from "@/lib/api/levels";
 import type { Source } from "@/lib/api/sources";
-import { defaultSourceMinLevel, isLevelAbove } from "@/lib/responseLevels";
+import { defaultSourceMinLevel, isLevelAbove, levelLabel } from "@/lib/responseLevels";
 
 import { formatCount } from "./format";
 import { formMinLevel, type SourceFormValues } from "./sourceForm";
@@ -36,7 +36,7 @@ export function MinLevelField({ form, source, canChange }: MinLevelFieldProps) {
   const [kind, minLevel] = useWatch({ control: form.control, name: ["kind", "minLevel"] });
   const level = formMinLevel({ kind, minLevel });
   const kindDefault = defaultSourceMinLevel(kind);
-  const levelName = (value: ResponseLevel) => t(`workspaceSettings.levels.names.${value}`);
+  const levelName = (value: ResponseLevel) => levelLabel(value, t);
   const changed = source !== undefined && source.document_count > 0 && level !== source.min_level;
 
   return (

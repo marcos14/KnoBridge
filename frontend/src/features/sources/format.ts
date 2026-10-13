@@ -2,6 +2,7 @@ import type { TFunction } from "i18next";
 
 import { translateApiErrorCode } from "@/i18n/apiErrors";
 import type { Run, Source } from "@/lib/api/sources";
+import { levelLabel } from "@/lib/responseLevels";
 
 import { type CronDescription, describeCron, formatCronTime } from "./cron";
 
@@ -125,6 +126,6 @@ export function minLevelText(
   source: Pick<Source, "min_level" | "min_level_is_default">,
   t: TFunction,
 ): string {
-  const level = t(`workspaceSettings.levels.names.${source.min_level}`);
+  const level = levelLabel(source.min_level, t);
   return source.min_level_is_default ? t("sources.detail.minLevelDefault", { level }) : level;
 }

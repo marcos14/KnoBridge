@@ -4,8 +4,11 @@
  * are UTC days too: the `day` rows and the CSV file name then match what the screen shows.
  */
 
+import type { ResponseLevel } from "./api/levels";
 import type { UsageGroup } from "./api/usage";
 import { validDay } from "./days";
+import { parseLevel } from "./responseLevels";
+import { isUuid } from "./uuid";
 
 export const USAGE_PRESETS = ["thisMonth", "lastMonth", "last30", "custom"] as const;
 export type UsagePreset = (typeof USAGE_PRESETS)[number];
@@ -22,12 +25,30 @@ export const USAGE_GROUPS = [
   "model",
 ] as const satisfies readonly UsageGroup[];
 
-/** What the screen shows; `from` and `to` (inclusive UTC days) only for the custom period. */
+/**
+ * What the screen shows; `from` and `to` (inclusive UTC days) only for the custom period;
+ * `product` and `level` restrict the chat answers (never with a grouping of embeddings only).
+ */
 export interface UsageSearch {
   preset: UsagePreset;
   group: UsageGroup;
   from?: string;
   to?: string;
+  product?: string;
+  level?: ResponseLevel;
+}
+
+/**
+ * Whether the product and level filters apply to a grouping: sources and collections only have
+ * embeddings, which belong to no product or level, so the API refuses the filters with them.
+ */
+export function acceptsChatFilters(group: UsageGroup): boolean {
+  return group !== "source" && group !== "collection";
+}
+
+/** Whether the report is restricted to a product or level (then it counts only the chat). */
+export function hasChatFilters(search: UsageSearch): boolean {
+  return search.product !== undefined || search.level !== undefined;
 }
 
 export const DEFAULT_USAGE_SEARCH: UsageSearch = { preset: "thisMonth", group: "day" };
@@ -52,10 +73,19 @@ function oneOf<T extends string>(values: readonly T[], value: string | null): T 
 export function parseUsageSearch(params: URLSearchParams): UsageSearch {
   const preset = oneOf(USAGE_PRESETS, params.get("period")) ?? DEFAULT_USAGE_SEARCH.preset;
   const group = oneOf(USAGE_GROUPS, params.get("group")) ?? DEFAULT_USAGE_SEARCH.group;
-  if (preset !== "custom") {
-    return { preset, group };
+  const search: UsageSearch =
+    preset === "custom"
+      ? { preset, group, from: validDay(params.get("from")), to: validDay(params.get("to")) }
+      : { preset, group };
+  if (!acceptsChatFilters(group)) {
+    return search;
   }
-  return { preset, group, from: validDay(params.get("from")), to: validDay(params.get("to")) };
+  const product = params.get("product");
+  return {
+    ...search,
+    product: isUuid(product) ? product : undefined,
+    level: parseLevel(params.get("level")),
+  };
 }
 
 /** The query string of `search`, leaving the defaults out so a plain link stays short. */
@@ -75,7 +105,23 @@ export function usageSearchParams(search: UsageSearch): URLSearchParams {
   if (search.group !== DEFAULT_USAGE_SEARCH.group) {
     params.set("group", search.group);
   }
+  if (acceptsChatFilters(search.group)) {
+    if (search.product !== undefined) {
+      params.set("product", search.product);
+    }
+    if (search.level !== undefined) {
+      params.set("level", search.level);
+    }
+  }
   return params;
+}
+
+/** The product and level sent to the API: none with a grouping of embeddings only. */
+export function usageChatFilters(search: UsageSearch): {
+  productId?: string;
+  level?: ResponseLevel;
+} {
+  return acceptsChatFilters(search.group) ? { productId: search.product, level: search.level } : {};
 }
 
 /** The UTC day of `date` plus `shift` days, as `YYYY-MM-DD`. */

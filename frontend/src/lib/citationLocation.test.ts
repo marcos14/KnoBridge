@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { Citation } from "@/lib/api/conversations";
 import { makeCitation } from "@/test/factories";
 import { makeKnowledgeCitation } from "@/test/knowledgeFactories";
-import { makeTicketCitation } from "@/test/ticketFactories";
+import { makeCardCitation, makeTicketCitation } from "@/test/ticketFactories";
 
 import {
   citationDate,
@@ -235,6 +235,52 @@ describe("citationSource for tickets", () => {
       url: null,
     });
     expect(citationSource(makeTicketCitation({ ticket_date_kind: undefined }))).toMatchObject({
+      dateKind: null,
+    });
+  });
+});
+
+describe("citationSource for cards", () => {
+  it("test_citation_source_reads_a_card_with_type_status_sprint_date_and_link", () => {
+    const citation = makeCardCitation();
+
+    expect(citationSource(citation)).toEqual({
+      type: "card",
+      number: "PROJ-123",
+      cardType: "bug",
+      status: "done",
+      sprint: "Sprint 42",
+      date: "2026-10-03T12:00:00Z",
+      dateKind: "done",
+      url: "https://cards.example.test/browse/PROJ-123",
+    });
+    expect(citationLocation(citation)).toBeNull();
+  });
+
+  it("test_citation_source_tolerates_a_card_without_its_fields", () => {
+    expect(
+      citationSource(
+        makeCardCitation({
+          card_number: null,
+          card_type: undefined,
+          card_status: null,
+          card_sprint: "",
+          date: null,
+          card_date_kind: "updated",
+          url: "javascript:alert(1)",
+        }),
+      ),
+    ).toEqual({
+      type: "card",
+      number: null,
+      cardType: null,
+      status: null,
+      sprint: null,
+      date: null,
+      dateKind: null,
+      url: null,
+    });
+    expect(citationSource(makeCardCitation({ card_date_kind: undefined }))).toMatchObject({
       dateKind: null,
     });
   });

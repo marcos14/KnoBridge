@@ -2,18 +2,28 @@ import type { TFunction } from "i18next";
 import { z } from "zod";
 
 import type { ApiKey, ApiKeyChanges, ApiKeyInput } from "@/lib/api/apiKeys";
+import { RESPONSE_LEVELS, type ResponseLevel } from "@/lib/api/levels";
 import { NAME_MAX_LENGTH } from "@/lib/schemas";
 
-/** Most assistants a key's scope may list (`ApiKeyCreate.product_ids`). */
+/** Most products a key's scope may list (`ApiKeyCreate.product_ids`). */
 export const API_KEY_SCOPE_MAX = 100;
+
+/**
+ * Maximum level a new key starts with in the form. The API has no default (`max_level` is
+ * required, so whoever creates the key chooses on purpose); the panel pre-selects the lowest
+ * level, `end_user` (`docs/specs/api-publica.md`, "Chaves: escopo e nível máximo").
+ */
+export const API_KEY_DEFAULT_MAX_LEVEL: ResponseLevel = "end_user";
 
 export type ApiKeyScope = "all" | "selected";
 
 export interface ApiKeyFormValues {
   name: string;
-  /** `all`: every active assistant, also the ones created later (`product_ids: null`). */
+  /** `all`: every active product, also the ones created later (`product_ids: null`). */
   scope: ApiKeyScope;
-  assistantIds: string[];
+  productIds: string[];
+  /** The highest level the key asks in, in any product of its scope. */
+  maxLevel: ResponseLevel;
 }
 
 export function apiKeyFormSchema(t: TFunction) {
@@ -25,57 +35,52 @@ export function apiKeyFormSchema(t: TFunction) {
         .min(1, { error: t("apiKeys.form.validation.nameRequired") })
         .max(NAME_MAX_LENGTH, { error: t("auth.validation.tooLong", { max: NAME_MAX_LENGTH }) }),
       scope: z.enum(["all", "selected"]),
-      assistantIds: z.array(z.string()),
+      productIds: z.array(z.string()),
+      maxLevel: z.enum(RESPONSE_LEVELS),
     })
     .superRefine((values, context) => {
       if (values.scope === "all") {
         return;
       }
-      if (values.assistantIds.length === 0) {
+      if (values.productIds.length === 0) {
         context.addIssue({
           code: "custom",
-          path: ["assistantIds"],
-          message: t("apiKeys.form.validation.assistantsRequired"),
+          path: ["productIds"],
+          message: t("apiKeys.form.validation.productsRequired"),
         });
-      } else if (values.assistantIds.length > API_KEY_SCOPE_MAX) {
+      } else if (values.productIds.length > API_KEY_SCOPE_MAX) {
         context.addIssue({
           code: "custom",
-          path: ["assistantIds"],
-          message: t("apiKeys.form.validation.tooManyAssistants", { max: API_KEY_SCOPE_MAX }),
+          path: ["productIds"],
+          message: t("apiKeys.form.validation.tooManyProducts", { max: API_KEY_SCOPE_MAX }),
         });
       }
     });
 }
 
-/** Form values of an existing key, or of a new one (every assistant). */
+/** Form values of an existing key, or of a new one (every product, the lowest level). */
 export function apiKeyFormDefaults(apiKey?: ApiKey): ApiKeyFormValues {
   if (apiKey === undefined) {
-    return { name: "", scope: "all", assistantIds: [] };
+    return { name: "", scope: "all", productIds: [], maxLevel: API_KEY_DEFAULT_MAX_LEVEL };
   }
   return {
     name: apiKey.name,
     scope: apiKey.product_ids === null ? "all" : "selected",
-    assistantIds: apiKey.product_ids ?? [],
+    productIds: apiKey.product_ids ?? [],
+    maxLevel: apiKey.max_level,
   };
 }
 
 function scopeOf(values: ApiKeyFormValues): string[] | null {
-  return values.scope === "all" ? null : values.assistantIds;
+  return values.scope === "all" ? null : values.productIds;
 }
-
-/**
- * Maximum level of a key created here (`ApiKeyCreate.max_level`, required by the API). Until the
- * form lets the admin choose it (plan 0009, F3.3), new keys keep the reach keys always had: every
- * source, as the migrated keys.
- */
-export const API_KEY_DEFAULT_MAX_LEVEL = "product_dev" satisfies ApiKeyInput["max_level"];
 
 /** Body of `POST .../api-keys`. */
 export function toApiKeyInput(values: ApiKeyFormValues): ApiKeyInput {
   return {
     name: values.name.trim(),
     product_ids: scopeOf(values),
-    max_level: API_KEY_DEFAULT_MAX_LEVEL,
+    max_level: values.maxLevel,
   };
 }
 
@@ -97,6 +102,9 @@ export function toApiKeyChanges(apiKey: ApiKey, values: ApiKeyFormValues): ApiKe
   const scope = scopeOf(values);
   if (!sameScope(apiKey.product_ids, scope)) {
     changes.product_ids = scope;
+  }
+  if (values.maxLevel !== apiKey.max_level) {
+    changes.max_level = values.maxLevel;
   }
   return Object.keys(changes).length === 0 ? null : changes;
 }

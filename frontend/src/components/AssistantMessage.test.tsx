@@ -6,7 +6,7 @@ import type { Citation } from "@/lib/api/conversations";
 import { makeCitation } from "@/test/factories";
 import { makeKnowledgeCitation } from "@/test/knowledgeFactories";
 import { renderWithProviders } from "@/test/renderWithProviders";
-import { makeTicketCitation } from "@/test/ticketFactories";
+import { makeCardCitation, makeTicketCitation } from "@/test/ticketFactories";
 
 import { AssistantMessage } from "./AssistantMessage";
 
@@ -103,6 +103,29 @@ describe("AssistantMessage sources", () => {
 
     expect(
       await screen.findByRole("button", { name: "[1] Erro 4021 ao fechar o caixa" }),
+    ).toBeVisible();
+  });
+
+  it("test_assistant_message_lists_cards_with_number_and_status", async () => {
+    const user = userEvent.setup();
+    const card = makeCardCitation({ index: 2 });
+    const onCitation = renderAnswer([makeCitation(), card]);
+
+    const button = await screen.findByRole("button", {
+      name: "[2] Fechamento do caixa trava com sangria pendente Card PROJ-123 Concluído",
+    });
+    await user.click(button);
+
+    expect(onCitation).toHaveBeenCalledWith(card);
+  });
+
+  it("test_assistant_message_lists_a_card_without_number_or_status", async () => {
+    renderAnswer([makeCardCitation({ card_number: null, card_status: null })]);
+
+    expect(
+      await screen.findByRole("button", {
+        name: "[1] Fechamento do caixa trava com sangria pendente",
+      }),
     ).toBeVisible();
   });
 });

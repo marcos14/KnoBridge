@@ -2,6 +2,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import { apiClient, unwrap } from "./client";
 import { MESSAGES_PAGE_SIZE } from "./conversations";
+import type { ResponseLevel } from "./levels";
 import type { components } from "./schema.gen";
 
 /**
@@ -23,7 +24,8 @@ export interface CreationPeriod {
 
 /** Filters and page of the workspace's conversations. */
 export interface WorkspaceConversationsQuery extends CreationPeriod {
-  assistantId?: string;
+  productId?: string;
+  level?: ResponseLevel;
   userId?: string;
   channel?: ConversationChannel;
   /** Only conversations with at least one thumbs down. */
@@ -46,7 +48,8 @@ export function useWorkspaceConversations(workspaceId: string, query: WorkspaceC
           params: {
             path: { workspace_id: workspaceId },
             query: {
-              product_id: query.assistantId,
+              product_id: query.productId,
+              level: query.level,
               user_id: query.userId,
               channel: query.channel,
               created_from: query.createdFrom,

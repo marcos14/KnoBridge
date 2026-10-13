@@ -14,6 +14,13 @@ export type TicketStatus = components["schemas"]["TicketStatus"];
 /** Which date a ticket citation carries: its resolution or its last update. */
 export type TicketDateKind = "resolved" | "updated";
 
+/** Normalized type and status of a cited development card (`docs/specs/cards.md`). */
+export type CardType = components["schemas"]["CardType"];
+export type CardStatus = components["schemas"]["CardStatus"];
+
+/** Which date a card citation carries: when it was done or its last update. */
+export type CardDateKind = "done" | "updated";
+
 /** Where a knowledge item was verified in the code, as the interface shows it. */
 export interface EvidenceLocation {
   path: string;
@@ -28,7 +35,8 @@ export interface EvidenceLocation {
 /**
  * Where a citation points (`docs/specs/chat-sse.md`, v0.3 fields; a commit's author and ISO date
  * since v0.4, `null` before; a knowledge item with its seal and evidence since v0.5; a ticket with
- * its number, status, date and link since v0.6), as the interface shows it.
+ * its number, status, date and link since v0.6; a development card with its number, type, status,
+ * sprint, date and link since v0.9), as the interface shows it.
  */
 export type CitationSource =
   | { type: "commit"; sha: string; shortSha: string; author: string | null; date: string | null }
@@ -54,6 +62,18 @@ export type CitationSource =
       /** `null` without a date. */
       dateKind: TicketDateKind | null;
       /** Link of the ticket in its system, only when it is `http(s)`; otherwise `null`. */
+      url: string | null;
+    }
+  | {
+      type: "card";
+      number: string | null;
+      cardType: CardType | null;
+      status: CardStatus | null;
+      sprint: string | null;
+      date: string | null;
+      /** `null` without a date. */
+      dateKind: CardDateKind | null;
+      /** Link of the card in its system, only when it is `http(s)`; otherwise `null`. */
       url: string | null;
     }
   | { type: "legacy" };
@@ -119,10 +139,23 @@ export function webUrl(value: string | null | undefined): string | null {
 
 /**
  * What the citation points to: a knowledge item (seal and evidence), a ticket (number, status,
- * date and link), a commit (with its SHA), a file (path, lines, symbol, language) or, for answers
+ * date and link), a card (number, type, status, sprint, date and link), a commit (with its SHA), a file (path, lines, symbol, language) or, for answers
  * saved before the location fields existed, `legacy` (shown by title, excerpt and URI).
  */
 export function citationSource(citation: Citation): CitationSource {
+  if (citation.kind === "card") {
+    const date = present(citation.date);
+    return {
+      type: "card",
+      number: present(citation.card_number),
+      cardType: citation.card_type ?? null,
+      status: citation.card_status ?? null,
+      sprint: present(citation.card_sprint),
+      date,
+      dateKind: date === null ? null : (citation.card_date_kind ?? null),
+      url: webUrl(citation.url),
+    };
+  }
   if (citation.kind === "ticket") {
     const date = present(citation.date);
     return {
@@ -186,6 +219,7 @@ export function citationLocation(citation: Citation): string | null {
       return rest.length === 0 ? first.location : `${first.location} +${String(rest.length)}`;
     }
     case "ticket":
+    case "card":
     case "legacy":
       return null;
   }
