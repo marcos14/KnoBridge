@@ -4,11 +4,11 @@ titulo: Telas para usar e administrar a plataforma — primeiro acesso com works
 slug: telas-de-uso-e-administracao
 solicitado_por: usuario
 criado_em: 2026-10-12
-atualizado_em: 2026-10-12
-status: em_execucao
+atualizado_em: 2026-10-13
+status: concluido
 aprovado_em: 2026-10-12
 aprovado_por: usuario
-concluido_em: null
+concluido_em: 2026-10-13
 branch: plano/0008-telas-de-uso-e-administracao
 fases:
   - id: F1
@@ -102,15 +102,15 @@ fases:
         commit: fbd2c02
   - id: F4
     titulo: Entrega
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F4.1
         titulo: E2E da stack, guias (primeiro acesso, usar a API), README, CHANGELOG e AGENTS raiz
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-12
-        concluida_em: null
-        commit: null
+        concluida_em: 2026-10-13
+        commit: 7af50a2
 decisoes:
   - id: D1
     data: 2026-10-12
@@ -500,7 +500,36 @@ Nenhuma.
 - 2026-10-12 — F3.4 concluída: busca, filtros, ordenação e paginação nas seis listas, Reindexar, Sincronizar todas, Duplicar, Sair de todas as sessões e estados vazios; gates do agente: frontend 1398 testes, 98,54% de branches, build e check:api; orquestrador: lint, typecheck e formato na integração
 - 2026-10-12 — F3.3 concluída: tela de chaves de API com escopo por assistente, token mostrado uma vez, revogação e exemplos REST e SDK da OpenAI, integrada sobre a F3.4; frontend 1439 testes, 98,58% de branches, lint, formato, build e check:api
 - 2026-10-12 — F4.1 iniciada (agente em worktree).
+- 2026-10-13 — F4.1 concluída: E2E da stack (primeiro acesso, API com o SDK da OpenAI, uso e custos; duas rodadas verdes), guia usar-a-api.md, README e CHANGELOG (7af50a2); correções reveladas pelo E2E num segundo commit (055e185): corrida em request_sync, conversas da API na visão administrativa e Vitest limitado a 50% dos núcleos; backend 2426 passed, frontend 1447 (duas rodadas verdes), E2E de chamados três vezes e E2E completo uma vez
+- 2026-10-13 — Plano concluído; encerramento na seção 8.
 
 ## 8. Encerramento
 
-A preencher ao concluir.
+**Entregue**:
+- **Primeiro acesso**: a configuração inicial cria o primeiro workspace, e o superadmin entra direto no Início, sem convite.
+- **Início**: cartões com documentos, fontes, falhas, conversas, feedback e custo do mês, e o checklist de primeiros passos.
+- **Administração da instância**: painel com contagens, falhas, uso e saúde dos serviços, e "Entrar" em qualquer workspace como admin auditado, com faixa no topo.
+- **Uso e custos**: tokens e US$ de embeddings e de chat por período e agrupamento, com CSV; custo estimado por resposta a partir dos preços do catálogo do OpenRouter, sobrescrevíveis por `KNOBRIDGE_CHAT_PRICES`.
+- **API pública** ([ADR 0007](../adr/0007-chaves-e-api-publica.md)): chaves de API com escopo por assistente, a API REST de conversa e a compatível com OpenAI (`/v1/models`, `/v1/chat/completions`), testada com o SDK oficial.
+- **Telas existentes**: busca, filtros, ordenação e paginação nas listas; reindexar fonte, sincronizar a coleção, duplicar assistente e sair de todas as sessões; estados vazios que orientam; conversas da API na visão administrativa.
+- **Testes e documentação**: E2E da stack (primeiro acesso, API com o SDK, uso e custos) e o guia [usar a API](../guias/usar-a-api.md).
+
+**Correções feitas no caminho**, todas com teste:
+- descrição de rota com acento no OpenAPI;
+- corrida em `request_sync`, que deixava envios de chamados sem processar;
+- conversas da API fora da visão administrativa;
+- testes do frontend instáveis por sobrecarga de CPU (Vitest limitado a metade dos núcleos).
+
+**Incidente de branch**: os commits do plano 0007 e o começo do 0008 foram para a `main` local porque a árvore principal tinha sido trocada para a `main` fora da sessão. Os do 0008 foram movidos para esta branch, e a `main` local voltou a `origin/main` (D10).
+
+**Fora do escopo, com o motivo**:
+- canvas de pipelines e canais, que continuam como placeholders (D2);
+- limite de requisições, cotas e cobrança por chave;
+- métricas materializadas (D7).
+
+**Como demonstrar**:
+1. Numa instância nova, siga o README: a configuração inicial já cria o workspace e abre o Início com o checklist.
+2. Em **Chaves de API**, crie uma chave e use um dos exemplos (`curl` da REST, ou Python e JavaScript com o SDK da OpenAI).
+3. Veja a resposta contada em **Uso e custos**, no canal API, e a conversa em **Conversas**.
+
+Sem stack manual, `frontend/e2e/stack/access.spec.ts` e `api.spec.ts` fazem o mesmo caminho.
