@@ -5,10 +5,10 @@ slug: canais-mcp-e-widget
 solicitado_por: usuario
 criado_em: 2026-10-14
 atualizado_em: 2026-10-14
-status: em_execucao
+status: concluido
 aprovado_em: 2026-10-14
 aprovado_por: usuario
-concluido_em: null
+concluido_em: 2026-10-14
 branch: plano/0010-canais-mcp-e-widget
 fases:
   - id: F1
@@ -85,7 +85,7 @@ fases:
         commit: c6d7ea2
   - id: F5
     titulo: Validação e documentação
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F5.1
         titulo: E2E da stack, guias e documentação
@@ -100,7 +100,7 @@ fases:
         agente: claude-code-orquestrador
         iniciada_em: 2026-10-14
         concluida_em: 2026-10-13
-        commit: null
+        commit: 0e12382
 decisoes:
   - id: D1
     data: 2026-10-14
@@ -267,15 +267,15 @@ O que já estava decidido na visão (seção 7 e tabela de stack): MCP em Stream
 
 ## 3. Critérios de aceite
 
-- [ ] Com uma chave `kbk_`, o Claude Code conecta em `/v1/mcp` e usa as cinco ferramentas. Cada ferramenta respeita os produtos e o nível máximo da chave: um nível acima é recusado, e um trecho acima do nível nunca sai, provado por teste.
-- [ ] `search_knowledge` não chama o LLM e devolve trechos com citações (arquivo, linhas, commit, chamado, card).
-- [ ] Um site de teste embute o widget com uma linha de `<script>` e um elemento.
+- [x] Com uma chave `kbk_`, o Claude Code conecta em `/v1/mcp` e usa as cinco ferramentas. Cada ferramenta respeita os produtos e o nível máximo da chave: um nível acima é recusado, e um trecho acima do nível nunca sai, provado por teste.
+- [x] `search_knowledge` não chama o LLM e devolve trechos com citações (arquivo, linhas, commit, chamado, card).
+- [x] Um site de teste embute o widget com uma linha de `<script>` e um elemento.
   - O visitante conversa com streaming e citações, avalia e abre chamado.
   - O histórico volta ao recarregar a página.
   - A resposta é sempre do nível Usuário final.
-- [ ] O widget só aceita os domínios permitidos e para no limite de requisições (429). Uma identidade assinada inválida é recusada e uma válida aparece na conversa e no chamado.
-- [ ] O painel configura o widget com prévia ao vivo e mostra os canais `mcp` e `widget` em Conversas e em Uso e custos.
-- [ ] O E2E da stack cobre MCP e widget. O ensaio real tem relatório. A cobertura fica em 95% ou mais, com isolamento entre workspaces testado.
+- [x] O widget só aceita os domínios permitidos e para no limite de requisições (429). Uma identidade assinada inválida é recusada e uma válida aparece na conversa e no chamado.
+- [x] O painel configura o widget com prévia ao vivo e mostra os canais `mcp` e `widget` em Conversas e em Uso e custos.
+- [x] O E2E da stack cobre MCP e widget. O ensaio real tem relatório. A cobertura fica em 95% ou mais, com isolamento entre workspaces testado.
 
 ## 4. Fases e subfases
 
@@ -531,7 +531,48 @@ Nenhuma.
 - 2026-10-14 — F5.1 iniciada (agente em worktree).
 - 2026-10-13 — F5.1 concluída: E2E da stack verde duas vezes seguidas (8 de 8) com MCP pelo cliente oficial e widget de outra origem; bug dos erros de ferramenta MCP corrigido com teste; variáveis do MCP e do widget no compose; guias conectar-pelo-mcp e embutir-o-widget, README, CHANGELOG e AGENTS raiz; orquestrador revisou os guias e rodou ruff, pyright, testes MCP, lint e typecheck
 - 2026-10-13 — F5.2 concluída: ensaio MCP (search_knowledge 9/9 x ask 7/9) e widget em end_user no Minski, relatório docs/pesquisa/0006 com custo (~US$ 2,87), AGENTS raiz com o ensaio e os próximos passos
+- 2026-10-14 — Plano concluído.
 
 ## 8. Encerramento
 
-A preencher ao concluir.
+**Entregue** ([ADR 0009](../adr/0009-canais-mcp-e-widget.md); contratos em [mcp.md](../specs/mcp.md) e [widget.md](../specs/widget.md)):
+- **Servidor MCP** em `/v1/mcp`, no processo da API (SDK oficial `mcp` 2.3, Streamable HTTP sem estado), autenticado pela chave `kbk_`:
+  - `list_products`, `search_knowledge` e `get_document`, no nível da chave e sem LLM;
+  - `ask`, gravado no canal `mcp`, com custo;
+  - `open_ticket`, pelo webhook do produto.
+- **Widget**, `<knobridge-chat>` em Lit, um JS de cerca de 18 KiB com gzip servido pela própria instância:
+  - balão e modo embutido, streaming, citações clicáveis, histórico no navegador;
+  - feedback, "Abrir chamado" e identidade assinada opcional;
+  - sempre em Usuário final;
+  - domínios permitidos, CORS próprio e limites de requisição no Postgres.
+- **Painel**:
+  - tela **Widgets** com prévia ao vivo, trecho de instalação e segredo de assinatura;
+  - **Conectar por MCP** nas chaves (Claude Code, Cursor e Codex);
+  - os canais MCP e Widget em Conversas e em Uso e custos.
+- **Migrações** `0020` (widget) e `0021` (canal `mcp`), ensaiadas sobre os dados reais do Minski.
+- **Testes e documentação**:
+  - E2E da stack com o cliente oficial do MCP em TypeScript e o widget numa página de outra origem;
+  - job do widget na CI;
+  - guias [conectar pelo MCP](../guias/conectar-pelo-mcp.md) e [embutir o widget](../guias/embutir-o-widget.md);
+  - o ensaio [0006](../pesquisa/0006-mcp-e-widget-no-minski.md).
+
+**Ensaio no Minski**: pelo MCP, o Claude Code acertou 9 de 9 perguntas com `search_knowledge`, contra 7 de 9 com `ask`. A diferença está nas perguntas difíceis: ele buscou até quatro vezes e resolveu a consulta SQL e o "já foi tratado?" que a busca única não resolve. O widget ficou em Usuário final, com as mesmas respostas do painel. O ensaio custou cerca de US$ 2,87.
+
+**Correções feitas no caminho**, todas com teste:
+- erros de ferramenta do MCP viravam erro de protocolo no cliente oficial em TypeScript; agora vêm só como texto (achado pelo E2E);
+- as variáveis do MCP e do widget não chegavam ao contêiner (faltavam no compose e no `.env.example`);
+- dois testes escritos em paralelo que não previam o canal da outra subfase.
+
+**Fora do escopo, com o motivo**:
+- Slack e Google Chat ficam num lote próprio (D1);
+- OAuth no MCP, que permitiria o conector no claude.ai e no ChatGPT (D2);
+- widget acima de Usuário final (D5);
+- anexos e voz no widget;
+- busca em mais de uma etapa no `ask` e no chat do painel, sugerida pelo ensaio e registrada nos próximos passos do `AGENTS.md` raiz.
+
+**Como demonstrar**:
+1. Suba a stack (`docker compose up -d --build --wait`), configure os níveis e um produto ([produtos-e-niveis.md](../guias/produtos-e-niveis.md)).
+2. Em **Chaves de API**, crie uma chave e siga **Conectar por MCP** no Claude Code; pergunte "use o KnoBridge e me diga…".
+3. Em **Widgets**, crie um widget com a origem de uma página sua, copie o trecho de instalação e converse; veja a conversa em **Conversas** e o canal em **Uso e custos**.
+
+Sem stack manual, `frontend/e2e/stack/mcp.spec.ts` e `widget.spec.ts` fazem o mesmo caminho.
