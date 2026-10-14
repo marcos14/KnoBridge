@@ -96,13 +96,13 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-13
         concluida_em: 2026-10-13
-        commit: null
+        commit: a8e60ef
       - id: F4.2
         titulo: Ensaio dos três níveis no índice do Minski
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code-orquestrador
+        iniciada_em: 2026-10-13
+        concluida_em: 2026-10-13
         commit: null
 decisoes:
   - id: D1
@@ -265,6 +265,13 @@ decisoes:
     decisao: "F4.1: E2E da stack refeito para produtos e níveis (configurar níveis, criar produto, perguntar no nível) com o novo levels.spec.ts (mesma pergunta nos três níveis: manual em todos, pasta Suporte a partir de Suporte, código .ts e card só em Desenvolvimento e produto) e a chave end_user recusando :support e :product_dev pelo SDK openai; o cenário 'produto migrado do assistente' fica coberto por test_migration_0018 (o compose de E2E sempre parte de banco limpo); guia de cards próprio (receber-cards-por-api.md), linkado com o de chamados"
     motivo: "E2E verde duas vezes (6/6) sem bug de produto"
     alternativas: "migrar banco antigo no E2E; cards como seção do guia de chamados"
+    adr: null
+  - id: D24
+    data: 2026-10-13
+    por: agente
+    decisao: "F4.2: ensaio na stack knobridge-minski atualizada (migrações 0014 a 0019 sobre os dados reais sem erro); modelos por nível gpt-4.1-mini, claude-sonnet-5.5 e claude-opus-5.5 (com preço conhecido, para comparar custo); 17 perguntas x 3 níveis sem vazamento; correção: o texto padrão do Usuário final passou a proibir planejar funcionalidades, com teste que compara os três textos com a spec palavra por palavra; recomendações no guia (separar pastas por público, revisar itens do harness, esquema do banco numa fonte Suporte); SQL do Suporte dependente do esquema no contexto fica como próximo passo"
+    motivo: "achados do ensaio com correção testada; o resto é configuração ou próximo passo"
+    alternativas: "trocar o modelo padrão do Usuário final (Haiku ficou conservador demais); mudar a busca neste plano"
     adr: null
 pendencias_usuario: []
 ---
@@ -532,6 +539,7 @@ Nenhuma.
 - 2026-10-13 — F3.3 concluída: chat com seletor de produto e nível, citação de card, filtros por produto e nível em Conversas e Uso e custos, chaves com produtos e nível máximo; frontend 1579 passed, 98,72% branches
 - 2026-10-13 — F4.1 iniciada (agente em worktree).
 - 2026-10-13 — F4.1 concluída: E2E da stack verde duas vezes seguidas (6 de 6, banco limpo e banco usado), guias produtos-e-niveis e receber-cards-por-api, primeiro-acesso, usar-a-api e demais guias atualizados, README, CHANGELOG e seções 1 e 12 do AGENTS.md raiz; orquestrador conferiu lint, format, typecheck, AGENTS e os valores do guia com o código
+- 2026-10-13 — F4.2 concluída: ensaio dos três níveis no Minski (51 respostas, nenhum vazamento; 14/12/7 de 16 úteis em Desenvolvimento e produto, Suporte e Usuário final; US$ 1,39), relatório docs/pesquisa/0005, correção do texto padrão do Usuário final com teste, recomendações no guia; backend 2709 passed com 99%
 
 ## 8. Encerramento
 

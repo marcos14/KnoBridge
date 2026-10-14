@@ -89,6 +89,12 @@ Só owner e admin mudam o nível mínimo:
 
 A mudança vale na hora, sem reindexar. O refinamento automático só **sobe** o nível: baixar a fonte para Usuário final não expõe o código de uma pasta. A lista de **Fontes** mostra o nível de cada uma e filtra por nível. O editor vê o nível, mas não o muda.
 
+Recomendações do [ensaio no Minski](../pesquisa/0005-niveis-no-minski.md):
+
+- **Separe as pastas por público.** O nível é da fonte inteira: uma pasta que mistura o manual do produto com PRD, planos, decisões e logs entrega tudo isso ao Usuário final, e um modelo pequeno repete o que encontra ali (nomes de arquivo, commits, planos). Deixe manuais e ajuda numa fonte Usuário final e os documentos internos numa fonte Suporte ou Desenvolvimento e produto.
+- **Revise os itens do harness que explicam regras de negócio.** Item inferido fica em Suporte; revisado no painel (aba **Conhecimento** da fonte do runner), ele passa a chegar ao Usuário final, com a seção de evidências ainda restrita a Suporte.
+- **Para o Suporte montar consultas SQL**, o esquema do banco (por exemplo, as migrações) precisa estar numa fonte de nível Suporte: num repositório Git ele fica em Desenvolvimento e produto.
+
 ### 5. Conversar num nível
 
 1. Vá em **Chat**. Escolha o **Produto** (só os ativos) e o **Nível de resposta**: o padrão é o seu máximo no produto; os níveis acima dele aparecem desabilitados, com o motivo.

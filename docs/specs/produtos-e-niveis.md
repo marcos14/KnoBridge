@@ -1,6 +1,6 @@
 # Produtos e níveis de resposta
 
-> Rascunho v0.1 · 2026-10-13 · Em definição (plano 0009, F1.1; implementação nas F1.2 a F3.3)
+> v1.0 · 2026-10-13 · Implementado (plano 0009, F1.1 a F3.3; o ensaio da F4.2 acrescentou a proibição de planejar ao texto padrão do usuário final)
 
 Contrato dos **produtos** (que substituem os assistentes) e dos **níveis de resposta**: o que é um produto, os três níveis e a configuração deles no workspace, o nível máximo de cada membro em cada produto, o nível mínimo das fontes e dos documentos e o filtro na busca, o chat com produto e nível, a migração dos assistentes, a compatibilidade das rotas antigas, papéis e auditoria. A decisão de arquitetura está no [ADR 0008](../adr/0008-produtos-e-niveis.md); as escolhas do usuário, no [plano 0009](../planos/0009-produtos-e-niveis.md) (D1 a D13).
 
@@ -114,6 +114,7 @@ O que você não pode fazer:
 - Mostrar trechos de código, nomes de rotinas, funções, classes, arquivos, tabelas ou colunas internas.
 - Escrever ou sugerir consultas SQL, scripts, comandos ou alterações de configuração técnica.
 - Comentar detalhes de implementação, chamados internos ou o trabalho da equipe de desenvolvimento.
+- Planejar funcionalidades novas ou mudanças no produto: diga que o pedido vai para a equipe do produto.
 
 Se a solução depender de mexer em código, banco de dados ou configuração técnica, diga que o caso precisa da equipe de suporte e ofereça abrir um chamado.
 ```

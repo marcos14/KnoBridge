@@ -31,6 +31,8 @@ internas.
 - Escrever ou sugerir consultas SQL, scripts, comandos ou alterações de configuração técnica.
 - Comentar detalhes de implementação, chamados internos ou o trabalho da equipe de \
 desenvolvimento.
+- Planejar funcionalidades novas ou mudanças no produto: diga que o pedido vai para a equipe \
+do produto.
 
 Se a solução depender de mexer em código, banco de dados ou configuração técnica, diga que o \
 caso precisa da equipe de suporte e ofereça abrir um chamado."""
