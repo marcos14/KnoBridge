@@ -53,10 +53,12 @@ def _visible(identity: ApiKeyIdentity) -> list[ColumnElement[bool]]:
     return conditions
 
 
-async def list_key_products(db: AsyncSession, identity: ApiKeyIdentity) -> Sequence[Product]:
-    """Active products of the key's scope, by name."""
+async def list_key_products(
+    db: AsyncSession, identity: ApiKeyIdentity, *, limit: int | None = None
+) -> Sequence[Product]:
+    """Active products of the key's scope, by name (at most ``limit``, when given)."""
     rows = await db.scalars(
-        select(Product).where(*_visible(identity)).order_by(Product.name, Product.id)
+        select(Product).where(*_visible(identity)).order_by(Product.name, Product.id).limit(limit)
     )
     return rows.all()
 
@@ -81,17 +83,18 @@ def _as_uuid(value: str) -> uuid.UUID | None:
         return None
 
 
-async def _find_product(
-    db: AsyncSession, identity: ApiKeyIdentity, reference: str, model: str
-) -> Product:
-    """The product named ``reference`` (exact name or id); the id wins when both match."""
+async def find_key_product(
+    db: AsyncSession, identity: ApiKeyIdentity, reference: str
+) -> Product | None:
+    """The visible product named ``reference`` (exact name or id; the id wins when both match),
+    or ``None``. Also resolves the ``product`` argument of the MCP tools (``mcp/tools.py``)."""
     product_id = _as_uuid(reference)
     match = Product.name == reference
     if product_id is not None:
         match = or_(match, Product.id == product_id)
     found = (await db.scalars(select(Product).where(*_visible(identity), match))).all()
     if not found:
-        raise NotFoundError(f"The model '{model}' does not exist.", code=MODEL_NOT_FOUND)
+        return None
     return next((item for item in found if item.id == product_id), found[0])
 
 
@@ -99,7 +102,9 @@ async def resolve_model(db: AsyncSession, identity: ApiKeyIdentity, model: str) 
     """The product and level of ``model``: 404 ``model_not_found`` for an unknown product (the
     whole value in the message), then 403 ``level_not_allowed`` above the key's maximum."""
     reference, level = split_model(model)
-    product = await _find_product(db, identity, reference, model)
+    product = await find_key_product(db, identity, reference)
+    if product is None:
+        raise NotFoundError(f"The model '{model}' does not exist.", code=MODEL_NOT_FOUND)
     effective = level or identity.max_level
     check_level(effective, identity.max_level, CeilingReason.API_KEY)
     return KeyModel(product, effective, level_explicit=level is not None)

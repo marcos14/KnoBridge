@@ -56,6 +56,7 @@ from knobridge.api import (
     usage,
 )
 from knobridge.api.body_limit import BodyLimitMiddleware
+from knobridge.api.mcp_channel import mount_mcp
 from knobridge.core.clock import Clock, SystemClock
 from knobridge.core.db import create_engine, create_session_factory
 from knobridge.core.errors import register_error_handlers
@@ -105,7 +106,9 @@ def create_app(
         app.state.ticket_webhook_starter = LazyTemporalTicketWebhookStarter(resolved)
         app.state.temporal_probe = LazyTemporalHealthProbe(resolved)
         try:
-            yield
+            # The MCP session manager's task group serves every /v1/mcp request.
+            async with mcp_server.session_manager.run():
+                yield
         finally:
             if engine is None:
                 await db_engine.dispose()
@@ -192,6 +195,8 @@ def create_app(
     for module in routers:
         v1.include_router(module.router)
     app.include_router(v1)
+    # MCP server at /v1/mcp, outside the OpenAPI (plan 0010 F2.1).
+    mcp_server = mount_mcp(app, resolved)
     return app
 
 

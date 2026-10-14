@@ -110,12 +110,27 @@ class Settings(BaseSettings):
     # address checks, also over http: the fake destination of Compose and E2E. Keep it empty
     # in production (docs/specs/chamados.md, "Proteção contra SSRF").
     webhook_allowed_hosts: Annotated[list[str], NoDecode] = Field(default_factory=list)
+    # ``Host`` values the MCP endpoint accepts (comma-separated; ``host:*`` = any port). Empty:
+    # the host of ``public_base_url``, ``localhost:*`` and ``127.0.0.1:*`` (docs/specs/mcp.md).
+    mcp_allowed_hosts: Annotated[list[str], NoDecode] = Field(default_factory=list)
+    # Browser origins (``https://host[:port]``, comma-separated) allowed to call the MCP
+    # endpoint. Empty: every request that carries ``Origin`` is refused (DNS rebinding).
+    mcp_allowed_origins: Annotated[list[str], NoDecode] = Field(default_factory=list)
 
-    @field_validator("webhook_allowed_hosts", mode="before")
+    @field_validator("webhook_allowed_hosts", "mcp_allowed_hosts", mode="before")
     @classmethod
     def _split_hosts(cls, value: object) -> object:
         if isinstance(value, str):
             return [host.strip().lower() for host in value.split(",") if host.strip()]
+        return value
+
+    @field_validator("mcp_allowed_origins", mode="before")
+    @classmethod
+    def _split_origins(cls, value: object) -> object:
+        if isinstance(value, str):
+            return [
+                origin.strip().lower().rstrip("/") for origin in value.split(",") if origin.strip()
+            ]
         return value
 
     @model_validator(mode="after")

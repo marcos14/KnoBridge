@@ -2,7 +2,8 @@
 payload") and the ingest of tickets (docs/specs/chamados.md, ``POST /v1/ingest/tickets``), plus
 the preview of one ticket in the panel (``.../tickets/preview``) and the public REST API of
 conversations and the OpenAI-compatible ``/v1/chat/completions`` (docs/specs/api-publica.md,
-"Limites"), which answers the 413 in OpenAI's error shape.
+"Limites"), which answers the 413 in OpenAI's error shape, and the MCP endpoint ``/v1/mcp``
+(docs/specs/mcp.md, "Limites").
 
 A pure ASGI middleware: for these routes it refuses a
 declared ``Content-Length`` above the route's limit and stops reading the body as soon as it
@@ -33,6 +34,8 @@ _LIMITS: tuple[tuple[re.Pattern[str], int], ...] = (
     (re.compile(r"^/v1/conversations$"), 4 * KIB),
     (re.compile(r"^/v1/conversations/[^/]+/messages$"), 64 * KIB),
     (re.compile(r"^/v1/chat/completions$"), 1 * MIB),
+    # MCP (docs/specs/mcp.md, "Limites"), before the SDK's own 4 MiB.
+    (re.compile(r"^/v1/mcp/?$"), 64 * KIB),
     # One ticket or card (at most 1 MiB) and its envelope. The upload of a file streams instead: its
     # route enforces its own limit while reading (``ticket_uploads.py``).
     (re.compile(r"^/v1/workspaces/[^/]+/sources/[^/]+/(?:tickets|cards)/preview$"), 2 * MIB),

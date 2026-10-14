@@ -28,10 +28,10 @@ fases:
     subfases:
       - id: F2.1
         titulo: Servidor MCP com list_products, search_knowledge e get_document
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-14
-        concluida_em: null
+        concluida_em: 2026-10-13
         commit: null
       - id: F2.2
         titulo: Ferramentas ask e open_ticket no MCP, canal mcp no uso e nas conversas
@@ -157,6 +157,13 @@ decisoes:
     decisao: "ordem das migrações trocada: a do widget (F3.1) vira 0020 e a do canal mcp (F2.2) vira 0021, porque a F3.1 roda antes da F2.2; a F3.1 ajusta os números nas specs"
     motivo: "F2.1 e F3.1 em paralelo"
     alternativas: "esperar a F2.2 para numerar"
+    adr: null
+  - id: D9
+    data: 2026-10-13
+    por: agente
+    decisao: "F2.1: MCP montado como duas Route do Starlette (/v1/mcp e /v1/mcp/), fora do OpenAPI e sem 307, um MCPServer por app; invólucro confere Origin (403 origin_not_allowed), método (405 fora do POST) e chave antes do SDK; hosts padrão = host de PUBLIC_BASE_URL, localhost:* e 127.0.0.1:*; argumentos validados pelos modelos Pydantic de mcp/schemas.py (erro validation_error como resultado de ferramenta); sem evento de auditoria por chamada, só last_used_at; get_document responde igual a inexistente para documento acima do nível; SDK mcp 2.3.0"
+    motivo: "spec mcp.md e SDK v2"
+    alternativas: "Mount com redirect; auditoria por chamada"
     adr: null
 pendencias_usuario: []
 ---
@@ -453,6 +460,7 @@ Nenhuma.
 - 2026-10-13 — F1.1 concluída: ADR 0009, specs mcp.md e widget.md e atualizações em api-publica, chat, chat-sse, chamados, uso-e-custos, modelo-de-dados, autenticacao, produtos-e-niveis e visão; links e âncoras conferidos por script; assinatura de exemplo conferida em Python e Node
 - 2026-10-14 — F2.1 iniciada (agente em worktree).
 - 2026-10-14 — F3.1 iniciada (agente em worktree).
+- 2026-10-13 — F2.1 concluída: servidor MCP em /v1/mcp com list_products, search_knowledge e get_document no nível da chave e sem LLM; gates do agente: backend 2775 passed com 99,89%; orquestrador: ruff, pyright e AGENTS na integração
 
 ## 8. Encerramento
 
