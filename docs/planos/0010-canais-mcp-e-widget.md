@@ -68,12 +68,12 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-14
         concluida_em: 2026-10-13
-        commit: null
+        commit: 66c14da
       - id: F4.2
         titulo: Feedback, chamado e identidade no widget; build servido pelo compose e gate na CI
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-14
         concluida_em: null
         commit: null
       - id: F4.3
@@ -496,6 +496,7 @@ Nenhuma.
 - 2026-10-13 — F3.2 concluída: conversa do widget (SSE, token kbv_, identidade assinada, sempre end_user, feedback e chamado, limites, 413 com CORS, canal widget no uso e na visão administrativa), integrada sobre a F2.2; backend 3098 passed + 1 teste ajustado ao canal mcp (34 passed na reexecução), cobertura 99%; frontend 1579
 - 2026-10-14 — F4.1 iniciada (agente em worktree).
 - 2026-10-13 — F4.1 concluída: pacote widget/ (Lit, um JS IIFE de 14,6 KiB gzip) com balão, modo embutido, SSE, histórico, citações e acessibilidade; 112 testes com 100% de cobertura; orquestrador conferiu lint, format, typecheck, testes e build
+- 2026-10-14 — F4.2 iniciada (agente em worktree).
 
 ## 8. Encerramento
 
