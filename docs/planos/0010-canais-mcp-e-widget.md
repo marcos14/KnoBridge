@@ -13,7 +13,7 @@ branch: plano/0010-canais-mcp-e-widget
 fases:
   - id: F1
     titulo: Contrato
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F1.1
         titulo: ADR e specs do servidor MCP e do widget
@@ -21,16 +21,16 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-14
         concluida_em: 2026-10-13
-        commit: null
+        commit: 6fc101b
   - id: F2
     titulo: Servidor MCP
-    status: pendente
+    status: em_execucao
     subfases:
       - id: F2.1
         titulo: Servidor MCP com list_products, search_knowledge e get_document
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-14
         concluida_em: null
         commit: null
       - id: F2.2
@@ -42,13 +42,13 @@ fases:
         commit: null
   - id: F3
     titulo: Backend do widget
-    status: pendente
+    status: em_execucao
     subfases:
       - id: F3.1
         titulo: Chaves do widget, domínios, aparência, limite de requisições e configuração pública
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-14
         concluida_em: null
         commit: null
       - id: F3.2
@@ -150,6 +150,13 @@ decisoes:
     decisao: "F1.1 (ADR 0009): MCP no processo da API em /v1/mcp, Streamable HTTP sem estado com resposta JSON, SDK mcp>=2.2,<3 (MCPServer), chave kbk_ validada por invólucro ASGI e passada às ferramentas por ContextVar, hosts permitidos por KNOBRIDGE_MCP_ALLOWED_HOSTS; widget em Lit, um JS IIFE servido pelo nginx do frontend em /widget/v1/knobridge-chat.js; chave pública kbp_ no caminho da URL (o preflight CORS não leva headers), segredo kbs_ cifrado, token de conversa kbv_ só em hash; identidade v1.<base64url>.<hmac hex> com sub, name, email, iat, exp (até 24 h, tolerância de 60 s), sem mudar o nível; limite em janela fixa no Postgres com a chave do contador em HMAC (IP não gravado), padrões 30 mensagens por IP por hora e 1000 por dia por widget (no painel) e 120 req/min, 20 conversas/h, 5 chamados/h (ambiente); duas migrações: 0020 na F2.2 (canal mcp, ticket_requests.user_id opcional) e 0021 na F3.1 (widget, limites, feedback.user_id opcional); e-mail obrigatório no open_ticket do MCP; excluir widget apaga as conversas dele; a prévia do painel cria conversas reais"
     motivo: "contrato implementável pelas subfases sem perguntas"
     alternativas: "uma migração única 0020; chave pública em header; FastMCP da v1"
+    adr: null
+  - id: D8
+    data: 2026-10-13
+    por: agente
+    decisao: "ordem das migrações trocada: a do widget (F3.1) vira 0020 e a do canal mcp (F2.2) vira 0021, porque a F3.1 roda antes da F2.2; a F3.1 ajusta os números nas specs"
+    motivo: "F2.1 e F3.1 em paralelo"
+    alternativas: "esperar a F2.2 para numerar"
     adr: null
 pendencias_usuario: []
 ---
@@ -444,6 +451,8 @@ Nenhuma.
 - 2026-10-14 — plano criado na branch `plano/0010-canais-mcp-e-widget` (a partir de `main`); aguardando aprovação.
 - 2026-10-14 — plano aprovado pelo usuário ("Aprovado"); F1.1 iniciada (agente em worktree).
 - 2026-10-13 — F1.1 concluída: ADR 0009, specs mcp.md e widget.md e atualizações em api-publica, chat, chat-sse, chamados, uso-e-custos, modelo-de-dados, autenticacao, produtos-e-niveis e visão; links e âncoras conferidos por script; assinatura de exemplo conferida em Python e Node
+- 2026-10-14 — F2.1 iniciada (agente em worktree).
+- 2026-10-14 — F3.1 iniciada (agente em worktree).
 
 ## 8. Encerramento
 
