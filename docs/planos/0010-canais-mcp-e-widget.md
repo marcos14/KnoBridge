@@ -93,13 +93,13 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-14
         concluida_em: 2026-10-13
-        commit: null
+        commit: eb5a81b
       - id: F5.2
         titulo: Ensaio real com Claude Code via MCP e o widget no Minski
-        status: pendente
-        agente: null
-        iniciada_em: null
-        concluida_em: null
+        status: concluida
+        agente: claude-code-orquestrador
+        iniciada_em: 2026-10-14
+        concluida_em: 2026-10-13
         commit: null
 decisoes:
   - id: D1
@@ -213,6 +213,13 @@ decisoes:
     decisao: "F5.1: erro de ferramenta MCP passa a vir só no conteúdo de texto, sem structured_content (o cliente oficial do SDK TypeScript 1.32.1 validava o conteúdo estruturado contra o esquema de saída mesmo com isError e transformava todo erro em McpError -32602; achado pelo E2E, corrigido com teste e spec mcp.md ajustada); compose e .env.example ganharam as variáveis KNOBRIDGE_MCP_* e KNOBRIDGE_WIDGET_* que não chegavam ao contêiner; E2E com mcp.spec (cliente oficial) e widget.spec (página servida por node:http de outra origem)"
     motivo: "E2E verde duas vezes (8/8)"
     alternativas: "manter structured_content nos erros"
+    adr: null
+  - id: D17
+    data: 2026-10-13
+    por: agente
+    decisao: "F5.2: ensaio na stack knobridge-minski atualizada (0020 e 0021 sobre os dados reais sem erro) com Claude Code (Sonnet) pelo MCP numa chave product_dev: search_knowledge 9/9 (até quatro buscas, inclusive SQL e já tratado?) contra ask 7/9, custo por pergunta ~US$ 0,16 (no cliente) contra ~US$ 0,13 (cliente + Opus do KnoBridge); widget em end_user pela API pública igual ao painel (403 para support e origem estranha, done sem custo); nenhum defeito novo; recomendação: busca em mais de uma etapa para ask e chat, registrada nos próximos passos; chave de teste revogada"
+    motivo: "relatório docs/pesquisa/0006"
+    alternativas: "rodar o widget num navegador real (o E2E da F5.1 já cobre a interface)"
     adr: null
 pendencias_usuario: []
 ---
@@ -523,6 +530,7 @@ Nenhuma.
 - 2026-10-13 — F4.3 concluída: tela de widgets com prévia ao vivo, seção MCP nas chaves, canais mcp e widget em Conversas e Uso e custos; frontend 1710 passed, 98,68% branches
 - 2026-10-14 — F5.1 iniciada (agente em worktree).
 - 2026-10-13 — F5.1 concluída: E2E da stack verde duas vezes seguidas (8 de 8) com MCP pelo cliente oficial e widget de outra origem; bug dos erros de ferramenta MCP corrigido com teste; variáveis do MCP e do widget no compose; guias conectar-pelo-mcp e embutir-o-widget, README, CHANGELOG e AGENTS raiz; orquestrador revisou os guias e rodou ruff, pyright, testes MCP, lint e typecheck
+- 2026-10-13 — F5.2 concluída: ensaio MCP (search_knowledge 9/9 x ask 7/9) e widget em end_user no Minski, relatório docs/pesquisa/0006 com custo (~US$ 2,87), AGENTS raiz com o ensaio e os próximos passos
 
 ## 8. Encerramento
 
