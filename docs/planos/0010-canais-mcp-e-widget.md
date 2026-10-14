@@ -75,12 +75,12 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-14
         concluida_em: 2026-10-13
-        commit: null
+        commit: 17293ee
       - id: F4.3
         titulo: Tela do widget no painel com prévia, MCP nas chaves e canais em Conversas e Uso
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-14
         concluida_em: null
         commit: null
   - id: F5
@@ -505,6 +505,7 @@ Nenhuma.
 - 2026-10-13 — F4.1 concluída: pacote widget/ (Lit, um JS IIFE de 14,6 KiB gzip) com balão, modo embutido, SSE, histórico, citações e acessibilidade; 112 testes com 100% de cobertura; orquestrador conferiu lint, format, typecheck, testes e build
 - 2026-10-14 — F4.2 iniciada (agente em worktree).
 - 2026-10-13 — F4.2 concluída: feedback, chamado e identidade no widget (184 testes, 100% de cobertura, 17,8 KiB gzip), arquivo servido pelo frontend em /widget/v1/knobridge-chat.js com os cabeçalhos da spec (conferido por curl), job widget na CI; orquestrador conferiu os gates do widget e o compose
+- 2026-10-14 — F4.3 iniciada (agente em worktree).
 
 ## 8. Encerramento
 
