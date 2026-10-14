@@ -24,7 +24,7 @@ fases:
         commit: 6fc101b
   - id: F2
     titulo: Servidor MCP
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F2.1
         titulo: Servidor MCP com list_products, search_knowledge e get_document
@@ -39,7 +39,7 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-14
         concluida_em: 2026-10-13
-        commit: null
+        commit: 55e79a0
   - id: F3
     titulo: Backend do widget
     status: em_execucao
