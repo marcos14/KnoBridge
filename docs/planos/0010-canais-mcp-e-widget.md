@@ -42,7 +42,7 @@ fases:
         commit: 55e79a0
   - id: F3
     titulo: Backend do widget
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F3.1
         titulo: Chaves do widget, domínios, aparência, limite de requisições e configuração pública
@@ -57,16 +57,16 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-14
         concluida_em: 2026-10-13
-        commit: null
+        commit: c30827c
   - id: F4
     titulo: Widget e painel
-    status: pendente
+    status: em_execucao
     subfases:
       - id: F4.1
         titulo: Pacote widget com balão, modo embutido, streaming e citações
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-14
         concluida_em: null
         commit: null
       - id: F4.2
@@ -487,6 +487,7 @@ Nenhuma.
 - 2026-10-14 — F3.2 iniciada (agente em worktree).
 - 2026-10-13 — F2.2 concluída: ask e open_ticket no MCP, canal mcp em Uso e custos e na visão administrativa, migração 0021; gates do agente: backend 3005 passed com 99,87%, frontend 1579; orquestrador: ruff, pyright e AGENTS na integração
 - 2026-10-13 — F3.2 concluída: conversa do widget (SSE, token kbv_, identidade assinada, sempre end_user, feedback e chamado, limites, 413 com CORS, canal widget no uso e na visão administrativa), integrada sobre a F2.2; backend 3098 passed + 1 teste ajustado ao canal mcp (34 passed na reexecução), cobertura 99%; frontend 1579
+- 2026-10-14 — F4.1 iniciada (agente em worktree).
 
 ## 8. Encerramento
 
