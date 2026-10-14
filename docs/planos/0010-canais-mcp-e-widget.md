@@ -35,9 +35,9 @@ fases:
         commit: f0e349b
       - id: F2.2
         titulo: Ferramentas ask e open_ticket no MCP, canal mcp no uso e nas conversas
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-14
         concluida_em: null
         commit: null
   - id: F3
@@ -50,12 +50,12 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-14
         concluida_em: 2026-10-13
-        commit: null
+        commit: dac08f5
       - id: F3.2
         titulo: Conversa do widget (SSE, histórico do visitante, identidade assinada, feedback e chamado)
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-14
         concluida_em: null
         commit: null
   - id: F4
@@ -469,6 +469,8 @@ Nenhuma.
 - 2026-10-14 — F3.1 iniciada (agente em worktree).
 - 2026-10-13 — F2.1 concluída: servidor MCP em /v1/mcp com list_products, search_knowledge e get_document no nível da chave e sem LLM; gates do agente: backend 2775 passed com 99,89%; orquestrador: ruff, pyright e AGENTS na integração
 - 2026-10-13 — F3.1 concluída: chaves do widget por produto, origens, aparência, limites, configuração pública com CORS próprio e limitador no Postgres, integrada sobre a F2.1; backend 2971 passed com 99%, frontend 1579
+- 2026-10-14 — F2.2 iniciada (agente em worktree).
+- 2026-10-14 — F3.2 iniciada (agente em worktree).
 
 ## 8. Encerramento
 
