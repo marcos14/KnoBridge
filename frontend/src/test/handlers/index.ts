@@ -21,6 +21,7 @@ import { setupHandlers } from "./setup";
 import { sourcesHandlers } from "./sources";
 import { ticketsHandlers } from "./tickets";
 import { usageHandlers } from "./usage";
+import { widgetsHandlers } from "./widgets";
 import { workspaceConversationsHandlers } from "./workspaceConversations";
 
 export * from "./account";
@@ -49,6 +50,7 @@ export * from "./setup";
 export * from "./sources";
 export * from "./tickets";
 export * from "./usage";
+export * from "./widgets";
 export * from "./workspaceConversations";
 
 /**
@@ -80,4 +82,5 @@ export const handlers = [
   ...workspaceConversationsHandlers,
   ...dashboardHandlers,
   ...usageHandlers,
+  ...widgetsHandlers,
 ];

@@ -22,6 +22,7 @@ export const USAGE_GROUPS = [
   "level",
   "channel",
   "api_key",
+  "widget",
   "model",
 ] as const satisfies readonly UsageGroup[];
 

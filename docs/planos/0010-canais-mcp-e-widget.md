@@ -78,10 +78,10 @@ fases:
         commit: 17293ee
       - id: F4.3
         titulo: Tela do widget no painel com prévia, MCP nas chaves e canais em Conversas e Uso
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-14
-        concluida_em: null
+        concluida_em: 2026-10-13
         commit: null
   - id: F5
     titulo: Validação e documentação
@@ -199,6 +199,13 @@ decisoes:
     decisao: "F4.2: botão secundário de chamado nas respostas completed (destacado nas no_source; spec ajustada); 👎 salva na hora e abre o comentário opcional; e-mail e nome ocultos quando o visitor verificado pelo servidor os traz; o botão some quando o servidor diz que não há chamado; troca de identidade em execução reabre a conversa do novo sub; imagem do frontend com estágio widget-build (contexto widget por additional_contexts) e bloco nginx /widget/ sem fallback do SPA, com ACAO *, CORP cross-origin, nosniff, max-age 300 e gzip; job widget na CI"
     motivo: "spec widget.md"
     alternativas: "menu de ações; verificar a identidade no navegador"
+    adr: null
+  - id: D15
+    data: 2026-10-13
+    por: agente
+    decisao: "F4.3: tela de widgets só para owner e admin (403 abaixo, sem visão de leitura), criar e editar em página própria com a prévia ao lado (a prévia usa storage none e api-base e carrega o script uma vez); segredo kbs_ mostrado uma vez, gerar sem confirmação, trocar e remover com confirmação; na seção MCP das chaves, os comandos de Claude Code, Cursor e Codex leem a chave de KNOBRIDGE_API_KEY e só a linha que define a variável mostra a chave, e só no diálogo logo após criar (spec mcp.md ajustada; sintaxe conferida na documentação oficial em 2026-10-14, Codex por config.toml com bearer_token_env_var)"
+    motivo: "spec e segurança da chave"
+    alternativas: "diálogo para criar widget; chave embutida nos comandos"
     adr: null
 pendencias_usuario: []
 ---
@@ -506,6 +513,7 @@ Nenhuma.
 - 2026-10-14 — F4.2 iniciada (agente em worktree).
 - 2026-10-13 — F4.2 concluída: feedback, chamado e identidade no widget (184 testes, 100% de cobertura, 17,8 KiB gzip), arquivo servido pelo frontend em /widget/v1/knobridge-chat.js com os cabeçalhos da spec (conferido por curl), job widget na CI; orquestrador conferiu os gates do widget e o compose
 - 2026-10-14 — F4.3 iniciada (agente em worktree).
+- 2026-10-13 — F4.3 concluída: tela de widgets com prévia ao vivo, seção MCP nas chaves, canais mcp e widget em Conversas e Uso e custos; frontend 1710 passed, 98,68% branches
 
 ## 8. Encerramento
 

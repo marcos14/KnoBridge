@@ -106,7 +106,12 @@ export function makeUsageRows(group: UsageGroup): UsageRow[] {
         chatRow("product_dev", "product_dev", 0.05, 100),
       ];
     case "channel":
-      return [chatRow("panel", "panel", 0.05, 100), chatRow("api", "api", 0.0084, 20, 3)];
+      return [
+        chatRow("panel", "panel", 0.05, 100),
+        chatRow("api", "api", 0.0084, 20, 3),
+        chatRow("mcp", "mcp", 0.003, 6),
+        chatRow("widget", "widget", 0.0021, 9),
+      ];
     case "api_key":
       return [chatRow("6f1c0000-0000-4000-8000-000000000001", "Integração CRM", 0.0084, 20)];
     case "widget":

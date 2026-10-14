@@ -8,6 +8,7 @@ import {
   House,
   KeyRound,
   Library,
+  MessageCircle,
   MessageSquare,
   MessagesSquare,
   Package,
@@ -34,6 +35,7 @@ export type WorkspaceArea =
   | "sources"
   | "runners"
   | "apiKeys"
+  | "widgets"
   | "pipelines"
   | "collections"
   | "channels"
@@ -69,6 +71,7 @@ export const WORKSPACE_AREAS: readonly WorkspaceAreaDefinition[] = [
   { key: "sources", path: "sources", minRole: "viewer", icon: Database },
   { key: "runners", path: "runners", minRole: "admin", icon: Server },
   { key: "apiKeys", path: "api-keys", minRole: "admin", icon: KeyRound },
+  { key: "widgets", path: "widgets", minRole: "admin", icon: MessageCircle },
   { key: "pipelines", path: "pipelines", minRole: "viewer", icon: Workflow },
   { key: "collections", path: "collections", minRole: "viewer", icon: Library },
   { key: "channels", path: "channels", minRole: "viewer", icon: Cable },

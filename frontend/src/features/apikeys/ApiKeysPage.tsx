@@ -17,6 +17,7 @@ import { clampOffset, pageOf } from "@/lib/pagination";
 
 import { ApiKeyDialog } from "./ApiKeyDialog";
 import { ApiKeyExamples } from "./ApiKeyExamples";
+import { McpConnection } from "./McpConnection";
 
 /** Rows per page of the key table (paged in the browser). */
 export const API_KEYS_PAGE_SIZE = 20;
@@ -38,6 +39,7 @@ export function ApiKeysPage() {
         <div key={workspace.id} className="flex flex-col gap-6">
           <ApiKeysList workspaceId={workspace.id} />
           <ApiKeyExamples workspaceId={workspace.id} />
+          <McpConnection />
         </div>
       ) : (
         <h1 className="text-xl font-semibold">{t("apiKeys.title")}</h1>

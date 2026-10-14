@@ -1,6 +1,6 @@
 # frontend/src/features/apikeys/
 
-**Função**: chaves de API do workspace em `/w/:workspaceId/api-keys` (owner e admin; editor e viewer não veem o item de menu e recebem 403 na rota). Lista, criação com a chave mostrada uma única vez, edição de nome, escopo por produto e nível máximo, revogação e exemplos de uso da API pública.
+**Função**: chaves de API do workspace em `/w/:workspaceId/api-keys` (owner e admin; editor e viewer não veem o item de menu e recebem 403 na rota). Lista, criação com a chave mostrada uma única vez, edição de nome, escopo por produto e nível máximo, revogação, exemplos de uso da API pública e a conexão pelo servidor MCP.
 
 **Entra aqui**:
 
@@ -9,15 +9,16 @@
 - `ApiKeyExamples.tsx`: "Como usar", com `curl` da REST própria e Python e JavaScript com o SDK oficial da OpenAI, cada um com `CopyButton`; servidor `window.location.origin`, o primeiro produto ativo (sem nenhum, marcadores) e o nível escolhido em "Nível dos exemplos" (padrão Usuário final): `{"product_id", "level"}` na REST e `model` `<produto>:<nível>` nos SDKs.
 - `apiKeyForm.ts`: schema do formulário, valores iniciais, corpo do `POST` e diferença para o `PATCH` (`product_ids: null` = todos; `max_level` só quando mudou). Chave nova começa em `API_KEY_DEFAULT_MAX_LEVEL` = `end_user`: a API não tem padrão (quem cria escolhe de propósito) e o painel pré-seleciona o nível mais baixo, como em `docs/specs/api-publica.md`.
 - `usageExamples.ts`: os textos dos exemplos (`restCurlExample`, `openAiPythonExample`, `openAiJavaScriptExample`, `apiBaseUrl`, `exampleModel`) e `API_KEY_VARIABLE` (`KNOBRIDGE_API_KEY`).
+- `McpConnection.tsx`: "Conectar por MCP", abaixo dos exemplos e também na visão da chave recém-criada: URL do servidor (`<origem>/v1/mcp`), a linha que define `KNOBRIDGE_API_KEY` (com a chave recém-criada no diálogo; na página, o marcador `kbk_sua_chave`) e as configurações do Claude Code (`claude mcp add --transport http … --header "Authorization: Bearer $KNOBRIDGE_API_KEY"`), do Cursor (`mcp.json` com `${env:KNOBRIDGE_API_KEY}`) e do Codex (`config.toml` com `bearer_token_env_var`), cada uma com `CopyButton`; textos em `mcpExamples.ts` (`mcpServerUrl`, `mcpKeyVariableCommand`, `claudeCodeMcpCommand`, `cursorMcpConfig`, `codexMcpConfig`), conferidos em 2026-10-14 na documentação de cada cliente (`docs/specs/mcp.md`).
 
 **Não entra aqui**: chamadas de API (`lib/api/apiKeys.ts`), produtos (`lib/api/products.ts`), o botão de copiar (`components/CopyButton.tsx`), textos (`i18n/locales/`, chaves `apiKeys.*`; erros `apiErrors.api_key_*`).
 
 **Convenções locais**:
 
-- A chave só existe no estado do diálogo: abrir e fechar o diálogo a descartam, e nenhuma consulta a guarda. Os exemplos nunca levam a chave: leem `KNOBRIDGE_API_KEY` do ambiente.
+- A chave só existe no estado do diálogo: abrir e fechar o diálogo a descartam, e nenhuma consulta a guarda. Os exemplos e as configurações MCP nunca levam a chave: leem `KNOBRIDGE_API_KEY` do ambiente; só a linha que define a variável, na visão da chave recém-criada, a mostra (é a mesma tela que já mostra a chave inteira uma vez).
 - Revogar é irreversível; chave revogada não tem ações (editar responderia 409 `api_key_revoked`). Não há exclusão.
 - As citações dos exemplos vêm de `message.citations` (REST) e do campo `knobridge` (compatível com OpenAI), como em `docs/specs/api-publica.md`.
 
-**Como testar**: de `frontend/`, `pnpm vitest run src/features/apikeys --coverage.enabled=true --coverage.include='src/features/apikeys/**'`. Pela árvore real (`renderWithProviders({ path: "/w/<id>/api-keys" })`) com MSW: `apiKeyStore(initial, productIds)` (`created`, `changes`, `revoked`), `apiKeysAs`, `apiKeysServerError`, `apiKeyActionFails(action, status, code)`; clipboard pelo stub do `userEvent.setup()`.
+**Como testar**: de `frontend/`, `pnpm vitest run src/features/apikeys --coverage.enabled=true --coverage.include='src/features/apikeys/**'`. Pela árvore real (`renderWithProviders({ path: "/w/<id>/api-keys" })`) com MSW: `apiKeyStore(initial, productIds)` (`created`, `changes`, `revoked`), `apiKeysAs`, `apiKeysServerError`, `apiKeyActionFails(action, status, code)`; clipboard pelo stub do `userEvent.setup()`. A seção MCP em `McpConnection.test.tsx`.
 
 **Leia também**: [../AGENTS.md](../AGENTS.md); [../../lib/api/AGENTS.md](../../lib/api/AGENTS.md); `docs/specs/api-publica.md`; [ADR 0007](../../../../docs/adr/0007-chaves-e-api-publica.md).

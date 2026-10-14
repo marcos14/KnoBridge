@@ -12,11 +12,15 @@ export function FeedbackList({ feedback }: { feedback: readonly WorkspaceFeedbac
   return (
     <ul aria-label={t("conversations.detail.feedbackLabel")} className="flex flex-col gap-1">
       {feedback.map((item) => (
-        <li key={item.user_id} className="text-sm">
+        // One rating per member and at most one of the widget's visitor (no user) per answer.
+        <li key={item.user_id ?? "visitor"} className="text-sm">
           <span className="font-medium">
-            {item.rating === "up"
-              ? t("conversations.detail.ratedUp", { name: item.user_name })
-              : t("conversations.detail.ratedDown", { name: item.user_name })}
+            {t(
+              item.rating === "up"
+                ? "conversations.detail.ratedUp"
+                : "conversations.detail.ratedDown",
+              { name: item.user_name ?? t("conversations.visitor") },
+            )}
           </span>
           {item.comment !== "" && (
             <q className="text-muted-foreground ml-2 italic">{item.comment}</q>

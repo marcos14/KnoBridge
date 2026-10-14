@@ -7,7 +7,8 @@ import type { components } from "./schema.gen";
 
 /**
  * The conversations of every member and API key, as owners and admins see them
- * (`/admin/conversations`). A conversation of the API has no user: `api_key_*` names its key.
+ * (`/admin/conversations`). A conversation of the API or MCP has no user: `api_key_*` names its
+ * key; one of a widget has `widget_*` and, with a signed identity, the `visitor`.
  */
 export type WorkspaceConversation = components["schemas"]["AdminConversationOut"];
 export type WorkspaceConversationDetail = components["schemas"]["AdminConversationDetailOut"];
@@ -28,6 +29,7 @@ export interface WorkspaceConversationsQuery extends CreationPeriod {
   level?: ResponseLevel;
   userId?: string;
   channel?: ConversationChannel;
+  widgetId?: string;
   /** Only conversations with at least one thumbs down. */
   negativeFeedback?: boolean;
   limit: number;
@@ -52,6 +54,7 @@ export function useWorkspaceConversations(workspaceId: string, query: WorkspaceC
               level: query.level,
               user_id: query.userId,
               channel: query.channel,
+              widget_id: query.widgetId,
               created_from: query.createdFrom,
               created_to: query.createdTo,
               // `false` is the API default: leaving it out keeps the request as short as the filter.

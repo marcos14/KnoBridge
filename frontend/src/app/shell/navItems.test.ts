@@ -52,6 +52,7 @@ describe("workspaceNavItems", () => {
       "sources",
       "runners",
       "apiKeys",
+      "widgets",
       "pipelines",
       "collections",
       "channels",

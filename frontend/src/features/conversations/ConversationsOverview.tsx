@@ -5,6 +5,7 @@ import { DataTable, type DataTableColumn } from "@/components/DataTable";
 import { Button } from "@/components/ui/button";
 import { useProducts } from "@/lib/api/products";
 import { useMembers } from "@/lib/api/members";
+import { useWidgets } from "@/lib/api/widgets";
 import {
   useConversationStats,
   useWorkspaceConversations,
@@ -36,9 +37,10 @@ export function ConversationsOverview({ workspaceId }: { workspaceId: string }) 
     toConversationsQuery(search, CONVERSATIONS_TABLE_PAGE_SIZE),
   );
   const stats = useConversationStats(workspaceId, toCreationPeriod(search.filters));
-  // Both fill the filters; while they load, a filter from a shared link shows its id.
+  // They fill the filters; while they load, a filter from a shared link shows its id.
   const products = useProducts(workspaceId);
   const members = useMembers(workspaceId);
+  const widgets = useWidgets(workspaceId);
 
   const columns: DataTableColumn<WorkspaceConversation>[] = [
     {
@@ -117,6 +119,7 @@ export function ConversationsOverview({ workspaceId }: { workspaceId: string }) 
         filters={search.filters}
         products={(products.data ?? []).map(({ id, name }) => ({ id, name }))}
         users={(members.data ?? []).map(({ user_id: id, name }) => ({ id, name }))}
+        widgets={(widgets.data ?? []).map(({ id, name }) => ({ id, name }))}
         onChange={setFilters}
       />
       {conversations.isPending ? (

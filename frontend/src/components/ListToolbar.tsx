@@ -39,7 +39,8 @@ interface ListToolbarProps {
   /** Called with the normalized text after a pause in typing, or at once on Enter. */
   onQueryChange: (query: string) => void;
   filters?: readonly ListToolbarFilter[];
-  sort: ListToolbarSort;
+  /** Omitted when the API has a single order (a select would offer one item). */
+  sort?: ListToolbarSort;
   /** Shows "Limpar filtros" while a search or a filter narrows the list. */
   onClear?: () => void;
 }
@@ -129,16 +130,18 @@ export function ListToolbar({
           </div>
         );
       })}
-      <div className="flex flex-col gap-2">
-        <Label htmlFor={sortId}>{t("listToolbar.sort")}</Label>
-        <FilterSelect
-          id={sortId}
-          className="w-full sm:w-52"
-          value={sort.value}
-          options={sort.options}
-          onValueChange={sort.onChange}
-        />
-      </div>
+      {sort !== undefined && (
+        <div className="flex flex-col gap-2">
+          <Label htmlFor={sortId}>{t("listToolbar.sort")}</Label>
+          <FilterSelect
+            id={sortId}
+            className="w-full sm:w-52"
+            value={sort.value}
+            options={sort.options}
+            onValueChange={sort.onChange}
+          />
+        </div>
+      )}
       {onClear !== undefined && (
         <Button
           type="button"

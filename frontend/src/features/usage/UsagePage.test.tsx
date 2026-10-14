@@ -233,7 +233,12 @@ describe("UsagePage report", () => {
     record();
     await renderUsage(`${PATH}?group=channel`, "Uso por Canal");
 
-    expect(bodyRows("Uso por Canal").map((row) => row[0])).toEqual(["Painel", "API"]);
+    expect(bodyRows("Uso por Canal").map((row) => row[0])).toEqual([
+      "Painel",
+      "API",
+      "MCP",
+      "Widget",
+    ]);
   });
 
   it("test_usage_by_source_shows_only_embedding_columns", async () => {
@@ -350,6 +355,7 @@ describe("UsagePage filters", () => {
     ["Nível", "level", "Uso por Nível"],
     ["Canal", "channel", "Uso por Canal"],
     ["Chave de API", "api_key", "Uso por Chave de API"],
+    ["Widget", "widget", "Uso por Widget"],
     ["Modelo", "model", "Uso por Modelo"],
   ])("test_usage_group_%s_asks_the_api", async (option, group, table) => {
     const recorder = record();

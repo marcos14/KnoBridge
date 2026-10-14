@@ -296,7 +296,16 @@ Entram no `settings.py` e no `.env.example` na F2.1.
 
 ## Configuração nos clientes
 
-O painel (seção MCP da tela de Chaves de API, F4.3) mostra estes exemplos com a origem da instância e a variável `KNOBRIDGE_API_KEY`, nunca a chave. A F4.3 confere a sintaxe na documentação de cada cliente na data da implementação.
+O painel mostra estes exemplos na seção "Conectar por MCP" da tela de Chaves de API (F4.3), com a origem da instância e a variável `KNOBRIDGE_API_KEY`. As configurações nunca levam a chave. Antes delas, o painel mostra a linha que define a variável (`export KNOBRIDGE_API_KEY="…"` e a forma do PowerShell):
+
+- na página, com um marcador;
+- logo depois de criar a chave, na mesma visão que já a mostra uma única vez, com a chave nova.
+
+A sintaxe foi conferida em 2026-10-14 na documentação de cada cliente:
+
+- Claude Code: `claude mcp add --transport http <nome> <url> --header "…"`;
+- Cursor: `url` e `headers` no `mcp.json`, com `${env:NOME}`;
+- Codex: `url` e `bearer_token_env_var` em `[mcp_servers.<nome>]` do `config.toml`. A documentação não mostra flag de token para `codex mcp add`, por isso o painel mostra o arquivo.
 
 Claude Code:
 
@@ -338,6 +347,6 @@ Uma chave por pessoa ou por máquina, com `max_level` de quem vai usar (o painel
 - Especificação do MCP, transporte Streamable HTTP e segurança (validação de `Origin`): <https://modelcontextprotocol.io/specification/2025-11-25/basic/transports>
 - SDK oficial Python (`mcp`): <https://github.com/modelcontextprotocol/python-sdk> e <https://pypi.org/project/mcp/>
 - Documentação do SDK v2: montar num app ASGI (<https://py.sdk.modelcontextprotocol.io/run/asgi/>), migração da v1 (<https://py.sdk.modelcontextprotocol.io/migration/>), novidades da v2 (<https://py.sdk.modelcontextprotocol.io/whats-new/>), testes (<https://py.sdk.modelcontextprotocol.io/get-started/testing/>) e transportes do cliente (<https://py.sdk.modelcontextprotocol.io/client/transports/>)
-- Claude Code, MCP: <https://docs.claude.com/en/docs/claude-code/mcp>
-- Cursor, MCP: <https://docs.cursor.com/context/model-context-protocol>
-- Codex, MCP: <https://github.com/openai/codex/blob/main/docs/config.md>
+- Claude Code, MCP: <https://code.claude.com/docs/en/mcp>
+- Cursor, MCP: <https://cursor.com/docs/context/mcp>
+- Codex, MCP: <https://developers.openai.com/codex/mcp>

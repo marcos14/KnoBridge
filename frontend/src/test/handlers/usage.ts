@@ -18,6 +18,7 @@ function requestedGroup(request: Request): UsageGroup {
     "level",
     "channel",
     "api_key",
+    "widget",
     "model",
   ];
   return groups.find((item) => item === group) ?? "day";

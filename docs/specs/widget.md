@@ -545,7 +545,7 @@ Modos: **`bubble`**, botão redondo fixo no canto (`position`) que abre um paine
 
 ## Prévia no painel
 
-A tela do widget (F4.3) mostra a prévia ao vivo carregando o mesmo `/widget/v1/knobridge-chat.js` da instância e um `<knobridge-chat>` com a chave do widget e os campos de aparência ainda não salvos como atributos (`mode="inline"` na área da prévia, para caber na tela). As requisições saem da origem da instância, sempre permitida. **A prévia conversa de verdade**: grava conversas com `channel = widget`, conta nos limites e no uso, e a tela avisa isso. Widget ainda não criado não tem prévia (falta a chave).
+A tela do widget (F4.3) mostra a prévia ao vivo carregando o mesmo `/widget/v1/knobridge-chat.js` da instância e um `<knobridge-chat>` com a chave do widget e os campos de aparência ainda não salvos como atributos (`mode="inline"` na área da prévia, para caber na tela). Ela também passa `api-base` com a origem da instância e `storage="none"`, para a conversa de teste não ficar no navegador do painel. O script entra na página uma única vez. As requisições saem da origem da instância, sempre permitida. **A prévia conversa de verdade**: grava conversas com `channel = widget`, conta nos limites e no uso, e a tela avisa isso. Widget ainda não criado não tem prévia (falta a chave).
 
 ## Privacidade
 

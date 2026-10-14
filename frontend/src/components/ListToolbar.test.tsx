@@ -184,4 +184,18 @@ describe("ListToolbar filters and sort", () => {
 
     expect(screen.queryByRole("button", { name: "Limpar filtros" })).not.toBeInTheDocument();
   });
+
+  it("test_list_toolbar_without_sort_shows_no_sort_select", () => {
+    render(
+      <ListToolbar
+        searchLabel="Buscar itens"
+        searchPlaceholder="Nome"
+        query=""
+        onQueryChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("searchbox", { name: "Buscar itens" })).toBeInTheDocument();
+    expect(screen.queryByRole("combobox", { name: "Ordenar por" })).not.toBeInTheDocument();
+  });
 });

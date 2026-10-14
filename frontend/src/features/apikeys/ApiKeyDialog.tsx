@@ -32,6 +32,7 @@ import { RESPONSE_LEVELS } from "@/lib/api/levels";
 import { useProducts } from "@/lib/api/products";
 import { levelAudience, levelLabel } from "@/lib/responseLevels";
 
+import { McpConnection } from "./McpConnection";
 import { API_KEY_VARIABLE } from "./usageExamples";
 import {
   type ApiKeyFormValues,
@@ -318,6 +319,7 @@ function SecretView({ created }: { created: ApiKeyCreated }) {
         <code className="bg-muted rounded-md p-2 text-sm break-all">{created.key}</code>
         <CopyButton text={created.key} label={t("apiKeys.secret.copy")} />
       </section>
+      <McpConnection apiKey={created.key} />
       <DialogFooter>
         <DialogClose asChild>
           <Button type="button">{t("apiKeys.secret.done")}</Button>

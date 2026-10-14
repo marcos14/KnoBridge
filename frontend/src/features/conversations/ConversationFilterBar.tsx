@@ -28,6 +28,7 @@ interface ConversationFilterBarProps {
   filters: ConversationFilters;
   products: readonly FilterChoice[];
   users: readonly FilterChoice[];
+  widgets: readonly FilterChoice[];
   onChange: (filters: ConversationFilters) => void;
 }
 
@@ -39,13 +40,14 @@ function withChosen(choices: readonly FilterChoice[], chosen: string | undefined
 }
 
 /**
- * Product, level, user, channel, creation period and "only 👎" of the conversations; each change
- * applies now.
+ * Product, level, user, channel, widget, creation period and "only 👎" of the conversations; each
+ * change applies now.
  */
 export function ConversationFilterBar({
   filters,
   products,
   users,
+  widgets,
   onChange,
 }: ConversationFilterBarProps) {
   const { t } = useTranslation();
@@ -53,6 +55,7 @@ export function ConversationFilterBar({
   const levelId = useId();
   const userId = useId();
   const channelId = useId();
+  const widgetId = useId();
   const fromId = useId();
   const toId = useId();
   const negativeId = useId();
@@ -65,6 +68,11 @@ export function ConversationFilterBar({
     users,
     filters.user,
     t("conversations.unknownUser", { id: filters.user }),
+  );
+  const widgetOptions = withChosen(
+    widgets,
+    filters.widget,
+    t("conversations.unknownWidget", { id: filters.widget }),
   );
 
   function change(patch: Partial<ConversationFilters>) {
@@ -134,6 +142,21 @@ export function ConversationFilterBar({
           ]}
           onValueChange={(value) => {
             change({ channel: parseChannel(value) });
+          }}
+        />
+      </div>
+      <div className="flex flex-col gap-2">
+        <Label htmlFor={widgetId}>{t("conversations.filters.widget")}</Label>
+        <FilterSelect
+          id={widgetId}
+          className="w-full sm:w-56"
+          value={filters.widget ?? ALL}
+          options={[
+            { value: ALL, label: t("conversations.filters.allWidgets") },
+            ...widgetOptions.map((choice) => ({ value: choice.id, label: choice.name })),
+          ]}
+          onValueChange={(value) => {
+            change({ widget: value === ALL ? undefined : value });
           }}
         />
       </div>

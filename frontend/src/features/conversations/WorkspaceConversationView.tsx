@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import { ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -8,7 +9,11 @@ import { CitationSheet } from "@/components/CitationSheet";
 import { Button } from "@/components/ui/button";
 import { isApiErrorCode } from "@/lib/api/client";
 import type { Citation } from "@/lib/api/conversations";
-import { useWorkspaceConversation, type WorkspaceMessage } from "@/lib/api/workspaceConversations";
+import {
+  useWorkspaceConversation,
+  type WorkspaceConversationDetail,
+  type WorkspaceMessage,
+} from "@/lib/api/workspaceConversations";
 import { formatDateTime } from "@/lib/intl";
 import { levelLabel } from "@/lib/responseLevels";
 
@@ -20,8 +25,32 @@ interface WorkspaceConversationViewProps {
   conversationId: string;
 }
 
+/** "Ana (ana@…) em ERP, nível Suporte", "MCP · ERP em …" or "Widget · Site · Visitante … em …". */
+function whoText(conversation: WorkspaceConversationDetail, t: TFunction): string {
+  const product = conversation.product_name;
+  const level = levelLabel(conversation.level, t);
+  if (conversation.channel === "panel") {
+    return t("conversations.detail.who", {
+      user: conversation.user_name,
+      email: conversation.user_email,
+      product,
+      level,
+    });
+  }
+  const owner = conversationOwner(conversation, t);
+  return conversation.channel === "widget"
+    ? t("conversations.detail.whoWidget", {
+        owner: owner.name,
+        visitor: owner.detail,
+        product,
+        level,
+      })
+    : t("conversations.detail.whoApi", { owner: owner.name, product, level });
+}
+
 /**
- * Any conversation of the workspace (a member's or an API key's), read only: the questions, the answers rendered as in the chat (safe
+ * Any conversation of the workspace (a member's, an API or MCP key's or a widget visitor's), read
+ * only: the questions, the answers rendered as in the chat (safe
  * Markdown, sources, status) and the ratings each answer received. The way back keeps the filters
  * of the list, which travel in the query string.
  */
@@ -69,21 +98,8 @@ export function WorkspaceConversationView({
       ) : (
         <ConversationThread
           title={conversation.data.title}
-          who={
-            conversation.data.channel === "api"
-              ? t("conversations.detail.whoApi", {
-                  owner: conversationOwner(conversation.data, t).name,
-                  product: conversation.data.product_name,
-                  level: levelLabel(conversation.data.level, t),
-                })
-              : t("conversations.detail.who", {
-                  user: conversation.data.user_name,
-                  email: conversation.data.user_email,
-                  product: conversation.data.product_name,
-                  level: levelLabel(conversation.data.level, t),
-                })
-          }
-          userName={conversationOwner(conversation.data, t).name}
+          who={whoText(conversation.data, t)}
+          userName={conversationOwner(conversation.data, t).asker}
           createdAt={conversation.data.created_at}
           messages={conversation.data.messages.items}
           onCitation={setCitation}

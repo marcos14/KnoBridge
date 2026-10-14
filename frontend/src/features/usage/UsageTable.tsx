@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type { UsageGroup, UsageRow, UsageTotals } from "@/lib/api/usage";
+import { parseChannel } from "@/lib/conversationFilters";
 import { formatCount, formatUsd } from "@/lib/numberFormat";
 import { levelLabel, parseLevel } from "@/lib/responseLevels";
 
@@ -63,8 +64,9 @@ export function UsageTable({ group, chatOnly, rows, totals, busy }: UsageTablePr
     if (group === "day") {
       return formatUsageDay(row.key, locale);
     }
-    if (group === "channel" && (row.key === "panel" || row.key === "api")) {
-      return t(`usage.channels.${row.key}`);
+    const channel = group === "channel" ? parseChannel(row.key) : undefined;
+    if (channel !== undefined) {
+      return t(`usage.channels.${channel}`);
     }
     const level = group === "level" ? parseLevel(row.key) : undefined;
     return level === undefined ? row.label : levelLabel(level, t);

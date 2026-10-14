@@ -17,6 +17,7 @@
       "sources": "Fontes",
       "runners": "Runners",
       "apiKeys": "Chaves de API",
+      "widgets": "Widgets",
       "pipelines": "Pipelines",
       "collections": "Coleções",
       "channels": "Canais",
@@ -1812,6 +1813,211 @@
         "hint": "Para Node.js com módulos ES. Instale com npm install openai.",
         "copy": "Copiar exemplo JavaScript"
       }
+    },
+    "mcp": {
+      "title": "Conectar por MCP",
+      "description": "Assistentes de código e agentes (Claude Code, Cursor, Codex) usam os produtos como ferramentas pelo servidor MCP desta instância, com uma chave de API: o escopo e o nível máximo da chave valem também aqui.",
+      "url": "URL do servidor:",
+      "copyUrl": "Copiar a URL",
+      "keyPlaceholder": "kbk_sua_chave",
+      "variable": {
+        "title": "1. Guarde a chave na variável {{variable}}",
+        "hintPlaceholder": "Troque o valor pela chave mostrada ao criá-la.",
+        "hintKey": "Com a chave que você acabou de criar. As configurações abaixo leem a variável.",
+        "copy": "Copiar o comando da variável"
+      },
+      "claudeCode": {
+        "title": "Claude Code",
+        "hint": "No terminal, com a variável definida.",
+        "copy": "Copiar o comando do Claude Code"
+      },
+      "cursor": {
+        "title": "Cursor",
+        "hint": "Em .cursor/mcp.json do projeto ou em ~/.cursor/mcp.json.",
+        "copy": "Copiar a configuração do Cursor"
+      },
+      "codex": {
+        "title": "Codex",
+        "hint": "Em ~/.codex/config.toml.",
+        "copy": "Copiar a configuração do Codex"
+      },
+      "levelHint": "Uma chave por pessoa ou por máquina, com o nível máximo de quem vai usar: desenvolvimento costuma usar Desenvolvimento e produto."
+    }
+  },
+  "widgets": {
+    "title": "Widgets",
+    "description": "O chat embutível leva um produto ao seu site ou sistema, sempre no nível Usuário final. Cada widget tem a sua chave pública, os domínios onde pode rodar, a aparência e os limites.",
+    "create": "Novo widget",
+    "createFirst": "Criar o primeiro widget",
+    "newTitle": "Novo widget",
+    "back": "Voltar para os widgets",
+    "loading": "Carregando widgets…",
+    "loadFailed": "Não foi possível carregar os widgets.",
+    "retry": "Tentar novamente",
+    "search": "Buscar widgets",
+    "searchPlaceholder": "Nome do widget",
+    "allProducts": "Todos os produtos",
+    "unknownProduct": "Produto {{id}}",
+    "tableLabel": "Widgets do workspace",
+    "empty": "Nenhum widget ainda. Crie um para conversar com os visitantes do seu site.",
+    "emptyNoProducts": "Nenhum widget ainda. Um widget pertence a um produto: crie um produto antes.",
+    "goToProducts": "Ir para Produtos",
+    "moreOrigins_one": "+{{count}} domínio",
+    "moreOrigins_other": "+{{count}} domínios",
+    "columns": {
+      "name": "Widget",
+      "product": "Produto",
+      "origins": "Domínios permitidos",
+      "mode": "Modo",
+      "status": "Estado",
+      "actions": "Ações"
+    },
+    "status": {
+      "active": "Ativo",
+      "inactive": "Inativo"
+    },
+    "modes": {
+      "bubble": "Balão",
+      "inline": "Embutido"
+    },
+    "positions": {
+      "bottom-right": "Canto inferior direito",
+      "bottom-left": "Canto inferior esquerdo"
+    },
+    "themes": {
+      "auto": "Automático (segue o sistema)",
+      "light": "Claro",
+      "dark": "Escuro"
+    },
+    "configure": "Configurar",
+    "configureLabel": "Configurar {{name}}",
+    "activate": "Ativar",
+    "activateLabel": "Ativar {{name}}",
+    "deactivate": "Desativar",
+    "deactivateLabel": "Desativar {{name}}",
+    "activated": "Widget {{name}} ativado.",
+    "deactivated": "Widget {{name}} desativado: o chat some do site até ser ativado de novo.",
+    "delete": "Excluir",
+    "deleteLabel": "Excluir {{name}}",
+    "deleteTitle": "Excluir o widget {{name}}?",
+    "deleteDescription": "As conversas dos visitantes deste widget, com as avaliações e os pedidos de chamado, serão apagadas, e a chave pública deixa de funcionar na hora. Para guardar o histórico, desative o widget em vez de excluir.",
+    "deleted": "Widget {{name}} excluído.",
+    "detail": {
+      "loading": "Carregando o widget…",
+      "loadFailed": "Não foi possível carregar o widget.",
+      "notFound": "Widget não encontrado",
+      "subtitle": "Produto {{product}} · responde sempre no nível Usuário final.",
+      "created": "Widget {{name}} criado. Copie o trecho abaixo para o seu site."
+    },
+    "form": {
+      "label": "Configuração do widget",
+      "identity": "Identificação",
+      "product": "Produto",
+      "chooseProduct": "Escolha um produto",
+      "inactiveProduct": "{{name}} (inativo)",
+      "productHint": "O produto não muda depois de criado: para outro produto, crie outro widget.",
+      "productFixed": "Produto: {{product}} (não muda depois de criado).",
+      "name": "Nome",
+      "nameHint": "Só aparece no painel, por exemplo \"Site público\" ou \"Sistema logado\".",
+      "active": "Ativo",
+      "activeHint": "Desativado, o chat mostra \"Chat indisponível\" e as conversas ficam guardadas.",
+      "originsTitle": "Domínios permitidos",
+      "origins": "Origens, uma por linha",
+      "originsHint": "Esquema, domínio e porta, sem caminho (ex.: https://app.cliente.com.br). Use https://*.cliente.com.br para qualquer subdomínio. A origem desta instância ({{origin}}) é sempre permitida, para a prévia.",
+      "appearance": "Aparência",
+      "mode": "Modo",
+      "modeHint": "Balão: um botão no canto abre o chat sobre a página. Embutido: o chat ocupa o lugar do elemento na página.",
+      "position": "Posição do balão",
+      "positionInline": "A posição só vale no modo balão.",
+      "theme": "Tema",
+      "primaryColor": "Cor principal",
+      "pickColor": "Escolher a cor principal",
+      "primaryColorHint": "No formato #RRGGBB.",
+      "lowContrast": "A cor principal tem contraste abaixo de 3:1 com o fundo no tema {{themes}}: botões e destaques podem ficar difíceis de ver.",
+      "titleField": "Título",
+      "titleHint": "Cabeçalho do chat; vazio usa o nome do produto.",
+      "greeting": "Saudação",
+      "greetingHint": "Primeira mensagem mostrada ao visitante; vazia, o chat abre sem saudação.",
+      "placeholder": "Texto do campo de pergunta",
+      "features": "Recursos e limites",
+      "feedback": "Avaliação das respostas (👍/👎)",
+      "ticket": "Oferecer \"Abrir chamado\"",
+      "ticketHint": "Usa o webhook de chamados do produto.",
+      "ticketUnavailable": "O produto ainda não tem o webhook de chamados configurado: o botão só aparece depois de configurá-lo em Produtos.",
+      "messagesPerIpPerHour": "Perguntas por visitante (IP) por hora",
+      "messagesPerIpPerHourHint": "De 1 a 1000.",
+      "messagesPerDay": "Perguntas do widget por dia",
+      "messagesPerDayHint": "Total de todos os visitantes em 24 horas, de 1 a 100000.",
+      "create": "Criar widget",
+      "save": "Salvar alterações",
+      "saved": "Alterações salvas.",
+      "unchanged": "Nada mudou.",
+      "previewAfterCreate": "Depois de criar, a tela mostra a chave pública, o trecho para copiar no seu site e a prévia ao vivo.",
+      "validation": {
+        "productRequired": "Escolha o produto do widget.",
+        "nameRequired": "Informe o nome do widget.",
+        "tooLong": "Use no máximo {{max}} caracteres.",
+        "originsRequired": "Informe ao menos uma origem.",
+        "tooManyOrigins": "Use no máximo {{max}} origens.",
+        "origin": "{{origin}}: {{reason}}.",
+        "color": "Use uma cor no formato #RRGGBB.",
+        "integer": "Use um número inteiro de {{min}} a {{max}}."
+      }
+    },
+    "originProblems": {
+      "malformed": "não é uma origem válida (esquema://domínio[:porta])",
+      "scheme_not_allowed": "use http ou https",
+      "path_not_allowed": "tire o caminho, a consulta e a barra final",
+      "wildcard_not_allowed": "o curinga * só vale no primeiro rótulo, como https://*.cliente.com.br",
+      "too_long": "passa de 255 caracteres",
+      "duplicate": "repetida"
+    },
+    "install": {
+      "title": "Instalar no site",
+      "description": {
+        "bubble": "Cole antes do fim do <body> das páginas onde o chat deve aparecer, num dos domínios permitidos.",
+        "inline": "Cole onde o chat deve ficar, num dos domínios permitidos; a altura do elemento é a do chat."
+      },
+      "publicKey": "Chave pública (não é segredo):",
+      "copy": "Copiar o trecho",
+      "inactive": "O widget está desativado: o trecho só funciona depois de ativá-lo."
+    },
+    "preview": {
+      "title": "Prévia ao vivo",
+      "description": "O widget servido por esta instância, no modo embutido, com a aparência do formulário ainda não salva.",
+      "realWarning": "A prévia conversa de verdade: as perguntas ficam gravadas como conversas do widget, gastam o modelo do nível Usuário final e contam nos limites e em Uso e custos.",
+      "areaLabel": "Prévia do widget"
+    },
+    "secret": {
+      "title": "Identidade assinada (opcional)",
+      "description": "Com o segredo de assinatura, o servidor do seu sistema identifica o visitante logado (nome, e-mail e id) e a conversa e o chamado chegam com esses dados. O segredo fica só no seu servidor, na variável {{variable}}; nunca no navegador. A identidade não muda o nível: o widget responde sempre como Usuário final.",
+      "none": "Nenhum segredo gerado: todos os visitantes são anônimos.",
+      "createdAt": "Segredo gerado em {{date}}.",
+      "generate": "Gerar segredo",
+      "replace": "Substituir segredo",
+      "replaceTitle": "Substituir o segredo de assinatura?",
+      "replaceDescription": "Identidades assinadas com o segredo atual passam a ser recusadas na hora. Atualize o seu servidor com o novo segredo.",
+      "remove": "Remover segredo",
+      "removeTitle": "Remover o segredo de assinatura?",
+      "removeDescription": "Identidades enviadas passam a ser recusadas; os visitantes anônimos continuam conversando.",
+      "removed": "Segredo removido: os visitantes passam a ser anônimos.",
+      "issued": "Copie o segredo agora: ele não será mostrado de novo.",
+      "label": "Segredo de assinatura",
+      "copy": "Copiar o segredo"
+    },
+    "identity": {
+      "element": {
+        "title": "Elemento com a identidade",
+        "copy": "Copiar o elemento"
+      },
+      "python": {
+        "title": "Assinar no servidor (Python)",
+        "copy": "Copiar o código Python"
+      },
+      "node": {
+        "title": "Assinar no servidor (Node)",
+        "copy": "Copiar o código Node"
+      }
     }
   },
   "chat": {
@@ -1963,7 +2169,7 @@
   },
   "conversations": {
     "title": "Conversas",
-    "description": "Uso do chat por todos os membros e pela API do workspace: totais do período, conversas e avaliações.",
+    "description": "Uso do chat por todos os membros, pela API, pelo MCP e pelos widgets do workspace: totais do período, conversas e avaliações.",
     "stats": {
       "label": "Totais do período",
       "period": "De {{start}} a {{end}}",
@@ -1993,6 +2199,8 @@
         "mcp": "MCP",
         "widget": "Widget"
       },
+      "widget": "Widget",
+      "allWidgets": "Todos os widgets",
       "from": "De",
       "to": "Até",
       "negative": "Só com 👎",
@@ -2030,7 +2238,7 @@
       "who": "{{user}} ({{email}}) em {{product}}, nível {{level}}",
       "whoApi": "{{owner}} em {{product}}, nível {{level}}",
       "startedAt": "Iniciada em {{when}}",
-      "readOnly": "Somente leitura. As avaliações são dos membros.",
+      "readOnly": "Somente leitura. As avaliações são de quem conversou.",
       "threadLabel": "Mensagens da conversa",
       "empty": "Esta conversa ainda não tem mensagens.",
       "question": "Pergunta de {{name}}",
@@ -2039,8 +2247,19 @@
       "latency": "{{latency}} ms",
       "feedbackLabel": "Avaliações da resposta",
       "ratedUp": "👍 {{name}}",
-      "ratedDown": "👎 {{name}}"
-    }
+      "ratedDown": "👎 {{name}}",
+      "whoWidget": "{{owner}} · {{visitor}} em {{product}}, nível {{level}}"
+    },
+    "mcpOwner": "MCP · {{key}}",
+    "mcpOwnerUnnamed": "MCP",
+    "widgetOwner": "Widget · {{widget}}",
+    "widgetOwnerUnnamed": "Widget",
+    "visitor": "Visitante",
+    "anonymousVisitor": "Visitante anônimo",
+    "visitorNameEmail": "Visitante: {{name}} ({{email}})",
+    "visitorKnown": "Visitante: {{who}}",
+    "visitorExternal": "Visitante identificado ({{id}})",
+    "unknownWidget": "Widget {{id}}"
   },
   "usage": {
     "title": "Uso e custos",
@@ -2082,6 +2301,7 @@
     "channels": {
       "panel": "Painel",
       "api": "API",
+      "mcp": "MCP",
       "widget": "Widget"
     },
     "export": "Exportar CSV",
@@ -2542,6 +2762,9 @@
     "card_too_large": "O card passa de 1 MiB.",
     "source_kind_mismatch": "O token é de outro tipo de fonte.",
     "level_not_allowed": "O nível pedido está acima do nível máximo permitido.",
-    "product_inactive": "Este produto está inativo e não aceita novas conversas nem mensagens."
+    "product_inactive": "Este produto está inativo e não aceita novas conversas nem mensagens.",
+    "widget_name_taken": "Já existe um widget com esse nome no workspace.",
+    "widget_product_invalid": "Escolha um produto deste workspace.",
+    "widget_origin_invalid": "Algum domínio permitido é inválido. Confira os apontados no campo."
   }
 }

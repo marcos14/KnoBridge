@@ -10,11 +10,13 @@ import {
 
 const PRODUCT = "00000000-0000-4000-8000-0000000000f1";
 const USER = "00000000-0000-4000-8000-000000000101";
+const WIDGET = "00000000-0000-4000-8000-0000000000b1";
 
 describe("conversationFilters", () => {
   it("test_parse_conversation_search_reads_every_filter", () => {
     const params = new URLSearchParams(
-      `product=${PRODUCT}&level=support&user=${USER}&channel=api&from=2026-10-01&to=2026-10-31` +
+      `product=${PRODUCT}&level=support&user=${USER}&channel=widget&widget=${WIDGET}` +
+        "&from=2026-10-01&to=2026-10-31" +
         "&negative=1&offset=50",
     );
 
@@ -23,7 +25,8 @@ describe("conversationFilters", () => {
         product: PRODUCT,
         level: "support",
         user: USER,
-        channel: "api",
+        channel: "widget",
+        widget: WIDGET,
         from: "2026-10-01",
         to: "2026-10-31",
         negative: true,
@@ -34,7 +37,7 @@ describe("conversationFilters", () => {
 
   it("test_parse_conversation_search_drops_values_the_api_refuses", () => {
     const params = new URLSearchParams(
-      "product=x&level=admin&user=ana&channel=slack&from=ontem&to=2026-02-30&negative=sim",
+      "product=x&level=admin&user=ana&channel=slack&widget=site&from=ontem&to=2026-02-30&negative=sim",
     );
 
     expect(parseConversationSearch(params)).toEqual({
@@ -79,6 +82,7 @@ describe("conversationFilters", () => {
           level: "product_dev",
           user: USER,
           channel: "panel",
+          widget: WIDGET,
           from: "2026-10-01",
           to: "2026-10-31",
           negative: true,
@@ -93,6 +97,7 @@ describe("conversationFilters", () => {
       level: "product_dev",
       userId: USER,
       channel: "panel",
+      widgetId: WIDGET,
       createdFrom: new Date(2026, 9, 1).toISOString(),
       createdTo: new Date(2026, 10, 1).toISOString(),
       negativeFeedback: true,

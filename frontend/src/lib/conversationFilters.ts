@@ -1,7 +1,7 @@
 /**
  * Filters of the conversations screen, kept in the URL query string so a filtered view can be
  * shared: `?product=<id>&level=end_user|support|product_dev&user=<id>&channel=panel|api
- * &from=YYYY-MM-DD&to=YYYY-MM-DD&negative=1&offset=<n>`.
+ * |mcp|widget&widget=<id>&from=YYYY-MM-DD&to=YYYY-MM-DD&negative=1&offset=<n>`.
  */
 
 import type { ResponseLevel } from "@/lib/api/levels";
@@ -20,8 +20,10 @@ export interface ConversationFilters {
   /** The level the conversation was held in (fixed for the whole conversation). */
   level?: ResponseLevel;
   user?: string;
-  /** Where the conversation happened: the panel or the public API (owned by a key). */
+  /** Where the conversation happened: the panel, the public API, MCP (both owned by a key) or a widget. */
   channel?: ConversationChannel;
+  /** The widget a visitor talked to. */
+  widget?: string;
   /** First day of the creation period, inclusive (`YYYY-MM-DD`, local calendar). */
   from?: string;
   /** Last day of the creation period, inclusive. */
@@ -31,7 +33,12 @@ export interface ConversationFilters {
 }
 
 /** The channels a conversation can come from, in the order the filter lists them. */
-export const CONVERSATION_CHANNELS: readonly ConversationChannel[] = ["panel", "api"];
+export const CONVERSATION_CHANNELS: readonly ConversationChannel[] = [
+  "panel",
+  "api",
+  "mcp",
+  "widget",
+];
 
 /** The channel named by `value`, or `undefined` when it names none. */
 export function parseChannel(value: string | null): ConversationChannel | undefined {
@@ -50,12 +57,14 @@ export interface ConversationSearch {
 export function parseConversationSearch(params: URLSearchParams): ConversationSearch {
   const product = params.get("product");
   const user = params.get("user");
+  const widget = params.get("widget");
   return {
     filters: {
       product: isUuid(product) ? product : undefined,
       level: parseLevel(params.get("level")),
       user: isUuid(user) ? user : undefined,
       channel: parseChannel(params.get("channel")),
+      widget: isUuid(widget) ? widget : undefined,
       from: validDay(params.get("from")),
       to: validDay(params.get("to")),
       negative: params.get("negative") === "1" ? true : undefined,
@@ -72,6 +81,7 @@ export function conversationSearchParams({ filters, offset }: ConversationSearch
     ["level", filters.level],
     ["user", filters.user],
     ["channel", filters.channel],
+    ["widget", filters.widget],
     ["from", filters.from],
     ["to", filters.to],
     ["negative", filters.negative === true ? "1" : undefined],
@@ -103,6 +113,7 @@ export function toConversationsQuery(
     level: filters.level,
     userId: filters.user,
     channel: filters.channel,
+    widgetId: filters.widget,
     ...toCreationPeriod(filters),
     negativeFeedback: filters.negative,
     limit,
