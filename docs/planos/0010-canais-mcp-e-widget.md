@@ -53,10 +53,10 @@ fases:
         commit: dac08f5
       - id: F3.2
         titulo: Conversa do widget (SSE, histórico do visitante, identidade assinada, feedback e chamado)
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-14
-        concluida_em: null
+        concluida_em: 2026-10-13
         commit: null
   - id: F4
     titulo: Widget e painel
@@ -178,6 +178,13 @@ decisoes:
     decisao: "F2.2: migração 0021 (mcp nos CHECKs de canal, chave dona em api e mcp, ticket_requests.user_id opcional; downgrade recusa dados mcp); o canal fica num campo do ApiKeyReader (padrão api; o MCP usa channel=mcp) e get_key_conversation filtra por ele, então REST, OpenAI e MCP só leem as próprias conversas; ask gerencia as próprias sessões (a fase 1 é commitada antes do stream); open_ticket inicia a entrega depois do commit, como o painel; o payload do chamado ganhou channel e requester.verified/external_id também no painel"
     motivo: "spec mcp.md e chamados.md"
     alternativas: "tabela de conversas por canal; canal como parâmetro solto"
+    adr: null
+  - id: D12
+    data: 2026-10-13
+    por: agente
+    decisao: "F3.2: GET da conversa do widget devolve os campos da conversa no mesmo nível de messages e has_more (spec ajustada); pedido de chamado do visitante montado em widget/tickets.py reaproveitando constantes e funções de tickets/requests.py (requester.verified só com e-mail da identidade assinada, external_id = sub); teto do WidgetReader pelo canal público (pedido acima dá 403 reason public_channel); produto inativo vira 404 widget_unavailable; done do SSE sem modelo, tokens e custo para o visitante (custo segue gravado); limites de mensagem contados depois de validar corpo e conversa; respostas com Cache-Control no-store"
+    motivo: "contrato widget.md"
+    alternativas: "mudar chat.py para o canal widget"
     adr: null
 pendencias_usuario: []
 ---
@@ -479,6 +486,7 @@ Nenhuma.
 - 2026-10-14 — F2.2 iniciada (agente em worktree).
 - 2026-10-14 — F3.2 iniciada (agente em worktree).
 - 2026-10-13 — F2.2 concluída: ask e open_ticket no MCP, canal mcp em Uso e custos e na visão administrativa, migração 0021; gates do agente: backend 3005 passed com 99,87%, frontend 1579; orquestrador: ruff, pyright e AGENTS na integração
+- 2026-10-13 — F3.2 concluída: conversa do widget (SSE, token kbv_, identidade assinada, sempre end_user, feedback e chamado, limites, 413 com CORS, canal widget no uso e na visão administrativa), integrada sobre a F2.2; backend 3098 passed + 1 teste ajustado ao canal mcp (34 passed na reexecução), cobertura 99%; frontend 1579
 
 ## 8. Encerramento
 

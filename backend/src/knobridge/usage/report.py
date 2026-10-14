@@ -48,12 +48,14 @@ from knobridge.ingestion.models import Collection, Run, Source
 from knobridge.levels.level import ResponseLevel, level_rank
 from knobridge.products.models import Product
 from knobridge.usage.period import Period
+from knobridge.widget.models import Widget
 
 ZERO = Decimal(0)
 CHANNEL_LABELS = {
     ConversationChannel.PANEL: "Painel",
     ConversationChannel.API: "API",
     ConversationChannel.MCP: "MCP",
+    ConversationChannel.WIDGET: "Widget",
 }
 # The channels where a key asks (``group_by=api_key``).
 KEY_CHANNELS = (ConversationChannel.API, ConversationChannel.MCP)
@@ -70,6 +72,7 @@ class UsageGroup(StrEnum):
     LEVEL = "level"
     CHANNEL = "channel"
     API_KEY = "api_key"
+    WIDGET = "widget"
     MODEL = "model"
     DAY = "day"
 
@@ -80,6 +83,7 @@ _CHAT_GROUPS = {
     UsageGroup.LEVEL,
     UsageGroup.CHANNEL,
     UsageGroup.API_KEY,
+    UsageGroup.WIDGET,
     UsageGroup.MODEL,
     UsageGroup.DAY,
 }
@@ -322,6 +326,18 @@ def _chat_part(
             )
             .where(Message.channel.in_(KEY_CHANNELS))
             .group_by(ApiKey.id, ApiKey.name)
+        )
+    elif group is UsageGroup.WIDGET:
+        key, label = cast(Widget.id, String), Widget.name
+        base = (
+            base.join(Conversation, conversation_join)
+            .join(
+                Widget,
+                (Widget.workspace_id == Conversation.workspace_id)
+                & (Widget.id == Conversation.widget_id),
+            )
+            .where(Message.channel == ConversationChannel.WIDGET)
+            .group_by(Widget.id, Widget.name)
         )
     elif group is UsageGroup.CHANNEL:
         key = label = cast(Message.channel, String)

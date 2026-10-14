@@ -49,6 +49,13 @@ _ERRORS: dict[int | str, dict[str, object]] = {
 }
 
 
+class AdminVisitorOut(BaseModel):
+    name: str | None
+    email: str | None
+    # The ``sub`` of the identity in the host system.
+    external_id: str
+
+
 class AdminConversationOut(BaseModel):
     id: uuid.UUID
     # Generated from the first question; null until then.
@@ -71,6 +78,11 @@ class AdminConversationOut(BaseModel):
     last_message_at: datetime | None
     created_at: datetime
     updated_at: datetime
+    # The widget that owns it (``widget`` channel) and its current name; null otherwise.
+    widget_id: uuid.UUID | None
+    widget_name: str | None
+    # The widget visitor's signed identity; null when anonymous or outside the widget.
+    visitor: AdminVisitorOut | None
 
 
 class AdminConversationPageOut(BaseModel):
@@ -81,9 +93,10 @@ class AdminConversationPageOut(BaseModel):
 
 
 class AdminFeedbackOut(BaseModel):
-    user_id: uuid.UUID
-    user_name: str
-    user_email: str
+    # Null for the widget visitor's feedback.
+    user_id: uuid.UUID | None
+    user_name: str | None
+    user_email: str | None
     rating: FeedbackRating
     comment: str
     updated_at: datetime
@@ -147,6 +160,13 @@ def _conversation_fields(item: AdminConversation) -> dict[str, object]:
         "last_message_at": item.last_message_at,
         "created_at": item.created_at,
         "updated_at": item.updated_at,
+        "widget_id": item.widget_id,
+        "widget_name": item.widget_name,
+        "visitor": None
+        if item.visitor is None
+        else AdminVisitorOut(
+            name=item.visitor.name, email=item.visitor.email, external_id=item.visitor.external_id
+        ),
     }
 
 
@@ -193,16 +213,17 @@ async def list_workspace_conversations(
     user_id: uuid.UUID | None = None,
     channel: ConversationChannel | None = None,
     api_key_id: uuid.UUID | None = None,
+    widget_id: uuid.UUID | None = None,
     created_from: datetime | None = None,
     created_to: datetime | None = None,
     negative_feedback: bool = False,
     limit: Annotated[int, Query(ge=1, le=MAX_LIMIT)] = DEFAULT_LIMIT,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> AdminConversationPageOut:
-    """The conversations of every member and API key, most recently active first.
+    """The conversations of every member, API key and widget, most recently active first.
 
     Filters: product, level, user, channel (``panel``, ``api``, ``mcp`` or ``widget``), API key
-    (its ``api`` and ``mcp`` conversations), creation period
+    (its ``api`` and ``mcp`` conversations), widget, creation period
     ``[created_from, created_to)`` and ``negative_feedback`` (only conversations with at least
     one thumbs down).
     """
@@ -226,6 +247,7 @@ async def list_workspace_conversations(
             user_id=user_id,
             channel=channel,
             api_key_id=api_key_id,
+            widget_id=widget_id,
             created_from=created_from,
             created_to=created_to,
             negative_feedback=negative_feedback,

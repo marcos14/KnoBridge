@@ -51,6 +51,12 @@ def _client() -> TestClient:
         ("/v1/chat/completions", MIB),
         ("/v1/models", None),
         ("/v1/workspaces/abc/conversations/def/messages", None),
+        ("/v1/widget/kbp_x/conversations", 8 * KIB),
+        ("/v1/widget/kbp_x/conversations/abc/messages", 64 * KIB),
+        ("/v1/widget/kbp_x/conversations/abc/messages/def/feedback", 8 * KIB),
+        ("/v1/widget/kbp_x/conversations/abc/ticket-requests", 16 * KIB),
+        ("/v1/widget/kbp_x/conversations/abc", None),
+        ("/v1/widget/kbp_x/config", None),
     ],
 )
 def test_body_limit_per_route(path: str, limit: int | None) -> None:

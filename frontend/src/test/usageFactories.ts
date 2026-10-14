@@ -109,6 +109,8 @@ export function makeUsageRows(group: UsageGroup): UsageRow[] {
       return [chatRow("panel", "panel", 0.05, 100), chatRow("api", "api", 0.0084, 20, 3)];
     case "api_key":
       return [chatRow("6f1c0000-0000-4000-8000-000000000001", "Integração CRM", 0.0084, 20)];
+    case "widget":
+      return [chatRow("7a2d0000-0000-4000-8000-000000000001", "Site público", 0.0021, 9)];
     case "source":
       return [
         embeddingRow("src-1", "erp-core", 0.02, 1_000_000),

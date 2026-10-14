@@ -12,6 +12,7 @@ workspace. Anyone who cannot read gets 404, so other people's conversations stay
 
 from __future__ import annotations
 
+import hmac
 import uuid
 from dataclasses import dataclass
 
@@ -61,8 +62,18 @@ class ApiKeyReader:
     channel: ConversationChannel = ConversationChannel.API
 
 
-# Who may ask in a conversation: the person who owns it, or the API key that owns it.
-type Owner = Reader | ApiKeyReader
+@dataclass(frozen=True)
+class WidgetReader:
+    """The visitor of a widget, known only by the hash of the conversation's ``kbv_`` token
+    (``docs/specs/widget.md``). The widget is a public channel: its ceiling is ``end_user``
+    whatever the identity (``levels/policy.py``, ``reason: public_channel``)."""
+
+    widget_id: uuid.UUID
+    visitor_token_hash: str
+
+
+# Who may ask in a conversation: the person, the API key or the widget visitor that owns it.
+type Owner = Reader | ApiKeyReader | WidgetReader
 
 
 @dataclass(frozen=True)
@@ -102,6 +113,12 @@ async def max_level_of(
     """The current maximum level of who asks in the product, and whose limit it is."""
     if isinstance(owner, ApiKeyReader):
         limit = ceiling(owner.max_level, CeilingReason.API_KEY, public_channel=owner.public_channel)
+        return limit.level, limit.reason
+    if isinstance(owner, WidgetReader):
+        # No principal limit of its own: the public channel sets the ceiling.
+        limit = ceiling(
+            ResponseLevel.PRODUCT_DEV, CeilingReason.PUBLIC_CHANNEL, public_channel=True
+        )
         return limit.level, limit.reason
     level = await member_max_level(
         db,
@@ -183,6 +200,30 @@ async def get_key_conversation(
     return conversation
 
 
+async def get_widget_conversation(
+    db: AsyncSession,
+    workspace_id: uuid.UUID,
+    conversation_id: uuid.UUID,
+    reader: WidgetReader,
+    *,
+    lock: bool = False,
+) -> Conversation:
+    """The visitor's conversation: of this widget and with this token (compared in constant
+    time); missing, of another widget or workspace and another token are the same 404."""
+    query = select(Conversation).where(
+        Conversation.workspace_id == workspace_id,
+        Conversation.id == conversation_id,
+        Conversation.widget_id == reader.widget_id,
+    )
+    if lock:
+        query = query.with_for_update()
+    conversation = (await db.scalars(query)).one_or_none()
+    stored = "" if conversation is None else conversation.visitor_token_hash or ""
+    if conversation is None or not hmac.compare_digest(stored, reader.visitor_token_hash):
+        raise NotFoundError("Conversation not found.")
+    return conversation
+
+
 async def get_owned_conversation(
     db: AsyncSession,
     workspace_id: uuid.UUID,
@@ -194,6 +235,8 @@ async def get_owned_conversation(
     """The conversation ``owner`` asks in: 404 when not visible, 403 for an admin who reads it."""
     if isinstance(owner, ApiKeyReader):
         return await get_key_conversation(db, workspace_id, conversation_id, owner, lock=lock)
+    if isinstance(owner, WidgetReader):
+        return await get_widget_conversation(db, workspace_id, conversation_id, owner, lock=lock)
     conversation = await get_readable_conversation(
         db, workspace_id, conversation_id, owner, lock=lock
     )

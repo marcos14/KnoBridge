@@ -288,6 +288,13 @@ def test_usage_by_channel_and_api_key(api: ApiEnv, seeded: Seeded) -> None:
             **_chat(0, 0, 0.0, 0, 0),
             "cost_usd": 0.0,
         },
+        {
+            "key": "widget",
+            "label": "Widget",
+            **_EMPTY_EMBEDDING,
+            **_chat(0, 0, 0.0, 0, 0),
+            "cost_usd": 0.0,
+        },
     ]
     assert _rows(api, seeded.world, "api_key") == [
         {
@@ -370,7 +377,7 @@ def test_usage_empty_workspace_has_zero_totals_and_seeded_rows(api: ApiEnv) -> N
         **_chat(0, 0, 0.0, 0, 0),
         "cost_usd": 0.0,
     }
-    assert [row["key"] for row in body["rows"]] == ["api", "mcp", "panel"]  # type: ignore[union-attr]
+    assert [row["key"] for row in body["rows"]] == ["api", "mcp", "panel", "widget"]  # type: ignore[union-attr]
     assert [row["key"] for row in days] == ["2026-09-01", "2026-09-02", "2026-09-03"]
     assert _rows(api, world, "source") == []
 

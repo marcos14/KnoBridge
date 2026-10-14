@@ -313,3 +313,20 @@ def test_settings_rejects_non_positive_widget_limits(
 
     with pytest.raises(ValidationError):
         Settings()
+
+
+def test_settings_reads_widget_identity_clock_skew(monkeypatch: pytest.MonkeyPatch) -> None:
+    assert Settings().widget_identity_clock_skew == 60
+    monkeypatch.setenv("KNOBRIDGE_WIDGET_IDENTITY_CLOCK_SKEW", "0")
+
+    assert Settings().widget_identity_clock_skew == 0
+
+
+@pytest.mark.parametrize("value", ["-1", "601"])
+def test_settings_rejects_widget_identity_clock_skew_out_of_range(
+    monkeypatch: pytest.MonkeyPatch, value: str
+) -> None:
+    monkeypatch.setenv("KNOBRIDGE_WIDGET_IDENTITY_CLOCK_SKEW", value)
+
+    with pytest.raises(ValidationError):
+        Settings()

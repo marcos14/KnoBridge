@@ -115,6 +115,9 @@ def test_admin_conversations_filters(api: ApiEnv) -> None:
         "last_message_at": oldest["last_message_at"],
         "created_at": "2026-10-08T12:00:00Z",
         "updated_at": "2026-10-08T12:00:00Z",
+        "widget_id": None,
+        "widget_name": None,
+        "visitor": None,
     }
     assert oldest["last_message_at"] is not None
     assert (middle["user_email"], middle["thumbs_up"], middle["thumbs_down"]) == (

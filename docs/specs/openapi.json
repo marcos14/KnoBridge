@@ -168,6 +168,39 @@
               }
             ],
             "title": "User Name"
+          },
+          "visitor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AdminVisitorOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "widget_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Widget Id"
+          },
+          "widget_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Widget Name"
           }
         },
         "required": [
@@ -188,6 +221,9 @@
           "last_message_at",
           "created_at",
           "updated_at",
+          "widget_id",
+          "widget_name",
+          "visitor",
           "messages"
         ],
         "title": "AdminConversationDetailOut",
@@ -316,6 +352,39 @@
               }
             ],
             "title": "User Name"
+          },
+          "visitor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AdminVisitorOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "widget_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Widget Id"
+          },
+          "widget_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Widget Name"
           }
         },
         "required": [
@@ -335,7 +404,10 @@
           "thumbs_down",
           "last_message_at",
           "created_at",
-          "updated_at"
+          "updated_at",
+          "widget_id",
+          "widget_name",
+          "visitor"
         ],
         "title": "AdminConversationOut",
         "type": "object"
@@ -386,17 +458,38 @@
             "type": "string"
           },
           "user_email": {
-            "title": "User Email",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Email"
           },
           "user_id": {
-            "format": "uuid",
-            "title": "User Id",
-            "type": "string"
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
           },
           "user_name": {
-            "title": "User Name",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Name"
           }
         },
         "required": [
@@ -631,6 +724,43 @@
           "offset"
         ],
         "title": "AdminUserPage",
+        "type": "object"
+      },
+      "AdminVisitorOut": {
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "external_id": {
+            "title": "External Id",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          }
+        },
+        "required": [
+          "name",
+          "email",
+          "external_id"
+        ],
+        "title": "AdminVisitorOut",
         "type": "object"
       },
       "AdminWorkspaceOut": {
@@ -11390,6 +11520,7 @@
           "level",
           "channel",
           "api_key",
+          "widget",
           "model",
           "day"
         ],
@@ -11831,6 +11962,253 @@
         "title": "VerifyEmailRequest",
         "type": "object"
       },
+      "VisitorFeedbackIn": {
+        "properties": {
+          "comment": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "rating": {
+            "$ref": "#/components/schemas/FeedbackRating"
+          }
+        },
+        "required": [
+          "rating"
+        ],
+        "title": "VisitorFeedbackIn",
+        "type": "object"
+      },
+      "VisitorFeedbackOut": {
+        "properties": {
+          "comment": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "rating": {
+            "$ref": "#/components/schemas/FeedbackRating"
+          }
+        },
+        "required": [
+          "rating",
+          "comment"
+        ],
+        "title": "VisitorFeedbackOut",
+        "type": "object"
+      },
+      "VisitorOut": {
+        "description": "The signed identity of the visitor; null in an anonymous conversation.",
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "verified": {
+            "title": "Verified",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "email",
+          "verified"
+        ],
+        "title": "VisitorOut",
+        "type": "object"
+      },
+      "WidgetConversationCreate": {
+        "properties": {
+          "identity": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identity"
+          },
+          "level": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResponseLevel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "WidgetConversationCreate",
+        "type": "object"
+      },
+      "WidgetConversationCreated": {
+        "properties": {
+          "conversation": {
+            "$ref": "#/components/schemas/WidgetConversationOut"
+          },
+          "visitor_token": {
+            "title": "Visitor Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "conversation",
+          "visitor_token"
+        ],
+        "title": "WidgetConversationCreated",
+        "type": "object"
+      },
+      "WidgetConversationDetail": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "has_more": {
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "level": {
+            "$ref": "#/components/schemas/ResponseLevel"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/WidgetMessageOut"
+            },
+            "title": "Messages",
+            "type": "array"
+          },
+          "ticket_enabled": {
+            "title": "Ticket Enabled",
+            "type": "boolean"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "visitor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VisitorOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "level",
+          "title",
+          "visitor",
+          "ticket_enabled",
+          "created_at",
+          "messages",
+          "has_more"
+        ],
+        "title": "WidgetConversationDetail",
+        "type": "object"
+      },
+      "WidgetConversationOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "level": {
+            "$ref": "#/components/schemas/ResponseLevel"
+          },
+          "ticket_enabled": {
+            "title": "Ticket Enabled",
+            "type": "boolean"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "visitor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VisitorOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "level",
+          "title",
+          "visitor",
+          "ticket_enabled",
+          "created_at"
+        ],
+        "title": "WidgetConversationOut",
+        "type": "object"
+      },
       "WidgetCreate": {
         "properties": {
           "active": {
@@ -11931,6 +12309,90 @@
           "allowed_origins"
         ],
         "title": "WidgetCreate",
+        "type": "object"
+      },
+      "WidgetMessageCreate": {
+        "properties": {
+          "content": {
+            "maxLength": 8000,
+            "minLength": 1,
+            "title": "Content",
+            "type": "string"
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "title": "WidgetMessageCreate",
+        "type": "object"
+      },
+      "WidgetMessageOut": {
+        "description": "A message without model, tokens, cost, latency, channel nor error code.",
+        "properties": {
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/CitationOut"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "content": {
+            "title": "Content",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VisitorFeedbackOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "position": {
+            "title": "Position",
+            "type": "integer"
+          },
+          "role": {
+            "$ref": "#/components/schemas/MessageRole"
+          },
+          "status": {
+            "$ref": "#/components/schemas/MessageStatus"
+          },
+          "ticket_request": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WidgetTicketRequestOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "position",
+          "role",
+          "content",
+          "status",
+          "citations",
+          "created_at",
+          "feedback",
+          "ticket_request"
+        ],
+        "title": "WidgetMessageOut",
         "type": "object"
       },
       "WidgetMode": {
@@ -12254,6 +12716,120 @@
         ],
         "title": "WidgetTheme",
         "type": "string"
+      },
+      "WidgetTicketRequestIn": {
+        "properties": {
+          "email": {
+            "anyOf": [
+              {
+                "maxLength": 320,
+                "minLength": 0,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "message_id": {
+            "format": "uuid",
+            "title": "Message Id",
+            "type": "string"
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "summary": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message_id",
+          "summary"
+        ],
+        "title": "WidgetTicketRequestIn",
+        "type": "object"
+      },
+      "WidgetTicketRequestOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "delivered_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delivered At"
+          },
+          "external_ticket_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Ticket Id"
+          },
+          "external_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Url"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "message_id": {
+            "format": "uuid",
+            "title": "Message Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/TicketRequestStatus"
+          }
+        },
+        "required": [
+          "id",
+          "message_id",
+          "status",
+          "external_ticket_id",
+          "external_url",
+          "created_at",
+          "delivered_at"
+        ],
+        "title": "WidgetTicketRequestOut",
+        "type": "object"
       },
       "WidgetUpdate": {
         "additionalProperties": false,
@@ -15031,6 +15607,485 @@
         ]
       }
     },
+    "/v1/widget/{public_key}/conversations": {
+      "post": {
+        "description": "Start the visitor's conversation (on the first question), optionally identified.",
+        "operationId": "create_widget_conversation_v1_widget__public_key__conversations_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "public_key",
+            "required": true,
+            "schema": {
+              "title": "Public Key",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WidgetConversationCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WidgetConversationCreated"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Signed identity refused (`widget_identity_invalid`, `reason`)."
+          },
+          "403": {
+            "description": "`Origin` not allowed (`widget_origin_not_allowed`) or a level above `end_user` (`level_not_allowed`, `reason: public_channel`)."
+          },
+          "404": {
+            "description": "Unknown public key (`not_found`, no CORS) or widget, product or workspace unavailable (`widget_unavailable`)."
+          },
+          "409": {
+            "description": "The `end_user` level has no model (`level_not_configured`)."
+          },
+          "413": {
+            "description": "Body above 8 KiB (`payload_too_large`)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "description": "Request limit (`rate_limited`, `details.limit`, `Retry-After`)."
+          }
+        },
+        "summary": "Create Widget Conversation",
+        "tags": [
+          "widget-public"
+        ]
+      }
+    },
+    "/v1/widget/{public_key}/conversations/{conversation_id}": {
+      "get": {
+        "description": "The visitor's conversation with its most recent messages, oldest first.",
+        "operationId": "get_widget_conversation_v1_widget__public_key__conversations__conversation_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "public_key",
+            "required": true,
+            "schema": {
+              "title": "Public Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "before",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Before"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WidgetConversationDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Missing or malformed visitor token (`invalid_visitor_token`)."
+          },
+          "403": {
+            "description": "`Origin` absent or not allowed (`widget_origin_not_allowed`), no CORS."
+          },
+          "404": {
+            "description": "Unknown public key (`not_found`, no CORS), widget unavailable (`widget_unavailable`) or conversation not found for this token (`not_found`)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "description": "Request limit (`rate_limited`, `details.limit`, `Retry-After`)."
+          }
+        },
+        "summary": "Get Widget Conversation",
+        "tags": [
+          "widget-public"
+        ]
+      }
+    },
+    "/v1/widget/{public_key}/conversations/{conversation_id}/messages": {
+      "post": {
+        "description": "Ask the product at ``end_user``. The question and the answer's starting point are\ncommitted before the answer starts; errors before it answer with the JSON error.",
+        "operationId": "send_widget_message_v1_widget__public_key__conversations__conversation_id__messages_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "public_key",
+            "required": true,
+            "schema": {
+              "title": "Public Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WidgetMessageCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Server-Sent Events: `citations`, `delta` (repeated), then `done` (without model, tokens nor cost) or `error` (see `docs/specs/chat-sse.md`)."
+          },
+          "401": {
+            "description": "Missing or malformed visitor token (`invalid_visitor_token`)."
+          },
+          "403": {
+            "description": "`Origin` absent or not allowed (`widget_origin_not_allowed`), no CORS."
+          },
+          "404": {
+            "description": "Unknown public key (`not_found`, no CORS), widget unavailable (`widget_unavailable`) or conversation not found for this token (`not_found`)."
+          },
+          "409": {
+            "description": "The `end_user` level has no model (`level_not_configured`)."
+          },
+          "413": {
+            "description": "Body above 64 KiB (`payload_too_large`)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "description": "Request limit (`rate_limited`, `details.limit`, `Retry-After`)."
+          }
+        },
+        "summary": "Send Widget Message",
+        "tags": [
+          "widget-public"
+        ]
+      }
+    },
+    "/v1/widget/{public_key}/conversations/{conversation_id}/messages/{message_id}/feedback": {
+      "post": {
+        "description": "The visitor's 👍/👎 on an answer (replaces the previous one).",
+        "operationId": "rate_widget_answer_v1_widget__public_key__conversations__conversation_id__messages__message_id__feedback_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "public_key",
+            "required": true,
+            "schema": {
+              "title": "Public Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "message_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Message Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VisitorFeedbackIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VisitorFeedbackOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Missing or malformed visitor token (`invalid_visitor_token`)."
+          },
+          "403": {
+            "description": "`Origin` absent or not allowed (`widget_origin_not_allowed`), no CORS."
+          },
+          "404": {
+            "description": "Widget, conversation or message not found (`not_found`)."
+          },
+          "409": {
+            "description": "The widget takes no feedback (`feedback_disabled`)."
+          },
+          "413": {
+            "description": "Body above 8 KiB (`payload_too_large`)."
+          },
+          "422": {
+            "description": "Not an assistant answer (`feedback_target_invalid`) or bad body."
+          },
+          "429": {
+            "description": "Request limit (`rate_limited`, `details.limit`, `Retry-After`)."
+          }
+        },
+        "summary": "Rate Widget Answer",
+        "tags": [
+          "widget-public"
+        ]
+      }
+    },
+    "/v1/widget/{public_key}/conversations/{conversation_id}/ticket-requests": {
+      "post": {
+        "description": "Ask for a ticket about an answer; delivered by the product's webhook after the commit.",
+        "operationId": "create_widget_ticket_request_v1_widget__public_key__conversations__conversation_id__ticket_requests_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "public_key",
+            "required": true,
+            "schema": {
+              "title": "Public Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WidgetTicketRequestIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WidgetTicketRequestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Missing or malformed visitor token (`invalid_visitor_token`)."
+          },
+          "403": {
+            "description": "`Origin` absent or not allowed (`widget_origin_not_allowed`), no CORS."
+          },
+          "404": {
+            "description": "Unknown public key (`not_found`, no CORS), widget unavailable (`widget_unavailable`) or conversation not found for this token (`not_found`)."
+          },
+          "409": {
+            "description": "The widget opens no ticket (`ticket_webhook_not_configured`) or the answer already has one (`ticket_request_exists`)."
+          },
+          "413": {
+            "description": "Body above 16 KiB (`payload_too_large`)."
+          },
+          "422": {
+            "description": "Not a completed or no-source answer, no e-mail, or bad body."
+          },
+          "429": {
+            "description": "Request limit (`rate_limited`, `details.limit`, `Retry-After`)."
+          }
+        },
+        "summary": "Create Widget Ticket Request",
+        "tags": [
+          "widget-public"
+        ]
+      }
+    },
+    "/v1/widget/{public_key}/conversations/{conversation_id}/ticket-requests/{ticket_request_id}": {
+      "get": {
+        "description": "Status, number and link of a ticket request of the visitor's conversation.",
+        "operationId": "get_widget_ticket_request_v1_widget__public_key__conversations__conversation_id__ticket_requests__ticket_request_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "public_key",
+            "required": true,
+            "schema": {
+              "title": "Public Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "conversation_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Conversation Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "ticket_request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Ticket Request Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WidgetTicketRequestOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "Missing or malformed visitor token (`invalid_visitor_token`)."
+          },
+          "403": {
+            "description": "`Origin` absent or not allowed (`widget_origin_not_allowed`), no CORS."
+          },
+          "404": {
+            "description": "Widget, conversation or ticket request not found (`not_found`)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "description": "Request limit (`rate_limited`, `details.limit`, `Retry-After`)."
+          }
+        },
+        "summary": "Get Widget Ticket Request",
+        "tags": [
+          "widget-public"
+        ]
+      }
+    },
     "/v1/workspaces/{workspace_id}": {
       "patch": {
         "description": "Rename the workspace (the slug does not change).",
@@ -15089,7 +16144,7 @@
     },
     "/v1/workspaces/{workspace_id}/admin/conversations": {
       "get": {
-        "description": "The conversations of every member and API key, most recently active first.\n\nFilters: product, level, user, channel (``panel``, ``api``, ``mcp`` or ``widget``), API key\n(its ``api`` and ``mcp`` conversations), creation period\n``[created_from, created_to)`` and ``negative_feedback`` (only conversations with at least\none thumbs down).",
+        "description": "The conversations of every member, API key and widget, most recently active first.\n\nFilters: product, level, user, channel (``panel``, ``api``, ``mcp`` or ``widget``), API key\n(its ``api`` and ``mcp`` conversations), widget, creation period\n``[created_from, created_to)`` and ``negative_feedback`` (only conversations with at least\none thumbs down).",
         "operationId": "list_workspace_conversations_v1_workspaces__workspace_id__admin_conversations_get",
         "parameters": [
           {
@@ -15183,6 +16238,23 @@
                 }
               ],
               "title": "Api Key Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "widget_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Widget Id"
             }
           },
           {

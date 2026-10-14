@@ -14,8 +14,13 @@ from collections.abc import MutableMapping
 from typing import Any
 
 from fastapi import Request
+from starlette.datastructures import Headers
 from starlette.middleware.cors import CORSMiddleware
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
+
+from knobridge.core.errors import KnoBridgeError
+from knobridge.widget.origins import instance_origin
+from knobridge.widget.public import accepted_origin, resolve_public_widget
 
 WIDGET_PATH_PREFIX = "/v1/widget/"
 # Key of the request state holding the accepted origin.
@@ -29,6 +34,30 @@ PREFLIGHT_HEADERS = {
 
 def is_widget_path(scope: Scope) -> bool:
     return scope["type"] == "http" and str(scope["path"]).startswith(WIDGET_PATH_PREFIX)
+
+
+def cors_headers(origin: str) -> dict[str, str]:
+    """The CORS headers of an answer to an accepted ``origin`` (never credentials)."""
+    return {
+        "Access-Control-Allow-Origin": origin,
+        "Vary": "Origin",
+        "Access-Control-Expose-Headers": "Retry-After",
+    }
+
+
+async def rejected_body_origin(scope: Scope) -> str | None:
+    """The accepted origin of a widget request refused before the route (413 of the body
+    limit), found with the first two checks of every public request; ``None`` answers it
+    without CORS (unknown key or origin not allowed)."""
+    state = scope["app"].state
+    public_key = str(scope["path"])[len(WIDGET_PATH_PREFIX) :].split("/", 1)[0]
+    try:
+        found = await resolve_public_widget(state.session_factory, public_key)
+        header = Headers(scope=scope).get("origin")
+        accepted_origin(found, header, instance=instance_origin(state.settings.public_base_url))
+    except KnoBridgeError:
+        return None
+    return str(header)
 
 
 def allow_origin(request: Request, origin: str) -> None:

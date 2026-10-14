@@ -233,7 +233,7 @@ Resposta 201:
 
 ### `GET /conversations/{conversation_id}`
 
-Para o widget reabrir o histórico ao recarregar a página. Parâmetros: `limit` (1 a 100, padrão 50) e `before` (opcional, uma `position`: só mensagens anteriores a ela). Resposta 200: o objeto `conversation` acima (sem token) mais
+Para o widget reabrir o histórico ao recarregar a página. Parâmetros: `limit` (1 a 100, padrão 50) e `before` (opcional, uma `position`: só mensagens anteriores a ela). Resposta 200 (`WidgetConversationDetail`): os campos do objeto `conversation` acima (sem token), no mesmo nível de `messages` e `has_more`:
 
 ```json
 {

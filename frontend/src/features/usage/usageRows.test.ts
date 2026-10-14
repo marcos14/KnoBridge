@@ -36,6 +36,7 @@ describe("usageColumns", () => {
     expect(usageColumns("level")).toEqual(chat);
     expect(usageColumns("channel")).toEqual(chat);
     expect(usageColumns("api_key")).toEqual(chat);
+    expect(usageColumns("widget")).toEqual(chat);
     // Filtered by product or level, models and days have only the chat.
     expect(usageColumns("model", true)).toEqual(chat);
     expect(usageColumns("day", true)).toEqual(chat);

@@ -123,6 +123,8 @@ class Settings(BaseSettings):
     widget_requests_per_minute: int = Field(default=120, ge=1)
     widget_conversations_per_hour: int = Field(default=20, ge=1)
     widget_tickets_per_hour: int = Field(default=5, ge=1)
+    # Clock tolerance, in seconds, of the signed visitor identity (``iat`` and ``exp``).
+    widget_identity_clock_skew: int = Field(default=60, ge=0, le=600)
 
     @field_validator("webhook_allowed_hosts", "mcp_allowed_hosts", mode="before")
     @classmethod

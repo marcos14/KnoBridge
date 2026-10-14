@@ -881,6 +881,127 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/widget/{public_key}/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Widget Conversation
+         * @description Start the visitor's conversation (on the first question), optionally identified.
+         */
+        post: operations["create_widget_conversation_v1_widget__public_key__conversations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/widget/{public_key}/conversations/{conversation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Widget Conversation
+         * @description The visitor's conversation with its most recent messages, oldest first.
+         */
+        get: operations["get_widget_conversation_v1_widget__public_key__conversations__conversation_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/widget/{public_key}/conversations/{conversation_id}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send Widget Message
+         * @description Ask the product at ``end_user``. The question and the answer's starting point are
+         *     committed before the answer starts; errors before it answer with the JSON error.
+         */
+        post: operations["send_widget_message_v1_widget__public_key__conversations__conversation_id__messages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/widget/{public_key}/conversations/{conversation_id}/messages/{message_id}/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rate Widget Answer
+         * @description The visitor's 👍/👎 on an answer (replaces the previous one).
+         */
+        post: operations["rate_widget_answer_v1_widget__public_key__conversations__conversation_id__messages__message_id__feedback_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/widget/{public_key}/conversations/{conversation_id}/ticket-requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Widget Ticket Request
+         * @description Ask for a ticket about an answer; delivered by the product's webhook after the commit.
+         */
+        post: operations["create_widget_ticket_request_v1_widget__public_key__conversations__conversation_id__ticket_requests_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/widget/{public_key}/conversations/{conversation_id}/ticket-requests/{ticket_request_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Widget Ticket Request
+         * @description Status, number and link of a ticket request of the visitor's conversation.
+         */
+        get: operations["get_widget_ticket_request_v1_widget__public_key__conversations__conversation_id__ticket_requests__ticket_request_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/workspaces/{workspace_id}": {
         parameters: {
             query?: never;
@@ -910,10 +1031,10 @@ export interface paths {
         };
         /**
          * List Workspace Conversations
-         * @description The conversations of every member and API key, most recently active first.
+         * @description The conversations of every member, API key and widget, most recently active first.
          *
          *     Filters: product, level, user, channel (``panel``, ``api``, ``mcp`` or ``widget``), API key
-         *     (its ``api`` and ``mcp`` conversations), creation period
+         *     (its ``api`` and ``mcp`` conversations), widget, creation period
          *     ``[created_from, created_to)`` and ``negative_feedback`` (only conversations with at least
          *     one thumbs down).
          */
@@ -2406,6 +2527,11 @@ export interface components {
             user_id: string | null;
             /** User Name */
             user_name: string | null;
+            visitor: components["schemas"]["AdminVisitorOut"] | null;
+            /** Widget Id */
+            widget_id: string | null;
+            /** Widget Name */
+            widget_name: string | null;
         };
         /** AdminConversationOut */
         AdminConversationOut: {
@@ -2453,6 +2579,11 @@ export interface components {
             user_id: string | null;
             /** User Name */
             user_name: string | null;
+            visitor: components["schemas"]["AdminVisitorOut"] | null;
+            /** Widget Id */
+            widget_id: string | null;
+            /** Widget Name */
+            widget_name: string | null;
         };
         /** AdminConversationPageOut */
         AdminConversationPageOut: {
@@ -2476,14 +2607,11 @@ export interface components {
              */
             updated_at: string;
             /** User Email */
-            user_email: string;
-            /**
-             * User Id
-             * Format: uuid
-             */
-            user_id: string;
+            user_email: string | null;
+            /** User Id */
+            user_id: string | null;
             /** User Name */
-            user_name: string;
+            user_name: string | null;
         };
         /** AdminMessageOut */
         AdminMessageOut: {
@@ -2559,6 +2687,15 @@ export interface components {
             offset: number;
             /** Total */
             total: number;
+        };
+        /** AdminVisitorOut */
+        AdminVisitorOut: {
+            /** Email */
+            email: string | null;
+            /** External Id */
+            external_id: string;
+            /** Name */
+            name: string | null;
         };
         /** AdminWorkspaceOut */
         AdminWorkspaceOut: {
@@ -6354,7 +6491,7 @@ export interface components {
          * UsageGroup
          * @enum {string}
          */
-        UsageGroup: "source" | "collection" | "product" | "level" | "channel" | "api_key" | "model" | "day";
+        UsageGroup: "source" | "collection" | "product" | "level" | "channel" | "api_key" | "widget" | "model" | "day";
         /** UsageReportOut */
         UsageReportOut: {
             group_by: components["schemas"]["UsageGroup"];
@@ -6494,6 +6631,84 @@ export interface components {
             /** Token */
             token: string;
         };
+        /** VisitorFeedbackIn */
+        VisitorFeedbackIn: {
+            /** Comment */
+            comment?: string | null;
+            rating: components["schemas"]["FeedbackRating"];
+        };
+        /** VisitorFeedbackOut */
+        VisitorFeedbackOut: {
+            /** Comment */
+            comment: string | null;
+            rating: components["schemas"]["FeedbackRating"];
+        };
+        /**
+         * VisitorOut
+         * @description The signed identity of the visitor; null in an anonymous conversation.
+         */
+        VisitorOut: {
+            /** Email */
+            email: string | null;
+            /** Name */
+            name: string | null;
+            /** Verified */
+            verified: boolean;
+        };
+        /** WidgetConversationCreate */
+        WidgetConversationCreate: {
+            /** Identity */
+            identity?: string | null;
+            level?: components["schemas"]["ResponseLevel"] | null;
+        };
+        /** WidgetConversationCreated */
+        WidgetConversationCreated: {
+            conversation: components["schemas"]["WidgetConversationOut"];
+            /** Visitor Token */
+            visitor_token: string;
+        };
+        /** WidgetConversationDetail */
+        WidgetConversationDetail: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Has More */
+            has_more: boolean;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            level: components["schemas"]["ResponseLevel"];
+            /** Messages */
+            messages: components["schemas"]["WidgetMessageOut"][];
+            /** Ticket Enabled */
+            ticket_enabled: boolean;
+            /** Title */
+            title: string | null;
+            visitor: components["schemas"]["VisitorOut"] | null;
+        };
+        /** WidgetConversationOut */
+        WidgetConversationOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            level: components["schemas"]["ResponseLevel"];
+            /** Ticket Enabled */
+            ticket_enabled: boolean;
+            /** Title */
+            title: string | null;
+            visitor: components["schemas"]["VisitorOut"] | null;
+        };
         /** WidgetCreate */
         WidgetCreate: {
             /**
@@ -6553,6 +6768,37 @@ export interface components {
             ticket_enabled: boolean;
             /** Title */
             title?: string | null;
+        };
+        /** WidgetMessageCreate */
+        WidgetMessageCreate: {
+            /** Content */
+            content: string;
+        };
+        /**
+         * WidgetMessageOut
+         * @description A message without model, tokens, cost, latency, channel nor error code.
+         */
+        WidgetMessageOut: {
+            /** Citations */
+            citations: components["schemas"]["CitationOut"][];
+            /** Content */
+            content: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            feedback: components["schemas"]["VisitorFeedbackOut"] | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Position */
+            position: number;
+            role: components["schemas"]["MessageRole"];
+            status: components["schemas"]["MessageStatus"];
+            ticket_request: components["schemas"]["WidgetTicketRequestOut"] | null;
         };
         /**
          * WidgetMode
@@ -6684,6 +6930,45 @@ export interface components {
          * @enum {string}
          */
         WidgetTheme: "light" | "dark" | "auto";
+        /** WidgetTicketRequestIn */
+        WidgetTicketRequestIn: {
+            /** Email */
+            email?: string | null;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+            /** Name */
+            name?: string | null;
+            /** Summary */
+            summary: string;
+        };
+        /** WidgetTicketRequestOut */
+        WidgetTicketRequestOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Delivered At */
+            delivered_at: string | null;
+            /** External Ticket Id */
+            external_ticket_id: string | null;
+            /** External Url */
+            external_url: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Message Id
+             * Format: uuid
+             */
+            message_id: string;
+            status: components["schemas"]["TicketRequestStatus"];
+        };
         /**
          * WidgetUpdate
          * @description Fields to change; omitted fields stay, ``title: null`` is the product's name again.
@@ -9082,6 +9367,438 @@ export interface operations {
             };
         };
     };
+    create_widget_conversation_v1_widget__public_key__conversations_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                public_key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WidgetConversationCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WidgetConversationCreated"];
+                };
+            };
+            /** @description Signed identity refused (`widget_identity_invalid`, `reason`). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `Origin` not allowed (`widget_origin_not_allowed`) or a level above `end_user` (`level_not_allowed`, `reason: public_channel`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown public key (`not_found`, no CORS) or widget, product or workspace unavailable (`widget_unavailable`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The `end_user` level has no model (`level_not_configured`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Body above 8 KiB (`payload_too_large`). */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Request limit (`rate_limited`, `details.limit`, `Retry-After`). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_widget_conversation_v1_widget__public_key__conversations__conversation_id__get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                before?: number | null;
+            };
+            header?: never;
+            path: {
+                public_key: string;
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WidgetConversationDetail"];
+                };
+            };
+            /** @description Missing or malformed visitor token (`invalid_visitor_token`). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `Origin` absent or not allowed (`widget_origin_not_allowed`), no CORS. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown public key (`not_found`, no CORS), widget unavailable (`widget_unavailable`) or conversation not found for this token (`not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Request limit (`rate_limited`, `details.limit`, `Retry-After`). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    send_widget_message_v1_widget__public_key__conversations__conversation_id__messages_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                public_key: string;
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WidgetMessageCreate"];
+            };
+        };
+        responses: {
+            /** @description Server-Sent Events: `citations`, `delta` (repeated), then `done` (without model, tokens nor cost) or `error` (see `docs/specs/chat-sse.md`). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                };
+            };
+            /** @description Missing or malformed visitor token (`invalid_visitor_token`). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `Origin` absent or not allowed (`widget_origin_not_allowed`), no CORS. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown public key (`not_found`, no CORS), widget unavailable (`widget_unavailable`) or conversation not found for this token (`not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The `end_user` level has no model (`level_not_configured`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Body above 64 KiB (`payload_too_large`). */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Request limit (`rate_limited`, `details.limit`, `Retry-After`). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    rate_widget_answer_v1_widget__public_key__conversations__conversation_id__messages__message_id__feedback_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                public_key: string;
+                conversation_id: string;
+                message_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VisitorFeedbackIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VisitorFeedbackOut"];
+                };
+            };
+            /** @description Missing or malformed visitor token (`invalid_visitor_token`). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `Origin` absent or not allowed (`widget_origin_not_allowed`), no CORS. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Widget, conversation or message not found (`not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The widget takes no feedback (`feedback_disabled`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Body above 8 KiB (`payload_too_large`). */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not an assistant answer (`feedback_target_invalid`) or bad body. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Request limit (`rate_limited`, `details.limit`, `Retry-After`). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    create_widget_ticket_request_v1_widget__public_key__conversations__conversation_id__ticket_requests_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                public_key: string;
+                conversation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WidgetTicketRequestIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WidgetTicketRequestOut"];
+                };
+            };
+            /** @description Missing or malformed visitor token (`invalid_visitor_token`). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `Origin` absent or not allowed (`widget_origin_not_allowed`), no CORS. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown public key (`not_found`, no CORS), widget unavailable (`widget_unavailable`) or conversation not found for this token (`not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The widget opens no ticket (`ticket_webhook_not_configured`) or the answer already has one (`ticket_request_exists`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Body above 16 KiB (`payload_too_large`). */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not a completed or no-source answer, no e-mail, or bad body. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Request limit (`rate_limited`, `details.limit`, `Retry-After`). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_widget_ticket_request_v1_widget__public_key__conversations__conversation_id__ticket_requests__ticket_request_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                public_key: string;
+                conversation_id: string;
+                ticket_request_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WidgetTicketRequestOut"];
+                };
+            };
+            /** @description Missing or malformed visitor token (`invalid_visitor_token`). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description `Origin` absent or not allowed (`widget_origin_not_allowed`), no CORS. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Widget, conversation or ticket request not found (`not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Request limit (`rate_limited`, `details.limit`, `Retry-After`). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     update_workspace_v1_workspaces__workspace_id__patch: {
         parameters: {
             query?: never;
@@ -9144,6 +9861,7 @@ export interface operations {
                 user_id?: string | null;
                 channel?: components["schemas"]["ConversationChannel"] | null;
                 api_key_id?: string | null;
+                widget_id?: string | null;
                 created_from?: string | null;
                 created_to?: string | null;
                 negative_feedback?: boolean;

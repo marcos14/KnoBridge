@@ -46,6 +46,7 @@ export function usageColumns(group: UsageGroup, chatOnly = false): UsageColumn[]
     case "level":
     case "channel":
     case "api_key":
+    case "widget":
       return [...CHAT_COLUMNS, "cost_usd"];
     case "model":
     case "day":

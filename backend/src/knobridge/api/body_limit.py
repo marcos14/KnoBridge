@@ -2,8 +2,9 @@
 payload") and the ingest of tickets (docs/specs/chamados.md, ``POST /v1/ingest/tickets``), plus
 the preview of one ticket in the panel (``.../tickets/preview``) and the public REST API of
 conversations and the OpenAI-compatible ``/v1/chat/completions`` (docs/specs/api-publica.md,
-"Limites"), which answers the 413 in OpenAI's error shape, and the MCP endpoint ``/v1/mcp``
-(docs/specs/mcp.md, "Limites").
+"Limites"), which answers the 413 in OpenAI's error shape, the MCP endpoint ``/v1/mcp``
+(docs/specs/mcp.md, "Limites") and the widget's public routes (docs/specs/widget.md, "Corpos e
+limites"), whose 413 carries CORS when the key and the ``Origin`` pass.
 
 A pure ASGI middleware: for these routes it refuses a
 declared ``Content-Length`` above the route's limit and stops reading the body as soon as it
@@ -22,6 +23,7 @@ from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from knobridge.api.openai_errors import openai_error_body
 from knobridge.core.errors import KnoBridgeError, error_body
+from knobridge.widget.cors import cors_headers, is_widget_path, rejected_body_origin
 
 KIB = 1024
 MIB = 1024 * KIB
@@ -36,6 +38,11 @@ _LIMITS: tuple[tuple[re.Pattern[str], int], ...] = (
     (re.compile(r"^/v1/chat/completions$"), 1 * MIB),
     # MCP (docs/specs/mcp.md, "Limites"), before the SDK's own 4 MiB.
     (re.compile(r"^/v1/mcp/?$"), 64 * KIB),
+    # The widget's public routes (docs/specs/widget.md, "Corpos e limites").
+    (re.compile(r"^/v1/widget/[^/]+/conversations$"), 8 * KIB),
+    (re.compile(r"^/v1/widget/[^/]+/conversations/[^/]+/messages$"), 64 * KIB),
+    (re.compile(r"^/v1/widget/[^/]+/conversations/[^/]+/messages/[^/]+/feedback$"), 8 * KIB),
+    (re.compile(r"^/v1/widget/[^/]+/conversations/[^/]+/ticket-requests$"), 16 * KIB),
     # One ticket or card (at most 1 MiB) and its envelope. The upload of a file streams instead: its
     # route enforces its own limit while reading (``ticket_uploads.py``).
     (re.compile(r"^/v1/workspaces/[^/]+/sources/[^/]+/(?:tickets|cards)/preview$"), 2 * MIB),
@@ -129,6 +136,9 @@ async def _too_large(scope: Scope, send: Send, limit: int) -> None:
         if scope["path"] == OPENAI_PATH
         else error_body(error.code, error.message, error.details)
     )
-    response = JSONResponse(status_code=error.status_code, content=content)
+    # A widget page reads the 413 only with CORS for its (accepted) origin.
+    origin = await rejected_body_origin(scope) if is_widget_path(scope) else None
+    headers = None if origin is None else cors_headers(origin)
+    response = JSONResponse(status_code=error.status_code, content=content, headers=headers)
     # The rest of the body is never read: the response goes out and the connection closes.
     await response(scope, _replay(b"", None), send)

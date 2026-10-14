@@ -4,7 +4,9 @@ key, and their feedback.
 Read-only queries in the caller's workspace-scoped session; every one filters by
 ``workspace_id`` (RLS filters again). Access (owner/admin) is checked by the route. A
 conversation of the API has no user: it shows the key's id and name instead, read from the
-``api_keys`` table by name (this package does not import ``apikeys/``). The number
+``api_keys`` table by name (this package does not import ``apikeys/``); one of the widget
+shows the widget's name (from ``widgets``, likewise) and the visitor's signed identity, and
+the visitor's feedback has no user. The number
 of statements does not depend on how many conversations or messages there are: per-row counts
 come from correlated subqueries inside the page query, and the feedback of a page of messages
 from one extra query. Periods are half-open ``[start, end)`` in UTC; an orphan ``streaming``
@@ -54,6 +56,13 @@ _api_keys = table(
     column("id", Uuid),
     column("name", String),
 )
+# The same for ``widgets`` (this package does not import ``widget/``).
+_widgets = table(
+    "widgets",
+    column("workspace_id", Uuid),
+    column("id", Uuid),
+    column("name", String),
+)
 
 
 def as_utc(moment: datetime) -> datetime:
@@ -84,11 +93,22 @@ class AdminConversationFilter:
     created_from: datetime | None = None
     created_to: datetime | None = None
     negative_feedback: bool = False
+    widget_id: uuid.UUID | None = None
+
+
+@dataclass(frozen=True)
+class AdminVisitor:
+    """The signed identity of a widget visitor."""
+
+    name: str | None
+    email: str | None
+    external_id: str
 
 
 @dataclass(frozen=True)
 class AdminConversation:
-    """The owner is a member (``user_*``) or, in the API channel, a key (``api_key_*``)."""
+    """The owner is a member (``user_*``), in the API channel a key (``api_key_*``) or, in the
+    widget channel, a widget (``widget_*``, with the ``visitor`` when signed)."""
 
     id: uuid.UUID
     title: str | None
@@ -107,6 +127,9 @@ class AdminConversation:
     last_message_at: datetime | None
     created_at: datetime
     updated_at: datetime
+    widget_id: uuid.UUID | None = None
+    widget_name: str | None = None
+    visitor: AdminVisitor | None = None
 
 
 @dataclass(frozen=True)
@@ -119,11 +142,11 @@ class AdminConversationPage:
 
 @dataclass(frozen=True)
 class FeedbackEntry:
-    """One member's feedback on an answer."""
+    """One member's feedback on an answer; the user is ``None`` for the widget visitor's."""
 
-    user_id: uuid.UUID
-    user_name: str
-    user_email: str
+    user_id: uuid.UUID | None
+    user_name: str | None
+    user_email: str | None
     rating: FeedbackRating
     comment: str
     updated_at: datetime
@@ -164,7 +187,7 @@ def _rating_count(rating: FeedbackRating) -> ScalarSelect[int]:
     )
 
 
-# ``Any``: a 17-column row; spelling out the tuple type adds nothing over ``_summary``.
+# ``Any``: a wide row; spelling out the tuple type adds nothing over ``_summary``.
 def _summary_select() -> Select[*tuple[Any, ...]]:
     """One row per conversation with names and counts (no N+1: correlated subqueries)."""
     message_count = (
@@ -199,18 +222,28 @@ def _summary_select() -> Select[*tuple[Any, ...]]:
             last_message_at.label("last_message_at"),
             Conversation.created_at,
             Conversation.updated_at,
+            Conversation.widget_id,
+            _widgets.c.name.label("widget_name"),
+            Conversation.visitor_external_id,
+            Conversation.visitor_name,
+            Conversation.visitor_email,
         )
         .join(
             Product,
             (Product.workspace_id == Conversation.workspace_id)
             & (Product.id == Conversation.product_id),
         )
-        # Exactly one owner per conversation: a member or, in the API channel, a key.
+        # Exactly one owner per conversation: a member, a key (API) or a widget.
         .outerjoin(User, User.id == Conversation.user_id)
         .outerjoin(
             _api_keys,
             (_api_keys.c.workspace_id == Conversation.workspace_id)
             & (_api_keys.c.id == Conversation.api_key_id),
+        )
+        .outerjoin(
+            _widgets,
+            (_widgets.c.workspace_id == Conversation.workspace_id)
+            & (_widgets.c.id == Conversation.widget_id),
         )
     )
 
@@ -234,6 +267,13 @@ def _summary(row: Row[*tuple[Any, ...]]) -> AdminConversation:
         last_message_at=row.last_message_at,
         created_at=row.created_at,
         updated_at=row.updated_at,
+        widget_id=row.widget_id,
+        widget_name=row.widget_name,
+        visitor=None
+        if row.visitor_external_id is None
+        else AdminVisitor(
+            name=row.visitor_name, email=row.visitor_email, external_id=row.visitor_external_id
+        ),
     )
 
 
@@ -251,6 +291,8 @@ def _conditions(
         conditions.append(Conversation.channel == filters.channel)
     if filters.api_key_id is not None:
         conditions.append(Conversation.api_key_id == filters.api_key_id)
+    if filters.widget_id is not None:
+        conditions.append(Conversation.widget_id == filters.widget_id)
     if filters.created_from is not None:
         conditions.append(Conversation.created_at >= as_utc(filters.created_from))
     if filters.created_to is not None:
@@ -352,7 +394,8 @@ async def _feedback(
             Feedback.comment,
             Feedback.updated_at,
         )
-        .join(User, User.id == Feedback.user_id)
+        # The widget visitor's feedback has no user.
+        .outerjoin(User, User.id == Feedback.user_id)
         .where(Feedback.workspace_id == workspace_id, Feedback.message_id.in_(message_ids))
         .order_by(Feedback.updated_at, Feedback.id)
     )

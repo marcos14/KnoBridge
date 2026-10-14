@@ -53,6 +53,7 @@ from knobridge.api import (
     ticket_uploads,
     ticket_webhook,
     usage,
+    widget_conversations,
     widget_public,
     widgets,
 )
@@ -198,6 +199,8 @@ def create_app(
         # Embeddable widget: panel management and public routes (plan 0010 F3.1).
         widgets,
         widget_public,
+        # The visitor's conversation of the widget (plan 0010 F3.2).
+        widget_conversations,
     )
     for module in routers:
         v1.include_router(module.router)

@@ -65,6 +65,26 @@ def widget_request_limit(per_minute: int) -> RateLimit:
     return RateLimit(RateLimitScope.WIDGET_REQUEST, per_minute, timedelta(minutes=1))
 
 
+def widget_conversation_limit(per_hour: int) -> RateLimit:
+    """New conversations of a widget and client (``KNOBRIDGE_WIDGET_CONVERSATIONS_PER_HOUR``)."""
+    return RateLimit(RateLimitScope.WIDGET_CONVERSATION, per_hour, timedelta(hours=1))
+
+
+def widget_message_ip_limit(per_hour: int) -> RateLimit:
+    """Questions of a widget and client (``messages_per_ip_per_hour`` of the widget)."""
+    return RateLimit(RateLimitScope.WIDGET_MESSAGE_IP, per_hour, timedelta(hours=1))
+
+
+def widget_message_day_limit(per_day: int) -> RateLimit:
+    """Questions of a widget from every client (``messages_per_day``; counted with ``ip=None``)."""
+    return RateLimit(RateLimitScope.WIDGET_MESSAGE_DAY, per_day, timedelta(hours=24))
+
+
+def widget_ticket_limit(per_hour: int) -> RateLimit:
+    """Ticket requests of a widget and client (``KNOBRIDGE_WIDGET_TICKETS_PER_HOUR``)."""
+    return RateLimit(RateLimitScope.WIDGET_TICKET, per_hour, timedelta(hours=1))
+
+
 class RateLimitedError(KnoBridgeError):
     code = "rate_limited"
     status_code = HTTPStatus.TOO_MANY_REQUESTS

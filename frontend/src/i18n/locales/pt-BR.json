@@ -2076,11 +2076,13 @@
       "level": "Nível",
       "channel": "Canal",
       "api_key": "Chave de API",
+      "widget": "Widget",
       "model": "Modelo"
     },
     "channels": {
       "panel": "Painel",
-      "api": "API"
+      "api": "API",
+      "widget": "Widget"
     },
     "export": "Exportar CSV",
     "exporting": "Exportando…",
