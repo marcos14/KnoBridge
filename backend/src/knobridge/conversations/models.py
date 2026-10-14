@@ -6,7 +6,7 @@ whose parent lives in another workspace; deletes cascade from the product down t
 feedback. Who may read a conversation (its owner, or an owner/admin of the workspace) is an
 application rule on top of the workspace isolation.
 
-A conversation belongs to exactly one owner: a person (``panel``), an API key (``api``,
+A conversation belongs to exactly one owner: a person (``panel``), an API key (``api`` or ``mcp``,
 ``docs/specs/api-publica.md``) or a widget (``widget``, ``docs/specs/widget.md``; with the hash of
 the visitor's conversation token and, when signed, the visitor's identity). ``api_keys`` and
 ``widgets`` are referenced by table name only: this package imports neither ``apikeys/`` nor
@@ -52,6 +52,7 @@ class ConversationChannel(StrEnum):
 
     PANEL = "panel"
     API = "api"
+    MCP = "mcp"
     WIDGET = "widget"
 
 
@@ -105,7 +106,10 @@ class Conversation(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         Index(None, "workspace_id", "widget_id"),
         # Exactly one owner: a person in the panel, a key in the API, a widget for a visitor.
         CheckConstraint("num_nonnulls(user_id, api_key_id, widget_id) = 1", name="one_owner"),
-        CheckConstraint("(channel = 'api') = (api_key_id IS NOT NULL)", name="api_key_when_api"),
+        # The API and the MCP server both ask through a key.
+        CheckConstraint(
+            "(channel IN ('api', 'mcp')) = (api_key_id IS NOT NULL)", name="api_key_when_api"
+        ),
         CheckConstraint(
             "(channel = 'widget') = (widget_id IS NOT NULL)", name="widget_when_widget"
         ),

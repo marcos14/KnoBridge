@@ -45,7 +45,7 @@ def _search(product: str, **arguments: object) -> tuple[str, dict[str, object]]:
     return "search_knowledge", {"product": product, "query": QUERY, **arguments}
 
 
-def test_list_tools_publishes_the_three_read_only_tools(api: ApiEnv) -> None:
+def test_list_tools_publishes_the_five_tools(api: ApiEnv) -> None:
     world = mcp_world(api)
     key = world_key(api, world)
 
@@ -60,10 +60,16 @@ def test_list_tools_publishes_the_three_read_only_tools(api: ApiEnv) -> None:
 
     names, instructions, required = run_mcp(api, scenario)
 
-    assert names == ["list_products", "search_knowledge", "get_document"]
+    assert names == ["list_products", "search_knowledge", "get_document", "ask", "open_ticket"]
     assert instructions is not None
     assert "search_knowledge" in instructions
-    assert required == [None, ["product", "query"], ["product", "document_id"]]
+    assert required == [
+        None,
+        ["product", "query"],
+        ["product", "document_id"],
+        ["product", "question"],
+        ["message_id", "summary", "requester_email"],
+    ]
 
 
 def test_list_products_shows_the_keys_scope_and_levels(api: ApiEnv) -> None:

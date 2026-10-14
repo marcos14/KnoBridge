@@ -6,7 +6,7 @@ Contrato do servidor MCP do KnoBridge: transporte, autenticação, as cinco ferr
 
 O MCP reaproveita o que já existe: a chave `kbk_` e o escopo dela ([api-publica.md](api-publica.md#chave-de-api)), produtos e níveis ([produtos-e-niveis.md](produtos-e-niveis.md)), a busca híbrida com o filtro de nível ([indexacao.md](indexacao.md), [chat.md](chat.md#recuperação-de-fontes)), a rodada de chat ([chat.md](chat.md#orquestração-em-duas-fases)), as citações ([chat-sse.md](chat-sse.md#citations)) e o pedido de chamado ([chamados.md](chamados.md#abrir-chamado-webhook-de-saída)).
 
-Código previsto: `backend/src/knobridge/mcp/` (servidor, invólucro de autenticação, ferramentas e esquemas; F2.1 e F2.2) e a montagem em `backend/src/knobridge/api/app.py`. Tela: a seção MCP da tela de Chaves de API (`frontend/src/features/apikeys/`, F4.3).
+Código: `backend/src/knobridge/mcp/` (servidor, invólucro de autenticação, ferramentas e esquemas; F2.1; `ask` e `open_ticket` em `mcp/answers.py`, F2.2), a montagem em `backend/src/knobridge/api/mcp_channel.py` e o lifespan em `api/app.py`. Tela: a seção MCP da tela de Chaves de API (`frontend/src/features/apikeys/`, F4.3).
 
 ## Transporte
 

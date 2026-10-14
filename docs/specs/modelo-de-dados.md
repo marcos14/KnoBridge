@@ -2,7 +2,7 @@
 
 > v1.2 · 2026-10-14 · Em uso (planos 0002 a 0005, 0008 e 0009; plano 0010 em implementação)
 >
-> **Mudanças da v1.2** (plano 0010, F1.1; [ADR 0009](../adr/0009-canais-mcp-e-widget.md)), em duas migrações: `0020` (F3.1), tabelas [`widgets`](#widgets) e [`rate_limit_counters`](#rate_limit_counters), canal `widget`, `conversations.widget_id`, o hash do token do visitante e a identidade assinada, um dono por conversa entre pessoa, chave e widget, e `feedback.user_id` opcional (feedback do visitante); `0021` (F2.2, prevista), canal `mcp` em `conversations` e `messages` (conversa da chave) e `ticket_requests.user_id` opcional. A ordem segue a execução do plano (decisão D8).
+> **Mudanças da v1.2** (plano 0010, F1.1; [ADR 0009](../adr/0009-canais-mcp-e-widget.md)), em duas migrações: `0020` (F3.1), tabelas [`widgets`](#widgets) e [`rate_limit_counters`](#rate_limit_counters), canal `widget`, `conversations.widget_id`, o hash do token do visitante e a identidade assinada, um dono por conversa entre pessoa, chave e widget, e `feedback.user_id` opcional (feedback do visitante); `0021` (F2.2), canal `mcp` em `conversations` e `messages` (conversa da chave) e `ticket_requests.user_id` opcional. A ordem segue a execução do plano (decisão D8).
 >
 > **Mudanças da v1.1**: migração `0019` (plano 0009, F2.2): `products` perde `credential_id`, `model` e `temperature` (a resposta usa os do nível da conversa, em [`workspace_levels`](#workspace_levels)); o lote de ingestão passa a gravar `documents.min_level` e `chunks.min_level` (o maior entre fonte, documento e trecho) e a mudança do nível de uma fonte recalcula `chunks.min_level` sem reindexar ([indexacao.md](indexacao.md#nível-mínimo)).
 >
@@ -52,7 +52,7 @@ Prevista no plano 0010 (o nome do arquivo segue a data em que a migração for e
 
 | Revisão | Arquivo | O que faz |
 |---|---|---|
-| `0021` | `2026MMDD_0021_mcp_channel.py` | F2.2: `ck_conversations_channel` e `ck_messages_channel` aceitam `mcp`; `ck_conversations_api_key_when_api` passa a `(channel IN ('api', 'mcp')) = (api_key_id IS NOT NULL)`; `ticket_requests.user_id` deixa de ser `NOT NULL`. O `downgrade` falha se houver conversa ou mensagem `mcp` ou pedido de chamado sem usuário (não apaga dados). |
+| `0021` | `20261014_0021_mcp_channel.py` | F2.2: `ck_conversations_channel` e `ck_messages_channel` aceitam `mcp`; `ck_conversations_api_key_when_api` passa a `(channel IN ('api', 'mcp')) = (api_key_id IS NOT NULL)`; `ticket_requests.user_id` deixa de ser `NOT NULL`. O `downgrade` falha se houver conversa ou mensagem `mcp` ou pedido de chamado sem usuário (não apaga dados). |
 
 Toda migração tem `downgrade` que desfaz o `upgrade`; o teste `test_migrations_match_orm_models` compara as migrações com os modelos ORM.
 

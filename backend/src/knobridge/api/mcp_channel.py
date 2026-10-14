@@ -7,8 +7,8 @@ the OpenAPI: the contract is the spec. The caller runs ``server.session_manager.
 app's lifespan (a mounted sub-app does not run its own).
 
 The tools get the app's services (``mcp.context.McpServices``) built per request like the
-routes' dependencies, honoring ``app.dependency_overrides`` of the embedding provider factory,
-so tests swap it the same way.
+routes' dependencies, honoring ``app.dependency_overrides`` of the embedding and LLM provider
+factories and of the ticket delivery starter, so tests swap them the same way.
 """
 
 from __future__ import annotations
@@ -18,15 +18,21 @@ from mcp.server.mcpserver import MCPServer
 from mcp.server.streamable_http_manager import StreamableHTTPASGIApp
 from starlette.routing import Route
 
-from knobridge.api.deps import get_embedding_provider_factory
+from knobridge.api.deps import get_embedding_provider_factory, get_provider_factory
+from knobridge.api.ticket_requests import get_ticket_webhook_starter
+from knobridge.conversations.chat import ChatService
 from knobridge.core.crypto import SecretBox
 from knobridge.core.settings import Settings
+from knobridge.llm.chat_pricing import ChatPriceTable
 from knobridge.llm.credentials import CREDENTIALS_KEY_INFO, ProviderCredentialService
-from knobridge.llm.factory import EmbeddingProviderFactory
+from knobridge.llm.factory import EmbeddingProviderFactory, ProviderFactory
 from knobridge.mcp.auth import McpEndpoint
 from knobridge.mcp.context import McpServices
 from knobridge.mcp.server import build_server, transport_security
+from knobridge.retrieval.retriever import HybridRetriever
 from knobridge.retrieval.search import SearchService
+from knobridge.tickets.delivery import TicketWebhookStarter
+from knobridge.tickets.requests import TicketRequestService
 
 MCP_PATH = "/v1/mcp"
 
@@ -34,15 +40,38 @@ MCP_PATH = "/v1/mcp"
 def mcp_services(app: FastAPI, settings: Settings) -> McpServices:
     box = SecretBox.derive(settings.secret_key.get_secret_value(), info=CREDENTIALS_KEY_INFO)
     clock = app.state.clock
+    factory = app.state.session_factory
     credentials = ProviderCredentialService(clock, box, allow_fake=settings.env != "production")
-    provide = app.dependency_overrides.get(
+    overrides = app.dependency_overrides
+    embeddings: EmbeddingProviderFactory = overrides.get(
         get_embedding_provider_factory, get_embedding_provider_factory
+    )()
+    providers: ProviderFactory = overrides.get(get_provider_factory, get_provider_factory)()
+    starter: TicketWebhookStarter = (
+        overrides[get_ticket_webhook_starter]()
+        if get_ticket_webhook_starter in overrides
+        else app.state.ticket_webhook_starter
     )
-    embeddings: EmbeddingProviderFactory = provide()
+    search = SearchService(credentials, embeddings)
     return McpServices(
-        factory=app.state.session_factory,
+        factory=factory,
         clock=clock,
-        search=SearchService(credentials, embeddings),
+        search=search,
+        chat=ChatService(
+            clock=clock,
+            retriever=HybridRetriever(search),
+            provider_factory=providers,
+            credentials=credentials,
+            session_factory=factory,
+            prices=ChatPriceTable.from_settings(settings),
+        ),
+        tickets=TicketRequestService(
+            clock=clock,
+            provider_factory=providers,
+            credentials=credentials,
+            public_base_url=settings.public_base_url,
+        ),
+        starter=starter,
     )
 
 

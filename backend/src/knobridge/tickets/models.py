@@ -212,9 +212,10 @@ class TicketRequest(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     # The assistant answer the request is about.
     message_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     product_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
-    # Who asked (the owner of the conversation).
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    # Who asked (the owner of the conversation); null for a request from the MCP or the widget,
+    # whose requester is in the body.
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=True
     )
     status: Mapped[TicketRequestStatus] = mapped_column(
         str_enum(TicketRequestStatus, "status"), nullable=False

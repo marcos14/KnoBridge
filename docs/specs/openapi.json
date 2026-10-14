@@ -2406,6 +2406,7 @@
         "enum": [
           "panel",
           "api",
+          "mcp",
           "widget"
         ],
         "title": "ConversationChannel",
@@ -15088,7 +15089,7 @@
     },
     "/v1/workspaces/{workspace_id}/admin/conversations": {
       "get": {
-        "description": "The conversations of every member and API key, most recently active first.\n\nFilters: product, level, user, channel (``panel`` or ``api``), API key, creation period\n``[created_from, created_to)`` and ``negative_feedback`` (only conversations with at least\none thumbs down).",
+        "description": "The conversations of every member and API key, most recently active first.\n\nFilters: product, level, user, channel (``panel``, ``api``, ``mcp`` or ``widget``), API key\n(its ``api`` and ``mcp`` conversations), creation period\n``[created_from, created_to)`` and ``negative_feedback`` (only conversations with at least\none thumbs down).",
         "operationId": "list_workspace_conversations_v1_workspaces__workspace_id__admin_conversations_get",
         "parameters": [
           {

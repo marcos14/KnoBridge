@@ -50,7 +50,13 @@ from knobridge.products.models import Product
 from knobridge.usage.period import Period
 
 ZERO = Decimal(0)
-CHANNEL_LABELS = {ConversationChannel.PANEL: "Painel", ConversationChannel.API: "API"}
+CHANNEL_LABELS = {
+    ConversationChannel.PANEL: "Painel",
+    ConversationChannel.API: "API",
+    ConversationChannel.MCP: "MCP",
+}
+# The channels where a key asks (``group_by=api_key``).
+KEY_CHANNELS = (ConversationChannel.API, ConversationChannel.MCP)
 _EMBEDDING, _CHAT = "embedding", "chat"
 # Inlined (not bound) so the expression in SELECT and in GROUP BY is the same text.
 _UTC = literal_column("'UTC'", String())
@@ -314,7 +320,7 @@ def _chat_part(
                 (ApiKey.workspace_id == Conversation.workspace_id)
                 & (ApiKey.id == Conversation.api_key_id),
             )
-            .where(Message.channel == ConversationChannel.API)
+            .where(Message.channel.in_(KEY_CHANNELS))
             .group_by(ApiKey.id, ApiKey.name)
         )
     elif group is UsageGroup.CHANNEL:
@@ -339,7 +345,7 @@ def _days(period: Period) -> list[str]:
 
 def _seed(group: UsageGroup, period: Period, *, chat_only: bool) -> dict[str, UsageRow]:
     """Rows that exist even without usage: every day of the period (without the embedding
-    side when the report is filtered by product or level), both channels, the three levels."""
+    side when the report is filtered by product or level), every channel, the three levels."""
     if group is UsageGroup.DAY:
         embedding = None if chat_only else EmbeddingUsage()
         return {

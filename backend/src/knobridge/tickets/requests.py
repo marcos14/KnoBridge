@@ -6,7 +6,9 @@ answer. ``preview`` gathers what would be sent (question, requester, last messag
 summary written by the model of the conversation's level, falling back to the question)
 without writing anything. ``create`` writes the request ``pending`` with the exact body of the
 ``ticket.requested`` event, built once and resent byte for byte; the caller starts the
-delivery after the commit (``tickets/delivery.py``).
+delivery after the commit (``tickets/delivery.py``). ``create_for_key`` is the same request
+from the MCP server (``open_ticket``): the key that owns the conversation asks, with the summary
+and the requester it gives, and no user. The body tells the conversation's ``channel``.
 
 Runs in the caller's workspace-scoped session. The preview calls the model inside the
 request's transaction (one bounded call, like the retriever's embedding); nothing is locked
@@ -27,8 +29,10 @@ from knobridge.audit.actions import AuditAction
 from knobridge.audit.service import AuditService, AuditTarget
 from knobridge.conversations.models import Conversation, Message, MessageRole, MessageStatus
 from knobridge.conversations.service import (
+    ApiKeyReader,
     Reader,
     get_active_product,
+    get_key_conversation,
     get_readable_conversation,
     require_owner,
 )
@@ -59,8 +63,13 @@ class TicketRequestExistsError(ConflictError):
 
 @dataclass(frozen=True)
 class Requester:
+    """Who asks: a panel account (``verified``), or the e-mail and name typed through the MCP
+    (not verified; without a name, the e-mail stands in for it)."""
+
     name: str
     email: str
+    verified: bool = True
+    external_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -184,6 +193,47 @@ class TicketRequestService:
         target = await self._target(
             db, workspace_id, conversation_id, reader, message_id, lock=True
         )
+        return await self._write(db, target, summary=summary, user_id=reader.user_id, ip=ip)
+
+    async def create_for_key(
+        self,
+        db: AsyncSession,
+        *,
+        workspace_id: uuid.UUID,
+        reader: ApiKeyReader,
+        message_id: uuid.UUID,
+        summary: str,
+        requester: Requester,
+    ) -> TicketRequest:
+        """The request of an answer in a conversation of the key, in the reader's channel (the
+        ``open_ticket`` tool of the MCP server): no preview, the summary and the requester given
+        by the caller, no user (``docs/specs/chamados.md``, "Pedidos vindos do MCP e do
+        widget"). A message the key does not see is 404."""
+        conversation_id = await db.scalar(
+            select(Message.conversation_id).where(
+                Message.workspace_id == workspace_id, Message.id == message_id
+            )
+        )
+        if conversation_id is None:
+            raise NotFoundError("Message not found.")
+        conversation = await get_key_conversation(
+            db, workspace_id, conversation_id, reader, lock=True
+        )
+        target = await self._complete(db, conversation, message_id, requester)
+        return await self._write(db, target, summary=summary, user_id=None, ip=None)
+
+    async def _write(
+        self,
+        db: AsyncSession,
+        target: _Target,
+        *,
+        summary: str,
+        user_id: uuid.UUID | None,
+        ip: str | None,
+    ) -> TicketRequest:
+        conversation = target.conversation
+        workspace_id, conversation_id = conversation.workspace_id, conversation.id
+        message_id = target.answer.id
         workspace_name = await db.scalar(select(Workspace.name).where(Workspace.id == workspace_id))
         request_id = uuid.uuid4()
         product = {"id": str(target.product.id), "name": target.product.name}
@@ -198,11 +248,17 @@ class TicketRequestService:
                 "level": target.conversation.level.value,
                 # Repeats ``product``; obsolete since chamados.md v0.2.
                 "assistant": product,
+                "channel": conversation.channel.value,
                 "conversation": {
                     "id": str(conversation_id),
                     "url": conversation_url(self._public_base_url, workspace_id, conversation_id),
                 },
-                "requester": {"name": target.requester.name, "email": target.requester.email},
+                "requester": {
+                    "name": target.requester.name,
+                    "email": target.requester.email,
+                    "verified": target.requester.verified,
+                    "external_id": target.requester.external_id,
+                },
                 "question": target.question,
                 "summary": summary,
                 "messages": [
@@ -221,7 +277,7 @@ class TicketRequestService:
             conversation_id=conversation_id,
             message_id=message_id,
             product_id=target.product.id,
-            user_id=reader.user_id,
+            user_id=user_id,
             status=TicketRequestStatus.PENDING,
             attempts=0,
             body=body.decode("utf-8"),
@@ -233,12 +289,13 @@ class TicketRequestService:
             db,
             action=AuditAction.TICKET_REQUEST_CREATED,
             workspace_id=workspace_id,
-            actor_user_id=reader.user_id,
+            actor_user_id=user_id,
             target=AuditTarget("ticket_request", str(request.id)),
             metadata={
                 "conversation_id": str(conversation_id),
                 "message_id": str(message_id),
                 "product_id": str(target.product.id),
+                "channel": conversation.channel.value,
             },
             ip=ip,
         )
@@ -283,6 +340,22 @@ class TicketRequestService:
             db, workspace_id, conversation_id, reader, lock=lock
         )
         require_owner(conversation, reader)
+        user = (
+            await db.execute(select(User.name, User.email).where(User.id == reader.user_id))
+        ).one()
+        return await self._complete(
+            db, conversation, message_id, Requester(name=user.name, email=user.email)
+        )
+
+    async def _complete(
+        self,
+        db: AsyncSession,
+        conversation: Conversation,
+        message_id: uuid.UUID,
+        requester: Requester,
+    ) -> _Target:
+        """The rest of the checks, once the conversation is known and locked if writing."""
+        workspace_id, conversation_id = conversation.workspace_id, conversation.id
         answer = await self._answer(db, conversation, message_id)
         product = await get_active_product(db, workspace_id, conversation.product_id)
         if not product.ticket_webhook_configured:
@@ -307,15 +380,12 @@ class TicketRequestService:
         )
         if question is None:
             raise ValidationError("The answer has no question to send.")
-        user = (
-            await db.execute(select(User.name, User.email).where(User.id == reader.user_id))
-        ).one()
         return _Target(
             conversation=conversation,
             product=product,
             answer=answer,
             question=question,
-            requester=Requester(name=user.name, email=user.email),
+            requester=requester,
             messages=await self._transcript(db, workspace_id, conversation_id, answer.position),
         )
 

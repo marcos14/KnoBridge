@@ -13,9 +13,15 @@ from typing import Annotated
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 from knobridge.audit.models import JSONValue
+from knobridge.conversations.models import MessageStatus
 from knobridge.levels.level import ResponseLevel
+from knobridge.tickets.models import TicketRequestStatus
+from knobridge.tickets.wire import Email
 
 PRODUCT_MAX_LENGTH = 200
+QUESTION_MAX_LENGTH = 8000
+SUMMARY_MAX_LENGTH = 2000
+REQUESTER_NAME_MAX_LENGTH = 200
 QUERY_MAX_LENGTH = 2000
 DEFAULT_SEARCH_LIMIT = 8
 MAX_SEARCH_LIMIT = 20
@@ -128,3 +134,56 @@ class GetDocumentOut(BaseModel):
     citation: Citation | None
     parts: list[DocumentPartOut]
     next_offset: int | None
+
+
+class AskIn(ToolInput):
+    product: ProductRef = Field(description="Id ou nome exato do produto.")
+    question: Annotated[
+        str,
+        StringConstraints(strip_whitespace=True, min_length=1, max_length=QUESTION_MAX_LENGTH),
+    ] = Field(description="A pergunta, em linguagem natural.")
+    level: ResponseLevel | None = Field(
+        default=None,
+        description="Nível de resposta; padrão: o máximo da chave. Numa conversa continuada, "
+        "se informado, tem de ser o nível dela.",
+    )
+    conversation_id: uuid.UUID | None = Field(
+        default=None, description="Continua uma conversa criada por ask (o conversation_id dela)."
+    )
+
+
+class AskOut(BaseModel):
+    conversation_id: uuid.UUID
+    message_id: uuid.UUID
+    product_id: uuid.UUID
+    product_name: str
+    level: ResponseLevel
+    status: MessageStatus
+    answer: str
+    citations: list[Citation]
+    ticket_enabled: bool
+    model: str | None
+    cost_usd: float | None
+
+
+RequesterName = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True, min_length=1, max_length=REQUESTER_NAME_MAX_LENGTH),
+]
+
+
+class OpenTicketIn(ToolInput):
+    message_id: uuid.UUID = Field(description="O message_id de uma resposta de ask.")
+    summary: Annotated[
+        str,
+        StringConstraints(strip_whitespace=True, min_length=1, max_length=SUMMARY_MAX_LENGTH),
+    ] = Field(description="Resumo do problema para a equipe do produto.")
+    requester_email: Email = Field(description="E-mail de quem pede, para a equipe responder.")
+    requester_name: RequesterName | None = Field(default=None, description="Nome de quem pede.")
+
+
+class OpenTicketOut(BaseModel):
+    ticket_request_id: uuid.UUID
+    status: TicketRequestStatus
+    conversation_id: uuid.UUID
+    message_id: uuid.UUID

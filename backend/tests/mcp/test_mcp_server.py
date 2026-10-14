@@ -13,18 +13,35 @@ from knobridge.core.errors import ForbiddenError
 from knobridge.core.settings import Settings
 from knobridge.mcp.auth import McpEndpoint, normalize_origin
 from knobridge.mcp.context import McpContextMissingError, McpServices, current_identity
-from knobridge.mcp.schemas import SearchKnowledgeIn
+from knobridge.mcp.schemas import AskIn, OpenTicketIn, SearchKnowledgeIn
 from knobridge.mcp.server import allowed_hosts, build_server, transport_security
 
 
-def test_server_publishes_three_read_only_tools_with_our_schemas() -> None:
+def test_server_publishes_five_tools_with_our_schemas() -> None:
     server = build_server()
 
     tools = asyncio.run(server.list_tools())
 
     assert server.name == "knobridge"
-    assert [tool.name for tool in tools] == ["list_products", "search_knowledge", "get_document"]
-    assert all(tool.annotations and tool.annotations.read_only_hint for tool in tools)
+    assert [tool.name for tool in tools] == [
+        "list_products",
+        "search_knowledge",
+        "get_document",
+        "ask",
+        "open_ticket",
+    ]
+    hints = [
+        (tool.annotations.read_only_hint, tool.annotations.open_world_hint)
+        for tool in tools
+        if tool.annotations is not None
+    ]
+    assert hints == [(True, False), (True, False), (True, False), (False, False), (False, True)]
+    assert tools[3].input_schema == AskIn.model_json_schema()
+    assert tools[4].input_schema == OpenTicketIn.model_json_schema()
+    assert tools[3].output_schema is not None
+    assert {"conversation_id", "message_id", "cost_usd", "ticket_enabled"} <= set(
+        tools[3].output_schema["properties"]
+    )
     search = tools[1]
     assert search.input_schema == SearchKnowledgeIn.model_json_schema()
     assert search.output_schema is not None

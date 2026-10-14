@@ -30,12 +30,15 @@ from search_support import Passage, SearchWorld, add_passages, build_search_worl
 from sqlalchemy import update
 
 from fakes.embedding_provider import RecordingEmbeddingFactory
+from fakes.ticket_webhook_starter import FakeTicketWebhookStarter
 from knobridge.api.app import create_app
 from knobridge.api.deps import get_embedding_provider_factory, get_provider_factory
+from knobridge.api.ticket_requests import get_ticket_webhook_starter
 from knobridge.core.db import system_session
 from knobridge.core.logging import configure_logging
 from knobridge.core.settings import Settings
 from knobridge.levels.level import ResponseLevel
+from knobridge.llm.factory import ProviderFactory
 from knobridge.llm.models import ProviderKind
 from knobridge.llm.provider import LLMProvider
 from knobridge.products.models import Product
@@ -59,7 +62,7 @@ LEVEL_PASSAGES = {
 
 
 class LLMForbiddenFactory:
-    """A ``ProviderFactory`` that fails the test: no MCP tool of F2.1 calls the LLM."""
+    """A ``ProviderFactory`` that fails the test: only ``ask`` with sources calls the LLM."""
 
     def __init__(self) -> None:
         self.calls = 0
@@ -150,8 +153,12 @@ def run_mcp[T](
     settings: Settings | None = None,
     embeddings: RecordingEmbeddingFactory | None = None,
     log_stream: TextIO | None = None,
+    llm_factory: ProviderFactory | None = None,
+    starter: FakeTicketWebhookStarter | None = None,
 ) -> T:
-    """Run ``scenario`` against a second app; ``log_stream`` receives its JSON logs."""
+    """Run ``scenario`` against a second app; ``log_stream`` receives its JSON logs. Without
+    ``llm_factory``, asking for an LLM fails the test; ``starter`` replaces the Temporal one
+    of the ticket deliveries."""
     resolved = settings or db_settings(api.database_url)
 
     async def run() -> T:
@@ -162,8 +169,10 @@ def run_mcp[T](
             configure_logging(resolved, stream=log_stream)
         llm = LLMForbiddenFactory()
         recording = embeddings or RecordingEmbeddingFactory()
-        app.dependency_overrides[get_provider_factory] = lambda: llm
+        app.dependency_overrides[get_provider_factory] = lambda: llm_factory or llm
         app.dependency_overrides[get_embedding_provider_factory] = lambda: recording
+        if starter is not None:
+            app.dependency_overrides[get_ticket_webhook_starter] = lambda: starter
         async with app.router.lifespan_context(app):
             harness = Harness(app, httpx.AsyncClient(), llm, recording)
             try:
@@ -184,6 +193,8 @@ def call_tools(
     *calls: tuple[str, dict[str, object]],
     embeddings: RecordingEmbeddingFactory | None = None,
     log_stream: TextIO | None = None,
+    llm_factory: ProviderFactory | None = None,
+    starter: FakeTicketWebhookStarter | None = None,
 ) -> list[CallToolResult]:
     """Each ``(tool, arguments)`` in order, on one MCP client with ``key``."""
 
@@ -191,7 +202,14 @@ def call_tools(
         async with harness.connect(key) as client:
             return [await client.call_tool(name, arguments) for name, arguments in calls]
 
-    return run_mcp(api, scenario, embeddings=embeddings, log_stream=log_stream)
+    return run_mcp(
+        api,
+        scenario,
+        embeddings=embeddings,
+        log_stream=log_stream,
+        llm_factory=llm_factory,
+        starter=starter,
+    )
 
 
 def add_product(

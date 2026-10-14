@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from knobridge.conversations.models import Conversation
+from knobridge.conversations.models import Conversation, ConversationChannel
 from knobridge.core.errors import ConflictError, ForbiddenError, NotFoundError
 from knobridge.levels.level import ResponseLevel
 from knobridge.levels.members import member_max_level
@@ -50,12 +50,15 @@ class ApiKeyReader:
     product left the scope reads as missing (404), like one of another key. ``max_level`` caps
     the level of its questions; on a public channel (where whoever asks is not identified, as
     the future widget) the cap is ``end_user`` whatever the key's (``levels/policy.py``).
+    ``channel`` is where the key asks: ``api`` (REST and OpenAI-compatible) or ``mcp`` (the
+    ``ask`` tool); each channel only reads its own conversations (``docs/specs/mcp.md``).
     """
 
     api_key_id: uuid.UUID
     product_ids: frozenset[uuid.UUID] | None
     max_level: ResponseLevel
     public_channel: bool = False
+    channel: ConversationChannel = ConversationChannel.API
 
 
 # Who may ask in a conversation: the person who owns it, or the API key that owns it.
@@ -162,11 +165,13 @@ async def get_key_conversation(
     *,
     lock: bool = False,
 ) -> Conversation:
-    """The conversation of the key, its product still in the key's scope; 404 otherwise."""
+    """The conversation of the key in the reader's channel, its product still in the key's
+    scope; 404 otherwise (an ``mcp`` conversation is not read by the REST API, and back)."""
     query = select(Conversation).where(
         Conversation.workspace_id == workspace_id,
         Conversation.id == conversation_id,
         Conversation.api_key_id == reader.api_key_id,
+        Conversation.channel == reader.channel,
     )
     if lock:
         query = query.with_for_update()

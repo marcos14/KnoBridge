@@ -2,8 +2,10 @@
 
 Runs in a session scoped to the key's workspace, without ``app.user_id``. A conversation made
 through the API has ``channel = api``, ``api_key_id`` = the key and no user; only that key
-reads it and asks in it. A product that does not exist, is inactive or is outside the key's
-scope reads as missing (404), never as forbidden: the key does not learn what it cannot use.
+reads it and asks in it (the ``ask`` tool of the MCP server writes them with ``channel = mcp``,
+and each channel only reads its own). A product that does not exist, is inactive or is outside
+the key's scope reads as missing (404), never as forbidden: the key does not learn what it
+cannot use.
 The turn itself is the panel's (``conversations.chat.ChatService``) with an ``ApiKeyReader``.
 """
 
@@ -69,10 +71,13 @@ async def create_key_conversation(
     identity: ApiKeyIdentity,
     product_id: uuid.UUID,
     level: ResponseLevel | None = None,
+    *,
+    channel: ConversationChannel = ConversationChannel.API,
 ) -> Conversation:
-    """A conversation of the key with the product at ``level`` (``None``: the key's maximum):
-    404 for a product the key cannot see, 403 ``level_not_allowed`` above the key's maximum,
-    409 ``level_not_configured`` for a level without a model, in this order."""
+    """A conversation of the key with the product at ``level`` (``None``: the key's maximum),
+    in ``channel`` (``api``, or ``mcp`` for the ``ask`` tool): 404 for a product the key cannot
+    see, 403 ``level_not_allowed`` above the key's maximum, 409 ``level_not_configured`` for a
+    level without a model, in this order."""
     await get_scoped_product(db, identity, product_id)
     chosen = level or identity.max_level
     await check_turn(db, identity.workspace_id, product_id, chosen, identity.reader)
@@ -82,7 +87,7 @@ async def create_key_conversation(
         user_id=None,
         api_key_id=identity.api_key_id,
         title=None,
-        channel=ConversationChannel.API,
+        channel=channel,
         level=chosen,
     )
     db.add(conversation)

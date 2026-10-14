@@ -158,7 +158,13 @@ def test_create_writes_pending_request_and_starts_delivery(
         "id": asked.conversation_id,
         "url": f"{base_url}/w/{asked.world.workspace_id}/conversations/{asked.conversation_id}",
     }
-    assert sent["requester"] == {"name": user.name, "email": user.email}
+    assert sent["channel"] == "panel"
+    assert sent["requester"] == {
+        "name": user.name,
+        "email": user.email,
+        "verified": True,
+        "external_id": None,
+    }
     assert sent["question"] == QUESTION
     assert sent["summary"] == "Precisa de nota de exportação."
     assert [item["role"] for item in sent["messages"]] == ["user", "assistant"]
@@ -180,6 +186,7 @@ def test_create_is_audited_without_content(api: ApiEnv, overrides: RequestOverri
             "conversation_id": asked.conversation_id,
             "message_id": asked.answer_id,
             "product_id": asked.world.assistant_id,
+            "channel": "panel",
         }
     ]
     assert request_id

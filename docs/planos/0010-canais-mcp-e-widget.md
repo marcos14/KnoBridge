@@ -35,10 +35,10 @@ fases:
         commit: f0e349b
       - id: F2.2
         titulo: Ferramentas ask e open_ticket no MCP, canal mcp no uso e nas conversas
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-14
-        concluida_em: null
+        concluida_em: 2026-10-13
         commit: null
   - id: F3
     titulo: Backend do widget
@@ -171,6 +171,13 @@ decisoes:
     decisao: "F3.1: migração 0020 (widgets, rate_limit_counters, canal widget e colunas de visitante em conversations, feedback.user_id opcional) e renomeia o CHECK de canal ck_conversations_ck_conversations_channel (prefixo duplo da 0017) para ck_conversations_channel, que a 0021 da F2.2 deve usar; downgrade recusa se houver widget, conversa widget ou feedback sem usuário; CORS das rotas /v1/widget/* fora do CORSMiddleware global, ecoando a origem aceita e sem credenciais, com a origem da instância sempre aceita; limitador grava o contador numa transação própria e conta as recusadas; PATCH com extra=forbid"
     motivo: "contrato da F1.1"
     alternativas: "CORS global com lista dinâmica"
+    adr: null
+  - id: D11
+    data: 2026-10-13
+    por: agente
+    decisao: "F2.2: migração 0021 (mcp nos CHECKs de canal, chave dona em api e mcp, ticket_requests.user_id opcional; downgrade recusa dados mcp); o canal fica num campo do ApiKeyReader (padrão api; o MCP usa channel=mcp) e get_key_conversation filtra por ele, então REST, OpenAI e MCP só leem as próprias conversas; ask gerencia as próprias sessões (a fase 1 é commitada antes do stream); open_ticket inicia a entrega depois do commit, como o painel; o payload do chamado ganhou channel e requester.verified/external_id também no painel"
+    motivo: "spec mcp.md e chamados.md"
+    alternativas: "tabela de conversas por canal; canal como parâmetro solto"
     adr: null
 pendencias_usuario: []
 ---
@@ -471,6 +478,7 @@ Nenhuma.
 - 2026-10-13 — F3.1 concluída: chaves do widget por produto, origens, aparência, limites, configuração pública com CORS próprio e limitador no Postgres, integrada sobre a F2.1; backend 2971 passed com 99%, frontend 1579
 - 2026-10-14 — F2.2 iniciada (agente em worktree).
 - 2026-10-14 — F3.2 iniciada (agente em worktree).
+- 2026-10-13 — F2.2 concluída: ask e open_ticket no MCP, canal mcp em Uso e custos e na visão administrativa, migração 0021; gates do agente: backend 3005 passed com 99,87%, frontend 1579; orquestrador: ruff, pyright e AGENTS na integração
 
 ## 8. Encerramento
 

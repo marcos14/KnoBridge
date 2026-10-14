@@ -57,11 +57,11 @@ class AdminConversationOut(BaseModel):
     product_id: uuid.UUID
     product_name: str
     level: ResponseLevel
-    # The member who owns it; null in the ``api`` channel, owned by a key.
+    # The member who owns it; null in the ``api`` and ``mcp`` channels, owned by a key.
     user_id: uuid.UUID | None
     user_name: str | None
     user_email: str | None
-    # The API key that owns it (``api`` channel); null for a member's conversation.
+    # The API key that owns it (``api`` and ``mcp`` channels); null for a member's conversation.
     api_key_id: uuid.UUID | None
     api_key_name: str | None
     message_count: int
@@ -201,7 +201,8 @@ async def list_workspace_conversations(
 ) -> AdminConversationPageOut:
     """The conversations of every member and API key, most recently active first.
 
-    Filters: product, level, user, channel (``panel`` or ``api``), API key, creation period
+    Filters: product, level, user, channel (``panel``, ``api``, ``mcp`` or ``widget``), API key
+    (its ``api`` and ``mcp`` conversations), creation period
     ``[created_from, created_to)`` and ``negative_feedback`` (only conversations with at least
     one thumbs down).
     """

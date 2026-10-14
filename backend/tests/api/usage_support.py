@@ -164,7 +164,11 @@ def add_conversation(
     level: ResponseLevel = ResponseLevel.PRODUCT_DEV,
     api_key_id: uuid.UUID | None = None,
     created_at: datetime | None = None,
+    channel: ConversationChannel | None = None,
 ) -> uuid.UUID:
+    """A conversation of the first user, or of ``api_key_id`` (``api`` unless ``channel``)."""
+    default = ConversationChannel.API if api_key_id else ConversationChannel.PANEL
+
     async def scenario(factory: SessionFactory) -> uuid.UUID:
         async with system_session(factory) as db:
             conversation = Conversation(
@@ -173,7 +177,7 @@ def add_conversation(
                 product_id=assistant_id or world.assistant_id,
                 user_id=None if api_key_id else world.users[0].id,
                 api_key_id=api_key_id,
-                channel=ConversationChannel.API if api_key_id else ConversationChannel.PANEL,
+                channel=channel or default,
                 level=level,
             )
             if created_at is not None:

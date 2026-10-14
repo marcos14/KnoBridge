@@ -912,7 +912,8 @@ export interface paths {
          * List Workspace Conversations
          * @description The conversations of every member and API key, most recently active first.
          *
-         *     Filters: product, level, user, channel (``panel`` or ``api``), API key, creation period
+         *     Filters: product, level, user, channel (``panel``, ``api``, ``mcp`` or ``widget``), API key
+         *     (its ``api`` and ``mcp`` conversations), creation period
          *     ``[created_from, created_to)`` and ``negative_feedback`` (only conversations with at least
          *     one thumbs down).
          */
@@ -3061,7 +3062,7 @@ export interface components {
          * @description Where the conversation happens (also kept on each message); Slack... come later.
          * @enum {string}
          */
-        ConversationChannel: "panel" | "api" | "widget";
+        ConversationChannel: "panel" | "api" | "mcp" | "widget";
         /** ConversationCreate */
         ConversationCreate: {
             level?: components["schemas"]["ResponseLevel"] | null;

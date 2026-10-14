@@ -1990,6 +1990,7 @@
       "channels": {
         "panel": "Painel",
         "api": "API",
+        "mcp": "MCP",
         "widget": "Widget"
       },
       "from": "De",
