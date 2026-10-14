@@ -15,7 +15,7 @@ export interface MessageContext {
   /** From a [n] marker: expands the citation and moves the focus to it. */
   showCitation(messageKey: string, index: number): void;
   retry(messageKey: string): void;
-  /** Extension point under each answer (feedback and "Abrir chamado" arrive in F4.2). */
+  /** Under each finished answer: feedback and "Abrir chamado" (../element/actions.ts). */
   answerActions(message: ViewMessage): TemplateResult | typeof nothing;
 }
 

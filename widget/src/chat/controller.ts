@@ -1,10 +1,21 @@
 // The visitor's conversation, without any rendering: restore from the browser pointer, create
-// the conversation on the first question, stream the answer and turn failures into messages
-// (docs/specs/widget.md, "Comportamento" and "Histórico no navegador").
+// the conversation on the first question (with the signed identity, when there is one), stream the
+// answer and turn failures into messages (docs/specs/widget.md, "Comportamento" and "Histórico no
+// navegador").
 
 import { ApiError, asApiError, isAbort, type WidgetApi } from "../api/client.ts";
-import type { Citation, MessageStatus, WidgetMessage } from "../api/types.ts";
+import type {
+  Citation,
+  Feedback,
+  MessageStatus,
+  TicketRequest,
+  Visitor,
+  WidgetConversation,
+  WidgetMessage,
+} from "../api/types.ts";
+import { identitySub } from "../lib/identity.ts";
 import type { ConversationStore } from "../lib/storage.ts";
+import { AnswerActions } from "./actions.ts";
 
 export type Failure =
   { kind: "failed" } | { kind: "rate_limited"; minutes: number } | { kind: "unavailable" };
@@ -20,6 +31,8 @@ export interface ViewMessage {
   failure: Failure | null;
   /** The question an assistant message answers, to resend it on "Tentar de novo". */
   question: string | null;
+  feedback: Feedback | null;
+  ticketRequest: TicketRequest | null;
 }
 
 /** What the controller needs from the element: events on the element and a re-render. */
@@ -28,12 +41,13 @@ export interface ChatHost {
   changed(): void;
 }
 
-interface Current {
+/** The conversation the widget talks to: its id and the visitor token that authorizes it. */
+export interface Session {
   id: string;
   token: string;
 }
 
-function failureOf(error: ApiError): Failure {
+export function failureOf(error: ApiError): Failure {
   if (error.code === "rate_limited") {
     return { kind: "rate_limited", minutes: Math.max(1, Math.ceil((error.retryAfter ?? 60) / 60)) };
   }
@@ -44,27 +58,40 @@ function failureOf(error: ApiError): Failure {
 export class ChatController {
   messages: ViewMessage[] = [];
   busy = false;
-  private current: Current | null = null;
+  /** Name and e-mail of the signed identity, as the server verified them. */
+  visitor: Visitor | null = null;
+  /** Whether the conversation offers tickets; null until the server says. */
+  ticketEnabled: boolean | null = null;
+  /** Feedback and tickets on the answers of this conversation. */
+  readonly actions: AnswerActions;
+  private current: Session | null = null;
   private abortController: AbortController | null = null;
   private sequence = 0;
+  private sub: string | null;
   private readonly api: WidgetApi;
   private readonly store: ConversationStore;
   private readonly host: ChatHost;
-  private readonly identitySub: () => string | null;
+  private readonly identity: () => string | null;
   private readonly now: () => Date;
 
   constructor(
     api: WidgetApi,
     store: ConversationStore,
     host: ChatHost,
-    identitySub: () => string | null,
+    identity: () => string | null,
     now: () => Date = () => new Date(),
   ) {
     this.api = api;
     this.store = store;
     this.host = host;
-    this.identitySub = identitySub;
+    this.identity = identity;
     this.now = now;
+    this.sub = identitySub(identity());
+    this.actions = new AnswerActions(api, this, host);
+  }
+
+  get session(): Session | null {
+    return this.current;
   }
 
   private nextKey(): string {
@@ -83,7 +110,15 @@ export class ChatController {
       citations: message.citations,
       failure: failed ? { kind: "failed" } : null,
       question: previous?.role === "user" ? previous.content : null,
+      feedback: message.feedback,
+      ticketRequest: message.ticket_request,
     };
+  }
+
+  private adopt(session: Session, conversation: WidgetConversation): void {
+    this.current = session;
+    this.visitor = conversation.visitor;
+    this.ticketEnabled = conversation.ticket_enabled;
   }
 
   /** Reopens the stored conversation of the same visitor; 401 or 404 forgets the pointer. */
@@ -91,13 +126,15 @@ export class ChatController {
     const entry = this.store.load();
     // Another person (or anonymous versus identified) never sees this conversation.
     if (!entry) return;
-    if (entry.identity_sub !== this.identitySub()) return;
+    if (entry.identity_sub !== this.sub) return;
     // The composer waits for the history, so a question never races the restored conversation.
     this.busy = true;
     this.host.changed();
     try {
       const detail = await this.api.conversation(entry.conversation_id, entry.visitor_token);
-      this.current = { id: entry.conversation_id, token: entry.visitor_token };
+      // The identity changed while the history was on its way: it belongs to someone else.
+      if (entry.identity_sub !== this.sub) return;
+      this.adopt({ id: entry.conversation_id, token: entry.visitor_token }, detail);
       this.messages = detail.messages.map((message, i) =>
         this.fromServer(message, detail.messages[i - 1]),
       );
@@ -112,19 +149,37 @@ export class ChatController {
     }
   }
 
-  private async ensureConversation(signal: AbortSignal): Promise<Current> {
+  /** The identity changed: with another `sub`, this conversation is put away and the next opens. */
+  async identityChanged(): Promise<void> {
+    const sub = identitySub(this.identity());
+    if (sub === this.sub) return;
+    this.sub = sub;
+    this.abort();
+    this.actions.reset();
+    this.current = null;
+    this.visitor = null;
+    this.ticketEnabled = null;
+    this.messages = [];
+    this.host.changed();
+    // The new visitor may have a conversation of their own in this browser.
+    await this.restore();
+  }
+
+  private async ensureConversation(signal: AbortSignal): Promise<Session> {
     if (this.current) return this.current;
-    const created = await this.api.createConversation(signal);
+    const sub = this.sub;
+    const created = await this.api.createConversation(this.identity(), signal);
     // "Nova conversa" during the creation: this conversation must not be remembered.
     signal.throwIfAborted();
-    this.current = { id: created.conversation.id, token: created.visitor_token };
+    const session = { id: created.conversation.id, token: created.visitor_token };
+    this.adopt(session, created.conversation);
     this.store.save({
-      conversation_id: created.conversation.id,
-      visitor_token: created.visitor_token,
-      identity_sub: this.identitySub(),
+      conversation_id: session.id,
+      visitor_token: session.token,
+      identity_sub: sub,
       saved_at: this.now().toISOString(),
     });
-    return this.current;
+    return session;
   }
 
   async send(question: string): Promise<void> {
@@ -139,6 +194,8 @@ export class ChatController {
       citations: [],
       failure: null,
       question: null,
+      feedback: null,
+      ticketRequest: null,
     };
     const answer: ViewMessage = {
       ...user,
@@ -167,6 +224,7 @@ export class ChatController {
           answer.content += event.data.text;
         } else if (event.type === "done") {
           answer.status = event.data.status;
+          this.ticketEnabled = event.data.ticket_requests_enabled;
         } else {
           answer.status = "failed";
           answer.failure = { kind: "failed" };
@@ -221,8 +279,11 @@ export class ChatController {
   /** "Nova conversa": stops a running answer and forgets the pointer in the browser. */
   reset(): void {
     this.abort();
+    this.actions.reset();
     this.store.clear();
     this.current = null;
+    this.visitor = null;
+    this.ticketEnabled = null;
     this.messages = [];
     this.busy = false;
     this.host.changed();

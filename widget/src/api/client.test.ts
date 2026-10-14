@@ -8,10 +8,12 @@ import {
   controlledSse,
   created,
   detail,
+  IDENTITY,
   installFetch,
   json,
   KEY,
   ROOT,
+  ticketRequest,
   TOKEN,
 } from "../test/fake-api.ts";
 import { ApiError, asApiError, isAbort, WidgetApi } from "./client.ts";
@@ -48,10 +50,10 @@ describe("WidgetApi", () => {
     expect(calls[0]?.init.credentials).toBe("omit");
   });
 
-  it("test_client_creates_a_conversation_with_an_empty_body", async () => {
+  it("test_client_creates_an_anonymous_conversation_with_an_empty_body", async () => {
     const { calls } = installFetch({ "POST /conversations": created() });
 
-    const result = await new WidgetApi(API, KEY).createConversation();
+    const result = await new WidgetApi(API, KEY).createConversation(null);
 
     expect(result.visitor_token).toBe(TOKEN);
     expect(calls[0]?.init.body).toBe("{}");
@@ -113,12 +115,52 @@ describe("WidgetApi", () => {
     expect(error).toMatchObject({ code: "network_error", status: null });
   });
 
+  it("test_client_creates_a_conversation_with_the_identity_as_given", async () => {
+    const { calls } = installFetch({ "POST /conversations": created() });
+
+    await new WidgetApi(API, KEY).createConversation(IDENTITY);
+
+    expect(calls[0]?.init.body).toBe(JSON.stringify({ identity: IDENTITY }));
+  });
+
+  it("test_client_rates_an_answer_with_the_visitor_token", async () => {
+    const { calls } = installFetch({
+      "POST /conversations/c1/messages/a1/feedback": json({ rating: "down", comment: "Faltou" }),
+    });
+
+    const saved = await new WidgetApi(API, KEY).rate("c1", TOKEN, "a1", {
+      rating: "down",
+      comment: "Faltou",
+    });
+
+    expect(saved).toEqual({ rating: "down", comment: "Faltou" });
+    expect(calls[0]?.init.body).toBe('{"rating":"down","comment":"Faltou"}');
+    expect(calls[0]?.init.headers).toMatchObject({ Authorization: `Bearer ${TOKEN}` });
+  });
+
+  it("test_client_requests_and_reads_a_ticket", async () => {
+    const { calls } = installFetch({
+      "POST /conversations/c1/ticket-requests": json(ticketRequest(), 202),
+      "GET /conversations/c1/ticket-requests/t1": json(ticketRequest({ status: "delivered" })),
+    });
+    const api = new WidgetApi(API, KEY);
+    const body = { message_id: "a1", summary: "Caixa", email: "ana@exemplo.com.br", name: null };
+
+    const created = await api.requestTicket("c1", TOKEN, body);
+    const read = await api.ticketRequest("c1", TOKEN, "t1");
+
+    expect(created.status).toBe("pending");
+    expect(read.status).toBe("delivered");
+    expect(calls[0]?.init.body).toBe(JSON.stringify(body));
+    expect(calls[1]?.init.headers).toEqual({ Authorization: `Bearer ${TOKEN}` });
+  });
+
   it("test_client_rethrows_an_abort", async () => {
     installFetch({ "POST /conversations": created() });
     const abort = new AbortController();
     abort.abort();
 
-    const promise = new WidgetApi(API, KEY).createConversation(abort.signal);
+    const promise = new WidgetApi(API, KEY).createConversation(null, abort.signal);
 
     await expect(promise).rejects.toMatchObject({ name: "AbortError" });
   });

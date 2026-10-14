@@ -4,6 +4,9 @@
 import { readSse } from "./sse.ts";
 import type {
   ChatEvent,
+  Feedback,
+  TicketRequest,
+  TicketRequestIn,
   WidgetConversationCreated,
   WidgetConversationDetail,
   WidgetPublicConfig,
@@ -102,14 +105,53 @@ export class WidgetApi {
     return (await response.json()) as WidgetPublicConfig;
   }
 
-  async createConversation(signal?: AbortSignal): Promise<WidgetConversationCreated> {
+  /** The signed identity goes as given: the widget never reads its signature nor holds a secret. */
+  async createConversation(
+    identity: string | null,
+    signal?: AbortSignal,
+  ): Promise<WidgetConversationCreated> {
     const response = await this.request("/conversations", {
       method: "POST",
       headers: WidgetApi.headers(),
-      body: JSON.stringify({}),
+      body: JSON.stringify(identity ? { identity } : {}),
       signal: signal ?? null,
     });
     return (await response.json()) as WidgetConversationCreated;
+  }
+
+  private conversationPath(id: string, rest = ""): string {
+    return `/conversations/${encodeURIComponent(id)}${rest}`;
+  }
+
+  async rate(id: string, token: string, messageId: string, feedback: Feedback): Promise<Feedback> {
+    const path = this.conversationPath(id, `/messages/${encodeURIComponent(messageId)}/feedback`);
+    const response = await this.request(path, {
+      method: "POST",
+      headers: WidgetApi.headers(token),
+      body: JSON.stringify(feedback),
+    });
+    return (await response.json()) as Feedback;
+  }
+
+  async requestTicket(id: string, token: string, body: TicketRequestIn): Promise<TicketRequest> {
+    const response = await this.request(this.conversationPath(id, "/ticket-requests"), {
+      method: "POST",
+      headers: WidgetApi.headers(token),
+      body: JSON.stringify(body),
+    });
+    return (await response.json()) as TicketRequest;
+  }
+
+  async ticketRequest(id: string, token: string, ticketRequestId: string): Promise<TicketRequest> {
+    const path = this.conversationPath(
+      id,
+      `/ticket-requests/${encodeURIComponent(ticketRequestId)}`,
+    );
+    const response = await this.request(path, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return (await response.json()) as TicketRequest;
   }
 
   async conversation(id: string, token: string): Promise<WidgetConversationDetail> {

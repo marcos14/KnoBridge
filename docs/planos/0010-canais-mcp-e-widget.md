@@ -71,10 +71,10 @@ fases:
         commit: 66c14da
       - id: F4.2
         titulo: Feedback, chamado e identidade no widget; build servido pelo compose e gate na CI
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-14
-        concluida_em: null
+        concluida_em: 2026-10-13
         commit: null
       - id: F4.3
         titulo: Tela do widget no painel com prévia, MCP nas chaves e canais em Conversas e Uso
@@ -192,6 +192,13 @@ decisoes:
     decisao: "F4.1: pacote widget/ com Lit 3.3.3 e as mesmas versões de ferramentas do frontend; build IIFE único dist/knobridge-chat.js (41,8 KiB, 14,6 KiB gzip) com orçamento de 60 KiB gzip verificado no build; tipos do wire escritos à mão (sem cliente gerado, para não pesar o pacote); atributos open e title mapeados para isOpen e chatTitle; campo readonly durante o streaming para não perder o foco; markdown seguro em árvore, nunca HTML; estilos no Shadow DOM e variáveis por CSSOM (CSP estrita); feedback e chamado ficam num ponto de extensão renderAnswerActions para a F4.2; hook prettier-widget no pre-commit"
     motivo: "spec widget.md; pacote leve e sem dependência do site"
     alternativas: "cliente gerado do OpenAPI; Preact; iframe"
+    adr: null
+  - id: D14
+    data: 2026-10-13
+    por: agente
+    decisao: "F4.2: botão secundário de chamado nas respostas completed (destacado nas no_source; spec ajustada); 👎 salva na hora e abre o comentário opcional; e-mail e nome ocultos quando o visitor verificado pelo servidor os traz; o botão some quando o servidor diz que não há chamado; troca de identidade em execução reabre a conversa do novo sub; imagem do frontend com estágio widget-build (contexto widget por additional_contexts) e bloco nginx /widget/ sem fallback do SPA, com ACAO *, CORP cross-origin, nosniff, max-age 300 e gzip; job widget na CI"
+    motivo: "spec widget.md"
+    alternativas: "menu de ações; verificar a identidade no navegador"
     adr: null
 pendencias_usuario: []
 ---
@@ -497,6 +504,7 @@ Nenhuma.
 - 2026-10-14 — F4.1 iniciada (agente em worktree).
 - 2026-10-13 — F4.1 concluída: pacote widget/ (Lit, um JS IIFE de 14,6 KiB gzip) com balão, modo embutido, SSE, histórico, citações e acessibilidade; 112 testes com 100% de cobertura; orquestrador conferiu lint, format, typecheck, testes e build
 - 2026-10-14 — F4.2 iniciada (agente em worktree).
+- 2026-10-13 — F4.2 concluída: feedback, chamado e identidade no widget (184 testes, 100% de cobertura, 17,8 KiB gzip), arquivo servido pelo frontend em /widget/v1/knobridge-chat.js com os cabeçalhos da spec (conferido por curl), job widget na CI; orquestrador conferiu os gates do widget e o compose
 
 ## 8. Encerramento
 

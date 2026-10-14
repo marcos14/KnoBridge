@@ -1,6 +1,6 @@
 # widget/src/lib/
 
-**Função**: funções puras e pequenas do widget: o subconjunto seguro de Markdown das respostas (`markdown.ts`), a validação dos atributos de aparência e a cor de contraste (`appearance.ts`) e o ponteiro da conversa no navegador (`storage.ts`).
+**Função**: funções puras e pequenas do widget: o subconjunto seguro de Markdown das respostas (`markdown.ts`), a validação dos atributos de aparência e a cor de contraste (`appearance.ts`), o ponteiro da conversa no navegador (`storage.ts`) e o `sub` da identidade assinada (`identity.ts`: lido do payload sem verificar; identidade fora do formato vira um `sub` que nunca casa com ponteiro guardado).
 
 **Entra aqui**: código sem Lit e sem rede, testado isoladamente.
 **Não entra aqui**: templates (`../element/`), chamadas HTTP (`../api/`).

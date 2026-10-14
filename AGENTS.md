@@ -82,7 +82,7 @@ Antes de começar, leia este arquivo, o `AGENTS.md` de cada pasta que for tocar 
 | `backend/` | Python: API REST e compatível com OpenAI (FastAPI), workers e workflows (Temporal), conectores, engine de pipelines, harness de código, recuperação, assistentes, canais, servidor MCP, migrações | Existe |
 | `frontend/` | Painel admin em React + TypeScript (canvas de pipelines, fontes, assistentes, canais, conversas) | Existe |
 | `runner/` | Python: `knobridge-runner`, runner local do harness de código na máquina do usuário (CLI `configure`/`run`/`doctor`, cliente do protocolo `/v1/runner/*`, camada 0, executores Claude Code e Codex somente leitura, verificação de evidências e excertos); projeto uv separado que nunca importa o backend ([ADR 0005](docs/adr/0005-runner-local-do-harness.md); uso em [mapear-codigo-com-runner.md](docs/guias/mapear-codigo-com-runner.md)) | Existe |
-| `widget/` | Web Component `<knobridge-chat>` do chat embutível: pacote pnpm próprio (Lit, Vite em modo biblioteca gerando um único JS IIFE), modos balão e embutido, SSE, histórico no navegador e citações ([docs/specs/widget.md](docs/specs/widget.md)) | Existe |
+| `widget/` | Web Component `<knobridge-chat>` do chat embutível: pacote pnpm próprio (Lit, Vite em modo biblioteca gerando um único JS IIFE), modos balão e embutido, SSE, histórico no navegador, citações, feedback, "Abrir chamado" e identidade assinada repassada sem verificação; publicado pela imagem do frontend em `/widget/v1/knobridge-chat.js` ([docs/specs/widget.md](docs/specs/widget.md)) | Existe |
 | `deploy/` | Infraestrutura que o compose monta (`postgres/` com a inicialização do banco, `sources/` com as fontes locais) e, no futuro, Helm chart e scripts de infra; também as convenções do compose da raiz | Existe |
 | `scripts/` | Automação do repositório (checagens de CI, geração de código e de dados sintéticos, receptor de webhook falso do E2E) | Existe |
 | `.github/` | Workflows de CI | Existe |
@@ -161,7 +161,7 @@ Resumo; detalhes e layout em [frontend/AGENTS.md](frontend/AGENTS.md).
 - Commits pequenos e atômicos, **Conventional Commits** em inglês, no imperativo: `feat(connectors): add git connector with incremental sync by sha`. O corpo explica o porquê quando não for óbvio.
 - Nunca `--no-verify`, nunca `push --force` em `main`, nunca reescrever histórico compartilhado.
 - PR descreve: o que mudou, por quê, como testar (comando), docs e `AGENTS.md` tocados, decisões envolvidas.
-- CI obrigatória para merge: lint, format check, typecheck, testes, cobertura ≥ 95%, build do frontend, checagem de `AGENTS.md` por pasta, varredura de segredos.
+- CI obrigatória para merge: lint, format check, typecheck, testes, cobertura ≥ 95%, build do frontend, widget (testes com cobertura ≥ 95% e build com orçamento de 60 KiB gzip), checagem de `AGENTS.md` por pasta, varredura de segredos.
 - Agentes de IA commitam ao fim de cada subfase de um plano aprovado (seção 3.4); fora disso, só quando a tarefa pede. Nunca em `main` sem instrução explícita do usuário.
 
 ## 9. Segurança e privacidade (LGPD)

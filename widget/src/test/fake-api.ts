@@ -3,7 +3,13 @@
 
 import { vi } from "vitest";
 
-import type { Citation, WidgetMessage, WidgetPublicConfig } from "../api/types.ts";
+import type {
+  Citation,
+  TicketRequest,
+  Visitor,
+  WidgetMessage,
+  WidgetPublicConfig,
+} from "../api/types.ts";
 
 export const KEY = "kbp_3k9x2m4q7w8e1r5t6y0u2i4o";
 export const TOKEN = `kbv_${"A".repeat(43)}`;
@@ -51,18 +57,20 @@ export function message(
     status: "completed",
     citations: [],
     created_at: "2026-10-14T10:00:00Z",
+    feedback: null,
+    ticket_request: null,
     ...overrides,
   };
 }
 
-export function created(id = "c1", token = TOKEN) {
+export function created(id = "c1", token = TOKEN, visitor: Visitor | null = null) {
   return json(
     {
       conversation: {
         id,
         level: "end_user",
         title: null,
-        visitor: null,
+        visitor,
         ticket_enabled: true,
         created_at: "2026-10-14T10:00:00Z",
       },
@@ -72,12 +80,41 @@ export function created(id = "c1", token = TOKEN) {
   );
 }
 
-export function detail(messages: WidgetMessage[], id = "c1") {
+/** The spec's reproducible identity (docs/specs/widget.md): sub cliente-42, Ana Souza. */
+export const IDENTITY =
+  "v1.eyJzdWIiOiJjbGllbnRlLTQyIiwibmFtZSI6IkFuYSBTb3V6YSIsImVtYWlsIjoiYW5hQGV4ZW1wbG8uY29tLmJyIiwiaWF0IjoxNzkxODAwMDAwLCJleHAiOjE3OTE4MDM2MDB9.880cf2b97633c3f6e883162cbdb90e927e79642940f40d8f81f79a9e0b10bec2";
+
+/** An identity with any claims: the widget never checks the signature, so a fake one will do. */
+export function identityOf(claims: Record<string, unknown>): string {
+  const bytes = new TextEncoder().encode(JSON.stringify(claims));
+  const payload = btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+  return `v1.${payload}.${"0".repeat(64)}`;
+}
+
+export const ANA: Visitor = { name: "Ana Souza", email: "ana@exemplo.com.br", verified: true };
+
+export function ticketRequest(overrides: Partial<TicketRequest> = {}): TicketRequest {
+  return {
+    id: "t1",
+    message_id: "a1",
+    status: "pending",
+    external_ticket_id: null,
+    external_url: null,
+    created_at: "2026-10-14T10:00:00Z",
+    delivered_at: null,
+    ...overrides,
+  };
+}
+
+export function detail(messages: WidgetMessage[], id = "c1", visitor: Visitor | null = null) {
   return json({
     id,
     level: "end_user",
     title: null,
-    visitor: null,
+    visitor,
     ticket_enabled: true,
     created_at: "2026-10-14T10:00:00Z",
     messages,
@@ -162,6 +199,12 @@ export interface FakeCall {
   path: string;
   url: string;
   init: RequestInit;
+}
+
+/** The JSON body a call sent (null without a text body). */
+export function sentBody(call: FakeCall | undefined): unknown {
+  const body = call?.init.body;
+  return typeof body === "string" ? JSON.parse(body) : null;
 }
 
 /**

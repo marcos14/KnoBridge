@@ -1,16 +1,18 @@
 // <knobridge-chat>: the embeddable chat of a KnoBridge product (docs/specs/widget.md, "Embutir o
 // elemento"). Bubble or inline mode, configuration from GET /config, history through the
-// browser pointer and answers streamed by SSE. Feedback, tickets and the signed identity are F4.2.
+// browser pointer, answers streamed by SSE, feedback and "Abrir chamado" under each answer, and the
+// signed identity passed through to the server as given.
 
 import { html, LitElement, nothing, svg, type PropertyValues, type TemplateResult } from "lit";
 import { styleMap } from "lit/directives/style-map.js";
 
 import { asApiError, WidgetApi } from "../api/client.ts";
 import type { WidgetPublicConfig } from "../api/types.ts";
-import { ChatController, type ViewMessage } from "../chat/controller.ts";
+import { ChatController } from "../chat/controller.ts";
 import { translator, type Translate } from "../i18n/index.ts";
 import { apiOrigin, contrastColor, isWidgetKey, pick, STORAGES } from "../lib/appearance.ts";
 import { ConversationStore } from "../lib/storage.ts";
+import { renderAnswerActions, type ActionsContext } from "./actions.ts";
 import { renderComposer } from "./composer.ts";
 import { styles } from "./styles.ts";
 import { citationId, renderGreeting, renderMessage, type MessageContext } from "./templates.ts";
@@ -52,6 +54,8 @@ export class KnoBridgeChat extends LitElement {
     greeting: {},
     placeholder: {},
     storage: {},
+    // `v1.<payload>.<signature>` from the host's server, passed through as given.
+    identity: {},
     // The `open` attribute; the property cannot be `open`, the name of the method.
     isOpen: { type: Boolean, attribute: "open", reflect: true },
     config: { state: true },
@@ -70,6 +74,7 @@ export class KnoBridgeChat extends LitElement {
   declare greeting: string | null;
   declare placeholder: string | null;
   declare storage: string | null;
+  declare identity: string | null;
   declare isOpen: boolean;
   declare config: WidgetPublicConfig | null;
   declare configFailed: boolean;
@@ -94,6 +99,7 @@ export class KnoBridgeChat extends LitElement {
     this.greeting = null;
     this.placeholder = null;
     this.storage = null;
+    this.identity = null;
     this.isOpen = false;
     this.config = null;
     this.configFailed = false;
@@ -134,8 +140,8 @@ export class KnoBridgeChat extends LitElement {
         this.requestUpdate();
       },
     };
-    // The signed identity arrives in F4.2; until then every visitor is anonymous (sub null).
-    this.controller = new ChatController(api, store, host, () => null);
+    // Read on each use, so setIdentity() applies to the next conversation.
+    this.controller = new ChatController(api, store, host, () => this.identity ?? null);
     try {
       this.config = await api.config();
     } catch (error) {
@@ -170,6 +176,11 @@ export class KnoBridgeChat extends LitElement {
     else this.open();
   }
 
+  /** Same as changing the attribute; with another `sub`, the next question opens a conversation. */
+  setIdentity(identity: string | null): void {
+    this.identity = identity;
+  }
+
   newConversation(): void {
     this.controller?.reset();
     this.draft = "";
@@ -184,6 +195,9 @@ export class KnoBridgeChat extends LitElement {
   }
 
   protected override updated(changed: PropertyValues<this>): void {
+    if (changed.has("identity") && changed.get("identity") !== undefined) {
+      void this.controller?.identityChanged();
+    }
     if (changed.has("isOpen") && changed.get("isOpen") !== undefined) {
       if (this.isOpen) {
         this.emit("knobridge-open", {});
@@ -264,7 +278,28 @@ export class KnoBridgeChat extends LitElement {
 
   // Rendering.
 
-  private context(t: Translate): MessageContext {
+  private focusById(id: string): void {
+    void this.updateComplete.then(() => {
+      this.shadowRoot?.getElementById(id)?.focus();
+    });
+  }
+
+  private context(
+    t: Translate,
+    controller: ChatController,
+    config: WidgetPublicConfig,
+  ): MessageContext {
+    // Under each finished answer: feedback and "Abrir chamado", as the configuration allows.
+    const actions: ActionsContext = {
+      t,
+      actions: controller.actions,
+      feedbackEnabled: config.feedback_enabled,
+      // The conversation (and each `done`) may say the product lost its webhook since loading.
+      ticketEnabled: config.ticket_enabled && controller.ticketEnabled !== false,
+      focus: (id) => {
+        this.focusById(id);
+      },
+    };
     return {
       t,
       isExpanded: (messageKey, index) => this.expanded.has(`${messageKey}:${String(index)}`),
@@ -273,26 +308,23 @@ export class KnoBridgeChat extends LitElement {
       },
       showCitation: (messageKey, index) => {
         this.toggleCitation(messageKey, index, true);
-        void this.updateComplete.then(() => {
-          this.shadowRoot?.getElementById(citationId(messageKey, index))?.focus();
-        });
+        this.focusById(citationId(messageKey, index));
       },
       retry: (messageKey) => {
-        void this.controller?.retry(messageKey);
+        void controller.retry(messageKey);
       },
-      answerActions: (message) => this.renderAnswerActions(message),
+      answerActions: (message) => renderAnswerActions(message, actions),
     };
   }
 
-  /** Extension point under each finished answer: feedback and "Abrir chamado" (F4.2). */
-  protected renderAnswerActions(_message: ViewMessage): TemplateResult | typeof nothing {
-    return nothing;
-  }
-
-  private renderPanel(t: Translate, controller: ChatController): TemplateResult {
+  private renderPanel(
+    t: Translate,
+    controller: ChatController,
+    config: WidgetPublicConfig,
+  ): TemplateResult {
     const view = this.view;
     const bubble = view.mode === "bubble";
-    const ctx = this.context(t);
+    const ctx = this.context(t, controller, config);
     return html`<section
       part="panel"
       class="panel"
@@ -369,7 +401,7 @@ export class KnoBridgeChat extends LitElement {
             </button>`
           : nothing
       }
-      ${this.renderPanel(t, controller)}
+      ${this.renderPanel(t, controller, this.config)}
     </div>`;
   }
 }

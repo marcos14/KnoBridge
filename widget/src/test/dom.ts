@@ -21,11 +21,11 @@ export function find(el: Element, selector: string): HTMLElement {
 }
 
 export function textarea(el: Element): HTMLTextAreaElement {
-  return required(root(el).querySelector("textarea"), "textarea");
+  return required(root(el).querySelector<HTMLTextAreaElement>("#input"), "#input");
 }
 
 export function form(el: Element): HTMLFormElement {
-  return required(root(el).querySelector("form"), "form");
+  return required(root(el).querySelector<HTMLFormElement>("form[part=composer]"), "composer");
 }
 
 export function sendButton(el: Element): HTMLButtonElement {
@@ -65,6 +65,8 @@ export const EVENT_NAMES = [
   "knobridge-close",
   "knobridge-message-sent",
   "knobridge-answer",
+  "knobridge-feedback",
+  "knobridge-ticket-requested",
   "knobridge-error",
 ] as const;
 

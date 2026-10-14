@@ -28,6 +28,8 @@ function assistant(content: string, overrides: Partial<ViewMessage> = {}): ViewM
     citations: [citation(1)],
     failure: null,
     question: "Como?",
+    feedback: null,
+    ticketRequest: null,
     ...overrides,
   };
 }

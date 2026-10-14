@@ -38,7 +38,8 @@ export const styles = css`
     min-height: 360px;
   }
   button,
-  textarea {
+  textarea,
+  input {
     font: inherit;
     color: inherit;
   }
@@ -231,14 +232,15 @@ export const styles = css`
     color: var(--muted);
     white-space: pre-wrap;
   }
-  form {
+  form[part="composer"] {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
     padding: 12px 16px;
     border-top: 1px solid var(--border);
   }
-  textarea {
+  textarea,
+  input {
     flex: 1 1 100%;
     box-sizing: border-box;
     min-height: 44px;
@@ -264,6 +266,54 @@ export const styles = css`
     background: var(--p);
     color: var(--pc);
     padding: 6px 16px;
+  }
+  .answer-actions {
+    margin-top: 8px;
+  }
+  .action-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .action-row button,
+  .inline-form button {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    padding: 2px 8px;
+  }
+  .rate[aria-pressed="true"] {
+    border-color: var(--p);
+    background: rgb(127 127 127 / 0.15);
+  }
+  .action-row .ticket.primary,
+  .inline-form button[type="submit"] {
+    border-color: var(--p);
+    background: var(--p);
+    color: var(--pc);
+  }
+  .inline-form {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 8px;
+  }
+  .inline-form p {
+    margin: 0 0 4px;
+  }
+  .inline-form textarea,
+  .inline-form input {
+    flex: none;
+    min-height: 0;
+  }
+  .form-buttons {
+    display: flex;
+    gap: 6px;
+    margin-top: 4px;
+  }
+  .field-error {
+    color: #dc2626;
+    font-size: 0.85em;
   }
   @keyframes pulse {
     50% {

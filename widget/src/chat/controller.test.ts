@@ -7,7 +7,12 @@ import {
   API,
   apiError,
   controlledSse,
+  ANA,
   created,
+  detail,
+  IDENTITY,
+  identityOf,
+  message,
   installFetch,
   KEY,
   TOKEN,
@@ -16,16 +21,10 @@ import { ChatController } from "./controller.ts";
 
 const NOW = new Date("2026-10-14T12:00:00Z");
 
-function setup(sub: string | null = null) {
+function setup(identity: () => string | null = () => null) {
   const host = { emit: vi.fn(), changed: vi.fn() };
   const store = new ConversationStore("none", KEY);
-  const controller = new ChatController(
-    new WidgetApi(API, KEY),
-    store,
-    host,
-    () => sub,
-    () => NOW,
-  );
+  const controller = new ChatController(new WidgetApi(API, KEY), store, host, identity, () => NOW);
   return { controller, host, store };
 }
 
@@ -43,7 +42,7 @@ describe("ChatController", () => {
       "POST /conversations": created(),
       "POST /conversations/c1/messages": answer(["Ok."]),
     });
-    const { controller, store } = setup("cliente-42");
+    const { controller, store } = setup(() => IDENTITY);
 
     await controller.send("Oi");
 
@@ -97,6 +96,115 @@ describe("ChatController", () => {
 
     expect(calls).toHaveLength(2);
     expect(controller.messages).toHaveLength(2);
+  });
+
+  it("test_controller_sends_the_identity_as_given_and_keeps_the_verified_visitor", async () => {
+    const { calls } = installFetch({
+      "POST /conversations": created("c1", TOKEN, ANA),
+      "POST /conversations/c1/messages": answer(["Ok."]),
+    });
+    const { controller } = setup(() => IDENTITY);
+
+    await controller.send("Oi");
+
+    expect(calls[0]?.init.body).toBe(JSON.stringify({ identity: IDENTITY }));
+    expect(controller.visitor).toEqual(ANA);
+    expect(controller.ticketEnabled).toBe(true);
+    expect(controller.session).toEqual({ id: "c1", token: TOKEN });
+  });
+
+  it("test_controller_identity_with_the_same_sub_keeps_the_conversation", async () => {
+    installFetch({
+      "POST /conversations": created(),
+      "POST /conversations/c1/messages": answer(["Ok."]),
+    });
+    let identity = identityOf({ sub: "cliente-42", iat: 1 });
+    const { controller } = setup(() => identity);
+    await controller.send("Oi");
+
+    identity = identityOf({ sub: "cliente-42", iat: 2 });
+    await controller.identityChanged();
+
+    expect(controller.messages).toHaveLength(2);
+    expect(controller.session?.id).toBe("c1");
+  });
+
+  it("test_controller_identity_of_another_sub_puts_the_conversation_away", async () => {
+    const { calls } = installFetch({
+      "POST /conversations": [created("c1", TOKEN, ANA), created("c2")],
+      "POST /conversations/c1/messages": answer(["Ok."]),
+      "POST /conversations/c2/messages": answer(["Outra."]),
+    });
+    let identity: string | null = IDENTITY;
+    const { controller, store } = setup(() => identity);
+    await controller.send("Oi");
+
+    identity = null;
+    await controller.identityChanged();
+
+    expect(controller.messages).toEqual([]);
+    expect(controller.session).toBeNull();
+    expect(controller.visitor).toBeNull();
+    // The pointer of cliente-42 stays, but an anonymous visitor never reopens it.
+    expect(store.load()?.identity_sub).toBe("cliente-42");
+    expect(calls).toHaveLength(2);
+
+    await controller.send("De novo");
+
+    expect(calls[2]?.init.body).toBe("{}");
+    expect(store.load()).toMatchObject({ conversation_id: "c2", identity_sub: null });
+  });
+
+  it("test_controller_identity_change_reopens_the_conversation_of_the_new_visitor", async () => {
+    installFetch({
+      "GET /conversations/c1": detail([message({ id: "q1", content: "Antes" })], "c1", ANA),
+    });
+    let identity: string | null = null;
+    const { controller, store } = setup(() => identity);
+    store.save({
+      conversation_id: "c1",
+      visitor_token: TOKEN,
+      identity_sub: "cliente-42",
+      saved_at: NOW.toISOString(),
+    });
+    await controller.restore();
+    expect(controller.messages).toEqual([]);
+
+    identity = IDENTITY;
+    await controller.identityChanged();
+
+    expect(controller.messages.map((m) => m.content)).toEqual(["Antes"]);
+    expect(controller.visitor).toEqual(ANA);
+  });
+
+  it("test_controller_history_arriving_after_an_identity_change_is_dropped", async () => {
+    let release!: (response: Response) => void;
+    installFetch({
+      "GET /conversations/c1": () =>
+        new Promise<Response>((resolve) => {
+          release = resolve;
+        }),
+    });
+    let identity: string | null = null;
+    const { controller, store } = setup(() => identity);
+    store.save({
+      conversation_id: "c1",
+      visitor_token: TOKEN,
+      identity_sub: null,
+      saved_at: NOW.toISOString(),
+    });
+    const restoring = controller.restore();
+    await vi.waitFor(() => {
+      expect(release).toBeTypeOf("function");
+    });
+
+    identity = IDENTITY;
+    await controller.identityChanged();
+    release(detail([message({ id: "q1", content: "De outra pessoa" })]));
+    await restoring;
+
+    expect(controller.messages).toEqual([]);
+    expect(controller.session).toBeNull();
   });
 
   it("test_controller_abort_without_answer_does_nothing", () => {

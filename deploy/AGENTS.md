@@ -13,7 +13,7 @@
 - `.env.example`: todas as variáveis que o compose interpola, com defaults de desenvolvimento; a cópia local é o `.env` da raiz, ignorado pelo Git.
 
 **Não entra aqui**:
-- `Dockerfile` das imagens próprias: ficam no pacote (`backend/Dockerfile`, `frontend/Dockerfile`, `widget/`).
+- `Dockerfile` das imagens próprias: ficam no pacote (`backend/Dockerfile`, `frontend/Dockerfile`). O widget não tem imagem: o `frontend/Dockerfile` o builda e o serve em `/widget/v1/knobridge-chat.js`.
 - Configuração da aplicação: só por variável `KNOBRIDGE_*`, lida em `backend/src/knobridge/core/settings.py`.
 - Workflows de CI (`.github/workflows/`) e scripts de checagem do repositório (`scripts/`).
 - Guias de operação: `docs/guias/` (o de subida é [subir-ambiente.md](../docs/guias/subir-ambiente.md)).
@@ -21,6 +21,7 @@
 
 **Convenções locais** (valem também para os arquivos do compose da raiz):
 - Caminhos dentro dos composes são relativos à raiz do repositório (`./backend`, `./frontend`, `./deploy/postgres/...`, `./deploy/sources`), como o `KNOBRIDGE_SOURCES_DIR` relativo.
+- O serviço `frontend` builda com o contexto `./frontend` e o contexto nomeado `widget: ./widget` (`additional_contexts`): a imagem do painel também publica o widget embutível (`/widget/v1/knobridge-chat.js`). Cada contexto tem o seu `.dockerignore`.
 - Imagens de terceiros sempre com tag fixa (nunca `latest`); atualizar versão é PR próprio.
 - Toda variável tem default de desenvolvimento no compose (`${VAR:-default}`), para o `up` funcionar sem `.env`, e aparece no `.env.example`. Credenciais de exemplo são só para desenvolvimento e estão marcadas assim.
 - Portas do host publicadas em `${BIND_ADDRESS:-127.0.0.1}` e configuráveis por variável (`*_PORT`).
@@ -40,6 +41,7 @@ docker compose config -q
 docker compose up -d --build --wait
 curl -f http://localhost:8000/v1/health/ready
 curl -f http://localhost:5173/v1/health/ready
+curl -sI http://localhost:5173/widget/v1/knobridge-chat.js   # 200, text/javascript, CORS *
 docker compose down -v
 
 # E2E contra a stack (de frontend/: pnpm e2e:stack)

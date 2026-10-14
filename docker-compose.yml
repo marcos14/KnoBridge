@@ -211,7 +211,11 @@ services:
         condition: service_healthy
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      # The image also serves the embeddable widget, built from widget/ (/widget/v1/knobridge-chat.js).
+      additional_contexts:
+        widget: ./widget
     image: knobridge-frontend:dev
     restart: unless-stopped
     depends_on:

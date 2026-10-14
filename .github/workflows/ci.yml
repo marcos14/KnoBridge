@@ -133,6 +133,35 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
+  widget:
+    name: widget
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: widget
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      # The pnpm version comes from "packageManager" in widget/package.json.
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: widget/package.json
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: widget/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm format:check
+      - run: pnpm typecheck
+      # Coverage is always on in vitest.config.ts, with thresholds of 95.
+      - run: pnpm test
+      # One IIFE file; fails above the 60 KiB gzip budget of docs/specs/widget.md.
+      - run: pnpm build
+
   secrets:
     name: secret scan
     runs-on: ubuntu-24.04
