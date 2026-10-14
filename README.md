@@ -2,7 +2,7 @@
 
 Plataforma open source (Apache 2.0) que conecta repositórios de código, sistemas de chamados e documentações, transforma tudo em índices para RAG e responde em linguagem natural, sempre citando a fonte. Sem fonte, o assistente diz que não sabe e oferece abrir um chamado.
 
-> **Status**: em desenvolvimento; Fase 0 do roadmap concluída. Já funcionam painel, workspaces, indexação de pastas, repositórios Git, código (via runner), chamados e cards de desenvolvimento, produtos com três níveis de resposta (usuário final, suporte, desenvolvimento e produto), chat com citações, uso e custos e API pública (REST e compatível com OpenAI); ainda não há canvas de pipelines nem canais externos (Slack, Google Chat, widget). O que mudou está no [CHANGELOG.md](CHANGELOG.md).
+> **Status**: em desenvolvimento; Fase 0 do roadmap concluída. Já funcionam painel, workspaces, indexação de pastas, repositórios Git, código (via runner), chamados e cards de desenvolvimento, produtos com três níveis de resposta (usuário final, suporte, desenvolvimento e produto), chat com citações, uso e custos, API pública (REST e compatível com OpenAI), servidor MCP para assistentes de código (Claude Code, Cursor, Codex) e widget embutível para sites e sistemas; ainda não há canvas de pipelines nem Slack e Google Chat. O que mudou está no [CHANGELOG.md](CHANGELOG.md).
 
 ## Requisitos
 
@@ -56,6 +56,8 @@ Se o chat responder "sem fonte" para uma pergunta que deveria ter resposta, abra
 - **Receber cards de desenvolvimento** (Jira, Azure DevOps, GitHub Issues…) pelo mesmo caminho, citados para desenvolvimento e produto: [receber-cards-por-api.md](docs/guias/receber-cards-por-api.md).
 - **"Abrir chamado" no seu sistema** a partir de uma resposta sem fonte, por webhook assinado: [receber-chamados-por-api.md](docs/guias/receber-chamados-por-api.md#9-receber-abrir-chamado-do-chat).
 - **Chamar os produtos de outro sistema** com uma chave de API (com nível máximo), pela REST ou pelo SDK oficial da OpenAI (`model` = `produto:nível`), com as citações na resposta: [usar-a-api.md](docs/guias/usar-a-api.md).
+- **Usar os produtos no Claude Code, no Cursor ou no Codex** pelo servidor MCP (`/v1/mcp`), com a mesma chave de API: busca com citações sem custo de LLM, resposta pronta e abrir chamado: [conectar-pelo-mcp.md](docs/guias/conectar-pelo-mcp.md).
+- **Pôr o chat no seu site ou sistema** com o widget (uma linha de `<script>` e um elemento, sempre no nível Usuário final, com avaliação, abrir chamado e identidade assinada opcional): [embutir-o-widget.md](docs/guias/embutir-o-widget.md).
 - Convidar pessoas, papéis, painel da instância, uso e custos e outros fluxos de conta: [primeiro-acesso.md](docs/guias/primeiro-acesso.md).
 
 ## Parar e limpar
@@ -83,6 +85,7 @@ Antes de mudar qualquer coisa (humano ou agente de IA), leia [AGENTS.md](AGENTS.
 
 - `backend/`: `uv sync && uv run ruff check . && uv run ruff format --check . && uv run pyright && uv run pytest` ([README](backend/README.md)).
 - `frontend/`: `pnpm install --frozen-lockfile && pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build` ([README](frontend/README.md)).
+- `widget/`: `pnpm install --frozen-lockfile && pnpm lint && pnpm format:check && pnpm typecheck && pnpm test && pnpm build` ([AGENTS.md](widget/AGENTS.md)).
 - `runner/`: `uv sync && uv run ruff check . && uv run ruff format --check . && uv run pyright && uv run pytest` ([README](runner/README.md)).
 - `scripts/`: `uv sync && uv run ruff check . && uv run pyright && uv run pytest` ([AGENTS.md](scripts/AGENTS.md)).
 - Hooks de pre-commit, da raiz: `uvx pre-commit run --all-files`.
@@ -93,7 +96,7 @@ A CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) roda tudo isso, mais
 
 - [docs/01-visao-do-projeto.md](docs/01-visao-do-projeto.md): visão, arquitetura, stack, decisões e roadmap.
 - [docs/guias/](docs/guias/): guias de uso e operação.
-- [docs/specs/](docs/specs/): contratos (autenticação, chat, produtos e níveis, API pública, uso e custos, conectores, indexação, runner, harness, chamados, cards, modelo de dados, OpenAPI).
+- [docs/specs/](docs/specs/): contratos (autenticação, chat, produtos e níveis, API pública, MCP, widget, uso e custos, conectores, indexação, runner, harness, chamados, cards, modelo de dados, OpenAPI).
 - [docs/adr/](docs/adr/): decisões de arquitetura.
 - [docs/planos/](docs/planos/): planos de execução, com andamento e decisões.
 - [CHANGELOG.md](CHANGELOG.md): o que mudou.

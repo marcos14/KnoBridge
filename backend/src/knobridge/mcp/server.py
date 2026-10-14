@@ -113,17 +113,20 @@ _FAILURES = {
 }
 
 
-def _result(body: Mapping[str, object], *, is_error: bool) -> CallToolResult:
+def _text(body: object) -> TextContent:
+    return TextContent(type="text", text=json.dumps(body, ensure_ascii=False))
+
+
+def _result(body: Mapping[str, object]) -> CallToolResult:
     structured = to_jsonable_python(body)
-    return CallToolResult(
-        content=[TextContent(type="text", text=json.dumps(structured, ensure_ascii=False))],
-        structured_content=structured,
-        is_error=is_error,
-    )
+    return CallToolResult(content=[_text(structured)], structured_content=structured)
 
 
 def _error(code: str, message: str, details: object = None) -> CallToolResult:
-    return _result({"error": {"code": code, "message": message, "details": details}}, is_error=True)
+    # Only as text: structured content must match the tool's output schema, and clients (the
+    # official TypeScript SDK among them) validate it even on an error result.
+    body = to_jsonable_python({"error": {"code": code, "message": message, "details": details}})
+    return CallToolResult(content=[_text(body)], is_error=True)
 
 
 def _in_session[In: BaseModel, Out: BaseModel](
@@ -159,7 +162,7 @@ async def _run[In: BaseModel, Out: BaseModel](
         output = await perform(call, request)
         if isinstance(output, AskOut):
             fields["conversation_id"] = str(output.conversation_id)
-        outcome, result = "ok", _result(output.model_dump(mode="json"), is_error=False)
+        outcome, result = "ok", _result(output.model_dump(mode="json"))
     except PydanticValidationError as exc:
         problems = [{"loc": list(e["loc"]), "problem": e["msg"]} for e in exc.errors()]
         outcome = "validation_error"

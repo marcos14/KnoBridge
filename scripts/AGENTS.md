@@ -6,7 +6,7 @@
 - `check_agents_md.py`: falha se alguma pasta não tiver `AGENTS.md` (regra da seção 4 do [AGENTS.md da raiz](../AGENTS.md)).
 - `check_plans.py`: valida o frontmatter de `docs/planos/NNNN-slug.md` contra o [modelo](../docs/planos/0000-modelo.md).
 - `synthetic_tickets/`: gerador determinístico de chamados sintéticos em pt-BR, com gabarito da anonimização, artigos e perguntas (`uv run python -m synthetic_tickets --seed N --tickets 300 --out <pasta fora do repo>`; [AGENTS.md](synthetic_tickets/AGENTS.md)).
-- `webhook_sink.py`: sistema de chamados falso do E2E (só biblioteca padrão): confere a `KnoBridge-Signature` com o segredo recebido em `PUT /secret`, responde `{ticket_id, url}` em `POST /hook` e lista o que chegou em `GET /deliveries`. O `docker-compose.e2e.yml` o monta numa imagem Python pequena (serviço `webhook-sink`).
+- `webhook_sink.py`: sistema de chamados falso do E2E (só biblioteca padrão): confere a `KnoBridge-Signature` com o segredo recebido em `PUT /secret`, responde `{ticket_id, url}` em `POST /hook` e lista o que chegou em `GET /deliveries` (com a pergunta, o canal e o solicitante de cada pedido assinado). O `docker-compose.e2e.yml` o monta numa imagem Python pequena (serviço `webhook-sink`).
 - Outros scripts de checagem ou geração de código usados pela CI ou pelos hooks, cada um com testes em `tests/`.
 
 **Não entra aqui**: código do produto (`backend/`, `frontend/`, `widget/`), infraestrutura (`deploy/`), workflows de CI (`.github/workflows/`), documentação (`docs/`).

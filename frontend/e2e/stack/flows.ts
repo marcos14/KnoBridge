@@ -7,6 +7,7 @@ import {
 } from "@playwright/test";
 
 import { emailedLink } from "./mailpit";
+import { setSinkSecret, SINK_HOOK_URL } from "./webhookSink";
 
 /**
  * Steps shared by the stack specs. The superadmin is fixed: on a fresh database the first spec
@@ -356,4 +357,62 @@ export async function ask(
   await box.fill(question);
   await box.press("Enter");
   await expect(page).toHaveURL(/\/chat\/[0-9a-f-]{36}$/);
+}
+
+/**
+ * Creates an API key on the panel (all products, `level` or the preselected end user level) and
+ * returns the `kbk_…` the panel shows once.
+ */
+export async function createApiKey(
+  page: Page,
+  workspaceId: string,
+  name: string,
+  level?: Level,
+): Promise<string> {
+  await page.goto(`/w/${workspaceId}/api-keys`);
+  await page.getByRole("button", { name: "Nova chave" }).click();
+  const dialog = page.getByRole("dialog", { name: "Nova chave de API" });
+  await dialog.getByLabel("Nome").fill(name);
+  // The panel preselects the lowest level: the key's owner raises it on purpose.
+  await expect(dialog.getByRole("radio", { name: LEVELS.end_user })).toBeChecked();
+  if (level !== undefined) {
+    await dialog.getByRole("radio", { name: LEVELS[level] }).click();
+  }
+  await dialog.getByRole("button", { name: "Salvar" }).click();
+
+  const secret = page.getByRole("dialog", { name: `Chave ${name} criada` });
+  const key = secret.getByText(/^kbk_[a-z0-9]{8}_/);
+  await expect(key).toBeVisible();
+  const apiKey = (await key.textContent())?.trim() ?? "";
+  expect(apiKey).toMatch(/^kbk_[a-z0-9]{8}_[A-Za-z0-9_-]{43}$/);
+  await secret.getByRole("button", { name: "Concluído" }).click();
+  return apiKey;
+}
+
+/**
+ * Points the "Abrir chamado" webhook of `product` at the fake ticket system of the compose,
+ * generates the secret (shown once), hands it to the receiver and checks a test delivery.
+ */
+export async function connectTicketWebhook(
+  page: Page,
+  workspaceId: string,
+  product: string,
+): Promise<void> {
+  const dialog = await editProduct(page, workspaceId, product);
+  await dialog.getByRole("checkbox", { name: 'Oferecer "Abrir chamado" no chat' }).check();
+  await dialog.getByLabel("URL do webhook").fill(SINK_HOOK_URL);
+  await dialog.getByRole("button", { name: "Salvar" }).click();
+  await expect(page.getByText(`Produto ${product} atualizado.`)).toBeVisible();
+
+  await page.getByRole("button", { name: `Editar ${product}` }).click();
+  const edit = page.getByRole("dialog", { name: "Editar produto" });
+  const panel = edit.getByRole("region", { name: "Segredo e teste do webhook" });
+  await panel.getByRole("button", { name: "Gerar segredo" }).click();
+  const secret = edit.getByLabel("Segredo do webhook");
+  await expect(secret).toHaveText(/^kbw_/);
+  await setSinkSecret((await secret.textContent()) ?? "");
+  await panel.getByRole("button", { name: "Testar entrega" }).click();
+  await expect(panel.getByRole("status")).toContainText("O destino aceitou a entrega de teste.");
+  await edit.getByRole("button", { name: "Cancelar" }).click();
+  await expect(edit).toBeHidden();
 }

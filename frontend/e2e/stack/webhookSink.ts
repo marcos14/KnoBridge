@@ -16,6 +16,14 @@ export interface SinkDelivery {
   verified: boolean;
   ticket_id: string | null;
   question: string | null;
+  /** `panel`, `mcp` or `widget` (docs/specs/chamados.md); `null` until a signed request. */
+  channel: string | null;
+  requester: {
+    name: string;
+    email: string | null;
+    verified: boolean;
+    external_id: string | null;
+  } | null;
 }
 
 /** Hands the sink the secret the panel showed once, so it can check the signatures. */

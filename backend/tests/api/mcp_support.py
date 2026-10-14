@@ -255,8 +255,12 @@ def structured(result: CallToolResult) -> dict[str, object]:
 
 
 def tool_error(result: CallToolResult) -> dict[str, object]:
+    """The error of a tool result: only in the text block, never as structured content."""
     assert result.is_error is True
-    return cast(dict[str, object], structured(result)["error"])
+    assert result.structured_content is None
+    block = result.content[0]
+    assert isinstance(block, TextContent)
+    return cast(dict[str, object], json.loads(block.text)["error"])
 
 
 def keys_of(body: dict[str, object]) -> list[str]:

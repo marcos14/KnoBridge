@@ -8,6 +8,8 @@ Passo a passo para chamar os produtos de um sistema externo (portal, ERP, bot, s
 
 Contrato completo (formatos, erros, limites) em [api-publica.md](../specs/api-publica.md); decisões de arquitetura no [ADR 0007](../adr/0007-chaves-e-api-publica.md) e no [ADR 0008](../adr/0008-produtos-e-niveis.md) (produtos e níveis, com o passo a passo em [produtos-e-niveis.md](produtos-e-niveis.md)). Custos em [uso-e-custos.md](../specs/uso-e-custos.md).
 
+A mesma chave conecta assistentes de código (Claude Code, Cursor, Codex) pelo servidor MCP: [conectar-pelo-mcp.md](conectar-pelo-mcp.md). Para pôr o chat num site ou sistema sem chave no navegador, use o widget: [embutir-o-widget.md](embutir-o-widget.md).
+
 ## Pré-requisitos
 
 - A stack rodando ([subir-ambiente.md](subir-ambiente.md)) e um produto **ativo** que responda com fontes no chat do painel, com os níveis de resposta configurados ([produtos-e-niveis.md](produtos-e-niveis.md), [indexar-uma-fonte.md](indexar-uma-fonte.md)). Em desenvolvimento, o provedor `fake` serve: ele responde `Fake reply to: <pergunta>`, mas as citações são reais.

@@ -89,10 +89,10 @@ fases:
     subfases:
       - id: F5.1
         titulo: E2E da stack, guias e documentação
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-14
-        concluida_em: null
+        concluida_em: 2026-10-13
         commit: null
       - id: F5.2
         titulo: Ensaio real com Claude Code via MCP e o widget no Minski
@@ -206,6 +206,13 @@ decisoes:
     decisao: "F4.3: tela de widgets só para owner e admin (403 abaixo, sem visão de leitura), criar e editar em página própria com a prévia ao lado (a prévia usa storage none e api-base e carrega o script uma vez); segredo kbs_ mostrado uma vez, gerar sem confirmação, trocar e remover com confirmação; na seção MCP das chaves, os comandos de Claude Code, Cursor e Codex leem a chave de KNOBRIDGE_API_KEY e só a linha que define a variável mostra a chave, e só no diálogo logo após criar (spec mcp.md ajustada; sintaxe conferida na documentação oficial em 2026-10-14, Codex por config.toml com bearer_token_env_var)"
     motivo: "spec e segurança da chave"
     alternativas: "diálogo para criar widget; chave embutida nos comandos"
+    adr: null
+  - id: D16
+    data: 2026-10-13
+    por: agente
+    decisao: "F5.1: erro de ferramenta MCP passa a vir só no conteúdo de texto, sem structured_content (o cliente oficial do SDK TypeScript 1.32.1 validava o conteúdo estruturado contra o esquema de saída mesmo com isError e transformava todo erro em McpError -32602; achado pelo E2E, corrigido com teste e spec mcp.md ajustada); compose e .env.example ganharam as variáveis KNOBRIDGE_MCP_* e KNOBRIDGE_WIDGET_* que não chegavam ao contêiner; E2E com mcp.spec (cliente oficial) e widget.spec (página servida por node:http de outra origem)"
+    motivo: "E2E verde duas vezes (8/8)"
+    alternativas: "manter structured_content nos erros"
     adr: null
 pendencias_usuario: []
 ---
@@ -515,6 +522,7 @@ Nenhuma.
 - 2026-10-14 — F4.3 iniciada (agente em worktree).
 - 2026-10-13 — F4.3 concluída: tela de widgets com prévia ao vivo, seção MCP nas chaves, canais mcp e widget em Conversas e Uso e custos; frontend 1710 passed, 98,68% branches
 - 2026-10-14 — F5.1 iniciada (agente em worktree).
+- 2026-10-13 — F5.1 concluída: E2E da stack verde duas vezes seguidas (8 de 8) com MCP pelo cliente oficial e widget de outra origem; bug dos erros de ferramenta MCP corrigido com teste; variáveis do MCP e do widget no compose; guias conectar-pelo-mcp e embutir-o-widget, README, CHANGELOG e AGENTS raiz; orquestrador revisou os guias e rodou ruff, pyright, testes MCP, lint e typecheck
 
 ## 8. Encerramento
 

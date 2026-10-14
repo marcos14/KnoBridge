@@ -21,7 +21,15 @@ from webhook_sink import (
 
 SECRET = "kbw_synthetic-test-secret"  # noqa: S105 - synthetic, signs test bodies only
 NOW = 1_760_000_000
-BODY = json.dumps({"event": "ticket.requested", "question": "Como emito a nota?"}).encode()
+REQUESTER = {"name": "Ana", "email": "ana@example.test", "verified": True}
+BODY = json.dumps(
+    {
+        "event": "ticket.requested",
+        "question": "Como emito a nota?",
+        "channel": "widget",
+        "requester": REQUESTER,
+    }
+).encode()
 
 
 def hook_headers(
@@ -79,6 +87,8 @@ def test_sink_answers_a_signed_request_with_a_ticket() -> None:
             "verified": True,
             "ticket_id": "KB-0001",
             "question": "Como emito a nota?",
+            "channel": "widget",
+            "requester": REQUESTER,
         }
     ]
 
@@ -180,6 +190,8 @@ def test_server_speaks_http_with_json(server: ThreadingHTTPServer) -> None:
             "verified": False,
             "ticket_id": None,
             "question": None,
+            "channel": None,
+            "requester": None,
         }
     ]
 

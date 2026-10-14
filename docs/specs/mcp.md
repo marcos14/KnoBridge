@@ -54,7 +54,7 @@ Cada ferramenta declara `input_schema` e `output_schema` (JSON Schema gerados do
 
 ### Erros das ferramentas
 
-Erros de domínio (produto, nível, validação de regra, provedor) voltam como **resultado de erro da ferramenta**, para o modelo do cliente ver: `CallToolResult(is_error=True)`, com `structured_content` e o texto em `content` iguais a:
+Erros de domínio (produto, nível, validação de regra, provedor) voltam como **resultado de erro da ferramenta**, para o modelo do cliente ver: `CallToolResult(is_error=True)`, com o JSON abaixo **só no texto** de `content` e **sem** `structured_content` (o conteúdo estruturado tem de seguir o `output_schema` da ferramenta, e clientes como o SDK oficial em TypeScript o validam mesmo num resultado de erro; achado do E2E da F5.1):
 
 ```json
 {"error": {"code": "level_not_allowed", "message": "The level is above the maximum allowed.", "details": {"requested_level": "product_dev", "max_level": "support", "reason": "api_key"}}}

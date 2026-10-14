@@ -47,6 +47,16 @@ x-backend: &backend
     # Extra chat prices (USD per million tokens) over the built-in table, for the estimated cost
     # of each answer (docs/specs/uso-e-custos.md). JSON; the default {} adds none.
     KNOBRIDGE_CHAT_PRICES: ${KNOBRIDGE_CHAT_PRICES:-{}}
+    # MCP server at /v1/mcp (docs/specs/mcp.md): extra Host values it accepts (empty = the host
+    # of KNOBRIDGE_PUBLIC_BASE_URL, localhost:* and 127.0.0.1:*) and browser origins (empty = none).
+    KNOBRIDGE_MCP_ALLOWED_HOSTS: ${KNOBRIDGE_MCP_ALLOWED_HOSTS:-}
+    KNOBRIDGE_MCP_ALLOWED_ORIGINS: ${KNOBRIDGE_MCP_ALLOWED_ORIGINS:-}
+    # Limits of the widget's public routes per widget and IP, and the clock tolerance of the
+    # signed identity (docs/specs/widget.md); the message limits are set per widget in the panel.
+    KNOBRIDGE_WIDGET_REQUESTS_PER_MINUTE: ${KNOBRIDGE_WIDGET_REQUESTS_PER_MINUTE:-120}
+    KNOBRIDGE_WIDGET_CONVERSATIONS_PER_HOUR: ${KNOBRIDGE_WIDGET_CONVERSATIONS_PER_HOUR:-20}
+    KNOBRIDGE_WIDGET_TICKETS_PER_HOUR: ${KNOBRIDGE_WIDGET_TICKETS_PER_HOUR:-5}
+    KNOBRIDGE_WIDGET_IDENTITY_CLOCK_SKEW: ${KNOBRIDGE_WIDGET_IDENTITY_CLOCK_SKEW:-60}
 
 services:
   postgres:

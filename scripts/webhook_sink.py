@@ -9,7 +9,8 @@ chamado"), standard library only, so the E2E compose runs it on a plain Python i
   ``"<t>.<body>"`` compared in constant time) and answers 401 when it does not match; a
   ``ticket.requested`` gets ``{"ticket_id", "url"}``, the same for every retry of one delivery;
   ``ticket.test`` gets ``{}``;
-- ``GET /deliveries``: what arrived, for the test to check; ``GET /health``: readiness.
+- ``GET /deliveries``: what arrived (with the question, channel and requester of each signed
+  ``ticket.requested``), for the test to check; ``GET /health``: readiness.
 
 Usage: ``python webhook_sink.py [--host HOST] [--port PORT]``. Development and E2E only.
 """
@@ -105,6 +106,8 @@ class Sink:
             "verified": verified,
             "ticket_id": None,
             "question": None,
+            "channel": None,
+            "requester": None,
         }
         self.deliveries.append(record)
         if not verified:
@@ -113,7 +116,10 @@ class Sink:
             return 200, {}
         ticket_id = self.tickets.setdefault(delivery_id, f"KB-{len(self.tickets) + 1:04d}")
         record["ticket_id"] = ticket_id
-        record["question"] = json.loads(body).get("question")
+        payload = json.loads(body)
+        record["question"] = payload.get("question")
+        record["channel"] = payload.get("channel")
+        record["requester"] = payload.get("requester")
         return 200, {"ticket_id": ticket_id, "url": TICKET_URL.format(ticket_id=ticket_id)}
 
 

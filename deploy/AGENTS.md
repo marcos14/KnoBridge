@@ -31,6 +31,7 @@
 - Em dev, todo e-mail vai para o `mailpit` (UI em `MAILPIT_UI_PORT`); nada é entregue a caixas reais.
 - Em dev, cookies sem `Secure` (`KNOBRIDGE_COOKIE_SECURE=false`), porque o painel é HTTP puro.
 - `KNOBRIDGE_WEBHOOK_ALLOWED_HOSTS` (na âncora `x-backend`) fica vazia no ambiente de desenvolvimento: o webhook de chamados dos assistentes só alcança `https` público. Só a camada de E2E a preenche, com o nome do receptor falso.
+- MCP e widget (na âncora `x-backend`): `KNOBRIDGE_MCP_ALLOWED_HOSTS` e `KNOBRIDGE_MCP_ALLOWED_ORIGINS` vazias (o host do painel, `localhost:*` e `127.0.0.1:*`; nenhuma origem de navegador) e os limites `KNOBRIDGE_WIDGET_*` com os padrões da spec; guias em [conectar-pelo-mcp.md](../docs/guias/conectar-pelo-mcp.md) e [embutir-o-widget.md](../docs/guias/embutir-o-widget.md).
 - Rede com sub-rede fixa (`COMPOSE_SUBNET`) e o `frontend` (nginx, proxy de `/v1`) em endereço fixo (`FRONTEND_IPV4`): é o único proxy cujo `X-Forwarded-For` a `api` aceita (`KNOBRIDGE_FORWARDED_ALLOW_IPS`), para a limitação de login contar o IP do cliente.
 - Scripts de shell com fim de linha LF (garantido pelo `.gitattributes`).
 
