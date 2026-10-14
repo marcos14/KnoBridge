@@ -27,6 +27,7 @@ from knobridge.products import models as products_models
 from knobridge.security import models as security_models
 from knobridge.tenancy import models as tenancy_models
 from knobridge.tickets import models as tickets_models
+from knobridge.widget import models as widget_models
 
 # Imported so their tables are in Base.metadata.
 _MODEL_MODULES = (
@@ -41,6 +42,7 @@ _MODEL_MODULES = (
     harness_models,
     tickets_models,
     apikeys_models,
+    widget_models,
 )
 _HARNESS_TABLES = (
     "runners",
@@ -76,6 +78,8 @@ _TENANCY_TABLES = (
     *_HARNESS_TABLES,
     *_TICKETS_TABLES,
     "api_keys",
+    "widgets",
+    "rate_limit_counters",
     *_PRODUCT_TABLES,
 )
 _INDEX_TABLES = ("collections", "sources", "runs", "run_errors", "documents", "chunks")
@@ -173,6 +177,8 @@ def test_migration_upgrade_downgrade_tenancy(postgres_url: str) -> None:
         **dict.fromkeys(_HARNESS_TABLES, (True, True, 1)),
         **dict.fromkeys(_TICKETS_TABLES, (True, True, 1)),
         "api_keys": (True, True, 1),
+        "widgets": (True, True, 1),
+        "rate_limit_counters": (True, True, 1),
     }
     assert after_downgrade == {}
 

@@ -7,7 +7,6 @@ from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import APIRouter, FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from knobridge import __version__
@@ -54,6 +53,8 @@ from knobridge.api import (
     ticket_uploads,
     ticket_webhook,
     usage,
+    widget_public,
+    widgets,
 )
 from knobridge.api.body_limit import BodyLimitMiddleware
 from knobridge.api.mcp_channel import mount_mcp
@@ -65,6 +66,7 @@ from knobridge.core.settings import Settings, get_settings
 from knobridge.email.rendering import EmailComposer
 from knobridge.email.sender import EmailSender, SmtpEmailSender
 from knobridge.security.passwords import PasswordHasher
+from knobridge.widget.cors import PanelCORSMiddleware, WidgetCORSMiddleware
 from knobridge.workers.sync_client import (
     LazyTemporalHealthProbe,
     LazyTemporalScheduleManager,
@@ -124,8 +126,10 @@ def create_app(
         else SmtpEmailSender.from_settings(resolved, clock=app.state.clock)
     )
     app.state.email_composer = EmailComposer.from_settings(resolved)
+    # The widget's public routes (/v1/widget/*) have their own CORS (widget/cors.py).
+    app.add_middleware(WidgetCORSMiddleware)
     app.add_middleware(
-        CORSMiddleware,
+        PanelCORSMiddleware,
         allow_origins=resolved.cors_origins,
         allow_credentials=True,
         allow_methods=["*"],
@@ -191,6 +195,9 @@ def create_app(
         admin_dashboard,
         # OpenAI-compatible API (plan 0008 F2.4).
         openai_compat,
+        # Embeddable widget: panel management and public routes (plan 0010 F3.1).
+        widgets,
+        widget_public,
     )
     for module in routers:
         v1.include_router(module.router)

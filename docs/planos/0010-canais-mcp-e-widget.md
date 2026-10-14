@@ -32,7 +32,7 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-14
         concluida_em: 2026-10-13
-        commit: null
+        commit: f0e349b
       - id: F2.2
         titulo: Ferramentas ask e open_ticket no MCP, canal mcp no uso e nas conversas
         status: pendente
@@ -46,10 +46,10 @@ fases:
     subfases:
       - id: F3.1
         titulo: Chaves do widget, domínios, aparência, limite de requisições e configuração pública
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-14
-        concluida_em: null
+        concluida_em: 2026-10-13
         commit: null
       - id: F3.2
         titulo: Conversa do widget (SSE, histórico do visitante, identidade assinada, feedback e chamado)
@@ -164,6 +164,13 @@ decisoes:
     decisao: "F2.1: MCP montado como duas Route do Starlette (/v1/mcp e /v1/mcp/), fora do OpenAPI e sem 307, um MCPServer por app; invólucro confere Origin (403 origin_not_allowed), método (405 fora do POST) e chave antes do SDK; hosts padrão = host de PUBLIC_BASE_URL, localhost:* e 127.0.0.1:*; argumentos validados pelos modelos Pydantic de mcp/schemas.py (erro validation_error como resultado de ferramenta); sem evento de auditoria por chamada, só last_used_at; get_document responde igual a inexistente para documento acima do nível; SDK mcp 2.3.0"
     motivo: "spec mcp.md e SDK v2"
     alternativas: "Mount com redirect; auditoria por chamada"
+    adr: null
+  - id: D10
+    data: 2026-10-13
+    por: agente
+    decisao: "F3.1: migração 0020 (widgets, rate_limit_counters, canal widget e colunas de visitante em conversations, feedback.user_id opcional) e renomeia o CHECK de canal ck_conversations_ck_conversations_channel (prefixo duplo da 0017) para ck_conversations_channel, que a 0021 da F2.2 deve usar; downgrade recusa se houver widget, conversa widget ou feedback sem usuário; CORS das rotas /v1/widget/* fora do CORSMiddleware global, ecoando a origem aceita e sem credenciais, com a origem da instância sempre aceita; limitador grava o contador numa transação própria e conta as recusadas; PATCH com extra=forbid"
+    motivo: "contrato da F1.1"
+    alternativas: "CORS global com lista dinâmica"
     adr: null
 pendencias_usuario: []
 ---
@@ -461,6 +468,7 @@ Nenhuma.
 - 2026-10-14 — F2.1 iniciada (agente em worktree).
 - 2026-10-14 — F3.1 iniciada (agente em worktree).
 - 2026-10-13 — F2.1 concluída: servidor MCP em /v1/mcp com list_products, search_knowledge e get_document no nível da chave e sem LLM; gates do agente: backend 2775 passed com 99,89%; orquestrador: ruff, pyright e AGENTS na integração
+- 2026-10-13 — F3.1 concluída: chaves do widget por produto, origens, aparência, limites, configuração pública com CORS próprio e limitador no Postgres, integrada sobre a F2.1; backend 2971 passed com 99%, frontend 1579
 
 ## 8. Encerramento
 

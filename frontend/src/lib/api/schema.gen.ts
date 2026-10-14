@@ -861,6 +861,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/widget/{public_key}/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Widget Config
+         * @description Appearance and features of the widget, read when it loads (cacheable for a minute).
+         */
+        get: operations["widget_config_v1_widget__public_key__config_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/workspaces/{workspace_id}": {
         parameters: {
             query?: never;
@@ -2249,6 +2269,79 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/workspaces/{workspace_id}/widgets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Widgets
+         * @description Widgets by name; ``query`` matches the name. Never the signing secret.
+         */
+        get: operations["list_widgets_v1_workspaces__workspace_id__widgets_get"];
+        put?: never;
+        /**
+         * Create Widget
+         * @description Create a widget of a product; its public key ``kbp_…`` is generated here.
+         */
+        post: operations["create_widget_v1_workspaces__workspace_id__widgets_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/widgets/{widget_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Widget */
+        get: operations["get_widget_v1_workspaces__workspace_id__widgets__widget_id__get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Widget
+         * @description Delete the widget and its conversations; its public key stops at once.
+         */
+        delete: operations["delete_widget_v1_workspaces__workspace_id__widgets__widget_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Widget
+         * @description Change the given fields; ``allowed_origins`` replaces the list.
+         */
+        patch: operations["update_widget_v1_workspaces__workspace_id__widgets__widget_id__patch"];
+        trace?: never;
+    };
+    "/v1/workspaces/{workspace_id}/widgets/{widget_id}/signing-secret": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Rotate Widget Signing Secret
+         * @description Generate or replace the signing secret and return it, the only time it is shown.
+         */
+        post: operations["rotate_widget_signing_secret_v1_workspaces__workspace_id__widgets__widget_id__signing_secret_post"];
+        /**
+         * Remove Widget Signing Secret
+         * @description Delete the signing secret: signed identities are refused, anonymous visitors go on.
+         */
+        delete: operations["remove_widget_signing_secret_v1_workspaces__workspace_id__widgets__widget_id__signing_secret_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -2570,7 +2663,7 @@ export interface components {
          * AuditAction
          * @enum {string}
          */
-        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "superadmin.workspace_entered" | "superadmin.workspace_exited" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted" | "provider.tested" | "assistant.created" | "assistant.updated" | "assistant.deleted" | "assistant.ticket_webhook_secret_rotated" | "assistant.ticket_webhook_tested" | "product.created" | "product.updated" | "product.deleted" | "product.ticket_webhook_secret_rotated" | "product.ticket_webhook_tested" | "workspace_level.updated" | "member_level.updated" | "conversation.deleted" | "ticket_request.created" | "collection.created" | "collection.updated" | "collection.deleted" | "source.created" | "source.updated" | "source.deleted" | "source.tested" | "source.sync.started" | "source.sync.cancelled" | "source.min_level_changed" | "source.reindex.started" | "source.ingest_token_rotated" | "source.tickets_uploaded" | "source.cards_uploaded" | "runner.created" | "runner.updated" | "runner.revoked" | "runner.deleted" | "harness_job.cancelled" | "harness_job.enqueued" | "harness_module.created" | "harness_module.updated" | "knowledge_item.updated" | "api_key.created" | "api_key.updated" | "api_key.revoked";
+        AuditAction: "setup.completed" | "user.created" | "user.suspended" | "user.reactivated" | "user.superadmin.granted" | "user.superadmin.revoked" | "workspace.created" | "workspace.updated" | "workspace.suspended" | "workspace.reactivated" | "superadmin.workspace_entered" | "superadmin.workspace_exited" | "auth.login.succeeded" | "auth.login.failed" | "auth.logout.succeeded" | "auth.sessions.revoked" | "auth.password.changed" | "auth.password_reset.requested" | "auth.password_reset.completed" | "auth.email.verified" | "auth.email_verification.requested" | "user.profile.updated" | "membership.invited" | "membership.invitation.accepted" | "membership.invitation.resent" | "membership.invitation.revoked" | "membership.role.changed" | "membership.removed" | "provider.created" | "provider.updated" | "provider.deleted" | "provider.tested" | "assistant.created" | "assistant.updated" | "assistant.deleted" | "assistant.ticket_webhook_secret_rotated" | "assistant.ticket_webhook_tested" | "product.created" | "product.updated" | "product.deleted" | "product.ticket_webhook_secret_rotated" | "product.ticket_webhook_tested" | "workspace_level.updated" | "member_level.updated" | "conversation.deleted" | "ticket_request.created" | "collection.created" | "collection.updated" | "collection.deleted" | "source.created" | "source.updated" | "source.deleted" | "source.tested" | "source.sync.started" | "source.sync.cancelled" | "source.min_level_changed" | "source.reindex.started" | "source.ingest_token_rotated" | "source.tickets_uploaded" | "source.cards_uploaded" | "runner.created" | "runner.updated" | "runner.revoked" | "runner.deleted" | "harness_job.cancelled" | "harness_job.enqueued" | "harness_module.created" | "harness_module.updated" | "knowledge_item.updated" | "api_key.created" | "api_key.updated" | "api_key.revoked" | "widget.created" | "widget.updated" | "widget.deleted" | "widget.signing_secret_rotated" | "widget.signing_secret_removed";
         /** AuditEventOut */
         AuditEventOut: {
             /** Action */
@@ -2965,10 +3058,10 @@ export interface components {
         };
         /**
          * ConversationChannel
-         * @description Where the conversation happens (also kept on each message); widget, Slack... come later.
+         * @description Where the conversation happens (also kept on each message); Slack... come later.
          * @enum {string}
          */
-        ConversationChannel: "panel" | "api";
+        ConversationChannel: "panel" | "api" | "widget";
         /** ConversationCreate */
         ConversationCreate: {
             level?: components["schemas"]["ResponseLevel"] | null;
@@ -6400,6 +6493,228 @@ export interface components {
             /** Token */
             token: string;
         };
+        /** WidgetCreate */
+        WidgetCreate: {
+            /**
+             * Active
+             * @default true
+             */
+            active: boolean;
+            /** Allowed Origins */
+            allowed_origins: string[];
+            /**
+             * Feedback Enabled
+             * @default true
+             */
+            feedback_enabled: boolean;
+            /**
+             * Greeting
+             * @default Olá! Como posso ajudar?
+             */
+            greeting: string;
+            /**
+             * Messages Per Day
+             * @default 1000
+             */
+            messages_per_day: number;
+            /**
+             * Messages Per Ip Per Hour
+             * @default 30
+             */
+            messages_per_ip_per_hour: number;
+            /** @default bubble */
+            mode: components["schemas"]["WidgetMode"];
+            /** Name */
+            name: string;
+            /**
+             * Placeholder
+             * @default Escreva sua pergunta
+             */
+            placeholder: string;
+            /** @default bottom-right */
+            position: components["schemas"]["WidgetPosition"];
+            /**
+             * Primary Color
+             * @default #2563eb
+             */
+            primary_color: string;
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
+            /** @default auto */
+            theme: components["schemas"]["WidgetTheme"];
+            /**
+             * Ticket Enabled
+             * @default true
+             */
+            ticket_enabled: boolean;
+            /** Title */
+            title?: string | null;
+        };
+        /**
+         * WidgetMode
+         * @enum {string}
+         */
+        WidgetMode: "bubble" | "inline";
+        /** WidgetOut */
+        WidgetOut: {
+            /** Active */
+            active: boolean;
+            /** Allowed Origins */
+            allowed_origins: string[];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string | null;
+            /** Created By Name */
+            created_by_name: string | null;
+            /** Feedback Enabled */
+            feedback_enabled: boolean;
+            /** Greeting */
+            greeting: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Messages Per Day */
+            messages_per_day: number;
+            /** Messages Per Ip Per Hour */
+            messages_per_ip_per_hour: number;
+            mode: components["schemas"]["WidgetMode"];
+            /** Name */
+            name: string;
+            /** Placeholder */
+            placeholder: string;
+            position: components["schemas"]["WidgetPosition"];
+            /** Primary Color */
+            primary_color: string;
+            /**
+             * Product Id
+             * Format: uuid
+             */
+            product_id: string;
+            /** Product Name */
+            product_name: string;
+            /** Public Key */
+            public_key: string;
+            /** Signing Secret Configured */
+            signing_secret_configured: boolean;
+            /** Signing Secret Created At */
+            signing_secret_created_at: string | null;
+            theme: components["schemas"]["WidgetTheme"];
+            /** Ticket Available */
+            ticket_available: boolean;
+            /** Ticket Enabled */
+            ticket_enabled: boolean;
+            /** Title */
+            title: string | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** WidgetPage */
+        WidgetPage: {
+            /** Items */
+            items: components["schemas"]["WidgetOut"][];
+            /** Limit */
+            limit: number;
+            /** Offset */
+            offset: number;
+            /** Total */
+            total: number;
+        };
+        /**
+         * WidgetPosition
+         * @enum {string}
+         */
+        WidgetPosition: "bottom-right" | "bottom-left";
+        /**
+         * WidgetPublicConfig
+         * @description What the widget needs to render; nothing about collections, model, limits or cost.
+         */
+        WidgetPublicConfig: {
+            /** Feedback Enabled */
+            feedback_enabled: boolean;
+            /** Greeting */
+            greeting: string;
+            /** Identity Enabled */
+            identity_enabled: boolean;
+            /** Language */
+            language: string;
+            level: components["schemas"]["ResponseLevel"];
+            mode: components["schemas"]["WidgetMode"];
+            /** Placeholder */
+            placeholder: string;
+            position: components["schemas"]["WidgetPosition"];
+            /** Primary Color */
+            primary_color: string;
+            /** Product Name */
+            product_name: string;
+            /** Public Key */
+            public_key: string;
+            /** Question Max Chars */
+            question_max_chars: number;
+            theme: components["schemas"]["WidgetTheme"];
+            /** Ticket Enabled */
+            ticket_enabled: boolean;
+            /** Title */
+            title: string;
+        };
+        /** WidgetSigningSecretOut */
+        WidgetSigningSecretOut: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Secret */
+            secret: string;
+        };
+        /**
+         * WidgetTheme
+         * @enum {string}
+         */
+        WidgetTheme: "light" | "dark" | "auto";
+        /**
+         * WidgetUpdate
+         * @description Fields to change; omitted fields stay, ``title: null`` is the product's name again.
+         *     ``product_id`` never changes (another product, another widget): unknown fields are 422.
+         */
+        WidgetUpdate: {
+            /** Active */
+            active?: boolean | null;
+            /** Allowed Origins */
+            allowed_origins?: string[] | null;
+            /** Feedback Enabled */
+            feedback_enabled?: boolean | null;
+            /** Greeting */
+            greeting?: string | null;
+            /** Messages Per Day */
+            messages_per_day?: number | null;
+            /** Messages Per Ip Per Hour */
+            messages_per_ip_per_hour?: number | null;
+            mode?: components["schemas"]["WidgetMode"] | null;
+            /** Name */
+            name?: string | null;
+            /** Placeholder */
+            placeholder?: string | null;
+            position?: components["schemas"]["WidgetPosition"] | null;
+            /** Primary Color */
+            primary_color?: string | null;
+            theme?: components["schemas"]["WidgetTheme"] | null;
+            /** Ticket Enabled */
+            ticket_enabled?: boolean | null;
+            /** Title */
+            title?: string | null;
+        };
         /**
          * WorkspaceAccessKind
          * @enum {string}
@@ -8711,6 +9026,58 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["SetupStatusResponse"];
                 };
+            };
+        };
+    };
+    widget_config_v1_widget__public_key__config_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                public_key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WidgetPublicConfig"];
+                };
+            };
+            /** @description `Origin` absent or not allowed (`widget_origin_not_allowed`), no CORS. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unknown public key (`not_found`, no CORS) or widget, product or workspace unavailable (`widget_unavailable`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Request limit (`rate_limited`, `details.limit`, `Retry-After`). */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -13749,6 +14116,396 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    list_widgets_v1_workspaces__workspace_id__widgets_get: {
+        parameters: {
+            query?: {
+                /** @description Case-insensitive substring. */
+                query?: string | null;
+                product_id?: string | null;
+                active?: boolean | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WidgetPage"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below admin (`forbidden`) or workspace suspended. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or widget not found (`not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_widget_v1_workspaces__workspace_id__widgets_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WidgetCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WidgetOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below admin (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or widget not found (`not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Name already used in the workspace (`widget_name_taken`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid body (`validation_error`), product outside the workspace (`widget_product_invalid`) or invalid origins (`widget_origin_invalid`, `details.origins[{origin, reason}]`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_widget_v1_workspaces__workspace_id__widgets__widget_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                widget_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WidgetOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below admin (`forbidden`) or workspace suspended. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or widget not found (`not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_widget_v1_workspaces__workspace_id__widgets__widget_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                widget_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below admin (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or widget not found (`not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_widget_v1_workspaces__workspace_id__widgets__widget_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                widget_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WidgetUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WidgetOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below admin (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or widget not found (`not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Name already used in the workspace (`widget_name_taken`). */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Invalid body (`validation_error`), product outside the workspace (`widget_product_invalid`) or invalid origins (`widget_origin_invalid`, `details.origins[{origin, reason}]`). */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    rotate_widget_signing_secret_v1_workspaces__workspace_id__widgets__widget_id__signing_secret_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                widget_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WidgetSigningSecretOut"];
+                };
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below admin (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or widget not found (`not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_widget_signing_secret_v1_workspaces__workspace_id__widgets__widget_id__signing_secret_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                widget_id: string;
+                workspace_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No live session (standard error shape). */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Role below admin (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`). */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Workspace or widget not found (`not_found`). */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };

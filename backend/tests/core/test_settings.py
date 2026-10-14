@@ -272,3 +272,44 @@ def test_settings_reads_webhook_allowlist_as_comma_list(monkeypatch: pytest.Monk
 
 def test_settings_accepts_webhook_allowlist_as_list() -> None:
     assert Settings(webhook_allowed_hosts=["a.test"]).webhook_allowed_hosts == ["a.test"]
+
+
+def test_settings_widget_limit_defaults() -> None:
+    settings = Settings()
+
+    assert (
+        settings.widget_requests_per_minute,
+        settings.widget_conversations_per_hour,
+        settings.widget_tickets_per_hour,
+    ) == (120, 20, 5)
+
+
+def test_settings_reads_widget_limits(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("KNOBRIDGE_WIDGET_REQUESTS_PER_MINUTE", "60")
+    monkeypatch.setenv("KNOBRIDGE_WIDGET_CONVERSATIONS_PER_HOUR", "10")
+    monkeypatch.setenv("KNOBRIDGE_WIDGET_TICKETS_PER_HOUR", "2")
+
+    settings = Settings()
+
+    assert (
+        settings.widget_requests_per_minute,
+        settings.widget_conversations_per_hour,
+        settings.widget_tickets_per_hour,
+    ) == (60, 10, 2)
+
+
+@pytest.mark.parametrize(
+    "variable",
+    [
+        "KNOBRIDGE_WIDGET_REQUESTS_PER_MINUTE",
+        "KNOBRIDGE_WIDGET_CONVERSATIONS_PER_HOUR",
+        "KNOBRIDGE_WIDGET_TICKETS_PER_HOUR",
+    ],
+)
+def test_settings_rejects_non_positive_widget_limits(
+    monkeypatch: pytest.MonkeyPatch, variable: str
+) -> None:
+    monkeypatch.setenv(variable, "0")
+
+    with pytest.raises(ValidationError):
+        Settings()

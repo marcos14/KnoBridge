@@ -1989,7 +1989,8 @@
       "allChannels": "Todos os canais",
       "channels": {
         "panel": "Painel",
-        "api": "API"
+        "api": "API",
+        "widget": "Widget"
       },
       "from": "De",
       "to": "Até",
@@ -2246,7 +2247,12 @@
     "knowledge_item_updated": "Item de conhecimento revisado",
     "api_key_created": "Chave de API criada",
     "api_key_updated": "Chave de API atualizada",
-    "api_key_revoked": "Chave de API revogada"
+    "api_key_revoked": "Chave de API revogada",
+    "widget_created": "Widget criado",
+    "widget_updated": "Widget atualizado",
+    "widget_deleted": "Widget excluído",
+    "widget_signing_secret_rotated": "Segredo de assinatura do widget gerado",
+    "widget_signing_secret_removed": "Segredo de assinatura do widget removido"
   },
   "admin": {
     "search": "Buscar",

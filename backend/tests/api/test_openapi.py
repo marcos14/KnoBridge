@@ -23,7 +23,8 @@ def test_render_openapi_is_deterministic_and_formatted() -> None:
     rendered = render_openapi()
 
     assert rendered == render_openapi()
-    assert rendered == json.dumps(json.loads(rendered), indent=2, sort_keys=True) + "\n"
+    expected = json.dumps(json.loads(rendered), indent=2, sort_keys=True, ensure_ascii=False)
+    assert rendered == expected + "\n"
 
 
 def test_export_openapi_uses_lf_line_endings(tmp_path: Path) -> None:

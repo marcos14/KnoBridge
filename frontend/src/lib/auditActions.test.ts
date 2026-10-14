@@ -4,7 +4,7 @@ import { AUDIT_ACTIONS, isAuditAction } from "./auditActions";
 
 describe("auditActions", () => {
   it("test_audit_actions_lists_every_contract_action_once", () => {
-    expect(AUDIT_ACTIONS).toHaveLength(72);
+    expect(AUDIT_ACTIONS).toHaveLength(77);
     expect(new Set(AUDIT_ACTIONS).size).toBe(AUDIT_ACTIONS.length);
     expect(AUDIT_ACTIONS).toContain("setup.completed");
     expect(AUDIT_ACTIONS).toContain("runner.revoked");
@@ -15,6 +15,7 @@ describe("auditActions", () => {
     expect(AUDIT_ACTIONS).toContain("superadmin.workspace_entered");
     expect(AUDIT_ACTIONS).toContain("superadmin.workspace_exited");
     expect(AUDIT_ACTIONS).toContain("api_key.revoked");
+    expect(AUDIT_ACTIONS).toContain("widget.signing_secret_rotated");
   });
 
   it("test_is_audit_action_accepts_only_known_codes", () => {

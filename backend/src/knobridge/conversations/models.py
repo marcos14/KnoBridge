@@ -6,10 +6,12 @@ whose parent lives in another workspace; deletes cascade from the product down t
 feedback. Who may read a conversation (its owner, or an owner/admin of the workspace) is an
 application rule on top of the workspace isolation.
 
-A conversation belongs to a person (``panel``) or to an API key (``api``,
-``docs/specs/api-publica.md``), never both. ``api_keys`` is referenced by table name only: this
-package does not import ``apikeys/``, so whoever writes conversations loads ``ApiKey`` (the API
-does, in ``api/conversations.py``).
+A conversation belongs to exactly one owner: a person (``panel``), an API key (``api``,
+``docs/specs/api-publica.md``) or a widget (``widget``, ``docs/specs/widget.md``; with the hash of
+the visitor's conversation token and, when signed, the visitor's identity). ``api_keys`` and
+``widgets`` are referenced by table name only: this package imports neither ``apikeys/`` nor
+``widget/``, so whoever writes conversations loads ``ApiKey`` (the API does, in
+``api/conversations.py``) and ``Widget`` (also there).
 """
 
 from __future__ import annotations
@@ -40,13 +42,17 @@ from knobridge.levels.level import ResponseLevel
 
 TITLE_MAX_LENGTH = 200
 FEEDBACK_COMMENT_MAX_LENGTH = 2000
+SHA256_HEX_LENGTH = 64
+VISITOR_TEXT_MAX_LENGTH = 200
+VISITOR_EMAIL_MAX_LENGTH = 320
 
 
 class ConversationChannel(StrEnum):
-    """Where the conversation happens (also kept on each message); widget, Slack... come later."""
+    """Where the conversation happens (also kept on each message); Slack... come later."""
 
     PANEL = "panel"
     API = "api"
+    WIDGET = "widget"
 
 
 class MessageRole(StrEnum):
@@ -89,11 +95,31 @@ class Conversation(UUIDPrimaryKeyMixin, TimestampMixin, Base):
             ["workspace_id", "api_key_id"],
             ["api_keys.workspace_id", "api_keys.id"],
         ),
+        ForeignKeyConstraint(
+            ["workspace_id", "widget_id"],
+            ["widgets.workspace_id", "widgets.id"],
+            ondelete="CASCADE",
+        ),
         Index(None, "workspace_id", "user_id", "updated_at"),
         Index(None, "workspace_id", "api_key_id"),
-        # Exactly one owner: a person in the panel, a key in the API.
-        CheckConstraint("(user_id IS NULL) = (api_key_id IS NOT NULL)", name="one_owner"),
+        Index(None, "workspace_id", "widget_id"),
+        # Exactly one owner: a person in the panel, a key in the API, a widget for a visitor.
+        CheckConstraint("num_nonnulls(user_id, api_key_id, widget_id) = 1", name="one_owner"),
         CheckConstraint("(channel = 'api') = (api_key_id IS NOT NULL)", name="api_key_when_api"),
+        CheckConstraint(
+            "(channel = 'widget') = (widget_id IS NOT NULL)", name="widget_when_widget"
+        ),
+        CheckConstraint(
+            "(channel = 'widget') = (visitor_token_hash IS NOT NULL)",
+            name="visitor_token_when_widget",
+        ),
+        # The identity exists only in a widget conversation, and only with its ``sub``.
+        CheckConstraint(
+            "(channel = 'widget' OR (visitor_external_id IS NULL AND visitor_name IS NULL"
+            " AND visitor_email IS NULL)) AND (visitor_external_id IS NOT NULL"
+            " OR (visitor_name IS NULL AND visitor_email IS NULL))",
+            name="visitor_only_widget",
+        ),
     )
 
     workspace_id: Mapped[uuid.UUID] = mapped_column(
@@ -108,6 +134,18 @@ class Conversation(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     )
     # The key that owns an API conversation; keys are revoked, never deleted.
     api_key_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True)
+    # The widget that owns a visitor's conversation; deleting the widget deletes them.
+    widget_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True)
+    # SHA-256 (hex) of the visitor's ``kbv_`` token; the token itself is shown once.
+    visitor_token_hash: Mapped[str | None] = mapped_column(String(SHA256_HEX_LENGTH), nullable=True)
+    # The signed identity of the visitor (``sub``, name and e-mail), when there is one.
+    visitor_external_id: Mapped[str | None] = mapped_column(
+        String(VISITOR_TEXT_MAX_LENGTH), nullable=True
+    )
+    visitor_name: Mapped[str | None] = mapped_column(String(VISITOR_TEXT_MAX_LENGTH), nullable=True)
+    visitor_email: Mapped[str | None] = mapped_column(
+        String(VISITOR_EMAIL_MAX_LENGTH), nullable=True
+    )
     # Generated from the first question; ``None`` until then.
     title: Mapped[str | None] = mapped_column(String(TITLE_MAX_LENGTH), nullable=True)
     channel: Mapped[ConversationChannel] = mapped_column(
@@ -170,6 +208,13 @@ class Feedback(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     __tablename__ = "feedback"
     __table_args__ = (
         UniqueConstraint("message_id", "user_id"),
+        # One feedback of the widget visitor (no user) per message.
+        Index(
+            "uq_feedback_message_id_visitor",
+            "message_id",
+            unique=True,
+            postgresql_where=text("user_id IS NULL"),
+        ),
         ForeignKeyConstraint(
             ["workspace_id", "message_id"],
             ["messages.workspace_id", "messages.id"],
@@ -181,8 +226,9 @@ class Feedback(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         Uuid, ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False
     )
     message_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    # ``None``: the visitor who owns the widget conversation.
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=True
     )
     rating: Mapped[FeedbackRating] = mapped_column(
         str_enum(FeedbackRating, "rating"), nullable=False

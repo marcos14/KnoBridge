@@ -117,6 +117,13 @@ class Settings(BaseSettings):
     # endpoint. Empty: every request that carries ``Origin`` is refused (DNS rebinding).
     mcp_allowed_origins: Annotated[list[str], NoDecode] = Field(default_factory=list)
 
+    # Limits of the widget's public routes per widget and client IP (docs/specs/widget.md,
+    # "Limites de requisição"): every request per minute, new conversations and ticket
+    # requests per hour. The message limits are set per widget in the panel.
+    widget_requests_per_minute: int = Field(default=120, ge=1)
+    widget_conversations_per_hour: int = Field(default=20, ge=1)
+    widget_tickets_per_hour: int = Field(default=5, ge=1)
+
     @field_validator("webhook_allowed_hosts", "mcp_allowed_hosts", mode="before")
     @classmethod
     def _split_hosts(cls, value: object) -> object:

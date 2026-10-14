@@ -345,7 +345,7 @@ async def _feedback(
     rows = await db.execute(
         select(
             Feedback.message_id,
-            Feedback.user_id,
+            User.id,
             User.name,
             User.email,
             Feedback.rating,

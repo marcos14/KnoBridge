@@ -112,3 +112,10 @@ class AuditAction(StrEnum):
     API_KEY_CREATED = "api_key.created"
     API_KEY_UPDATED = "api_key.updated"
     API_KEY_REVOKED = "api_key.revoked"
+    # Widgets of the products (name, product, public key, origins and changed fields; never the
+    # signing secret). Requests of the public routes are not audited.
+    WIDGET_CREATED = "widget.created"
+    WIDGET_UPDATED = "widget.updated"
+    WIDGET_DELETED = "widget.deleted"
+    WIDGET_SIGNING_SECRET_ROTATED = "widget.signing_secret_rotated"  # noqa: S105 - action name
+    WIDGET_SIGNING_SECRET_REMOVED = "widget.signing_secret_removed"  # noqa: S105 - action name

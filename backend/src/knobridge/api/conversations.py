@@ -51,11 +51,12 @@ from knobridge.tenancy.models import Role
 from knobridge.tenancy.rbac import role_at_least
 from knobridge.tickets.models import TicketRequest
 from knobridge.tickets.requests import requests_by_message, ticket_requests_enabled
+from knobridge.widget.models import Widget
 
-# ``conversations`` points at ``api_keys`` by name and ``conversations/`` does not import
-# ``apikeys/``; the module that writes conversations loads the key model, or the first flush
-# of a conversation fails with ``NoReferencedTableError``.
-REFERENCED_MODELS = (ApiKey,)
+# ``conversations`` points at ``api_keys`` and ``widgets`` by name and ``conversations/`` imports
+# neither ``apikeys/`` nor ``widget/``; the module that writes conversations loads both models,
+# or the first flush of a conversation fails with ``NoReferencedTableError``.
+REFERENCED_MODELS = (ApiKey, Widget)
 
 DEFAULT_LIMIT = 50
 MAX_LIMIT = 200

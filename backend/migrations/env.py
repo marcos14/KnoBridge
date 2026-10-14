@@ -27,6 +27,7 @@ from knobridge.products import models as products_models
 from knobridge.security import models as security_models
 from knobridge.tenancy import models as tenancy_models
 from knobridge.tickets import models as tickets_models
+from knobridge.widget import models as widget_models
 
 config = context.config
 
@@ -47,6 +48,7 @@ _MODEL_MODULES = (
     harness_models,
     tickets_models,
     apikeys_models,
+    widget_models,
 )
 target_metadata = Base.metadata
 

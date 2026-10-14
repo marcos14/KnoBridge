@@ -1016,7 +1016,12 @@
           "knowledge_item.updated",
           "api_key.created",
           "api_key.updated",
-          "api_key.revoked"
+          "api_key.revoked",
+          "widget.created",
+          "widget.updated",
+          "widget.deleted",
+          "widget.signing_secret_rotated",
+          "widget.signing_secret_removed"
         ],
         "title": "AuditAction",
         "type": "string"
@@ -2397,10 +2402,11 @@
         "type": "object"
       },
       "ConversationChannel": {
-        "description": "Where the conversation happens (also kept on each message); widget, Slack... come later.",
+        "description": "Where the conversation happens (also kept on each message); Slack... come later.",
         "enum": [
           "panel",
-          "api"
+          "api",
+          "widget"
         ],
         "title": "ConversationChannel",
         "type": "string"
@@ -11824,6 +11830,604 @@
         "title": "VerifyEmailRequest",
         "type": "object"
       },
+      "WidgetCreate": {
+        "properties": {
+          "active": {
+            "default": true,
+            "title": "Active",
+            "type": "boolean"
+          },
+          "allowed_origins": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Allowed Origins",
+            "type": "array"
+          },
+          "feedback_enabled": {
+            "default": true,
+            "title": "Feedback Enabled",
+            "type": "boolean"
+          },
+          "greeting": {
+            "default": "Olá! Como posso ajudar?",
+            "maxLength": 500,
+            "title": "Greeting",
+            "type": "string"
+          },
+          "messages_per_day": {
+            "default": 1000,
+            "maximum": 100000.0,
+            "minimum": 1.0,
+            "title": "Messages Per Day",
+            "type": "integer"
+          },
+          "messages_per_ip_per_hour": {
+            "default": 30,
+            "maximum": 1000.0,
+            "minimum": 1.0,
+            "title": "Messages Per Ip Per Hour",
+            "type": "integer"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/WidgetMode",
+            "default": "bubble"
+          },
+          "name": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "placeholder": {
+            "default": "Escreva sua pergunta",
+            "maxLength": 120,
+            "title": "Placeholder",
+            "type": "string"
+          },
+          "position": {
+            "$ref": "#/components/schemas/WidgetPosition",
+            "default": "bottom-right"
+          },
+          "primary_color": {
+            "default": "#2563eb",
+            "pattern": "^#[0-9a-fA-F]{6}$",
+            "title": "Primary Color",
+            "type": "string"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "theme": {
+            "$ref": "#/components/schemas/WidgetTheme",
+            "default": "auto"
+          },
+          "ticket_enabled": {
+            "default": true,
+            "title": "Ticket Enabled",
+            "type": "boolean"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "required": [
+          "product_id",
+          "name",
+          "allowed_origins"
+        ],
+        "title": "WidgetCreate",
+        "type": "object"
+      },
+      "WidgetMode": {
+        "enum": [
+          "bubble",
+          "inline"
+        ],
+        "title": "WidgetMode",
+        "type": "string"
+      },
+      "WidgetOut": {
+        "properties": {
+          "active": {
+            "title": "Active",
+            "type": "boolean"
+          },
+          "allowed_origins": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Allowed Origins",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "created_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By Name"
+          },
+          "feedback_enabled": {
+            "title": "Feedback Enabled",
+            "type": "boolean"
+          },
+          "greeting": {
+            "title": "Greeting",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "messages_per_day": {
+            "title": "Messages Per Day",
+            "type": "integer"
+          },
+          "messages_per_ip_per_hour": {
+            "title": "Messages Per Ip Per Hour",
+            "type": "integer"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/WidgetMode"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "placeholder": {
+            "title": "Placeholder",
+            "type": "string"
+          },
+          "position": {
+            "$ref": "#/components/schemas/WidgetPosition"
+          },
+          "primary_color": {
+            "title": "Primary Color",
+            "type": "string"
+          },
+          "product_id": {
+            "format": "uuid",
+            "title": "Product Id",
+            "type": "string"
+          },
+          "product_name": {
+            "title": "Product Name",
+            "type": "string"
+          },
+          "public_key": {
+            "title": "Public Key",
+            "type": "string"
+          },
+          "signing_secret_configured": {
+            "title": "Signing Secret Configured",
+            "type": "boolean"
+          },
+          "signing_secret_created_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Signing Secret Created At"
+          },
+          "theme": {
+            "$ref": "#/components/schemas/WidgetTheme"
+          },
+          "ticket_available": {
+            "title": "Ticket Available",
+            "type": "boolean"
+          },
+          "ticket_enabled": {
+            "title": "Ticket Enabled",
+            "type": "boolean"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "product_id",
+          "product_name",
+          "name",
+          "public_key",
+          "allowed_origins",
+          "active",
+          "mode",
+          "position",
+          "theme",
+          "primary_color",
+          "title",
+          "greeting",
+          "placeholder",
+          "feedback_enabled",
+          "ticket_enabled",
+          "ticket_available",
+          "messages_per_ip_per_hour",
+          "messages_per_day",
+          "signing_secret_configured",
+          "signing_secret_created_at",
+          "created_by",
+          "created_by_name",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "WidgetOut",
+        "type": "object"
+      },
+      "WidgetPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/WidgetOut"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "offset": {
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "WidgetPage",
+        "type": "object"
+      },
+      "WidgetPosition": {
+        "enum": [
+          "bottom-right",
+          "bottom-left"
+        ],
+        "title": "WidgetPosition",
+        "type": "string"
+      },
+      "WidgetPublicConfig": {
+        "description": "What the widget needs to render; nothing about collections, model, limits or cost.",
+        "properties": {
+          "feedback_enabled": {
+            "title": "Feedback Enabled",
+            "type": "boolean"
+          },
+          "greeting": {
+            "title": "Greeting",
+            "type": "string"
+          },
+          "identity_enabled": {
+            "title": "Identity Enabled",
+            "type": "boolean"
+          },
+          "language": {
+            "title": "Language",
+            "type": "string"
+          },
+          "level": {
+            "$ref": "#/components/schemas/ResponseLevel"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/WidgetMode"
+          },
+          "placeholder": {
+            "title": "Placeholder",
+            "type": "string"
+          },
+          "position": {
+            "$ref": "#/components/schemas/WidgetPosition"
+          },
+          "primary_color": {
+            "title": "Primary Color",
+            "type": "string"
+          },
+          "product_name": {
+            "title": "Product Name",
+            "type": "string"
+          },
+          "public_key": {
+            "title": "Public Key",
+            "type": "string"
+          },
+          "question_max_chars": {
+            "title": "Question Max Chars",
+            "type": "integer"
+          },
+          "theme": {
+            "$ref": "#/components/schemas/WidgetTheme"
+          },
+          "ticket_enabled": {
+            "title": "Ticket Enabled",
+            "type": "boolean"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "public_key",
+          "product_name",
+          "language",
+          "title",
+          "greeting",
+          "placeholder",
+          "mode",
+          "position",
+          "theme",
+          "primary_color",
+          "feedback_enabled",
+          "ticket_enabled",
+          "identity_enabled",
+          "level",
+          "question_max_chars"
+        ],
+        "title": "WidgetPublicConfig",
+        "type": "object"
+      },
+      "WidgetSigningSecretOut": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "secret": {
+            "title": "Secret",
+            "type": "string"
+          }
+        },
+        "required": [
+          "secret",
+          "created_at"
+        ],
+        "title": "WidgetSigningSecretOut",
+        "type": "object"
+      },
+      "WidgetTheme": {
+        "enum": [
+          "light",
+          "dark",
+          "auto"
+        ],
+        "title": "WidgetTheme",
+        "type": "string"
+      },
+      "WidgetUpdate": {
+        "additionalProperties": false,
+        "description": "Fields to change; omitted fields stay, ``title: null`` is the product's name again.\n``product_id`` never changes (another product, another widget): unknown fields are 422.",
+        "properties": {
+          "active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Active"
+          },
+          "allowed_origins": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 50,
+                "minItems": 1,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allowed Origins"
+          },
+          "feedback_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback Enabled"
+          },
+          "greeting": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Greeting"
+          },
+          "messages_per_day": {
+            "anyOf": [
+              {
+                "maximum": 100000.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Messages Per Day"
+          },
+          "messages_per_ip_per_hour": {
+            "anyOf": [
+              {
+                "maximum": 1000.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Messages Per Ip Per Hour"
+          },
+          "mode": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WidgetMode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "placeholder": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Placeholder"
+          },
+          "position": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WidgetPosition"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "primary_color": {
+            "anyOf": [
+              {
+                "pattern": "^#[0-9a-fA-F]{6}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Primary Color"
+          },
+          "theme": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WidgetTheme"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ticket_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticket Enabled"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "title": "WidgetUpdate",
+        "type": "object"
+      },
       "WorkspaceAccessKind": {
         "enum": [
           "member",
@@ -14371,6 +14975,58 @@
         "summary": "Setup Status",
         "tags": [
           "setup"
+        ]
+      }
+    },
+    "/v1/widget/{public_key}/config": {
+      "get": {
+        "description": "Appearance and features of the widget, read when it loads (cacheable for a minute).",
+        "operationId": "widget_config_v1_widget__public_key__config_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "public_key",
+            "required": true,
+            "schema": {
+              "title": "Public Key",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WidgetPublicConfig"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "403": {
+            "description": "`Origin` absent or not allowed (`widget_origin_not_allowed`), no CORS."
+          },
+          "404": {
+            "description": "Unknown public key (`not_found`, no CORS) or widget, product or workspace unavailable (`widget_unavailable`)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "429": {
+            "description": "Request limit (`rate_limited`, `details.limit`, `Retry-After`)."
+          }
+        },
+        "summary": "Widget Config",
+        "tags": [
+          "widget-public"
         ]
       }
     },
@@ -21227,6 +21883,491 @@
         "summary": "Get Usage Csv",
         "tags": [
           "usage"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/widgets": {
+      "get": {
+        "description": "Widgets by name; ``query`` matches the name. Never the signing secret.",
+        "operationId": "list_widgets_v1_workspaces__workspace_id__widgets_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Case-insensitive substring.",
+            "in": "query",
+            "name": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 200,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Case-insensitive substring.",
+              "title": "Query"
+            }
+          },
+          {
+            "in": "query",
+            "name": "product_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Product Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "active",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Active"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WidgetPage"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below admin (`forbidden`) or workspace suspended."
+          },
+          "404": {
+            "description": "Workspace or widget not found (`not_found`)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Widgets",
+        "tags": [
+          "widgets"
+        ]
+      },
+      "post": {
+        "description": "Create a widget of a product; its public key ``kbp_…`` is generated here.",
+        "operationId": "create_widget_v1_workspaces__workspace_id__widgets_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WidgetCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WidgetOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below admin (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
+          },
+          "404": {
+            "description": "Workspace or widget not found (`not_found`)."
+          },
+          "409": {
+            "description": "Name already used in the workspace (`widget_name_taken`)."
+          },
+          "422": {
+            "description": "Invalid body (`validation_error`), product outside the workspace (`widget_product_invalid`) or invalid origins (`widget_origin_invalid`, `details.origins[{origin, reason}]`)."
+          }
+        },
+        "summary": "Create Widget",
+        "tags": [
+          "widgets"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/widgets/{widget_id}": {
+      "delete": {
+        "description": "Delete the widget and its conversations; its public key stops at once.",
+        "operationId": "delete_widget_v1_workspaces__workspace_id__widgets__widget_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "widget_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Widget Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below admin (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
+          },
+          "404": {
+            "description": "Workspace or widget not found (`not_found`)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Widget",
+        "tags": [
+          "widgets"
+        ]
+      },
+      "get": {
+        "operationId": "get_widget_v1_workspaces__workspace_id__widgets__widget_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "widget_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Widget Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WidgetOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below admin (`forbidden`) or workspace suspended."
+          },
+          "404": {
+            "description": "Workspace or widget not found (`not_found`)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Widget",
+        "tags": [
+          "widgets"
+        ]
+      },
+      "patch": {
+        "description": "Change the given fields; ``allowed_origins`` replaces the list.",
+        "operationId": "update_widget_v1_workspaces__workspace_id__widgets__widget_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "widget_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Widget Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WidgetUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WidgetOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below admin (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
+          },
+          "404": {
+            "description": "Workspace or widget not found (`not_found`)."
+          },
+          "409": {
+            "description": "Name already used in the workspace (`widget_name_taken`)."
+          },
+          "422": {
+            "description": "Invalid body (`validation_error`), product outside the workspace (`widget_product_invalid`) or invalid origins (`widget_origin_invalid`, `details.origins[{origin, reason}]`)."
+          }
+        },
+        "summary": "Update Widget",
+        "tags": [
+          "widgets"
+        ]
+      }
+    },
+    "/v1/workspaces/{workspace_id}/widgets/{widget_id}/signing-secret": {
+      "delete": {
+        "description": "Delete the signing secret: signed identities are refused, anonymous visitors go on.",
+        "operationId": "remove_widget_signing_secret_v1_workspaces__workspace_id__widgets__widget_id__signing_secret_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "widget_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Widget Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below admin (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
+          },
+          "404": {
+            "description": "Workspace or widget not found (`not_found`)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Remove Widget Signing Secret",
+        "tags": [
+          "widgets"
+        ]
+      },
+      "post": {
+        "description": "Generate or replace the signing secret and return it, the only time it is shown.",
+        "operationId": "rotate_widget_signing_secret_v1_workspaces__workspace_id__widgets__widget_id__signing_secret_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "widget_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Widget Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "workspace_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Workspace Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WidgetSigningSecretOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "description": "No live session (standard error shape)."
+          },
+          "403": {
+            "description": "Role below admin (`forbidden`), workspace suspended or CSRF failure (`csrf_failed`)."
+          },
+          "404": {
+            "description": "Workspace or widget not found (`not_found`)."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Rotate Widget Signing Secret",
+        "tags": [
+          "widgets"
         ]
       }
     }
