@@ -1,6 +1,8 @@
 # Chat em streaming (SSE)
 
-> Rascunho v0.8 · 2026-10-12 · Plano 0002, F4.4 (v0.1; v0.2, F4.5: resposta `streaming` órfã lida como `interrupted`; v0.3, plano 0003 F4.2: campos de localização nas citações e erros do provedor de embedding antes do stream; v0.4, plano 0003 F6.1: autor e data nas citações de commit; v0.5, plano 0004 F2.4: citação de item de conhecimento com confiança e evidências; v0.6, plano 0005 F1.1: citação de chamado, implementada na F2.3; v0.7, plano 0005 F3.2: `ticket_requests_enabled` no `done`; v0.8, plano 0008 F1.1: `cost_usd` no `done`; v0.9, plano 0009 F1.1: produto e nível no `citations`, citação de card)
+> Rascunho v0.10 · 2026-10-14 · Plano 0002, F4.4 (v0.1; v0.2, F4.5: resposta `streaming` órfã lida como `interrupted`; v0.3, plano 0003 F4.2: campos de localização nas citações e erros do provedor de embedding antes do stream; v0.4, plano 0003 F6.1: autor e data nas citações de commit; v0.5, plano 0004 F2.4: citação de item de conhecimento com confiança e evidências; v0.6, plano 0005 F1.1: citação de chamado, implementada na F2.3; v0.7, plano 0005 F3.2: `ticket_requests_enabled` no `done`; v0.8, plano 0008 F1.1: `cost_usd` no `done`; v0.9, plano 0009 F1.1: produto e nível no `citations`, citação de card; v0.10, plano 0010 F1.1: os mesmos eventos no widget)
+>
+> **Mudanças da v0.10** (plano 0010, F1.1; implementação na F3.2): os mesmos eventos servem à conversa do **widget** (`POST /v1/widget/{public_key}/conversations/{id}/messages`, [widget.md](widget.md)), com o `done` sem modelo, tokens e custo e o `ticket_requests_enabled` do widget ([No canal widget](#no-canal-widget)). O MCP não usa SSE: `ask` devolve a resposta inteira, com as mesmas citações ([mcp.md](mcp.md#ask)).
 >
 > **Mudanças da v0.9** (plano 0009, F1.1; implementada nas F2.2 e F2.3): a conversa é de um **produto** num **nível** ([produtos-e-niveis.md](produtos-e-niveis.md)). O evento `citations` traz `product_id` e `level`; citação `kind: card` com `card_number`, `card_type`, `card_status`, `card_sprint` e `card_date_kind` (`null` fora de `card`; [cards.md](cards.md#citação-kind-card)); citação `kind: knowledge` no nível `end_user` vai com `evidence: null`; erros antes do stream: 403 `level_not_allowed`, 409 `level_not_configured` e 409 `product_inactive` (no lugar de `assistant_inactive`). Campos aditivos; respostas gravadas antes vêm com os campos de card `null`. `ticket_requests_enabled` passa a vir do webhook do produto.
 >
@@ -155,6 +157,15 @@ data: {"message_id":"…","status":"no_source","model":null,"input_tokens":null,
 ```
 
 A mensagem fica gravada com `status: no_source` e `citations: []`. O painel usa esse status para mostrar a oferta de abrir chamado, que usa o webhook de saída do produto quando ele está configurado ([chamados.md](chamados.md#abrir-chamado-webhook-de-saída)).
+
+## No canal widget
+
+Desde a v0.10, a rota de mensagens do widget ([widget.md](widget.md#post-conversationsconversation_idmessages)) devolve exatamente estes eventos, na mesma ordem, com estas diferenças:
+
+- **Requisição**: sem sessão nem CSRF; `Authorization: Bearer kbv_…` (token da conversa do visitante) e `Origin` permitido. Os erros antes do stream são os da [tabela da requisição](#requisição) com os códigos do widget no lugar dos do painel: 401 `invalid_visitor_token`, 404 `not_found` ou `widget_unavailable` (no lugar de `product_inactive`), 429 `rate_limited`, além de `level_not_configured`, `validation_error` e os do provedor de embedding.
+- **`citations`**: `level` é sempre `end_user`; citação de conhecimento com `evidence: null`.
+- **`done`**: `model`, `input_tokens`, `output_tokens` e `cost_usd` vêm sempre `null` (o custo é gravado na mensagem, mas não vai ao visitante); `ticket_requests_enabled` é o do widget (o widget oferece chamado **e** o produto tem o webhook).
+- **`error`**: igual; o widget mostra uma mensagem genérica, sem o código.
 
 ## Estados da mensagem do assistente
 

@@ -302,7 +302,7 @@ teto do principal = nível máximo do membro no produto (painel) ou max_level da
 teto do canal     = end_user, se o canal é público; senão, sem limite
 ```
 
-Os canais de hoje, `panel` e `api`, não são públicos. Um canal público que pede `support` ou `product_dev` recebe 403 `level_not_allowed` com `reason: public_channel`, mesmo que a chave usada por ele tenha `max_level` maior. A regra e o teste ficam prontos neste plano, com um canal público fake; o widget e os canais entram depois.
+Os canais `panel`, `api` e `mcp` (o servidor MCP, com a chave; [mcp.md](mcp.md#produto-e-nível)) não são públicos; o `widget` é ([widget.md](widget.md#nível-sempre-end_user), plano 0010). Um canal público que pede `support` ou `product_dev` recebe 403 `level_not_allowed` com `reason: public_channel`, mesmo que a chave usada por ele tenha `max_level` maior. A regra e o teste ficam prontos neste plano, com um canal público fake; o widget e os canais entram depois.
 
 ## Migração dos assistentes
 

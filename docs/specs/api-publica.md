@@ -1,6 +1,8 @@
 # API pública
 
-> Rascunho v0.2 · 2026-10-13 · Planos 0008 (F1.1; implementação nas F2.3 e F2.4) e 0009 (F1.1; implementação na F2.4)
+> Rascunho v0.3 · 2026-10-14 · Planos 0008 (F1.1; implementação nas F2.3 e F2.4), 0009 (F1.1; implementação na F2.4) e 0010 (F1.1; implementação nas F2.1 e F2.2)
+>
+> **Mudanças da v0.3** (plano 0010, F1.1): a chave `kbk_` também abre o **servidor MCP** em `/v1/mcp`, com o mesmo escopo de produtos, o mesmo `max_level` e a mesma autenticação ([mcp.md](mcp.md), [ADR 0009](../adr/0009-canais-mcp-e-widget.md)); as conversas criadas pela ferramenta `ask` são da chave, com `channel = mcp` ([Conversas da API](#conversas-da-api)). O widget não usa chave `kbk_`: tem a chave pública `kbp_` própria ([widget.md](widget.md)).
 >
 > **Mudanças da v0.2** (plano 0009, F1.1): os assistentes viram **produtos** e cada pergunta tem um **nível** ([produtos-e-niveis.md](produtos-e-niveis.md), [ADR 0008](../adr/0008-produtos-e-niveis.md)). A chave ganha escopo por produto (`product_ids`, no lugar de `assistant_ids`) e **nível máximo** (`max_level`, obrigatório na criação; [Chaves: escopo e nível máximo](#chaves-escopo-e-nível-máximo)); a REST própria recebe `product_id` e `level` (com `assistant_id` aceito como sinônimo obsoleto); na API compatível com OpenAI, `model` é `<produto>` ou `<produto>:<nível>`, sem nível vale o máximo da chave, e `/v1/models` lista as combinações permitidas ([Modelo = produto e nível](#modelo--produto-e-nível)); nível acima do máximo dá 403 `level_not_allowed`; o canal público só responde no nível `end_user`.
 
@@ -15,6 +17,7 @@ Código previsto: `backend/src/knobridge/apikeys/` (chaves e autenticação), `b
 | `GET`, `POST .../api-keys`, `PATCH .../api-keys/{id}`, `POST .../api-keys/{id}/revoke` | sessão + CSRF, owner ou admin | KnoBridge (`{"error": {"code", "message", "details"}}`) |
 | `POST /v1/conversations`, `GET /v1/conversations/{id}`, `POST /v1/conversations/{id}/messages` | chave de API | KnoBridge |
 | `GET /v1/models`, `POST /v1/chat/completions` | chave de API | OpenAI (`{"error": {"message", "type", "param", "code"}}`) |
+| `POST /v1/mcp` (servidor MCP, v0.3) | chave de API | KnoBridge em HTTP (401, 403, 413); erros das ferramentas como resultado de erro do MCP ([mcp.md](mcp.md#erros-das-ferramentas)) |
 
 `...` = `/v1/workspaces/{workspace_id}`.
 
@@ -86,7 +89,7 @@ Toda resposta 401 leva `WWW-Authenticate: Bearer`.
 
 Regras:
 
-- **A chave só abre a API pública** (tabela da visão geral). Com a chave, rotas do painel respondem 401 como sem sessão; com o cookie de sessão e sem chave, a API pública responde 401. A API pública ignora cookies e não exige CSRF.
+- **A chave só abre a API pública** (tabela da visão geral, que inclui `/v1/mcp` desde a v0.3). Com a chave, rotas do painel respondem 401 como sem sessão; com o cookie de sessão e sem chave, a API pública responde 401. A API pública ignora cookies e não exige CSRF.
 - **A chave nunca é logada nem auditada**, nem em erro. Logs da API pública levam `workspace_id`, `api_key_id` e `conversation_id`.
 - **`last_used_at`**: gravado numa transação curta depois da autenticação, só quando está nulo ou tem mais de 60 s (`UPDATE … WHERE last_used_at IS NULL OR last_used_at < agora - 60 s`), para não escrever a cada requisição. Relógio injetado.
 - **Uso não é auditado por requisição.** As conversas ficam gravadas (abaixo) e o custo, em [uso-e-custos.md](uso-e-custos.md).
@@ -94,6 +97,7 @@ Regras:
 ## Conversas da API
 
 - Toda conversa criada pela API (REST própria ou compatível com OpenAI) é gravada com `channel = api`, `api_key_id` = a chave e `user_id` nulo; cada resposta, com `messages.channel = api` e o custo estimado ([chat.md](chat.md#custo-e-canal-por-resposta)).
+- Desde a v0.3, a ferramenta `ask` do MCP grava as conversas da chave com **`channel = mcp`** ([mcp.md](mcp.md#ask)). Cada canal só lê as suas: uma conversa `mcp` responde 404 em `GET /v1/conversations/{id}` e em `POST .../messages` da REST própria, e uma conversa `api` não é continuada por `ask`.
 - **A chave é a dona**: só a chave que criou a conversa lê e pergunta nela (outra chave do mesmo workspace recebe 404). Pessoas não continuam conversas da API pelo painel; owner e admin as leem na visão administrativa (**Conversas**), que mostra o nome da chave no lugar do usuário e filtra por canal ([chat.md](chat.md#visão-administrativa)).
 - Revogar a chave não apaga as conversas; excluir o produto apaga, como no painel.
 - Cada conversa da API tem produto e nível, fixos desde a criação, como no painel; as mensagens gravam os dois ([chat.md](chat.md#custo-e-canal-por-resposta)).
@@ -149,7 +153,7 @@ A rodada é a mesma do painel ([chat.md](chat.md#orquestração-em-duas-fases)):
 
 Resposta 200 `PublicConversationDetail` = `PublicConversationOut` + `messages` paginadas (`messages_limit` padrão 50, máximo 200; `messages_offset`; `{items, total, limit, offset}`), na ordem da conversa, no formato acima. Resposta `streaming` órfã aparece como `interrupted` ([chat.md](chat.md#estados-das-mensagens)). Erro: 404 `not_found`.
 
-Fora desta versão: listar e excluir conversas pela API, feedback e pedido de chamado pela API.
+Fora desta versão: listar e excluir conversas pela API, feedback e pedido de chamado pela REST própria (o pedido de chamado com a chave existe pelo MCP, na ferramenta `open_ticket`; [mcp.md](mcp.md#open_ticket)).
 
 ## API compatível com OpenAI
 
@@ -308,6 +312,7 @@ Os SDKs da OpenAI repetem 429 e 5xx sozinhos; cada repetição vira uma conversa
 | `POST /v1/chat/completions` | 1 MiB |
 | `POST /v1/conversations/{id}/messages` | 64 KiB |
 | `POST /v1/conversations` | 4 KiB |
+| `POST /v1/mcp` (v0.3) | 64 KiB |
 
 Aplicados pelo `BodyLimitMiddleware` (413 `payload_too_large` com `details.max_bytes`; nas rotas compatíveis com OpenAI, no formato da OpenAI). Além disso: pergunta até 8000 caracteres, até 200 mensagens por pedido e as 10 mais recentes como histórico. Sem limite de requisições nem cota por chave nesta versão (fora do escopo do plano 0008); o custo de cada chave aparece em Uso e custos.
 

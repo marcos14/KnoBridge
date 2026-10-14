@@ -1,6 +1,8 @@
 # Chamados
 
-> Rascunho v0.2 · 2026-10-13 · Em uso (planos 0005 e 0009)
+> Rascunho v0.3 · 2026-10-14 · Em uso (planos 0005 e 0009; plano 0010 em implementação)
+>
+> **Mudanças da v0.3** (plano 0010, F1.1; implementação nas F2.2 e F3.2): chamado pedido pelo **MCP** (ferramenta `open_ticket`, com a chave) e pelo **widget** (visitante, anônimo ou com identidade assinada), sem pessoa logada: o pedido fica com `user_id` nulo, o resumo vem de quem pede (sem LLM) e o payload ganha `channel`, `requester.verified` e `requester.external_id` ([Pedidos vindos do MCP e do widget](#pedidos-vindos-do-mcp-e-do-widget)). `version` continua 1.
 >
 > **Mudanças da v0.2** (plano 0009, F1.1; implementação nas F2.1 e F2.4): o webhook de abrir chamado passa do assistente para o **produto** ([produtos-e-niveis.md](produtos-e-niveis.md)), com as rotas em `/products/{pid}/ticket-webhook`, `product_id` no pedido e `product` e `level` no payload (que mantém `assistant`, obsoleto, com os mesmos valores); a fonte `tickets` tem nível mínimo padrão `support`; os **cards de desenvolvimento** seguem o mesmo caminho dos chamados, em [cards.md](cards.md).
 
@@ -777,8 +779,9 @@ Erros:
   "product": { "id": "…", "name": "ERP" },
   "level": "end_user",
   "assistant": { "id": "…", "name": "ERP" },
+  "channel": "panel",
   "conversation": { "id": "…", "url": "https://kb.exemplo.com.br/w/…/conversations/…" },
-  "requester": { "name": "Ana Souza", "email": "ana@exemplo.com.br" },
+  "requester": { "name": "Ana Souza", "email": "ana@exemplo.com.br", "verified": true, "external_id": null },
   "question": "Como emito nota fiscal para cliente do exterior?",
   "summary": "O usuário quer emitir nota fiscal de exportação e não achou o passo a passo nas fontes.",
   "messages": [
@@ -790,8 +793,29 @@ Erros:
 
 - `product` e `level` (v0.2): o produto e o nível da conversa. `assistant` repete `product` e é obsoleto: fica enquanto houver destinos que o leem e sai numa versão futura, anunciada no `CHANGELOG.md`. `version` continua 1, porque a mudança só acrescenta campos.
 - `id`: id do pedido, o mesmo em todas as tentativas. O destino deve usá-lo para não abrir dois chamados.
-- `conversation.url`: `KNOBRIDGE_PUBLIC_BASE_URL` + caminho da conversa no painel; `null` sem a variável.
+- `conversation.url`: `KNOBRIDGE_PUBLIC_BASE_URL` + caminho da conversa no painel (`/w/<workspace>/conversations/<conversa>`, a visão administrativa, que lê conversas de qualquer canal); `null` sem a variável.
+- `channel` (v0.3): o canal da conversa, `panel`, `api`, `mcp` ou `widget`.
+- `requester.verified` (v0.3): `true` quando nome e e-mail vêm de uma conta do painel ou de uma identidade assinada do widget; `false` quando quem pede os digitou (MCP, widget anônimo). `requester.external_id` (v0.3): o `sub` da identidade assinada do widget, senão `null`. `requester.name` é sempre texto: sem nome informado, repete o e-mail.
 - O corpo é montado uma vez, na criação do pedido, e reenviado byte a byte em cada tentativa.
+
+### Pedidos vindos do MCP e do widget
+
+Desde a v0.3 ([ADR 0009](../adr/0009-canais-mcp-e-widget.md)), o pedido também nasce fora do painel, sem pessoa logada. Valem a mensagem elegível (resposta `completed` ou `no_source` da conversa), o pedido único por mensagem, o payload, a assinatura, a entrega, as retentativas e a proteção contra SSRF desta seção, com estas diferenças:
+
+| | MCP (`open_ticket`; [mcp.md](mcp.md#open_ticket)) | Widget (`POST /v1/widget/{kbp_}/conversations/{id}/ticket-requests`; [widget.md](widget.md#post-conversationsconversation_idticket-requests)) |
+|---|---|---|
+| Quem pede | A chave dona da conversa `mcp`. | O visitante com o token da conversa `widget`. |
+| Preview | Não há. | Não há. |
+| `summary` | Escrito por quem chama, 1 a 2000 caracteres. **Sem LLM.** | Digitado pelo visitante (o widget preenche com a pergunta), 1 a 2000 caracteres. **Sem LLM.** |
+| `requester` | `requester_email` (obrigatório) e `requester_name` (opcional) da chamada; `verified: false`, `external_id: null`. | Da identidade assinada da conversa (`verified: true`, `external_id` = `sub`); o que faltar nela (e-mail ou nome) vem do formulário, com `verified: false` se o e-mail foi digitado. Sem identidade, e-mail obrigatório no formulário. |
+| `channel` | `mcp` | `widget` |
+| Oferta | O produto tem webhook. | O widget oferece chamado (`ticket_enabled`) **e** o produto tem webhook (senão, 409 `ticket_webhook_not_configured`). |
+| Limite | Nenhum além da chave. | `widget_ticket`: 5 por hora por widget e IP ([widget.md](widget.md#limites-de-requisição)). |
+
+- `ticket_requests.user_id` fica **nulo** ([modelo-de-dados.md](modelo-de-dados.md#ticket_requests)); a conversa diz de onde veio.
+- `messages` do payload: as da conversa, como no painel (20 mais recentes, `completed` e `no_source`).
+- Auditoria: `ticket_request.created` com `actor_user_id` nulo e `details` = `conversation_id`, `message_id`, `product_id` e `channel` (`mcp` ou `widget`); nunca o e-mail nem o resumo. No painel, `channel` também passa a ir em `details` (`panel`).
+- O visitante acompanha o pedido por `GET .../ticket-requests/{id}` do widget (status, número e link); pelo MCP, não há consulta nesta versão.
 
 ### Cabeçalhos e assinatura
 

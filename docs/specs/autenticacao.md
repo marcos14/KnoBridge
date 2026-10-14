@@ -1,6 +1,8 @@
 # Autenticação, papéis e permissões
 
-> Rascunho v0.3 · 2026-10-13 · Em uso (planos 0002, 0008 e 0009)
+> Rascunho v0.4 · 2026-10-14 · Em uso (planos 0002, 0008 e 0009; plano 0010 em implementação)
+>
+> **Mudanças da v0.4** (plano 0010, F1.1): na matriz, o servidor MCP (`/v1/mcp`, chave de API; [mcp.md](mcp.md)), a gestão dos widgets (admin) e as rotas públicas do widget (`/v1/widget/*`, sem sessão: `Origin` permitido e token de conversa do visitante; [widget.md](widget.md)); a tela **Widget**. Nenhuma das rotas novas lê o cookie de sessão nem exige CSRF.
 >
 > **Mudanças da v0.3** (plano 0009, F1.1; implementação na F2.1): **nível máximo por membro e produto**, com padrão pelo papel e valor gravado pelo admin ([produtos-e-niveis.md](produtos-e-niveis.md#nível-por-membro-e-produto)); convites com `product_levels` ([Convites](#convites)); `GET /v1/me` com o nível de cada produto ([Nível por produto no `/v1/me`](#nível-por-produto-no-v1me)); na matriz, as rotas de produtos no lugar das de assistentes, a configuração dos níveis, a tabela de níveis dos membros, o nível mínimo das fontes (admin) e "testar busca" para editor.
 >
@@ -194,6 +196,10 @@ Legenda: "público" = sem sessão; "logado" = qualquer sessão viva; nos papéis
 | `POST .../sources/{id}/reindex`, `POST .../collections/{id}/sync` | editor ([indexacao.md](indexacao.md#reindexar-uma-fonte)) |
 | `GET`, `POST .../api-keys`, `PATCH .../api-keys/{id}`, `POST .../api-keys/{id}/revoke` | admin ([api-publica.md](api-publica.md#gestão-no-painel-owner-ou-admin)) |
 | `GET /v1/models`, `POST /v1/chat/completions`, `POST /v1/conversations`, `GET /v1/conversations/{id}`, `POST /v1/conversations/{id}/messages` | chave de API (`Authorization: Bearer kbk_...`), sem sessão nem CSRF ([api-publica.md](api-publica.md#autenticação)) |
+| `POST /v1/mcp` | chave de API, sem sessão nem CSRF; `Origin`, quando presente, só de `KNOBRIDGE_MCP_ALLOWED_ORIGINS` (v0.4; [mcp.md](mcp.md#autenticação)) |
+| `GET`, `POST .../widgets`, `GET`, `PATCH`, `DELETE .../widgets/{id}`, `POST`, `DELETE .../widgets/{id}/signing-secret` | admin (v0.4; [widget.md](widget.md#rotas-owner-ou-admin)) |
+| `GET /v1/widget/{public_key}/config`, `POST /v1/widget/{public_key}/conversations` | público, com `Origin` nos domínios do widget e limite de requisições; identidade assinada opcional (v0.4; [widget.md](widget.md#checagem-de-origin)) |
+| `GET /v1/widget/{public_key}/conversations/{id}`, `POST .../messages`, `POST .../messages/{message_id}/feedback`, `POST`, `GET .../ticket-requests[/{id}]` | token de conversa do visitante (`Authorization: Bearer kbv_...`), com `Origin` permitido, sem sessão nem CSRF (v0.4; [widget.md](widget.md#token-de-conversa-kbv_)) |
 | `GET`, `POST .../providers`, `PATCH`, `DELETE .../providers/{id}`, `POST .../providers/{id}/test` | editor |
 | `GET .../runners`, `GET .../runners/{id}` | editor |
 | `POST .../runners`, `PATCH`, `DELETE .../runners/{id}` | admin |
@@ -221,7 +227,8 @@ O papel mínimo de cada área do workspace vem de `WORKSPACE_AREAS` em `frontend
 | Membros (`/w/:id/members`) | viewer | Leitor vê a lista; convidar, gerenciar e editar o nível por produto só para admin+. |
 | Configurações (`/w/:id/settings`) | admin | Inclui **Níveis de resposta** (v0.3). |
 | Uso e custos (`/w/:id/usage`) | admin | |
-| Chaves de API (`/w/:id/api-keys`) | admin | |
+| Chaves de API (`/w/:id/api-keys`) | admin | Inclui a seção MCP, com os comandos dos clientes (v0.4). |
+| Widget (`/w/:id/widgets`) | admin | Lista por produto, edição, segredo de assinatura, trecho para copiar e prévia ao vivo (v0.4). |
 | Auditoria (`/w/:id/audit`) | admin | |
 | Painel, Workspaces, Usuários, Auditoria da instância (`/admin/...`) | superadmin | Guarda `RequireSuperadmin`. "Entrar" em cada workspace da lista. |
 | Perfil e Segurança (`/account/...`) | logado | |
@@ -230,7 +237,7 @@ O papel mínimo de cada área do workspace vem de `WORKSPACE_AREAS` em `frontend
 
 ## Auditoria
 
-Login (sucesso e falha), logout, troca e redefinição de senha, verificação de e-mail, mudanças de perfil, revogação de sessões, convites, membros, níveis dos membros, provedores, produtos, configuração dos níveis, nível mínimo das fontes, chaves de API, exclusão de conversa, entrada e saída de superadmin num workspace e todo o trabalho de superadmin gravam um evento em `audit_events` na mesma transação da mudança, sem segredos (catálogo em `backend/src/knobridge/audit/actions.py`). Owner e admin leem a trilha do workspace; o superadmin lê a da instância.
+Login (sucesso e falha), logout, troca e redefinição de senha, verificação de e-mail, mudanças de perfil, revogação de sessões, convites, membros, níveis dos membros, provedores, produtos, configuração dos níveis, nível mínimo das fontes, chaves de API, widgets e o segredo de assinatura deles (v0.4), exclusão de conversa, entrada e saída de superadmin num workspace e todo o trabalho de superadmin gravam um evento em `audit_events` na mesma transação da mudança, sem segredos (catálogo em `backend/src/knobridge/audit/actions.py`). Owner e admin leem a trilha do workspace; o superadmin lê a da instância.
 
 ## Referências
 

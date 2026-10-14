@@ -1,6 +1,8 @@
 # Chat com produtos e níveis
 
-> Rascunho v0.4 · 2026-10-13 · Em uso (planos 0002, 0003, 0008 e 0009)
+> Rascunho v0.5 · 2026-10-14 · Em uso (planos 0002, 0003, 0008 e 0009; plano 0010 em implementação)
+>
+> **Mudanças da v0.5** (plano 0010, F1.1; implementação nas F2.2 e F3.2): canais **`mcp`** (ferramenta `ask` do servidor MCP, conversa da chave; [mcp.md](mcp.md#ask)) e **`widget`** (visitante do widget, conversa do widget, sempre no nível `end_user`; [widget.md](widget.md)); a conversa tem exatamente um dono: pessoa, chave ou widget ([Acesso e privacidade](#acesso-e-privacidade)); feedback do visitante sem usuário; a visão administrativa mostra e filtra os dois canais, o widget e o visitante ([Visão administrativa](#visão-administrativa)).
 >
 > **Mudanças da v0.4** (plano 0009, F1.1; implementação nas F2.1 a F2.4): o **produto** substitui o assistente e cada conversa tem um **nível** (`end_user`, `support`, `product_dev`) que decide as fontes (filtro de nível mínimo no SQL da busca), as instruções (texto do nível + texto do produto) e o modelo (do nível, no workspace) ([produtos-e-niveis.md](produtos-e-niveis.md)); nível conferido a cada pergunta (403 `level_not_allowed`, 409 `level_not_configured`, 409 `product_inactive`); mensagens gravam produto e nível; citação `kind: card` ([cards.md](cards.md#citação-kind-card)) e regra fixa de cards; citação de conhecimento sem evidências no nível `end_user`; visão administrativa filtra produto e nível; a lista e a duplicação de assistentes viram as de produtos ([Listagem e duplicação de produtos](#listagem-e-duplicação-de-produtos)).
 >
@@ -123,7 +125,7 @@ stateDiagram-v2
 
 Desde a v0.3 (D4 e D7 do [plano 0008](../planos/0008-telas-de-uso-e-administracao.md)), cada mensagem grava:
 
-- **`channel`**: `panel` (painel) ou `api` (API pública, REST própria ou compatível com OpenAI; [api-publica.md](api-publica.md)). Pergunta e resposta levam o canal da requisição. É o mesmo `channel` da conversa, repetido na mensagem para as agregações de [uso-e-custos.md](uso-e-custos.md) não precisarem do join e para canais futuros. Mensagens gravadas antes da migração ficam `panel`.
+- **`channel`**: `panel` (painel), `api` (API pública, REST própria ou compatível com OpenAI; [api-publica.md](api-publica.md)), `mcp` (ferramenta `ask` do MCP, v0.5; [mcp.md](mcp.md)) ou `widget` (widget embutível, v0.5; [widget.md](widget.md)). Pergunta e resposta levam o canal da requisição. É o mesmo `channel` da conversa, repetido na mensagem para as agregações de [uso-e-custos.md](uso-e-custos.md) não precisarem do join e para canais futuros. Mensagens gravadas antes da migração ficam `panel`.
 - **`cost_usd`**: custo estimado da resposta, pela tabela de preços de chat (`ChatPriceTable`, [uso-e-custos.md](uso-e-custos.md#preços-do-chat)) aplicada a `model`, `input_tokens` e `output_tokens`, com 6 casas. É gravado junto com o desfecho (`completed`, `failed`, `interrupted`), quando o provedor informou os tokens. É `null` em perguntas, em `no_source` (sem LLM), quando o modelo não tem preço ou quando faltam tokens. Nunca zero por desconhecimento.
 - **`product_id` e `level`** (v0.4): o produto e o nível da conversa, repetidos na mensagem pelo mesmo motivo do `channel` ([uso-e-custos.md](uso-e-custos.md) agrupa e filtra por eles). Pergunta e resposta levam os mesmos valores.
 
@@ -141,7 +143,7 @@ A RLS isola o workspace; dentro dele, as regras são da aplicação (`Reader` em
 
 | Ação | Quem pode |
 |---|---|
-| Criar conversa | Qualquer membro (inclusive leitor), com produto ativo do workspace, num nível até o próprio máximo no produto (v0.4; sem `level`, o máximo). Pela API pública, uma chave com o produto no escopo, num nível até o `max_level` dela; a conversa é da chave (`api_key_id`, `user_id` nulo) e só ela a lê e continua ([api-publica.md](api-publica.md#conversas-da-api)). |
+| Criar conversa | Qualquer membro (inclusive leitor), com produto ativo do workspace, num nível até o próprio máximo no produto (v0.4; sem `level`, o máximo). Pela API pública, uma chave com o produto no escopo, num nível até o `max_level` dela; a conversa é da chave (`api_key_id`, `user_id` nulo) e só ela a lê e continua ([api-publica.md](api-publica.md#conversas-da-api)); pelo MCP (v0.5), a mesma regra, com `channel = mcp`, e cada canal só lê as suas ([mcp.md](mcp.md#conversas-uso-e-custos)). Pelo widget (v0.5), o visitante de um widget ativo, sempre no nível `end_user`; a conversa é do widget (`widget_id`, `user_id` e `api_key_id` nulos) e só o token de conversa `kbv_` a lê e continua ([widget.md](widget.md#token-de-conversa-kbv_)). |
 | Listar "minhas conversas" | Cada um vê só as próprias, da mais recente para a mais antiga. |
 | Ler uma conversa | O dono, e owner/admin do workspace. Os demais recebem 404. |
 | Enviar mensagem, excluir conversa | Só o dono; enviar exige também o nível da conversa até o máximo atual do dono (403 `level_not_allowed`). Owner/admin que leem a conversa de outro recebem 403 `forbidden`. A exclusão é auditada (`conversation.deleted`, sem conteúdo). |
@@ -151,7 +153,7 @@ Matriz completa em [autenticacao.md](autenticacao.md#matriz-de-permissões).
 
 ## Feedback
 
-`POST .../conversations/{conversation_id}/messages/{message_id}/feedback` com `{"rating": "up" | "down", "comment": "..."}` (comentário opcional, até 2000 caracteres). Um feedback por mensagem e usuário: enviar de novo substitui (upsert). Só mensagens do assistente aceitam feedback (422 `feedback_target_invalid`). Na leitura da conversa (`GET .../conversations/{id}`), cada mensagem traz o feedback de quem está lendo.
+`POST .../conversations/{conversation_id}/messages/{message_id}/feedback` com `{"rating": "up" | "down", "comment": "..."}` (comentário opcional, até 2000 caracteres). Um feedback por mensagem e usuário: enviar de novo substitui (upsert). Só mensagens do assistente aceitam feedback (422 `feedback_target_invalid`). Na leitura da conversa (`GET .../conversations/{id}`), cada mensagem traz o feedback de quem está lendo. No widget (v0.5), o visitante avalia pela rota pública, com o feedback gravado sem usuário (`user_id` nulo), um por mensagem ([widget.md](widget.md#post-conversationsconversation_idmessagesmessage_idfeedback)).
 
 ## Visão administrativa
 
@@ -162,6 +164,14 @@ Owner e admin do workspace têm rotas próprias em `/v1/workspaces/{workspace_id
 - `GET /{conversation_id}`: a conversa com as mensagens paginadas e o feedback de todos, com quem deu. Vale também para a conversa da API, com os mesmos campos da lista (usuário nulo, `api_key_id` e `api_key_name`); a chave revogada continua com o nome.
 
 Na lista e no detalhe, `user_id`, `user_name` e `user_email` são nulos na conversa da API, e `api_key_id` e `api_key_name` são nulos na do painel. `channel` aceita `panel` ou `api` (outro valor: 422). O painel mostra a conversa da API como "API · <nome da chave>" no lugar do usuário e tem o filtro **Canal** (Painel, API).
+
+**Canais `mcp` e `widget`** (v0.5):
+
+- A lista e o detalhe trazem também `widget_id`, `widget_name` e `visitor` (`{name, email, external_id}` da identidade assinada, ou `null`): preenchidos só na conversa do widget. A conversa do MCP tem `api_key_id` e `api_key_name`, como a da API.
+- `channel` aceita `panel`, `api`, `mcp` e `widget` (outro valor: 422); filtro novo `widget_id`. O filtro `api_key_id` casa as conversas da chave nos canais `api` e `mcp`.
+- O painel mostra "MCP · <nome da chave>" e "Widget · <nome do widget>" no lugar do usuário, com o nome e o e-mail do visitante quando a identidade é assinada (senão, "Visitante"); o filtro **Canal** ganha MCP e Widget, e há o filtro **Widget**.
+- O feedback do visitante (`feedback.user_id` nulo) conta nos 👍 e 👎 e aparece no detalhe como "Visitante". O pedido de chamado aparece na mensagem, como no painel.
+- `GET /stats` conta todos os canais.
 
 As consultas usam número constante de statements, independente do tamanho da página (há teste que conta). A visão é só leitura: o admin não envia mensagens nem exclui conversas de outros.
 

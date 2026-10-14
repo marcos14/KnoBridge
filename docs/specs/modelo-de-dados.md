@@ -1,6 +1,8 @@
 # Modelo de dados
 
-> v1.1 · 2026-10-13 · Em uso (planos 0002 a 0005, 0008 e 0009)
+> v1.2 · 2026-10-14 · Em uso (planos 0002 a 0005, 0008 e 0009; plano 0010 em implementação)
+>
+> **Mudanças da v1.2** (plano 0010, F1.1; [ADR 0009](../adr/0009-canais-mcp-e-widget.md)), previstas em duas migrações: `0020` (F2.2), canal `mcp` em `conversations` e `messages` (conversa da chave) e `ticket_requests.user_id` opcional; `0021` (F3.1), tabelas [`widgets`](#widgets) e [`rate_limit_counters`](#rate_limit_counters), canal `widget`, `conversations.widget_id`, o hash do token do visitante e a identidade assinada, um dono por conversa entre pessoa, chave e widget, e `feedback.user_id` opcional (feedback do visitante).
 >
 > **Mudanças da v1.1**: migração `0019` (plano 0009, F2.2): `products` perde `credential_id`, `model` e `temperature` (a resposta usa os do nível da conversa, em [`workspace_levels`](#workspace_levels)); o lote de ingestão passa a gravar `documents.min_level` e `chunks.min_level` (o maior entre fonte, documento e trecho) e a mudança do nível de uma fonte recalcula `chunks.min_level` sem reindexar ([indexacao.md](indexacao.md#nível-mínimo)).
 >
@@ -44,6 +46,13 @@ Tabelas do Postgres do KnoBridge, criadas pelas migrações em [`backend/migrati
 | `0016` | `20261012_0016_tickets.py` | Chamados: `ingest_tokens`, `ticket_inbox`, `ticket_requests` (RLS forçada); `assistants.ticket_webhook_url`, `ticket_webhook_secret_ciphertext` e `ticket_webhook_secret_created_at`; `sources.kind` aceita `tickets`, `runs.trigger` aceita `ingest`, `documents.kind` e `run_items.document_kind` aceitam `ticket`. O `downgrade` falha se houver fonte `tickets`, execução `ingest` ou documento `ticket` (não apaga dados). |
 | `0017` | `20261012_0017_api_keys_and_usage.py` | `api_keys` (RLS forçada); `conversations.user_id` opcional, `conversations.api_key_id` e canal `api`; `messages.channel` (as existentes ficam `panel`) e `messages.cost_usd`; `sessions.superadmin_workspace_id` e `superadmin_entered_at`. O `downgrade` falha se houver conversa da API (não apaga dados). |
 | `0018` | `20261013_0018_products_and_levels.py` | Produtos e níveis ([migração dos assistentes](#migração-dos-assistentes-0018)): `assistants` → `products` e `assistant_collections` → `product_collections` (mesmos ids, restrições e políticas renomeadas); `product_id` em `conversations`, `messages` e `ticket_requests`, `product_ids` em `api_keys`; `workspace_levels` e `member_product_levels` (RLS forçada); `level` em `conversations` e `messages`, `max_level` em `api_keys`; `min_level` em `sources`, `documents` e `chunks`; `invitations.product_levels`; `sources.kind` aceita `cards`, `documents.kind` e `run_items.document_kind` aceitam `card`. Os passos de dados rodam em modo de sistema. O `downgrade` falha se houver produto criado depois da migração, conversa ou chave abaixo de `product_dev`, nível gravado de membro, convite com níveis ou fonte `cards`. |
+
+Previstas no plano 0010 (o nome do arquivo segue a data em que a migração for escrita):
+
+| Revisão | Arquivo | O que faz |
+|---|---|---|
+| `0020` | `2026MMDD_0020_mcp_channel.py` | F2.2: `ck_conversations_channel` e `ck_messages_channel` aceitam `mcp`; `ck_conversations_api_key_when_api` passa a `(channel IN ('api', 'mcp')) = (api_key_id IS NOT NULL)`; `ticket_requests.user_id` deixa de ser `NOT NULL`. O `downgrade` falha se houver conversa ou mensagem `mcp` ou pedido de chamado sem usuário (não apaga dados). |
+| `0021` | `2026MMDD_0021_widgets.py` | F3.1: `widgets` (RLS forçada) e `rate_limit_counters` (só modo de sistema); `conversations.widget_id`, `visitor_token_hash`, `visitor_external_id`, `visitor_name` e `visitor_email`; canal `widget` em `conversations` e `messages`; `ck_conversations_one_owner` passa a `num_nonnulls(user_id, api_key_id, widget_id) = 1`, com `ck_conversations_widget_when_widget` e `ck_conversations_visitor_token_when_widget`; `feedback.user_id` deixa de ser `NOT NULL`, com o índice único parcial `uq_feedback_message_id_visitor`. O `downgrade` falha se houver widget, conversa `widget` ou feedback sem usuário. |
 
 Toda migração tem `downgrade` que desfaz o `upgrade`; o teste `test_migrations_match_orm_models` compara as migrações com os modelos ORM.
 
@@ -108,6 +117,8 @@ Todas as tabelas abaixo têm `ENABLE` + `FORCE ROW LEVEL SECURITY`. `users` é a
 | `ticket_inbox` | `ticket_inbox_workspace` | `ALL` | workspace, ou sistema |
 | `ticket_requests` | `ticket_requests_workspace` | `ALL` | workspace, ou sistema |
 | `api_keys` | `api_keys_workspace` | `ALL` | workspace, ou sistema (a autenticação da chave busca por `key_prefix` em modo de sistema) |
+| `widgets` | `widgets_workspace` | `ALL` | workspace, ou sistema (as rotas públicas buscam o widget por `public_key` em modo de sistema; `0021`) |
+| `rate_limit_counters` | `rate_limit_counters_system` | `ALL` | sistema (`0021`) |
 
 A RLS isola workspaces; regras dentro do workspace (papel mínimo, privacidade de conversa entre membros) são da aplicação ([autenticacao.md](autenticacao.md#matriz-de-permissões)). Cada consulta tem teste de isolamento contra Postgres real, junto dos testes do seu módulo (ex.: `backend/tests/tenancy/test_invitations_rls.py`).
 
@@ -191,15 +202,33 @@ erDiagram
         timestamptz revoked_at
     }
     api_keys |o--o{ conversations : "conversa"
+    products ||--o{ widgets : "publica"
+    users |o--o{ widgets : "criou"
+    widgets {
+        uuid id PK
+        uuid workspace_id FK
+        uuid product_id FK "mesmo workspace"
+        varchar name "único por workspace"
+        varchar public_key "kbp_; único na instância"
+        text_array allowed_origins "1 a 50"
+        boolean active
+        varchar mode "bubble | inline"
+        integer messages_per_ip_per_hour
+        integer messages_per_day
+        text signing_secret_ciphertext "AES-GCM; nulo = sem identidade"
+    }
+    widgets |o--o{ conversations : "conversa"
     conversations {
         uuid id PK
         uuid workspace_id FK
         uuid product_id FK "mesmo workspace"
         varchar level "fixo na conversa"
         uuid user_id FK "dono no painel"
-        uuid api_key_id FK "dona na API, mesmo workspace"
+        uuid api_key_id FK "dona na API e no MCP, mesmo workspace"
+        uuid widget_id FK "dono no widget, mesmo workspace"
+        varchar visitor_token_hash "SHA-256 do kbv_; só widget"
         varchar title "da primeira pergunta"
-        varchar channel "panel | api"
+        varchar channel "panel | api | mcp | widget"
     }
     conversations ||--o{ messages : "contém"
     messages {
@@ -215,17 +244,17 @@ erDiagram
         varchar model
         integer latency_ms
         numeric cost_usd "estimado; nulo sem preço"
-        varchar channel "panel | api"
+        varchar channel "panel | api | mcp | widget"
         uuid product_id "o da conversa"
         varchar level "o da conversa"
     }
     messages ||--o{ feedback : "recebe"
-    users ||--o{ feedback : "avalia"
+    users |o--o{ feedback : "avalia"
     feedback {
         uuid id PK
         uuid workspace_id FK
         uuid message_id FK "mesmo workspace"
-        uuid user_id FK
+        uuid user_id FK "nulo = visitante do widget"
         varchar rating "up | down"
         text comment
     }
@@ -364,7 +393,7 @@ erDiagram
         uuid id PK
         uuid workspace_id FK
         uuid message_id FK "único"
-        uuid user_id FK
+        uuid user_id FK "nulo = MCP ou widget"
         varchar status "pending | delivered | failed"
         integer attempts
         text body "só em pending"
@@ -406,6 +435,11 @@ erDiagram
         varchar key_hash "único; SHA-256 de e-mail + IP"
         integer failures
         timestamptz window_started_at
+    }
+    rate_limit_counters {
+        varchar key_hash PK "HMAC de escopo + widget + IP"
+        integer hits
+        timestamptz window_ends_at
     }
     users {
         uuid id PK
@@ -707,9 +741,14 @@ Conversa de um membro (canal `panel`) ou de uma chave de API (canal `api`, desde
 | `user_id` | `uuid` | Dono da conversa no painel. FK `users.id`, `ON DELETE CASCADE`. Nulo nas conversas da API. |
 | `api_key_id` | `uuid` | Chave dona de uma conversa da API. FK composta `(workspace_id, api_key_id)` → `api_keys (workspace_id, id)` (`fk_conversations_workspace_id_api_keys`), sem ação: chaves são revogadas, nunca excluídas, e uma chave com conversas não pode ser apagada (excluir o workspace apaga as duas). |
 | `title` | `varchar(200)` | Nulo até a primeira pergunta; depois, a pergunta numa linha, cortada em 80 caracteres (sem LLM). |
-| `channel` | `varchar(32)` | `panel` ou `api` (`ck_conversations_channel`). |
+| `channel` | `varchar(32)` | `panel` ou `api` (`ck_conversations_channel`); `mcp` desde a `0020` e `widget` desde a `0021`. |
+| `widget_id` | `uuid` | `0021`: widget dono de uma conversa do widget. FK composta `(workspace_id, widget_id)` → `widgets (workspace_id, id)` (`fk_conversations_workspace_id_widgets`), `ON DELETE CASCADE` (excluir o widget apaga as conversas dele). Nulo nos outros canais. |
+| `visitor_token_hash` | `varchar(64)` | `0021`: SHA-256 hex do token de conversa `kbv_…` do visitante ([widget.md](widget.md#token-de-conversa-kbv_)); presente se e somente se o canal é `widget` (`ck_conversations_visitor_token_when_widget`). |
+| `visitor_external_id` | `varchar(200)` | `0021`: `sub` da identidade assinada; nulo sem identidade. |
+| `visitor_name` | `varchar(200)` | `0021`: `name` da identidade assinada, se houver. |
+| `visitor_email` | `varchar(320)` | `0021`: `email` da identidade assinada, se houver. Os três `visitor_*` só existem em conversa `widget` com identidade assinada (`ck_conversations_visitor_only_widget`: nulos fora do canal `widget`, e `visitor_name`/`visitor_email` só com `visitor_external_id`). |
 
-Exatamente um dono: `ck_conversations_one_owner` (`user_id` nulo se e somente se `api_key_id` presente) e `ck_conversations_api_key_when_api` (`api_key_id` presente se e somente se o canal é `api`). As leituras do painel (detalhe da conversa e lista administrativa) mostram só conversas de membros até a visão administrativa ganhar o canal ([chat.md](chat.md#visão-administrativa)).
+Exatamente um dono: `ck_conversations_one_owner` (`user_id` nulo se e somente se `api_key_id` presente) e `ck_conversations_api_key_when_api` (`api_key_id` presente se e somente se o canal é `api`). Desde a `0020`, `ck_conversations_api_key_when_api` vale para `api` e `mcp` (a conversa do MCP é da chave). Desde a `0021`, `ck_conversations_one_owner` é `num_nonnulls(user_id, api_key_id, widget_id) = 1` e `ck_conversations_widget_when_widget` exige `widget_id` presente se e somente se o canal é `widget`; índice `ix_conversations_workspace_id_widget_id`. As leituras do painel (detalhe da conversa e lista administrativa) mostram só conversas de membros até a visão administrativa ganhar o canal ([chat.md](chat.md#visão-administrativa)).
 
 Únicos e índices: `uq_conversations_workspace_id_id` (alvo da FK de `messages`), `ix_conversations_workspace_id_user_id_updated_at` ("minhas conversas", da mais recente) e `ix_conversations_workspace_id_api_key_id` (conversas de uma chave). `updated_at` muda a cada pergunta.
 
@@ -731,7 +770,7 @@ Pergunta ou resposta de uma conversa. RLS forçada, política `messages_workspac
 | `input_tokens`, `output_tokens` | `integer` | Uso informado pelo provedor, quando há. |
 | `latency_ms` | `integer` | Da pergunta ao fim da resposta, pelo relógio injetado. |
 | `cost_usd` | `numeric(12,6)` | Custo estimado da resposta pela tabela de preços do chat ([chat.md](chat.md#custo-e-canal-por-resposta)); nulo em perguntas, em `no_source`, sem preço do modelo ou sem tokens, nunca zero por desconhecimento. ≥ 0 (`ck_messages_cost_usd_not_negative`) e só em respostas (`ck_messages_cost_usd_only_answers`). |
-| `channel` | `varchar(32)` | `panel` ou `api` (`ck_messages_channel`), o canal da requisição que gravou a mensagem (o mesmo da conversa, repetido para as agregações de [uso-e-custos.md](uso-e-custos.md) não precisarem do join); padrão `panel`, valor das mensagens anteriores à `0017`. |
+| `channel` | `varchar(32)` | `panel` ou `api` (`ck_messages_channel`; `mcp` desde a `0020`, `widget` desde a `0021`), o canal da requisição que gravou a mensagem (o mesmo da conversa, repetido para as agregações de [uso-e-custos.md](uso-e-custos.md) não precisarem do join); padrão `panel`, valor das mensagens anteriores à `0017`. |
 | `product_id` | `uuid` | O produto da conversa, repetido como `channel` para as agregações de uso por produto. Sem FK própria: a mensagem já cai junto com a conversa. |
 | `level` | `varchar(32)` | O nível da conversa (`ck_messages_level`), repetido pelo mesmo motivo. |
 
@@ -745,7 +784,7 @@ Avaliação (👍/👎 e comentário) de uma resposta do assistente por um usuá
 |---|---|---|
 | `workspace_id` | `uuid` | FK `workspaces.id`, `ON DELETE CASCADE`. |
 | `message_id` | `uuid` | FK composta `(workspace_id, message_id)` → `messages (workspace_id, id)` (`fk_feedback_workspace_id_messages`), `ON DELETE CASCADE`. Só mensagens `assistant` (422 `feedback_target_invalid` na API). |
-| `user_id` | `uuid` | Quem avaliou. FK `users.id`, `ON DELETE CASCADE`. |
+| `user_id` | `uuid` | Quem avaliou. FK `users.id`, `ON DELETE CASCADE`. Desde a `0021`, nulo = o visitante dono da conversa do widget ([widget.md](widget.md#post-conversationsconversation_idmessagesmessage_idfeedback)); um feedback sem usuário por mensagem (índice único parcial `uq_feedback_message_id_visitor` em `message_id` `WHERE user_id IS NULL`). Ser de conversa `widget` é regra da aplicação. |
 | `rating` | `varchar(32)` | `up` ou `down`. |
 | `comment` | `text` | Até 2000 caracteres (validado na API); vazio permitido. |
 
@@ -1016,7 +1055,7 @@ Um pedido de chamado feito a partir de uma resposta do chat, entregue pelo webho
 | `conversation_id` | `uuid` | FK composta → `conversations` (`fk_ticket_requests_workspace_id_conversations`), `ON DELETE CASCADE`. |
 | `message_id` | `uuid` | Resposta do assistente; FK composta → `messages` (`fk_ticket_requests_workspace_id_messages`), `ON DELETE CASCADE`; única. |
 | `product_id` | `uuid` | FK composta → `products` (`fk_ticket_requests_workspace_id_products`), `ON DELETE CASCADE`. Era `assistant_id` (mesmo valor). |
-| `user_id` | `uuid` | Quem pediu (dono da conversa); FK `users.id`, `ON DELETE CASCADE`. |
+| `user_id` | `uuid` | Quem pediu (dono da conversa); FK `users.id`, `ON DELETE CASCADE`. Desde a `0020`, nulo nos pedidos do MCP e do widget ([chamados.md](chamados.md#pedidos-vindos-do-mcp-e-do-widget)): quem pede está no corpo e a conversa diz o canal. |
 | `status` | `varchar(32)` | `pending`, `delivered` ou `failed` (`ck_ticket_requests_status`). |
 | `attempts` | `integer` | Tentativas de entrega, ≥ 0 (`ck_ticket_requests_attempts_not_negative`), padrão 0. |
 | `body` | `text` | O JSON exato enviado ao webhook (texto, não `jsonb`, para reenviar byte a byte o que foi assinado); **só em `pending`** (`ck_ticket_requests_body_when_pending`), apagado ao entregar ou falhar. |
@@ -1048,3 +1087,46 @@ A chave `kbk_<prefixo>_<segredo>` de um workspace, mostrada uma vez e nunca grav
 | `revoked_at` | `timestamptz` | Preenchido ao revogar (irreversível); chave revogada responde 401. |
 
 Únicos: `uq_api_keys_workspace_id_id` (alvo da FK composta de `conversations`), além dos dois acima.
+
+## Widget e limite de requisições
+
+Tabelas do widget embutível e do limite de requisições das rotas públicas (plano 0010, migração `0021`, F3.1; [ADR 0009](../adr/0009-canais-mcp-e-widget.md)), em `backend/src/knobridge/widget/`. Contrato em [widget.md](widget.md).
+
+### `widgets`
+
+Um widget de um produto: a chave pública, os domínios permitidos, a aparência, os recursos, os limites de mensagens e o segredo de assinatura opcional. Dado de workspace com RLS forçada e a política padrão (`widgets_workspace`). As rotas públicas buscam o widget por `public_key` em modo de sistema e depois abrem o escopo do workspace dele. Auditoria `widget.*` ([widget.md](widget.md#auditoria)).
+
+| Coluna | Tipo | Regras |
+|---|---|---|
+| `workspace_id` | `uuid` | FK `workspaces.id`, `ON DELETE CASCADE`. |
+| `product_id` | `uuid` | FK composta `(workspace_id, product_id)` → `products (workspace_id, id)` (`fk_widgets_workspace_id_products`), `ON DELETE CASCADE`. Não muda depois de criado (regra da aplicação). |
+| `name` | `varchar(200)` | Não vazio (`ck_widgets_name_not_empty`); único no workspace (`uq_widgets_workspace_id_name`, 409 `widget_name_taken`). |
+| `public_key` | `varchar(28)` | `kbp_` + 24 caracteres `[a-z0-9]` (`ck_widgets_public_key_format`); **único na instância** (`uq_widgets_public_key`). Em claro: não é segredo. |
+| `allowed_origins` | `text[]` | 1 a 50 origens normalizadas, sem nulos (`ck_widgets_allowed_origins_size`); formato validado na aplicação. |
+| `active` | `boolean` | Padrão `true`. |
+| `mode` | `varchar(32)` | `bubble` ou `inline` (`ck_widgets_mode`), padrão `bubble`. |
+| `position` | `varchar(32)` | `bottom-right` ou `bottom-left` (`ck_widgets_position`), padrão `bottom-right`. |
+| `theme` | `varchar(32)` | `light`, `dark` ou `auto` (`ck_widgets_theme`), padrão `auto`. |
+| `primary_color` | `varchar(7)` | `#rrggbb` em minúsculas (`ck_widgets_primary_color_format`), padrão `#2563eb`. |
+| `title` | `varchar(80)` | Nulo = nome do produto. |
+| `greeting` | `varchar(500)` | Padrão "Olá! Como posso ajudar?"; vazio = sem saudação. |
+| `placeholder` | `varchar(120)` | Padrão "Escreva sua pergunta". |
+| `feedback_enabled` | `boolean` | Padrão `true`. |
+| `ticket_enabled` | `boolean` | Padrão `true`; vale só com o webhook do produto configurado. |
+| `messages_per_ip_per_hour` | `integer` | 1 a 1000 (`ck_widgets_messages_per_ip_per_hour_range`), padrão 30. |
+| `messages_per_day` | `integer` | 1 a 100 000 (`ck_widgets_messages_per_day_range`), padrão 1000. |
+| `signing_secret_ciphertext` | `text` | Segredo `kbs_…` cifrado com AES-256-GCM ([ADR 0003](../adr/0003-segredos-cifrados.md); `info` `knobridge/widget-signing-secrets/v1`, dados associados `widget_signing_secret:<workspace_id>:<id>`); nulo = sem identidade assinada. |
+| `signing_secret_created_at` | `timestamptz` | Presente se e somente se há segredo (`ck_widgets_signing_secret_created_at`). |
+| `created_by` | `uuid` | FK `users.id`, `ON DELETE SET NULL`. |
+
+Único extra `uq_widgets_workspace_id_id`, alvo da FK composta de `conversations`; índice `ix_widgets_workspace_id_product_id`.
+
+### `rate_limit_counters`
+
+Contadores do limite de requisições do widget, em janela fixa ([widget.md](widget.md#limites-de-requisição)), em `widget/rate_limit.py`. Como `login_attempts`: sem `workspace_id`, sem `created_at`/`updated_at` (datas do relógio da aplicação), RLS forçada com uma única política, `rate_limit_counters_system` (só modo de sistema), porque quem chama é anônimo. A tabela não guarda IP nem widget em claro.
+
+| Coluna | Tipo | Regras |
+|---|---|---|
+| `key_hash` | `varchar(64)` | Chave primária: HMAC-SHA256 hex de `"<escopo>\|<widget_id>\|<ip>"` com chave derivada de `KNOBRIDGE_SECRET_KEY` (HKDF, `info` `knobridge/rate-limit/v1`). |
+| `hits` | `integer` | Batidas na janela atual, ≥ 1 (`ck_rate_limit_counters_hits_positive`). |
+| `window_ends_at` | `timestamptz` | Fim da janela atual; índice `ix_rate_limit_counters_window_ends_at` para a limpeza (linhas com o fim há mais de 24 h). |

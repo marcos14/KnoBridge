@@ -1,6 +1,8 @@
 # Uso e custos, painel do workspace e painel da instância
 
-> Rascunho v0.3 · 2026-10-13 · Planos 0008 (F1.1; implementado na F2.2) e 0009 (F1.1)
+> Rascunho v0.4 · 2026-10-14 · Planos 0008 (F1.1; implementado na F2.2), 0009 (F1.1) e 0010 (F1.1)
+
+> **Mudanças da v0.4** (plano 0010, F1.1; implementação nas F2.2, F3.2 e F4.3): canais **`mcp`** e **`widget`**: `group_by=channel` traz sempre as quatro linhas, `group_by=api_key` conta os canais `api` e `mcp`, e há o agrupamento novo `group_by=widget` ([Canais MCP e widget](#canais-mcp-e-widget)).
 
 > **Mudanças da v0.3** (plano 0009, F1.1; implementação nas F2.2 e F3.3): uso e custos agrupam por **produto** (`group_by=product`, no lugar de `assistant`) e por **nível** (`group_by=level`) e filtram por `product_id` e `level` ([Filtros por produto e nível](#filtros-por-produto-e-nível)); o preço de cada resposta usa o modelo do nível; o checklist ganha `levels` e troca `assistant` por `product` ([produtos-e-niveis.md](produtos-e-niveis.md)).
 
@@ -89,16 +91,28 @@ Parâmetros: `from`, `to` (período), `group_by` (obrigatório, abaixo) e, desde
 | `collection` | Uma por coleção (pela fonte da execução) | id / nome da coleção | embeddings |
 | `product` | Uma por produto com resposta no período (v0.3; no lugar de `assistant`, que passa a dar 422) | id / nome do produto | chat |
 | `level` | `end_user`, `support` e `product_dev`, sempre as três, na ordem dos níveis (v0.3) | nível / o mesmo nome (o painel traduz) | chat |
-| `channel` | `panel` e `api` | canal / "Painel" ou "API" (o painel traduz) | chat |
-| `api_key` | Uma por chave com resposta no período (canal `api`) | id / nome da chave | chat |
+| `channel` | `panel`, `api`, `mcp` e `widget` (v0.4; até a v0.3, só os dois primeiros) | canal / "Painel", "API", "MCP" ou "Widget" (o painel traduz) | chat |
+| `api_key` | Uma por chave com resposta no período (canais `api` e `mcp`, v0.4) | id / nome da chave | chat |
+| `widget` | Uma por widget com resposta no período (canal `widget`, v0.4) | id / nome do widget | chat |
 | `model` | Uma por modelo (de embedding ou de chat) | modelo / modelo | as do tipo do modelo |
 | `day` | Um dia UTC por linha, do primeiro ao último do período, inclusive dias vazios (com zeros) | `2026-10-01` / a mesma data | todas |
 
 - Colunas que não se aplicam ao agrupamento vêm `null` (não zero). `cost_usd` da linha é a soma dos custos conhecidos que se aplicam; sem nenhum custo conhecido, a soma é `0` e `unpriced_runs`/`unpriced_answers` dizem quantos itens ficaram de fora. `totals` é sempre do período inteiro, com todas as colunas.
-- `channel` traz sempre as duas linhas (`panel` e `api`) e `level` sempre as três, com zeros quando não houve resposta; em `model`, um modelo usado nos dois papéis vem numa linha só, com os dois lados.
+- `channel` traz sempre as quatro linhas (`panel`, `api`, `mcp` e `widget`, nessa ordem quando os custos empatam) e `level` sempre as três, com zeros quando não houve resposta; em `model`, um modelo usado nos dois papéis vem numa linha só, com os dois lados.
 - Linhas ordenadas por `cost_usd` decrescente (nulos por último) e depois por `label`; em `day`, pela data; em `level`, pela ordem dos níveis. Sem paginação: o número de linhas é limitado pelo agrupamento (fontes, produtos, chaves, níveis) ou pelo período (até 367 dias).
 - Fonte, coleção, produto ou chave excluídos: as execuções e conversas vão junto (cascata), então somem do relatório. Produto renomeado aparece com o nome atual. As respostas de antes da migração `0018` contam no produto que veio do assistente (mesmo id) e no nível `product_dev`.
 - Número constante de statements: um para os totais e um para as linhas.
+
+### Canais MCP e widget
+
+Desde a v0.4 ([ADR 0009](../adr/0009-canais-mcp-e-widget.md)):
+
+- As respostas da ferramenta `ask` do MCP ([mcp.md](mcp.md#ask)) têm `messages.channel = mcp`; as do widget ([widget.md](widget.md)), `widget`. Contam no chat como as demais (respostas com `model` preenchido), com custo pelo modelo do nível.
+- `group_by=api_key` soma as respostas da chave nos canais `api` e `mcp` (pela `conversations.api_key_id`); para separar, use `group_by=channel`.
+- `group_by=widget`: uma linha por widget (pela `conversations.widget_id`), com o nome atual. Widget excluído leva as conversas junto (cascata) e some do relatório.
+- `search_knowledge` e `get_document` do MCP não chamam o LLM e não entram; o embedding das consultas delas não é registrado (como o "testar busca").
+- Os filtros `product_id` e `level` valem para os canais novos. No widget, o nível é sempre `end_user`.
+- O CSV aceita `group_by=widget`. O painel traduz os canais e mostra o agrupamento **Widget**.
 
 ### Filtros por produto e nível
 
