@@ -4,11 +4,11 @@ titulo: Produtos e níveis de acesso — o chat por produto com respostas, fonte
 slug: produtos-e-niveis
 solicitado_por: usuario
 criado_em: 2026-10-13
-atualizado_em: 2026-10-13
-status: em_execucao
+atualizado_em: 2026-10-14
+status: concluido
 aprovado_em: 2026-10-13
 aprovado_por: usuario
-concluido_em: null
+concluido_em: 2026-10-14
 branch: plano/0009-produtos-e-niveis
 fases:
   - id: F1
@@ -88,7 +88,7 @@ fases:
         commit: 6a5d819
   - id: F4
     titulo: Entrega e ensaio
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F4.1
         titulo: E2E da stack, guias, README, CHANGELOG e AGENTS raiz
@@ -103,7 +103,7 @@ fases:
         agente: claude-code-orquestrador
         iniciada_em: 2026-10-13
         concluida_em: 2026-10-13
-        commit: null
+        commit: 9a77652
 decisoes:
   - id: D1
     data: 2026-10-13
@@ -318,16 +318,16 @@ Hoje há um chat interno (menu **Chat**), mas por assistente, sem produto nem n�
 
 ## 3. Critérios de aceite
 
-- [ ] Os assistentes existentes viram produtos sem perder coleções, conversas, chaves nem webhook.
-- [ ] A mesma pergunta, no mesmo produto, responde diferente por nível:
+- [x] Os assistentes existentes viram produtos sem perder coleções, conversas, chaves nem webhook.
+- [x] A mesma pergunta, no mesmo produto, responde diferente por nível:
   - usuário final só recebe fontes do nível dele, nunca trecho de código, provado por teste no SQL da busca;
-  - suporte recebe exemplos de código e SQL a partir das fontes do seu nível;
+  - suporte recebe exemplos de código e SQL a partir das fontes do seu nível (no E2E; no Minski o SQL depende de o esquema do banco estar numa fonte Suporte, ver o encerramento);
   - desenvolvimento e produto consulta também cards e código.
-- [ ] Cada nível usa o modelo configurado no workspace.
-- [ ] Ninguém responde acima do próprio nível, nem pelo painel nem pela API; chave com nível máximo de usuário final recusa suporte; canal público só aceita usuário final.
-- [ ] Cards entram por API e por upload, e são citados só para desenvolvimento e produto.
-- [ ] Conversas e Uso e custos mostram e filtram produto e nível.
-- [ ] O E2E da stack cobre os três níveis; o ensaio no Minski tem relatório; cobertura ≥ 95% e isolamento testados.
+- [x] Cada nível usa o modelo configurado no workspace.
+- [x] Ninguém responde acima do próprio nível, nem pelo painel nem pela API; chave com nível máximo de usuário final recusa suporte; canal público só aceita usuário final.
+- [x] Cards entram por API e por upload, e são citados só para desenvolvimento e produto.
+- [x] Conversas e Uso e custos mostram e filtram produto e nível.
+- [x] O E2E da stack cobre os três níveis; o ensaio no Minski tem relatório; cobertura ≥ 95% e isolamento testados.
 
 ## 4. Fases e subfases
 
@@ -540,7 +540,35 @@ Nenhuma.
 - 2026-10-13 — F4.1 iniciada (agente em worktree).
 - 2026-10-13 — F4.1 concluída: E2E da stack verde duas vezes seguidas (6 de 6, banco limpo e banco usado), guias produtos-e-niveis e receber-cards-por-api, primeiro-acesso, usar-a-api e demais guias atualizados, README, CHANGELOG e seções 1 e 12 do AGENTS.md raiz; orquestrador conferiu lint, format, typecheck, AGENTS e os valores do guia com o código
 - 2026-10-13 — F4.2 concluída: ensaio dos três níveis no Minski (51 respostas, nenhum vazamento; 14/12/7 de 16 úteis em Desenvolvimento e produto, Suporte e Usuário final; US$ 1,39), relatório docs/pesquisa/0005, correção do texto padrão do Usuário final com teste, recomendações no guia; backend 2709 passed com 99%
+- 2026-10-14 — Plano concluído.
 
 ## 8. Encerramento
 
-A preencher ao concluir.
+**Entregue** ([ADR 0008](../adr/0008-produtos-e-niveis.md), contrato em [produtos-e-niveis.md](../specs/produtos-e-niveis.md)):
+- **Produtos no lugar dos assistentes**: migração `0018` com os mesmos ids, nomes, coleções, conversas, chaves e webhook; `0019` tira o modelo do produto. Ensaiada sobre os dados reais do Minski sem erro.
+- **Três níveis por workspace** (Usuário final, Suporte, Desenvolvimento e produto), cada um com credencial, modelo, temperatura, instruções padrão em pt-BR e custo estimado por resposta, em **Configurações > Níveis de resposta**.
+- **Nível máximo por membro e produto**, com padrão pelo papel e nível no convite; o chat escolhe produto e nível, conferidos a cada pergunta.
+- **Nível mínimo em fontes, documentos e trechos**, com padrão por tipo e refinamento automático (código de pasta e evidências do harness), filtrado no SQL dos dois braços da busca: um trecho acima do nível nunca chega ao LLM, provado em banco real e no E2E.
+- **API pública por produto e nível**: chaves com produtos e nível máximo, `product_id` e `level` na REST, `model` = `produto:nível` na API compatível com OpenAI; regra do canal público (só Usuário final) pronta em `levels/policy.py`.
+- **Cards de desenvolvimento** pelo caminho dos chamados (API, upload, prévia, telas no painel) e citados só em Desenvolvimento e produto.
+- **Painel**: Produtos, Níveis de resposta, níveis em Membros e convites, nível mínimo nas Fontes, chat com seletor de produto e nível, Conversas, Uso e custos e Chaves de API por produto e nível.
+- **Testes e documentação**: E2E da stack refeito (seis specs, mesma pergunta nos três níveis, chave Usuário final recusando `:support` pelo SDK `openai`), guias [produtos e níveis](../guias/produtos-e-niveis.md) e [cards por API](../guias/receber-cards-por-api.md), e o ensaio [0005](../pesquisa/0005-niveis-no-minski.md).
+
+**Ensaio no Minski**: nenhum vazamento entre níveis em 51 respostas; úteis e corretas 14 de 16 em Desenvolvimento e produto (US$ 0,057 por resposta), 12 de 16 em Suporte (US$ 0,022) e 7 de 16 em Usuário final (US$ 0,002). As falhas do Usuário final vêm de documentos internos numa fonte de Usuário final, não do filtro.
+
+**Correções feitas no caminho**, todas com teste:
+- o texto padrão do Usuário final não proibia planejar funcionalidades (achado do ensaio; o teste novo compara os três textos com a spec palavra por palavra);
+- duas linhas de `frontend/src/test/handlers/AGENTS.md` misturadas por um merge do plano 0008, refeitas a partir do código;
+- uma linha corrompida em `frontend/src/lib/api/AGENTS.md`.
+
+**Fora do escopo, com o motivo**:
+- consultas SQL do Suporte quando o esquema do banco só está numa fonte Git: dependem de busca em duas etapas ou de mais contexto para perguntas de SQL; ficam nos próximos passos do `AGENTS.md` raiz;
+- widget e canais públicos, que ainda não existem (a regra do nível já está pronta para eles);
+- remoção dos campos obsoletos `assistant_id`/`assistant`, que sai numa versão anunciada no CHANGELOG.
+
+**Como demonstrar**:
+1. Suba a stack (`docker compose up -d --build --wait`) e, em **Configurações > Níveis de resposta**, configure os três níveis (com a credencial `fake`, modelo `fake-chat`).
+2. Crie um produto ligado a uma coleção com uma pasta de manuais e uma pasta com código, e pergunte a mesma coisa no **Chat** nos três níveis: o código só aparece em Desenvolvimento e produto.
+3. Em **Chaves de API**, crie uma chave com nível máximo Usuário final e chame `model: "<produto>:support"` pelo SDK da OpenAI: a resposta é 403 `level_not_allowed`.
+
+Sem stack manual, `frontend/e2e/stack/levels.spec.ts` e `api.spec.ts` fazem o mesmo caminho.
