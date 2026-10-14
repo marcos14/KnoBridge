@@ -64,10 +64,10 @@ fases:
     subfases:
       - id: F4.1
         titulo: Pacote widget com balão, modo embutido, streaming e citações
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-14
-        concluida_em: null
+        concluida_em: 2026-10-13
         commit: null
       - id: F4.2
         titulo: Feedback, chamado e identidade no widget; build servido pelo compose e gate na CI
@@ -185,6 +185,13 @@ decisoes:
     decisao: "F3.2: GET da conversa do widget devolve os campos da conversa no mesmo nível de messages e has_more (spec ajustada); pedido de chamado do visitante montado em widget/tickets.py reaproveitando constantes e funções de tickets/requests.py (requester.verified só com e-mail da identidade assinada, external_id = sub); teto do WidgetReader pelo canal público (pedido acima dá 403 reason public_channel); produto inativo vira 404 widget_unavailable; done do SSE sem modelo, tokens e custo para o visitante (custo segue gravado); limites de mensagem contados depois de validar corpo e conversa; respostas com Cache-Control no-store"
     motivo: "contrato widget.md"
     alternativas: "mudar chat.py para o canal widget"
+    adr: null
+  - id: D13
+    data: 2026-10-13
+    por: agente
+    decisao: "F4.1: pacote widget/ com Lit 3.3.3 e as mesmas versões de ferramentas do frontend; build IIFE único dist/knobridge-chat.js (41,8 KiB, 14,6 KiB gzip) com orçamento de 60 KiB gzip verificado no build; tipos do wire escritos à mão (sem cliente gerado, para não pesar o pacote); atributos open e title mapeados para isOpen e chatTitle; campo readonly durante o streaming para não perder o foco; markdown seguro em árvore, nunca HTML; estilos no Shadow DOM e variáveis por CSSOM (CSP estrita); feedback e chamado ficam num ponto de extensão renderAnswerActions para a F4.2; hook prettier-widget no pre-commit"
+    motivo: "spec widget.md; pacote leve e sem dependência do site"
+    alternativas: "cliente gerado do OpenAPI; Preact; iframe"
     adr: null
 pendencias_usuario: []
 ---
@@ -488,6 +495,7 @@ Nenhuma.
 - 2026-10-13 — F2.2 concluída: ask e open_ticket no MCP, canal mcp em Uso e custos e na visão administrativa, migração 0021; gates do agente: backend 3005 passed com 99,87%, frontend 1579; orquestrador: ruff, pyright e AGENTS na integração
 - 2026-10-13 — F3.2 concluída: conversa do widget (SSE, token kbv_, identidade assinada, sempre end_user, feedback e chamado, limites, 413 com CORS, canal widget no uso e na visão administrativa), integrada sobre a F2.2; backend 3098 passed + 1 teste ajustado ao canal mcp (34 passed na reexecução), cobertura 99%; frontend 1579
 - 2026-10-14 — F4.1 iniciada (agente em worktree).
+- 2026-10-13 — F4.1 concluída: pacote widget/ (Lit, um JS IIFE de 14,6 KiB gzip) com balão, modo embutido, SSE, histórico, citações e acessibilidade; 112 testes com 100% de cobertura; orquestrador conferiu lint, format, typecheck, testes e build
 
 ## 8. Encerramento
 

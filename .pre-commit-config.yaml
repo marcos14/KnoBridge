@@ -4,7 +4,7 @@
 
 # Generated files and lockfiles are never rewritten by hooks; plans in docs/planos/ are edited
 # only by the orchestrator of each plan.
-exclude: ^(frontend/src/lib/api/schema\.gen\.ts|docs/specs/openapi\.json|frontend/pnpm-lock\.yaml|(backend|runner|scripts)/uv\.lock)$
+exclude: ^(frontend/src/lib/api/schema\.gen\.ts|docs/specs/openapi\.json|(frontend|widget)/pnpm-lock\.yaml|(backend|runner|scripts)/uv\.lock)$
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -49,6 +49,14 @@ repos:
         entry: pnpm --dir frontend exec prettier --write --log-level warn .
         language: system
         files: ^frontend/
+        pass_filenames: false
+      # Same for the widget, with the prettier pinned in widget/pnpm-lock.yaml and
+      # widget/.prettierignore. Needs `pnpm install` in widget/ first.
+      - id: prettier-widget
+        name: prettier (widget)
+        entry: pnpm --dir widget exec prettier --write --log-level warn .
+        language: system
+        files: ^widget/
         pass_filenames: false
       - id: check-agents-md
         name: every folder has an AGENTS.md
