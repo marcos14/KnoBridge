@@ -60,7 +60,7 @@ fases:
         commit: c30827c
   - id: F4
     titulo: Widget e painel
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F4.1
         titulo: Pacote widget com balão, modo embutido, streaming e citações
@@ -82,16 +82,16 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-14
         concluida_em: 2026-10-13
-        commit: null
+        commit: c6d7ea2
   - id: F5
     titulo: Validação e documentação
-    status: pendente
+    status: em_execucao
     subfases:
       - id: F5.1
         titulo: E2E da stack, guias e documentação
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-14
         concluida_em: null
         commit: null
       - id: F5.2
@@ -514,6 +514,7 @@ Nenhuma.
 - 2026-10-13 — F4.2 concluída: feedback, chamado e identidade no widget (184 testes, 100% de cobertura, 17,8 KiB gzip), arquivo servido pelo frontend em /widget/v1/knobridge-chat.js com os cabeçalhos da spec (conferido por curl), job widget na CI; orquestrador conferiu os gates do widget e o compose
 - 2026-10-14 — F4.3 iniciada (agente em worktree).
 - 2026-10-13 — F4.3 concluída: tela de widgets com prévia ao vivo, seção MCP nas chaves, canais mcp e widget em Conversas e Uso e custos; frontend 1710 passed, 98,68% branches
+- 2026-10-14 — F5.1 iniciada (agente em worktree).
 
 ## 8. Encerramento
 
