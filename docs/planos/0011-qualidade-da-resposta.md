@@ -42,9 +42,9 @@ fases:
         commit: 881b200
       - id: F2.3
         titulo: Rodada de chat em várias etapas em todos os canais, com limite por nível
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-17
         concluida_em: null
         commit: null
       - id: F2.4
@@ -53,7 +53,7 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-17
         concluida_em: 2026-10-13
-        commit: null
+        commit: b070873
   - id: F3
     titulo: Painel
     status: pendente
@@ -441,6 +441,7 @@ Nenhuma.
 - 2026-10-13 — F2.2 concluída: chamada de ferramentas nos provedores OpenAI/OpenRouter, Anthropic e fake, com streaming e ToolsUnsupportedError; corpo sem ferramentas idêntico ao de hoje; gates do agente: ruff, pyright e 244 testes direcionados, módulos de llm/ em 100%; orquestrador: ruff, pyright e tests/llm na integração (a suíte inteira roda na próxima integração)
 - 2026-10-13 — F2.1 concluída: reranker self-host (TEI com bge-reranker-v2-m3) no compose, HttpReranker com queda para a ordem do RRF, opção por produto (0022), saúde da instância e reranker falso no E2E; gates do agente: backend 3168 passed + 1 stub corrigido (25/25), 99,85%, scripts 99,81%, frontend 1711; orquestrador: ruff, pyright, 278 testes direcionados e compose nas duas camadas
 - 2026-10-13 — F2.4 concluída: limiar de similaridade por modelo de embedding (0023, produtos com 0,35 passam ao padrão do modelo) e aviso de arquivos que dominam o índice em sources.index_stats; integrada sobre F2.1 e F2.2: backend 3245 passed com 99%, frontend 1711
+- 2026-10-17 — F2.3 iniciada (agente em worktree).
 
 ## 8. Encerramento
 
