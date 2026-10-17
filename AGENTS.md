@@ -84,7 +84,7 @@ Antes de começar, leia este arquivo, o `AGENTS.md` de cada pasta que for tocar 
 | `runner/` | Python: `knobridge-runner`, runner local do harness de código na máquina do usuário (CLI `configure`/`run`/`doctor`, cliente do protocolo `/v1/runner/*`, camada 0, executores Claude Code e Codex somente leitura, verificação de evidências e excertos); projeto uv separado que nunca importa o backend ([ADR 0005](docs/adr/0005-runner-local-do-harness.md); uso em [mapear-codigo-com-runner.md](docs/guias/mapear-codigo-com-runner.md)) | Existe |
 | `widget/` | Web Component `<knobridge-chat>` do chat embutível: pacote pnpm próprio (Lit, Vite em modo biblioteca gerando um único JS IIFE), modos balão e embutido, SSE, histórico no navegador, citações, feedback, "Abrir chamado" e identidade assinada repassada sem verificação; publicado pela imagem do frontend em `/widget/v1/knobridge-chat.js` ([docs/specs/widget.md](docs/specs/widget.md)) | Existe |
 | `deploy/` | Infraestrutura que o compose monta (`postgres/` com a inicialização do banco, `sources/` com as fontes locais) e, no futuro, Helm chart e scripts de infra; também as convenções do compose da raiz | Existe |
-| `scripts/` | Automação do repositório (checagens de CI, geração de código e de dados sintéticos, receptor de webhook falso e reranker falso do E2E) | Existe |
+| `scripts/` | Automação do repositório (checagens de CI, geração de código e de dados sintéticos, receptor de webhook falso e reranker falso do E2E, e o conjunto de avaliação sintético das respostas em `scripts/eval/`, rodado contra a stack com `uv run python -m eval`) | Existe |
 | `.github/` | Workflows de CI | Existe |
 
 Regras:

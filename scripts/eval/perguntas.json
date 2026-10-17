@@ -1,0 +1,274 @@
+{
+  "version": 1,
+  "level_rules": {
+    "end_user": {"forbidden": ["ticket:*", "card:*", "path:interno-*", "path:src/**", "path:migrations/**", "path:gerado/**"]},
+    "support": {"forbidden": ["card:*", "path:src/**", "path:migrations/**", "path:gerado/**"]},
+    "product_dev": {"forbidden": []}
+  },
+  "questions": [
+    {
+      "id": "eu-01",
+      "level": "end_user",
+      "kind": "how_to",
+      "question": "Como tiro a segunda via de um boleto que já venceu?",
+      "answerable": true,
+      "expected_sources": {"any": ["path:manual-segunda-via-de-boleto.md"]},
+      "must_include": [["reemitir"]]
+    },
+    {
+      "id": "eu-02",
+      "level": "end_user",
+      "kind": "business_rule",
+      "question": "Por que meu pedido ficou com a situação Aguardando liberação de crédito?",
+      "answerable": true,
+      "expected_sources": {"any": ["path:manual-limite-de-credito.md"]},
+      "must_include": [["limite"]]
+    },
+    {
+      "id": "eu-03",
+      "level": "end_user",
+      "kind": "error_message",
+      "question": "Apareceu Rejeição 539 ao transmitir a nota. O que eu faço?",
+      "answerable": true,
+      "expected_sources": {"any": ["path:manual-emissao-de-nfe.md"]},
+      "must_include": [["consultar situacao"]]
+    },
+    {
+      "id": "eu-04",
+      "level": "end_user",
+      "kind": "how_to",
+      "question": "Como registro uma sangria durante o turno do caixa?",
+      "answerable": true,
+      "expected_sources": {"any": ["path:manual-fechamento-de-caixa.md"]},
+      "must_include": [["sangria"]]
+    },
+    {
+      "id": "eu-05",
+      "level": "end_user",
+      "kind": "business_rule",
+      "question": "Até quantos dias depois da venda posso registrar uma devolução?",
+      "answerable": true,
+      "expected_sources": {"any": ["path:manual-devolucao-de-mercadoria.md"]},
+      "must_include": [["30 dias"]]
+    },
+    {
+      "id": "eu-06",
+      "level": "end_user",
+      "kind": "business_rule",
+      "question": "Vendi em dez parcelas. Quando o vendedor ganha a comissão dessa venda?",
+      "answerable": true,
+      "needs_steps": true,
+      "expected_sources": {"any": ["path:manual-comissao-de-vendedores.md"]},
+      "must_include": [["recebid", "pag"]]
+    },
+    {
+      "id": "eu-07",
+      "level": "end_user",
+      "kind": "business_rule",
+      "question": "Acabei de cadastrar um cliente. Ele já pode comprar a prazo?",
+      "answerable": true,
+      "needs_steps": true,
+      "expected_sources": {"any": ["path:manual-limite-de-credito.md"]},
+      "must_include": [["analise", "limite zero"]]
+    },
+    {
+      "id": "eu-08",
+      "level": "end_user",
+      "kind": "sql",
+      "question": "Em qual tabela e coluna do banco fica o limite de crédito do cliente?",
+      "answerable": false
+    },
+    {
+      "id": "eu-09",
+      "level": "end_user",
+      "kind": "unrelated",
+      "question": "Qual é a receita de feijoada?",
+      "answerable": false
+    },
+    {
+      "id": "eu-10",
+      "level": "end_user",
+      "kind": "validation",
+      "question": "Qual é o código da validação que trava o pedido de cliente com título vencido há mais de 30 dias?",
+      "answerable": false
+    },
+    {
+      "id": "su-01",
+      "level": "support",
+      "kind": "sql",
+      "question": "Monte uma consulta para listar os clientes com limite de crédito estourado e quanto passaram do limite.",
+      "answerable": true,
+      "needs_steps": true,
+      "expected_sources": {"any": ["path:interno-esquema-do-banco.md"]},
+      "must_include": [["limite_credito"], ["select"]],
+      "must_not_include": ["update ", "delete "]
+    },
+    {
+      "id": "su-02",
+      "level": "support",
+      "kind": "validation",
+      "question": "Qual validação trava o pedido de um cliente com título vencido há mais de 30 dias?",
+      "answerable": true,
+      "expected_sources": {"any": ["path:interno-validacoes-do-pedido.md"]},
+      "must_include": [["val-ped-014"]]
+    },
+    {
+      "id": "su-03",
+      "level": "support",
+      "kind": "ticket_history",
+      "question": "Já tivemos chamado de pedido travado em Aguardando liberação de crédito? Como foi resolvido?",
+      "answerable": true,
+      "expected_sources": {"any": ["ticket:EVAL-T-001"]},
+      "must_include": [["liber"]]
+    },
+    {
+      "id": "su-04",
+      "level": "support",
+      "kind": "how_to",
+      "question": "O cliente recebeu Rejeição 539 e a nota consta autorizada na SEFAZ. Como o suporte resolve?",
+      "answerable": true,
+      "expected_sources": {"any": ["path:interno-runbook-rejeicao-539.md", "ticket:EVAL-T-003"]},
+      "must_include": [["sincronizar autorizacao"]]
+    },
+    {
+      "id": "su-05",
+      "level": "support",
+      "kind": "how_to",
+      "question": "Os boletos de ontem estão parados em Aguardando registro. O que devo verificar?",
+      "answerable": true,
+      "expected_sources": {"any": ["path:interno-runbook-boletos-sem-registro.md", "ticket:EVAL-T-004"]},
+      "must_include": [["remessa"]]
+    },
+    {
+      "id": "su-06",
+      "level": "support",
+      "kind": "business_rule",
+      "question": "Um cliente antigo passou um pouco do limite e o pedido não travou. Por quê?",
+      "answerable": true,
+      "needs_steps": true,
+      "expected_sources": {"any": ["path:interno-validacoes-do-pedido.md", "ticket:EVAL-T-010"]},
+      "must_include": [["5%", "5 %", "cinco por cento"]]
+    },
+    {
+      "id": "su-07",
+      "level": "support",
+      "kind": "sql",
+      "question": "Preciso de uma consulta que some, por cliente, os títulos vencidos e ainda não pagos.",
+      "answerable": true,
+      "expected_sources": {"any": ["path:interno-esquema-do-banco.md"]},
+      "must_include": [["titulos_receber"], ["vencimento"], ["sum("]],
+      "must_not_include": ["update ", "delete "]
+    },
+    {
+      "id": "su-08",
+      "level": "support",
+      "kind": "where_in_code",
+      "question": "Em qual arquivo do código-fonte fica a função que calcula a exposição de crédito?",
+      "answerable": false
+    },
+    {
+      "id": "su-09",
+      "level": "support",
+      "kind": "planning",
+      "question": "A liberação de crédito em lote já está em desenvolvimento? Em qual sprint?",
+      "answerable": false
+    },
+    {
+      "id": "su-10",
+      "level": "support",
+      "kind": "ticket_history",
+      "question": "Ainda tem algum chamado aberto de pedido parado aguardando crédito?",
+      "answerable": true,
+      "expected_sources": {"any": ["ticket:EVAL-T-002"]}
+    },
+    {
+      "id": "pd-01",
+      "level": "product_dev",
+      "kind": "where_in_code",
+      "question": "Onde no código é calculada a exposição de crédito do cliente?",
+      "answerable": true,
+      "expected_sources": {"any": ["path:src/credito/exposicao.ts"]},
+      "must_include": [["calcularexposicao"]]
+    },
+    {
+      "id": "pd-02",
+      "level": "product_dev",
+      "kind": "where_in_code",
+      "question": "Qual função calcula a multa e os juros do boleto em atraso?",
+      "answerable": true,
+      "expected_sources": {"any": ["path:src/financeiro/boleto.ts"]},
+      "must_include": [["calcularencargos"]]
+    },
+    {
+      "id": "pd-03",
+      "level": "product_dev",
+      "kind": "already_done",
+      "question": "A tolerância de 5% no limite de crédito para clientes antigos já foi entregue? Em qual versão?",
+      "answerable": true,
+      "expected_sources": {"any": ["card:EVAL-C-001"]},
+      "must_include": [["12.4"]]
+    },
+    {
+      "id": "pd-04",
+      "level": "product_dev",
+      "kind": "planning",
+      "question": "O que ainda falta para entregar a liberação de crédito em lote?",
+      "answerable": true,
+      "expected_sources": {"any": ["card:EVAL-C-002"]},
+      "must_include": [["auditoria", "limite"]]
+    },
+    {
+      "id": "pd-05",
+      "level": "product_dev",
+      "kind": "already_done",
+      "question": "Já existe exportação do extrato de comissões para Excel?",
+      "answerable": true,
+      "expected_sources": {"any": ["card:EVAL-C-006", "card:EVAL-C-007"]},
+      "must_include": [["csv", "xlsx"]]
+    },
+    {
+      "id": "pd-06",
+      "level": "product_dev",
+      "kind": "sql",
+      "question": "Qual migração criou a coluna limite_credito?",
+      "answerable": true,
+      "expected_sources": {"any": ["path:migrations/0001_clientes.sql"]},
+      "must_include": [["0001"]]
+    },
+    {
+      "id": "pd-07",
+      "level": "product_dev",
+      "kind": "where_in_code",
+      "question": "Onde está o tratamento da rejeição 539 da NF-e no código?",
+      "answerable": true,
+      "expected_sources": {"any": ["path:src/fiscal/rejeicoes.ts"]},
+      "must_include": [["tratarrejeicao", "rejeicoes.ts"]]
+    },
+    {
+      "id": "pd-08",
+      "level": "product_dev",
+      "kind": "validation",
+      "question": "Que regras o sistema confere antes de aceitar um pedido de venda?",
+      "answerable": true,
+      "needs_steps": true,
+      "expected_sources": {"any": ["path:src/pedidos/validacoes.ts", "path:interno-validacoes-do-pedido.md"]},
+      "must_include": [["val-ped-010", "bloqueado"], ["val-ped-020", "limite"]]
+    },
+    {
+      "id": "pd-09",
+      "level": "product_dev",
+      "kind": "planning",
+      "question": "Já foi discutido mandar boletos pelo WhatsApp? O que foi decidido?",
+      "answerable": true,
+      "expected_sources": {"any": ["card:EVAL-C-008"]},
+      "must_include": [["cancel"]]
+    },
+    {
+      "id": "pd-10",
+      "level": "product_dev",
+      "kind": "unrelated",
+      "question": "Qual é a previsão do tempo para amanhã em Curitiba?",
+      "answerable": false
+    }
+  ]
+}

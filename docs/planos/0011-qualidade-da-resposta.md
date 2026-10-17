@@ -71,10 +71,10 @@ fases:
     subfases:
       - id: F4.1
         titulo: Conjunto de avaliação sintético com gabarito e roteiro contra a stack
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-17
-        concluida_em: null
+        concluida_em: 2026-10-17
         commit: null
       - id: F4.2
         titulo: E2E da stack, guias e documentação
@@ -223,6 +223,27 @@ decisoes:
     decisao: "Uso e custos ganha chat_searches como sexta coluna (0 do lado de embeddings), logo depois de answers no CSV e também nos totais do painel da instância; estimated_max_cost_per_answer_usd soma os tokens de todas as chamadas do máximo de etapas"
     motivo: "o custo extra das etapas precisa ficar visível onde o custo já é lido"
     alternativas: "contar buscas só no detalhe da conversa"
+    adr: null
+  - id: D20
+    data: 2026-10-17
+    por: agente
+    decisao: "o conjunto de avaliação fica em scripts/eval/ com o corpus em fixtures/corpus/ (pasta só de dados, sem AGENTS.md que seria indexado), fontes eval-<rótulo>-<pasta>, credencial fake com chave de marcador, CLI que recusa opções com cara de segredo e compare recalculado sobre as perguntas em comum; os JSON de gerado/ têm cerca de 100 trechos cada para a fonte de código passar de 200 trechos e o aviso de arquivos dominantes disparar"
+    motivo: "o verificador só isenta pastas fixtures; nomes de fonte são únicos no workspace; abaixo de 200 trechos nada domina (indexacao.md), o que a primeira execução contra a stack mostrou"
+    alternativas: "corpus em scripts/eval/corpus/; JSON pequenos sem o aviso"
+    adr: null
+  - id: D21
+    data: 2026-10-17
+    por: agente
+    decisao: "o serviço reranker roda com --max-batch-tokens 2048"
+    motivo: "com o modelo real o TEI aquecia no máximo de 8.192 tokens, passava dos 4 GB e era morto por falta de memória em laço; os textos enviados têm até 2.000 caracteres; o E2E usa o reranker falso e não pegou o defeito"
+    alternativas: "subir mem_limit para 8 GB ou mais; desligar o aquecimento"
+    adr: null
+  - id: D22
+    data: 2026-10-17
+    por: agente
+    decisao: "o endereço fixo do painel na rede do compose passa de .10 para .250"
+    motivo: "com o reranker a stack passou de nove contêineres e o Docker pode dar o .10 a outro serviço (Address already in use)"
+    alternativas: "ip_range para os dinâmicos, que exigiria uma segunda variável ao trocar a sub-rede"
     adr: null
 pendencias_usuario: []
 ---
@@ -480,6 +501,7 @@ Nenhuma.
 - 2026-10-17 — F2.3 concluída: busca em etapas com search_sources até max_steps do nível em todos os canais, reformulação com busca vazia, evento step, steps/retrieval na mensagem, chat_searches em Uso e custos, migração 0024; backend 3.303 testes (99%), frontend 1.711
 - 2026-10-17 — F3.1 iniciada
 - 2026-10-17 — F4.1 iniciada (em paralelo à F3.1)
+- 2026-10-17 — F4.1 concluída: scripts/eval com corpus sintético do Vértice ERP, 30 perguntas com gabarito, run/compare/copy-corpus e testes contra API falsa (264 testes, 99,9%); rodado contra uma stack isolada com o provedor fake: 5 fontes indexadas, aviso gerado/** na fonte de código, nenhum vazamento, limpeza e níveis restaurados; a validação achou e corrigiu dois defeitos do compose (a01bc74 reranker sem memória, c613051 IP do painel)
 
 ## 8. Encerramento
 

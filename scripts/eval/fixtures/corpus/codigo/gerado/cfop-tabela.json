@@ -1,0 +1,4805 @@
+{
+  "gerado_por": "ferramenta fictícia",
+  "itens": [
+    {
+      "codigo": "5001",
+      "descricao": "Operação fiscal fictícia número 1 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5002",
+      "descricao": "Operação fiscal fictícia número 2 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5003",
+      "descricao": "Operação fiscal fictícia número 3 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5004",
+      "descricao": "Operação fiscal fictícia número 4 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5005",
+      "descricao": "Operação fiscal fictícia número 5 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5006",
+      "descricao": "Operação fiscal fictícia número 6 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5007",
+      "descricao": "Operação fiscal fictícia número 7 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5008",
+      "descricao": "Operação fiscal fictícia número 8 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5009",
+      "descricao": "Operação fiscal fictícia número 9 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5010",
+      "descricao": "Operação fiscal fictícia número 10 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5011",
+      "descricao": "Operação fiscal fictícia número 11 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5012",
+      "descricao": "Operação fiscal fictícia número 12 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5013",
+      "descricao": "Operação fiscal fictícia número 13 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5014",
+      "descricao": "Operação fiscal fictícia número 14 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5015",
+      "descricao": "Operação fiscal fictícia número 15 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5016",
+      "descricao": "Operação fiscal fictícia número 16 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5017",
+      "descricao": "Operação fiscal fictícia número 17 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5018",
+      "descricao": "Operação fiscal fictícia número 18 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5019",
+      "descricao": "Operação fiscal fictícia número 19 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5020",
+      "descricao": "Operação fiscal fictícia número 20 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5021",
+      "descricao": "Operação fiscal fictícia número 21 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5022",
+      "descricao": "Operação fiscal fictícia número 22 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5023",
+      "descricao": "Operação fiscal fictícia número 23 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5024",
+      "descricao": "Operação fiscal fictícia número 24 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5025",
+      "descricao": "Operação fiscal fictícia número 25 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5026",
+      "descricao": "Operação fiscal fictícia número 26 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5027",
+      "descricao": "Operação fiscal fictícia número 27 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5028",
+      "descricao": "Operação fiscal fictícia número 28 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5029",
+      "descricao": "Operação fiscal fictícia número 29 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5030",
+      "descricao": "Operação fiscal fictícia número 30 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5031",
+      "descricao": "Operação fiscal fictícia número 31 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5032",
+      "descricao": "Operação fiscal fictícia número 32 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5033",
+      "descricao": "Operação fiscal fictícia número 33 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5034",
+      "descricao": "Operação fiscal fictícia número 34 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5035",
+      "descricao": "Operação fiscal fictícia número 35 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5036",
+      "descricao": "Operação fiscal fictícia número 36 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5037",
+      "descricao": "Operação fiscal fictícia número 37 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5038",
+      "descricao": "Operação fiscal fictícia número 38 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5039",
+      "descricao": "Operação fiscal fictícia número 39 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5040",
+      "descricao": "Operação fiscal fictícia número 40 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5041",
+      "descricao": "Operação fiscal fictícia número 41 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5042",
+      "descricao": "Operação fiscal fictícia número 42 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5043",
+      "descricao": "Operação fiscal fictícia número 43 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5044",
+      "descricao": "Operação fiscal fictícia número 44 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5045",
+      "descricao": "Operação fiscal fictícia número 45 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5046",
+      "descricao": "Operação fiscal fictícia número 46 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5047",
+      "descricao": "Operação fiscal fictícia número 47 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5048",
+      "descricao": "Operação fiscal fictícia número 48 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5049",
+      "descricao": "Operação fiscal fictícia número 49 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5050",
+      "descricao": "Operação fiscal fictícia número 50 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5051",
+      "descricao": "Operação fiscal fictícia número 51 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5052",
+      "descricao": "Operação fiscal fictícia número 52 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5053",
+      "descricao": "Operação fiscal fictícia número 53 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5054",
+      "descricao": "Operação fiscal fictícia número 54 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5055",
+      "descricao": "Operação fiscal fictícia número 55 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5056",
+      "descricao": "Operação fiscal fictícia número 56 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5057",
+      "descricao": "Operação fiscal fictícia número 57 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5058",
+      "descricao": "Operação fiscal fictícia número 58 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5059",
+      "descricao": "Operação fiscal fictícia número 59 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5060",
+      "descricao": "Operação fiscal fictícia número 60 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5061",
+      "descricao": "Operação fiscal fictícia número 61 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5062",
+      "descricao": "Operação fiscal fictícia número 62 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5063",
+      "descricao": "Operação fiscal fictícia número 63 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5064",
+      "descricao": "Operação fiscal fictícia número 64 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5065",
+      "descricao": "Operação fiscal fictícia número 65 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5066",
+      "descricao": "Operação fiscal fictícia número 66 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5067",
+      "descricao": "Operação fiscal fictícia número 67 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5068",
+      "descricao": "Operação fiscal fictícia número 68 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5069",
+      "descricao": "Operação fiscal fictícia número 69 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5070",
+      "descricao": "Operação fiscal fictícia número 70 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5071",
+      "descricao": "Operação fiscal fictícia número 71 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5072",
+      "descricao": "Operação fiscal fictícia número 72 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5073",
+      "descricao": "Operação fiscal fictícia número 73 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5074",
+      "descricao": "Operação fiscal fictícia número 74 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5075",
+      "descricao": "Operação fiscal fictícia número 75 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5076",
+      "descricao": "Operação fiscal fictícia número 76 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5077",
+      "descricao": "Operação fiscal fictícia número 77 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5078",
+      "descricao": "Operação fiscal fictícia número 78 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5079",
+      "descricao": "Operação fiscal fictícia número 79 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5080",
+      "descricao": "Operação fiscal fictícia número 80 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5081",
+      "descricao": "Operação fiscal fictícia número 81 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5082",
+      "descricao": "Operação fiscal fictícia número 82 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5083",
+      "descricao": "Operação fiscal fictícia número 83 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5084",
+      "descricao": "Operação fiscal fictícia número 84 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5085",
+      "descricao": "Operação fiscal fictícia número 85 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5086",
+      "descricao": "Operação fiscal fictícia número 86 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5087",
+      "descricao": "Operação fiscal fictícia número 87 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5088",
+      "descricao": "Operação fiscal fictícia número 88 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5089",
+      "descricao": "Operação fiscal fictícia número 89 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5090",
+      "descricao": "Operação fiscal fictícia número 90 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5091",
+      "descricao": "Operação fiscal fictícia número 91 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5092",
+      "descricao": "Operação fiscal fictícia número 92 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5093",
+      "descricao": "Operação fiscal fictícia número 93 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5094",
+      "descricao": "Operação fiscal fictícia número 94 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5095",
+      "descricao": "Operação fiscal fictícia número 95 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5096",
+      "descricao": "Operação fiscal fictícia número 96 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5097",
+      "descricao": "Operação fiscal fictícia número 97 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5098",
+      "descricao": "Operação fiscal fictícia número 98 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5099",
+      "descricao": "Operação fiscal fictícia número 99 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5100",
+      "descricao": "Operação fiscal fictícia número 100 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5101",
+      "descricao": "Operação fiscal fictícia número 101 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5102",
+      "descricao": "Operação fiscal fictícia número 102 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5103",
+      "descricao": "Operação fiscal fictícia número 103 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5104",
+      "descricao": "Operação fiscal fictícia número 104 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5105",
+      "descricao": "Operação fiscal fictícia número 105 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5106",
+      "descricao": "Operação fiscal fictícia número 106 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5107",
+      "descricao": "Operação fiscal fictícia número 107 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5108",
+      "descricao": "Operação fiscal fictícia número 108 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5109",
+      "descricao": "Operação fiscal fictícia número 109 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5110",
+      "descricao": "Operação fiscal fictícia número 110 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5111",
+      "descricao": "Operação fiscal fictícia número 111 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5112",
+      "descricao": "Operação fiscal fictícia número 112 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5113",
+      "descricao": "Operação fiscal fictícia número 113 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5114",
+      "descricao": "Operação fiscal fictícia número 114 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5115",
+      "descricao": "Operação fiscal fictícia número 115 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5116",
+      "descricao": "Operação fiscal fictícia número 116 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5117",
+      "descricao": "Operação fiscal fictícia número 117 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5118",
+      "descricao": "Operação fiscal fictícia número 118 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5119",
+      "descricao": "Operação fiscal fictícia número 119 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5120",
+      "descricao": "Operação fiscal fictícia número 120 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5121",
+      "descricao": "Operação fiscal fictícia número 121 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5122",
+      "descricao": "Operação fiscal fictícia número 122 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5123",
+      "descricao": "Operação fiscal fictícia número 123 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5124",
+      "descricao": "Operação fiscal fictícia número 124 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5125",
+      "descricao": "Operação fiscal fictícia número 125 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5126",
+      "descricao": "Operação fiscal fictícia número 126 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5127",
+      "descricao": "Operação fiscal fictícia número 127 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5128",
+      "descricao": "Operação fiscal fictícia número 128 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5129",
+      "descricao": "Operação fiscal fictícia número 129 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5130",
+      "descricao": "Operação fiscal fictícia número 130 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5131",
+      "descricao": "Operação fiscal fictícia número 131 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5132",
+      "descricao": "Operação fiscal fictícia número 132 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5133",
+      "descricao": "Operação fiscal fictícia número 133 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5134",
+      "descricao": "Operação fiscal fictícia número 134 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5135",
+      "descricao": "Operação fiscal fictícia número 135 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5136",
+      "descricao": "Operação fiscal fictícia número 136 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5137",
+      "descricao": "Operação fiscal fictícia número 137 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5138",
+      "descricao": "Operação fiscal fictícia número 138 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5139",
+      "descricao": "Operação fiscal fictícia número 139 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5140",
+      "descricao": "Operação fiscal fictícia número 140 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5141",
+      "descricao": "Operação fiscal fictícia número 141 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5142",
+      "descricao": "Operação fiscal fictícia número 142 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5143",
+      "descricao": "Operação fiscal fictícia número 143 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5144",
+      "descricao": "Operação fiscal fictícia número 144 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5145",
+      "descricao": "Operação fiscal fictícia número 145 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5146",
+      "descricao": "Operação fiscal fictícia número 146 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5147",
+      "descricao": "Operação fiscal fictícia número 147 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5148",
+      "descricao": "Operação fiscal fictícia número 148 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5149",
+      "descricao": "Operação fiscal fictícia número 149 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5150",
+      "descricao": "Operação fiscal fictícia número 150 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5151",
+      "descricao": "Operação fiscal fictícia número 151 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5152",
+      "descricao": "Operação fiscal fictícia número 152 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5153",
+      "descricao": "Operação fiscal fictícia número 153 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5154",
+      "descricao": "Operação fiscal fictícia número 154 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5155",
+      "descricao": "Operação fiscal fictícia número 155 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5156",
+      "descricao": "Operação fiscal fictícia número 156 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5157",
+      "descricao": "Operação fiscal fictícia número 157 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5158",
+      "descricao": "Operação fiscal fictícia número 158 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5159",
+      "descricao": "Operação fiscal fictícia número 159 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5160",
+      "descricao": "Operação fiscal fictícia número 160 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5161",
+      "descricao": "Operação fiscal fictícia número 161 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5162",
+      "descricao": "Operação fiscal fictícia número 162 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5163",
+      "descricao": "Operação fiscal fictícia número 163 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5164",
+      "descricao": "Operação fiscal fictícia número 164 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5165",
+      "descricao": "Operação fiscal fictícia número 165 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5166",
+      "descricao": "Operação fiscal fictícia número 166 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5167",
+      "descricao": "Operação fiscal fictícia número 167 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5168",
+      "descricao": "Operação fiscal fictícia número 168 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5169",
+      "descricao": "Operação fiscal fictícia número 169 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5170",
+      "descricao": "Operação fiscal fictícia número 170 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5171",
+      "descricao": "Operação fiscal fictícia número 171 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5172",
+      "descricao": "Operação fiscal fictícia número 172 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5173",
+      "descricao": "Operação fiscal fictícia número 173 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5174",
+      "descricao": "Operação fiscal fictícia número 174 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5175",
+      "descricao": "Operação fiscal fictícia número 175 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5176",
+      "descricao": "Operação fiscal fictícia número 176 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5177",
+      "descricao": "Operação fiscal fictícia número 177 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5178",
+      "descricao": "Operação fiscal fictícia número 178 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5179",
+      "descricao": "Operação fiscal fictícia número 179 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5180",
+      "descricao": "Operação fiscal fictícia número 180 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5181",
+      "descricao": "Operação fiscal fictícia número 181 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5182",
+      "descricao": "Operação fiscal fictícia número 182 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5183",
+      "descricao": "Operação fiscal fictícia número 183 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5184",
+      "descricao": "Operação fiscal fictícia número 184 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5185",
+      "descricao": "Operação fiscal fictícia número 185 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5186",
+      "descricao": "Operação fiscal fictícia número 186 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5187",
+      "descricao": "Operação fiscal fictícia número 187 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5188",
+      "descricao": "Operação fiscal fictícia número 188 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5189",
+      "descricao": "Operação fiscal fictícia número 189 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5190",
+      "descricao": "Operação fiscal fictícia número 190 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5191",
+      "descricao": "Operação fiscal fictícia número 191 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5192",
+      "descricao": "Operação fiscal fictícia número 192 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5193",
+      "descricao": "Operação fiscal fictícia número 193 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5194",
+      "descricao": "Operação fiscal fictícia número 194 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5195",
+      "descricao": "Operação fiscal fictícia número 195 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5196",
+      "descricao": "Operação fiscal fictícia número 196 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5197",
+      "descricao": "Operação fiscal fictícia número 197 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5198",
+      "descricao": "Operação fiscal fictícia número 198 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5199",
+      "descricao": "Operação fiscal fictícia número 199 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5200",
+      "descricao": "Operação fiscal fictícia número 200 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5201",
+      "descricao": "Operação fiscal fictícia número 201 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5202",
+      "descricao": "Operação fiscal fictícia número 202 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5203",
+      "descricao": "Operação fiscal fictícia número 203 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5204",
+      "descricao": "Operação fiscal fictícia número 204 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5205",
+      "descricao": "Operação fiscal fictícia número 205 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5206",
+      "descricao": "Operação fiscal fictícia número 206 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5207",
+      "descricao": "Operação fiscal fictícia número 207 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5208",
+      "descricao": "Operação fiscal fictícia número 208 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5209",
+      "descricao": "Operação fiscal fictícia número 209 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5210",
+      "descricao": "Operação fiscal fictícia número 210 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5211",
+      "descricao": "Operação fiscal fictícia número 211 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5212",
+      "descricao": "Operação fiscal fictícia número 212 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5213",
+      "descricao": "Operação fiscal fictícia número 213 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5214",
+      "descricao": "Operação fiscal fictícia número 214 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5215",
+      "descricao": "Operação fiscal fictícia número 215 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5216",
+      "descricao": "Operação fiscal fictícia número 216 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5217",
+      "descricao": "Operação fiscal fictícia número 217 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5218",
+      "descricao": "Operação fiscal fictícia número 218 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5219",
+      "descricao": "Operação fiscal fictícia número 219 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5220",
+      "descricao": "Operação fiscal fictícia número 220 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5221",
+      "descricao": "Operação fiscal fictícia número 221 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5222",
+      "descricao": "Operação fiscal fictícia número 222 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5223",
+      "descricao": "Operação fiscal fictícia número 223 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5224",
+      "descricao": "Operação fiscal fictícia número 224 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5225",
+      "descricao": "Operação fiscal fictícia número 225 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5226",
+      "descricao": "Operação fiscal fictícia número 226 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5227",
+      "descricao": "Operação fiscal fictícia número 227 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5228",
+      "descricao": "Operação fiscal fictícia número 228 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5229",
+      "descricao": "Operação fiscal fictícia número 229 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5230",
+      "descricao": "Operação fiscal fictícia número 230 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5231",
+      "descricao": "Operação fiscal fictícia número 231 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5232",
+      "descricao": "Operação fiscal fictícia número 232 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5233",
+      "descricao": "Operação fiscal fictícia número 233 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5234",
+      "descricao": "Operação fiscal fictícia número 234 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5235",
+      "descricao": "Operação fiscal fictícia número 235 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5236",
+      "descricao": "Operação fiscal fictícia número 236 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5237",
+      "descricao": "Operação fiscal fictícia número 237 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5238",
+      "descricao": "Operação fiscal fictícia número 238 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5239",
+      "descricao": "Operação fiscal fictícia número 239 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5240",
+      "descricao": "Operação fiscal fictícia número 240 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5241",
+      "descricao": "Operação fiscal fictícia número 241 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5242",
+      "descricao": "Operação fiscal fictícia número 242 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5243",
+      "descricao": "Operação fiscal fictícia número 243 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5244",
+      "descricao": "Operação fiscal fictícia número 244 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5245",
+      "descricao": "Operação fiscal fictícia número 245 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5246",
+      "descricao": "Operação fiscal fictícia número 246 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5247",
+      "descricao": "Operação fiscal fictícia número 247 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5248",
+      "descricao": "Operação fiscal fictícia número 248 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5249",
+      "descricao": "Operação fiscal fictícia número 249 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5250",
+      "descricao": "Operação fiscal fictícia número 250 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5251",
+      "descricao": "Operação fiscal fictícia número 251 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5252",
+      "descricao": "Operação fiscal fictícia número 252 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5253",
+      "descricao": "Operação fiscal fictícia número 253 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5254",
+      "descricao": "Operação fiscal fictícia número 254 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5255",
+      "descricao": "Operação fiscal fictícia número 255 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5256",
+      "descricao": "Operação fiscal fictícia número 256 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5257",
+      "descricao": "Operação fiscal fictícia número 257 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5258",
+      "descricao": "Operação fiscal fictícia número 258 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5259",
+      "descricao": "Operação fiscal fictícia número 259 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5260",
+      "descricao": "Operação fiscal fictícia número 260 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5261",
+      "descricao": "Operação fiscal fictícia número 261 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5262",
+      "descricao": "Operação fiscal fictícia número 262 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5263",
+      "descricao": "Operação fiscal fictícia número 263 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5264",
+      "descricao": "Operação fiscal fictícia número 264 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5265",
+      "descricao": "Operação fiscal fictícia número 265 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5266",
+      "descricao": "Operação fiscal fictícia número 266 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5267",
+      "descricao": "Operação fiscal fictícia número 267 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5268",
+      "descricao": "Operação fiscal fictícia número 268 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5269",
+      "descricao": "Operação fiscal fictícia número 269 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5270",
+      "descricao": "Operação fiscal fictícia número 270 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5271",
+      "descricao": "Operação fiscal fictícia número 271 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5272",
+      "descricao": "Operação fiscal fictícia número 272 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5273",
+      "descricao": "Operação fiscal fictícia número 273 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5274",
+      "descricao": "Operação fiscal fictícia número 274 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5275",
+      "descricao": "Operação fiscal fictícia número 275 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5276",
+      "descricao": "Operação fiscal fictícia número 276 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5277",
+      "descricao": "Operação fiscal fictícia número 277 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5278",
+      "descricao": "Operação fiscal fictícia número 278 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5279",
+      "descricao": "Operação fiscal fictícia número 279 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5280",
+      "descricao": "Operação fiscal fictícia número 280 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5281",
+      "descricao": "Operação fiscal fictícia número 281 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5282",
+      "descricao": "Operação fiscal fictícia número 282 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5283",
+      "descricao": "Operação fiscal fictícia número 283 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5284",
+      "descricao": "Operação fiscal fictícia número 284 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5285",
+      "descricao": "Operação fiscal fictícia número 285 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5286",
+      "descricao": "Operação fiscal fictícia número 286 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5287",
+      "descricao": "Operação fiscal fictícia número 287 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5288",
+      "descricao": "Operação fiscal fictícia número 288 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5289",
+      "descricao": "Operação fiscal fictícia número 289 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5290",
+      "descricao": "Operação fiscal fictícia número 290 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5291",
+      "descricao": "Operação fiscal fictícia número 291 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5292",
+      "descricao": "Operação fiscal fictícia número 292 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5293",
+      "descricao": "Operação fiscal fictícia número 293 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5294",
+      "descricao": "Operação fiscal fictícia número 294 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5295",
+      "descricao": "Operação fiscal fictícia número 295 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5296",
+      "descricao": "Operação fiscal fictícia número 296 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5297",
+      "descricao": "Operação fiscal fictícia número 297 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5298",
+      "descricao": "Operação fiscal fictícia número 298 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5299",
+      "descricao": "Operação fiscal fictícia número 299 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5300",
+      "descricao": "Operação fiscal fictícia número 300 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5301",
+      "descricao": "Operação fiscal fictícia número 301 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5302",
+      "descricao": "Operação fiscal fictícia número 302 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5303",
+      "descricao": "Operação fiscal fictícia número 303 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5304",
+      "descricao": "Operação fiscal fictícia número 304 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5305",
+      "descricao": "Operação fiscal fictícia número 305 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5306",
+      "descricao": "Operação fiscal fictícia número 306 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5307",
+      "descricao": "Operação fiscal fictícia número 307 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5308",
+      "descricao": "Operação fiscal fictícia número 308 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5309",
+      "descricao": "Operação fiscal fictícia número 309 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5310",
+      "descricao": "Operação fiscal fictícia número 310 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5311",
+      "descricao": "Operação fiscal fictícia número 311 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5312",
+      "descricao": "Operação fiscal fictícia número 312 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5313",
+      "descricao": "Operação fiscal fictícia número 313 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5314",
+      "descricao": "Operação fiscal fictícia número 314 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5315",
+      "descricao": "Operação fiscal fictícia número 315 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5316",
+      "descricao": "Operação fiscal fictícia número 316 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5317",
+      "descricao": "Operação fiscal fictícia número 317 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5318",
+      "descricao": "Operação fiscal fictícia número 318 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5319",
+      "descricao": "Operação fiscal fictícia número 319 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5320",
+      "descricao": "Operação fiscal fictícia número 320 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5321",
+      "descricao": "Operação fiscal fictícia número 321 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5322",
+      "descricao": "Operação fiscal fictícia número 322 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5323",
+      "descricao": "Operação fiscal fictícia número 323 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5324",
+      "descricao": "Operação fiscal fictícia número 324 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5325",
+      "descricao": "Operação fiscal fictícia número 325 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5326",
+      "descricao": "Operação fiscal fictícia número 326 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5327",
+      "descricao": "Operação fiscal fictícia número 327 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5328",
+      "descricao": "Operação fiscal fictícia número 328 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5329",
+      "descricao": "Operação fiscal fictícia número 329 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5330",
+      "descricao": "Operação fiscal fictícia número 330 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5331",
+      "descricao": "Operação fiscal fictícia número 331 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5332",
+      "descricao": "Operação fiscal fictícia número 332 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5333",
+      "descricao": "Operação fiscal fictícia número 333 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5334",
+      "descricao": "Operação fiscal fictícia número 334 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5335",
+      "descricao": "Operação fiscal fictícia número 335 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5336",
+      "descricao": "Operação fiscal fictícia número 336 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5337",
+      "descricao": "Operação fiscal fictícia número 337 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5338",
+      "descricao": "Operação fiscal fictícia número 338 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5339",
+      "descricao": "Operação fiscal fictícia número 339 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5340",
+      "descricao": "Operação fiscal fictícia número 340 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5341",
+      "descricao": "Operação fiscal fictícia número 341 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5342",
+      "descricao": "Operação fiscal fictícia número 342 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5343",
+      "descricao": "Operação fiscal fictícia número 343 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5344",
+      "descricao": "Operação fiscal fictícia número 344 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5345",
+      "descricao": "Operação fiscal fictícia número 345 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5346",
+      "descricao": "Operação fiscal fictícia número 346 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5347",
+      "descricao": "Operação fiscal fictícia número 347 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5348",
+      "descricao": "Operação fiscal fictícia número 348 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5349",
+      "descricao": "Operação fiscal fictícia número 349 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5350",
+      "descricao": "Operação fiscal fictícia número 350 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5351",
+      "descricao": "Operação fiscal fictícia número 351 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5352",
+      "descricao": "Operação fiscal fictícia número 352 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5353",
+      "descricao": "Operação fiscal fictícia número 353 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5354",
+      "descricao": "Operação fiscal fictícia número 354 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5355",
+      "descricao": "Operação fiscal fictícia número 355 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5356",
+      "descricao": "Operação fiscal fictícia número 356 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5357",
+      "descricao": "Operação fiscal fictícia número 357 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5358",
+      "descricao": "Operação fiscal fictícia número 358 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5359",
+      "descricao": "Operação fiscal fictícia número 359 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5360",
+      "descricao": "Operação fiscal fictícia número 360 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5361",
+      "descricao": "Operação fiscal fictícia número 361 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5362",
+      "descricao": "Operação fiscal fictícia número 362 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5363",
+      "descricao": "Operação fiscal fictícia número 363 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5364",
+      "descricao": "Operação fiscal fictícia número 364 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5365",
+      "descricao": "Operação fiscal fictícia número 365 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5366",
+      "descricao": "Operação fiscal fictícia número 366 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5367",
+      "descricao": "Operação fiscal fictícia número 367 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5368",
+      "descricao": "Operação fiscal fictícia número 368 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5369",
+      "descricao": "Operação fiscal fictícia número 369 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5370",
+      "descricao": "Operação fiscal fictícia número 370 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5371",
+      "descricao": "Operação fiscal fictícia número 371 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5372",
+      "descricao": "Operação fiscal fictícia número 372 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5373",
+      "descricao": "Operação fiscal fictícia número 373 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5374",
+      "descricao": "Operação fiscal fictícia número 374 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5375",
+      "descricao": "Operação fiscal fictícia número 375 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5376",
+      "descricao": "Operação fiscal fictícia número 376 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5377",
+      "descricao": "Operação fiscal fictícia número 377 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5378",
+      "descricao": "Operação fiscal fictícia número 378 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5379",
+      "descricao": "Operação fiscal fictícia número 379 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5380",
+      "descricao": "Operação fiscal fictícia número 380 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5381",
+      "descricao": "Operação fiscal fictícia número 381 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5382",
+      "descricao": "Operação fiscal fictícia número 382 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5383",
+      "descricao": "Operação fiscal fictícia número 383 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5384",
+      "descricao": "Operação fiscal fictícia número 384 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5385",
+      "descricao": "Operação fiscal fictícia número 385 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5386",
+      "descricao": "Operação fiscal fictícia número 386 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5387",
+      "descricao": "Operação fiscal fictícia número 387 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5388",
+      "descricao": "Operação fiscal fictícia número 388 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5389",
+      "descricao": "Operação fiscal fictícia número 389 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5390",
+      "descricao": "Operação fiscal fictícia número 390 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5391",
+      "descricao": "Operação fiscal fictícia número 391 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5392",
+      "descricao": "Operação fiscal fictícia número 392 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5393",
+      "descricao": "Operação fiscal fictícia número 393 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5394",
+      "descricao": "Operação fiscal fictícia número 394 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5395",
+      "descricao": "Operação fiscal fictícia número 395 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5396",
+      "descricao": "Operação fiscal fictícia número 396 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5397",
+      "descricao": "Operação fiscal fictícia número 397 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5398",
+      "descricao": "Operação fiscal fictícia número 398 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5399",
+      "descricao": "Operação fiscal fictícia número 399 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5400",
+      "descricao": "Operação fiscal fictícia número 400 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5401",
+      "descricao": "Operação fiscal fictícia número 401 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5402",
+      "descricao": "Operação fiscal fictícia número 402 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5403",
+      "descricao": "Operação fiscal fictícia número 403 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5404",
+      "descricao": "Operação fiscal fictícia número 404 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5405",
+      "descricao": "Operação fiscal fictícia número 405 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5406",
+      "descricao": "Operação fiscal fictícia número 406 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5407",
+      "descricao": "Operação fiscal fictícia número 407 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5408",
+      "descricao": "Operação fiscal fictícia número 408 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5409",
+      "descricao": "Operação fiscal fictícia número 409 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5410",
+      "descricao": "Operação fiscal fictícia número 410 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5411",
+      "descricao": "Operação fiscal fictícia número 411 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5412",
+      "descricao": "Operação fiscal fictícia número 412 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5413",
+      "descricao": "Operação fiscal fictícia número 413 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5414",
+      "descricao": "Operação fiscal fictícia número 414 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5415",
+      "descricao": "Operação fiscal fictícia número 415 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5416",
+      "descricao": "Operação fiscal fictícia número 416 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5417",
+      "descricao": "Operação fiscal fictícia número 417 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5418",
+      "descricao": "Operação fiscal fictícia número 418 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5419",
+      "descricao": "Operação fiscal fictícia número 419 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5420",
+      "descricao": "Operação fiscal fictícia número 420 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5421",
+      "descricao": "Operação fiscal fictícia número 421 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5422",
+      "descricao": "Operação fiscal fictícia número 422 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5423",
+      "descricao": "Operação fiscal fictícia número 423 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5424",
+      "descricao": "Operação fiscal fictícia número 424 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5425",
+      "descricao": "Operação fiscal fictícia número 425 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5426",
+      "descricao": "Operação fiscal fictícia número 426 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5427",
+      "descricao": "Operação fiscal fictícia número 427 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5428",
+      "descricao": "Operação fiscal fictícia número 428 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5429",
+      "descricao": "Operação fiscal fictícia número 429 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5430",
+      "descricao": "Operação fiscal fictícia número 430 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5431",
+      "descricao": "Operação fiscal fictícia número 431 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5432",
+      "descricao": "Operação fiscal fictícia número 432 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5433",
+      "descricao": "Operação fiscal fictícia número 433 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5434",
+      "descricao": "Operação fiscal fictícia número 434 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5435",
+      "descricao": "Operação fiscal fictícia número 435 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5436",
+      "descricao": "Operação fiscal fictícia número 436 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5437",
+      "descricao": "Operação fiscal fictícia número 437 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5438",
+      "descricao": "Operação fiscal fictícia número 438 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5439",
+      "descricao": "Operação fiscal fictícia número 439 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5440",
+      "descricao": "Operação fiscal fictícia número 440 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5441",
+      "descricao": "Operação fiscal fictícia número 441 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5442",
+      "descricao": "Operação fiscal fictícia número 442 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5443",
+      "descricao": "Operação fiscal fictícia número 443 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5444",
+      "descricao": "Operação fiscal fictícia número 444 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5445",
+      "descricao": "Operação fiscal fictícia número 445 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5446",
+      "descricao": "Operação fiscal fictícia número 446 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5447",
+      "descricao": "Operação fiscal fictícia número 447 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5448",
+      "descricao": "Operação fiscal fictícia número 448 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5449",
+      "descricao": "Operação fiscal fictícia número 449 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5450",
+      "descricao": "Operação fiscal fictícia número 450 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5451",
+      "descricao": "Operação fiscal fictícia número 451 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5452",
+      "descricao": "Operação fiscal fictícia número 452 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5453",
+      "descricao": "Operação fiscal fictícia número 453 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5454",
+      "descricao": "Operação fiscal fictícia número 454 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5455",
+      "descricao": "Operação fiscal fictícia número 455 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5456",
+      "descricao": "Operação fiscal fictícia número 456 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5457",
+      "descricao": "Operação fiscal fictícia número 457 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5458",
+      "descricao": "Operação fiscal fictícia número 458 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5459",
+      "descricao": "Operação fiscal fictícia número 459 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5460",
+      "descricao": "Operação fiscal fictícia número 460 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5461",
+      "descricao": "Operação fiscal fictícia número 461 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5462",
+      "descricao": "Operação fiscal fictícia número 462 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5463",
+      "descricao": "Operação fiscal fictícia número 463 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5464",
+      "descricao": "Operação fiscal fictícia número 464 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5465",
+      "descricao": "Operação fiscal fictícia número 465 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5466",
+      "descricao": "Operação fiscal fictícia número 466 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5467",
+      "descricao": "Operação fiscal fictícia número 467 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5468",
+      "descricao": "Operação fiscal fictícia número 468 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5469",
+      "descricao": "Operação fiscal fictícia número 469 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5470",
+      "descricao": "Operação fiscal fictícia número 470 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5471",
+      "descricao": "Operação fiscal fictícia número 471 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5472",
+      "descricao": "Operação fiscal fictícia número 472 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5473",
+      "descricao": "Operação fiscal fictícia número 473 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5474",
+      "descricao": "Operação fiscal fictícia número 474 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5475",
+      "descricao": "Operação fiscal fictícia número 475 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5476",
+      "descricao": "Operação fiscal fictícia número 476 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5477",
+      "descricao": "Operação fiscal fictícia número 477 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5478",
+      "descricao": "Operação fiscal fictícia número 478 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5479",
+      "descricao": "Operação fiscal fictícia número 479 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5480",
+      "descricao": "Operação fiscal fictícia número 480 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5481",
+      "descricao": "Operação fiscal fictícia número 481 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5482",
+      "descricao": "Operação fiscal fictícia número 482 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5483",
+      "descricao": "Operação fiscal fictícia número 483 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5484",
+      "descricao": "Operação fiscal fictícia número 484 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5485",
+      "descricao": "Operação fiscal fictícia número 485 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5486",
+      "descricao": "Operação fiscal fictícia número 486 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5487",
+      "descricao": "Operação fiscal fictícia número 487 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5488",
+      "descricao": "Operação fiscal fictícia número 488 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5489",
+      "descricao": "Operação fiscal fictícia número 489 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5490",
+      "descricao": "Operação fiscal fictícia número 490 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5491",
+      "descricao": "Operação fiscal fictícia número 491 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5492",
+      "descricao": "Operação fiscal fictícia número 492 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5493",
+      "descricao": "Operação fiscal fictícia número 493 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5494",
+      "descricao": "Operação fiscal fictícia número 494 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5495",
+      "descricao": "Operação fiscal fictícia número 495 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5496",
+      "descricao": "Operação fiscal fictícia número 496 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5497",
+      "descricao": "Operação fiscal fictícia número 497 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5498",
+      "descricao": "Operação fiscal fictícia número 498 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5499",
+      "descricao": "Operação fiscal fictícia número 499 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5500",
+      "descricao": "Operação fiscal fictícia número 500 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5501",
+      "descricao": "Operação fiscal fictícia número 501 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5502",
+      "descricao": "Operação fiscal fictícia número 502 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5503",
+      "descricao": "Operação fiscal fictícia número 503 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5504",
+      "descricao": "Operação fiscal fictícia número 504 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5505",
+      "descricao": "Operação fiscal fictícia número 505 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5506",
+      "descricao": "Operação fiscal fictícia número 506 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5507",
+      "descricao": "Operação fiscal fictícia número 507 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5508",
+      "descricao": "Operação fiscal fictícia número 508 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5509",
+      "descricao": "Operação fiscal fictícia número 509 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5510",
+      "descricao": "Operação fiscal fictícia número 510 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5511",
+      "descricao": "Operação fiscal fictícia número 511 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5512",
+      "descricao": "Operação fiscal fictícia número 512 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5513",
+      "descricao": "Operação fiscal fictícia número 513 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5514",
+      "descricao": "Operação fiscal fictícia número 514 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5515",
+      "descricao": "Operação fiscal fictícia número 515 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5516",
+      "descricao": "Operação fiscal fictícia número 516 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5517",
+      "descricao": "Operação fiscal fictícia número 517 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5518",
+      "descricao": "Operação fiscal fictícia número 518 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5519",
+      "descricao": "Operação fiscal fictícia número 519 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5520",
+      "descricao": "Operação fiscal fictícia número 520 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5521",
+      "descricao": "Operação fiscal fictícia número 521 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5522",
+      "descricao": "Operação fiscal fictícia número 522 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5523",
+      "descricao": "Operação fiscal fictícia número 523 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5524",
+      "descricao": "Operação fiscal fictícia número 524 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5525",
+      "descricao": "Operação fiscal fictícia número 525 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5526",
+      "descricao": "Operação fiscal fictícia número 526 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5527",
+      "descricao": "Operação fiscal fictícia número 527 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5528",
+      "descricao": "Operação fiscal fictícia número 528 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5529",
+      "descricao": "Operação fiscal fictícia número 529 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5530",
+      "descricao": "Operação fiscal fictícia número 530 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5531",
+      "descricao": "Operação fiscal fictícia número 531 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5532",
+      "descricao": "Operação fiscal fictícia número 532 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5533",
+      "descricao": "Operação fiscal fictícia número 533 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5534",
+      "descricao": "Operação fiscal fictícia número 534 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5535",
+      "descricao": "Operação fiscal fictícia número 535 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5536",
+      "descricao": "Operação fiscal fictícia número 536 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5537",
+      "descricao": "Operação fiscal fictícia número 537 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5538",
+      "descricao": "Operação fiscal fictícia número 538 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5539",
+      "descricao": "Operação fiscal fictícia número 539 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5540",
+      "descricao": "Operação fiscal fictícia número 540 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5541",
+      "descricao": "Operação fiscal fictícia número 541 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5542",
+      "descricao": "Operação fiscal fictícia número 542 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5543",
+      "descricao": "Operação fiscal fictícia número 543 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5544",
+      "descricao": "Operação fiscal fictícia número 544 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5545",
+      "descricao": "Operação fiscal fictícia número 545 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5546",
+      "descricao": "Operação fiscal fictícia número 546 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5547",
+      "descricao": "Operação fiscal fictícia número 547 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5548",
+      "descricao": "Operação fiscal fictícia número 548 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5549",
+      "descricao": "Operação fiscal fictícia número 549 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5550",
+      "descricao": "Operação fiscal fictícia número 550 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5551",
+      "descricao": "Operação fiscal fictícia número 551 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5552",
+      "descricao": "Operação fiscal fictícia número 552 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5553",
+      "descricao": "Operação fiscal fictícia número 553 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5554",
+      "descricao": "Operação fiscal fictícia número 554 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5555",
+      "descricao": "Operação fiscal fictícia número 555 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5556",
+      "descricao": "Operação fiscal fictícia número 556 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5557",
+      "descricao": "Operação fiscal fictícia número 557 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5558",
+      "descricao": "Operação fiscal fictícia número 558 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5559",
+      "descricao": "Operação fiscal fictícia número 559 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5560",
+      "descricao": "Operação fiscal fictícia número 560 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5561",
+      "descricao": "Operação fiscal fictícia número 561 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5562",
+      "descricao": "Operação fiscal fictícia número 562 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5563",
+      "descricao": "Operação fiscal fictícia número 563 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5564",
+      "descricao": "Operação fiscal fictícia número 564 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5565",
+      "descricao": "Operação fiscal fictícia número 565 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5566",
+      "descricao": "Operação fiscal fictícia número 566 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5567",
+      "descricao": "Operação fiscal fictícia número 567 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5568",
+      "descricao": "Operação fiscal fictícia número 568 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5569",
+      "descricao": "Operação fiscal fictícia número 569 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5570",
+      "descricao": "Operação fiscal fictícia número 570 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5571",
+      "descricao": "Operação fiscal fictícia número 571 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5572",
+      "descricao": "Operação fiscal fictícia número 572 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5573",
+      "descricao": "Operação fiscal fictícia número 573 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5574",
+      "descricao": "Operação fiscal fictícia número 574 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5575",
+      "descricao": "Operação fiscal fictícia número 575 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5576",
+      "descricao": "Operação fiscal fictícia número 576 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5577",
+      "descricao": "Operação fiscal fictícia número 577 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5578",
+      "descricao": "Operação fiscal fictícia número 578 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5579",
+      "descricao": "Operação fiscal fictícia número 579 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5580",
+      "descricao": "Operação fiscal fictícia número 580 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5581",
+      "descricao": "Operação fiscal fictícia número 581 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5582",
+      "descricao": "Operação fiscal fictícia número 582 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5583",
+      "descricao": "Operação fiscal fictícia número 583 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5584",
+      "descricao": "Operação fiscal fictícia número 584 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5585",
+      "descricao": "Operação fiscal fictícia número 585 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5586",
+      "descricao": "Operação fiscal fictícia número 586 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5587",
+      "descricao": "Operação fiscal fictícia número 587 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5588",
+      "descricao": "Operação fiscal fictícia número 588 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5589",
+      "descricao": "Operação fiscal fictícia número 589 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5590",
+      "descricao": "Operação fiscal fictícia número 590 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5591",
+      "descricao": "Operação fiscal fictícia número 591 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5592",
+      "descricao": "Operação fiscal fictícia número 592 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5593",
+      "descricao": "Operação fiscal fictícia número 593 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5594",
+      "descricao": "Operação fiscal fictícia número 594 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5595",
+      "descricao": "Operação fiscal fictícia número 595 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5596",
+      "descricao": "Operação fiscal fictícia número 596 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5597",
+      "descricao": "Operação fiscal fictícia número 597 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5598",
+      "descricao": "Operação fiscal fictícia número 598 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5599",
+      "descricao": "Operação fiscal fictícia número 599 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5600",
+      "descricao": "Operação fiscal fictícia número 600 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5601",
+      "descricao": "Operação fiscal fictícia número 601 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5602",
+      "descricao": "Operação fiscal fictícia número 602 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5603",
+      "descricao": "Operação fiscal fictícia número 603 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5604",
+      "descricao": "Operação fiscal fictícia número 604 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5605",
+      "descricao": "Operação fiscal fictícia número 605 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5606",
+      "descricao": "Operação fiscal fictícia número 606 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5607",
+      "descricao": "Operação fiscal fictícia número 607 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5608",
+      "descricao": "Operação fiscal fictícia número 608 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5609",
+      "descricao": "Operação fiscal fictícia número 609 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5610",
+      "descricao": "Operação fiscal fictícia número 610 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5611",
+      "descricao": "Operação fiscal fictícia número 611 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5612",
+      "descricao": "Operação fiscal fictícia número 612 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5613",
+      "descricao": "Operação fiscal fictícia número 613 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5614",
+      "descricao": "Operação fiscal fictícia número 614 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5615",
+      "descricao": "Operação fiscal fictícia número 615 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5616",
+      "descricao": "Operação fiscal fictícia número 616 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5617",
+      "descricao": "Operação fiscal fictícia número 617 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5618",
+      "descricao": "Operação fiscal fictícia número 618 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5619",
+      "descricao": "Operação fiscal fictícia número 619 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5620",
+      "descricao": "Operação fiscal fictícia número 620 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5621",
+      "descricao": "Operação fiscal fictícia número 621 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5622",
+      "descricao": "Operação fiscal fictícia número 622 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5623",
+      "descricao": "Operação fiscal fictícia número 623 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5624",
+      "descricao": "Operação fiscal fictícia número 624 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5625",
+      "descricao": "Operação fiscal fictícia número 625 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5626",
+      "descricao": "Operação fiscal fictícia número 626 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5627",
+      "descricao": "Operação fiscal fictícia número 627 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5628",
+      "descricao": "Operação fiscal fictícia número 628 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5629",
+      "descricao": "Operação fiscal fictícia número 629 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5630",
+      "descricao": "Operação fiscal fictícia número 630 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5631",
+      "descricao": "Operação fiscal fictícia número 631 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5632",
+      "descricao": "Operação fiscal fictícia número 632 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5633",
+      "descricao": "Operação fiscal fictícia número 633 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5634",
+      "descricao": "Operação fiscal fictícia número 634 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5635",
+      "descricao": "Operação fiscal fictícia número 635 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5636",
+      "descricao": "Operação fiscal fictícia número 636 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5637",
+      "descricao": "Operação fiscal fictícia número 637 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5638",
+      "descricao": "Operação fiscal fictícia número 638 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5639",
+      "descricao": "Operação fiscal fictícia número 639 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5640",
+      "descricao": "Operação fiscal fictícia número 640 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5641",
+      "descricao": "Operação fiscal fictícia número 641 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5642",
+      "descricao": "Operação fiscal fictícia número 642 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5643",
+      "descricao": "Operação fiscal fictícia número 643 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5644",
+      "descricao": "Operação fiscal fictícia número 644 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5645",
+      "descricao": "Operação fiscal fictícia número 645 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5646",
+      "descricao": "Operação fiscal fictícia número 646 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5647",
+      "descricao": "Operação fiscal fictícia número 647 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5648",
+      "descricao": "Operação fiscal fictícia número 648 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5649",
+      "descricao": "Operação fiscal fictícia número 649 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5650",
+      "descricao": "Operação fiscal fictícia número 650 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5651",
+      "descricao": "Operação fiscal fictícia número 651 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5652",
+      "descricao": "Operação fiscal fictícia número 652 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5653",
+      "descricao": "Operação fiscal fictícia número 653 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5654",
+      "descricao": "Operação fiscal fictícia número 654 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5655",
+      "descricao": "Operação fiscal fictícia número 655 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5656",
+      "descricao": "Operação fiscal fictícia número 656 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5657",
+      "descricao": "Operação fiscal fictícia número 657 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5658",
+      "descricao": "Operação fiscal fictícia número 658 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5659",
+      "descricao": "Operação fiscal fictícia número 659 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5660",
+      "descricao": "Operação fiscal fictícia número 660 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5661",
+      "descricao": "Operação fiscal fictícia número 661 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5662",
+      "descricao": "Operação fiscal fictícia número 662 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5663",
+      "descricao": "Operação fiscal fictícia número 663 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5664",
+      "descricao": "Operação fiscal fictícia número 664 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5665",
+      "descricao": "Operação fiscal fictícia número 665 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5666",
+      "descricao": "Operação fiscal fictícia número 666 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5667",
+      "descricao": "Operação fiscal fictícia número 667 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5668",
+      "descricao": "Operação fiscal fictícia número 668 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5669",
+      "descricao": "Operação fiscal fictícia número 669 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5670",
+      "descricao": "Operação fiscal fictícia número 670 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5671",
+      "descricao": "Operação fiscal fictícia número 671 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5672",
+      "descricao": "Operação fiscal fictícia número 672 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5673",
+      "descricao": "Operação fiscal fictícia número 673 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5674",
+      "descricao": "Operação fiscal fictícia número 674 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5675",
+      "descricao": "Operação fiscal fictícia número 675 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5676",
+      "descricao": "Operação fiscal fictícia número 676 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5677",
+      "descricao": "Operação fiscal fictícia número 677 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5678",
+      "descricao": "Operação fiscal fictícia número 678 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5679",
+      "descricao": "Operação fiscal fictícia número 679 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5680",
+      "descricao": "Operação fiscal fictícia número 680 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5681",
+      "descricao": "Operação fiscal fictícia número 681 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5682",
+      "descricao": "Operação fiscal fictícia número 682 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5683",
+      "descricao": "Operação fiscal fictícia número 683 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5684",
+      "descricao": "Operação fiscal fictícia número 684 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5685",
+      "descricao": "Operação fiscal fictícia número 685 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5686",
+      "descricao": "Operação fiscal fictícia número 686 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5687",
+      "descricao": "Operação fiscal fictícia número 687 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5688",
+      "descricao": "Operação fiscal fictícia número 688 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5689",
+      "descricao": "Operação fiscal fictícia número 689 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5690",
+      "descricao": "Operação fiscal fictícia número 690 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5691",
+      "descricao": "Operação fiscal fictícia número 691 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5692",
+      "descricao": "Operação fiscal fictícia número 692 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5693",
+      "descricao": "Operação fiscal fictícia número 693 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5694",
+      "descricao": "Operação fiscal fictícia número 694 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5695",
+      "descricao": "Operação fiscal fictícia número 695 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5696",
+      "descricao": "Operação fiscal fictícia número 696 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5697",
+      "descricao": "Operação fiscal fictícia número 697 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5698",
+      "descricao": "Operação fiscal fictícia número 698 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5699",
+      "descricao": "Operação fiscal fictícia número 699 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5700",
+      "descricao": "Operação fiscal fictícia número 700 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5701",
+      "descricao": "Operação fiscal fictícia número 701 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5702",
+      "descricao": "Operação fiscal fictícia número 702 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5703",
+      "descricao": "Operação fiscal fictícia número 703 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5704",
+      "descricao": "Operação fiscal fictícia número 704 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5705",
+      "descricao": "Operação fiscal fictícia número 705 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5706",
+      "descricao": "Operação fiscal fictícia número 706 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5707",
+      "descricao": "Operação fiscal fictícia número 707 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5708",
+      "descricao": "Operação fiscal fictícia número 708 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5709",
+      "descricao": "Operação fiscal fictícia número 709 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5710",
+      "descricao": "Operação fiscal fictícia número 710 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5711",
+      "descricao": "Operação fiscal fictícia número 711 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5712",
+      "descricao": "Operação fiscal fictícia número 712 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5713",
+      "descricao": "Operação fiscal fictícia número 713 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5714",
+      "descricao": "Operação fiscal fictícia número 714 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5715",
+      "descricao": "Operação fiscal fictícia número 715 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5716",
+      "descricao": "Operação fiscal fictícia número 716 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5717",
+      "descricao": "Operação fiscal fictícia número 717 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5718",
+      "descricao": "Operação fiscal fictícia número 718 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5719",
+      "descricao": "Operação fiscal fictícia número 719 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5720",
+      "descricao": "Operação fiscal fictícia número 720 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5721",
+      "descricao": "Operação fiscal fictícia número 721 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5722",
+      "descricao": "Operação fiscal fictícia número 722 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5723",
+      "descricao": "Operação fiscal fictícia número 723 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5724",
+      "descricao": "Operação fiscal fictícia número 724 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5725",
+      "descricao": "Operação fiscal fictícia número 725 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5726",
+      "descricao": "Operação fiscal fictícia número 726 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5727",
+      "descricao": "Operação fiscal fictícia número 727 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5728",
+      "descricao": "Operação fiscal fictícia número 728 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5729",
+      "descricao": "Operação fiscal fictícia número 729 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5730",
+      "descricao": "Operação fiscal fictícia número 730 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5731",
+      "descricao": "Operação fiscal fictícia número 731 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5732",
+      "descricao": "Operação fiscal fictícia número 732 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5733",
+      "descricao": "Operação fiscal fictícia número 733 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5734",
+      "descricao": "Operação fiscal fictícia número 734 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5735",
+      "descricao": "Operação fiscal fictícia número 735 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5736",
+      "descricao": "Operação fiscal fictícia número 736 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5737",
+      "descricao": "Operação fiscal fictícia número 737 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5738",
+      "descricao": "Operação fiscal fictícia número 738 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5739",
+      "descricao": "Operação fiscal fictícia número 739 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5740",
+      "descricao": "Operação fiscal fictícia número 740 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5741",
+      "descricao": "Operação fiscal fictícia número 741 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5742",
+      "descricao": "Operação fiscal fictícia número 742 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5743",
+      "descricao": "Operação fiscal fictícia número 743 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5744",
+      "descricao": "Operação fiscal fictícia número 744 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5745",
+      "descricao": "Operação fiscal fictícia número 745 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5746",
+      "descricao": "Operação fiscal fictícia número 746 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5747",
+      "descricao": "Operação fiscal fictícia número 747 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5748",
+      "descricao": "Operação fiscal fictícia número 748 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5749",
+      "descricao": "Operação fiscal fictícia número 749 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5750",
+      "descricao": "Operação fiscal fictícia número 750 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5751",
+      "descricao": "Operação fiscal fictícia número 751 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5752",
+      "descricao": "Operação fiscal fictícia número 752 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5753",
+      "descricao": "Operação fiscal fictícia número 753 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5754",
+      "descricao": "Operação fiscal fictícia número 754 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5755",
+      "descricao": "Operação fiscal fictícia número 755 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5756",
+      "descricao": "Operação fiscal fictícia número 756 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5757",
+      "descricao": "Operação fiscal fictícia número 757 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5758",
+      "descricao": "Operação fiscal fictícia número 758 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5759",
+      "descricao": "Operação fiscal fictícia número 759 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5760",
+      "descricao": "Operação fiscal fictícia número 760 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5761",
+      "descricao": "Operação fiscal fictícia número 761 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5762",
+      "descricao": "Operação fiscal fictícia número 762 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5763",
+      "descricao": "Operação fiscal fictícia número 763 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5764",
+      "descricao": "Operação fiscal fictícia número 764 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5765",
+      "descricao": "Operação fiscal fictícia número 765 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5766",
+      "descricao": "Operação fiscal fictícia número 766 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5767",
+      "descricao": "Operação fiscal fictícia número 767 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5768",
+      "descricao": "Operação fiscal fictícia número 768 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5769",
+      "descricao": "Operação fiscal fictícia número 769 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5770",
+      "descricao": "Operação fiscal fictícia número 770 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5771",
+      "descricao": "Operação fiscal fictícia número 771 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5772",
+      "descricao": "Operação fiscal fictícia número 772 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5773",
+      "descricao": "Operação fiscal fictícia número 773 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5774",
+      "descricao": "Operação fiscal fictícia número 774 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5775",
+      "descricao": "Operação fiscal fictícia número 775 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5776",
+      "descricao": "Operação fiscal fictícia número 776 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5777",
+      "descricao": "Operação fiscal fictícia número 777 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5778",
+      "descricao": "Operação fiscal fictícia número 778 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5779",
+      "descricao": "Operação fiscal fictícia número 779 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5780",
+      "descricao": "Operação fiscal fictícia número 780 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5781",
+      "descricao": "Operação fiscal fictícia número 781 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5782",
+      "descricao": "Operação fiscal fictícia número 782 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5783",
+      "descricao": "Operação fiscal fictícia número 783 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5784",
+      "descricao": "Operação fiscal fictícia número 784 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5785",
+      "descricao": "Operação fiscal fictícia número 785 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5786",
+      "descricao": "Operação fiscal fictícia número 786 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5787",
+      "descricao": "Operação fiscal fictícia número 787 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5788",
+      "descricao": "Operação fiscal fictícia número 788 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5789",
+      "descricao": "Operação fiscal fictícia número 789 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5790",
+      "descricao": "Operação fiscal fictícia número 790 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5791",
+      "descricao": "Operação fiscal fictícia número 791 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5792",
+      "descricao": "Operação fiscal fictícia número 792 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5793",
+      "descricao": "Operação fiscal fictícia número 793 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5794",
+      "descricao": "Operação fiscal fictícia número 794 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5795",
+      "descricao": "Operação fiscal fictícia número 795 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5796",
+      "descricao": "Operação fiscal fictícia número 796 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5797",
+      "descricao": "Operação fiscal fictícia número 797 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5798",
+      "descricao": "Operação fiscal fictícia número 798 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    },
+    {
+      "codigo": "5799",
+      "descricao": "Operação fiscal fictícia número 799 do Vértice ERP",
+      "tipo": "saida",
+      "gera_credito": true
+    },
+    {
+      "codigo": "5800",
+      "descricao": "Operação fiscal fictícia número 800 do Vértice ERP",
+      "tipo": "entrada",
+      "gera_credito": false
+    }
+  ]
+}

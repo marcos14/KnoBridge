@@ -1,10 +1,12 @@
 # Avaliação das respostas
 
-> Rascunho v0.1 · 2026-10-17 · Plano 0011 (F1.1; implementação na F4.1)
+> Rascunho v0.2 · 2026-10-17 · Plano 0011 (F1.1; implementação na F4.1)
+>
+> **Mudanças da v0.2** (F4.1, o que a implementação ajustou contra a API real): o corpus fica em `scripts/eval/fixtures/corpus/` (pasta só de dados, isenta de `AGENTS.md`, que de outra forma seria indexado junto); as fontes se chamam `eval-<rótulo>-<pasta>` (nome único no workspace); a credencial `fake` recebe uma chave fictícia (`ProviderCreate` exige 8 ou mais caracteres); a espera da indexação consulta `GET .../runs/{run_id}`; cada resposta do `report.json` ganha `question`, `answerable` e `needs_steps`, `leaks` traz os índices das citações e `config` ganha `redacted`; a comparação recalcula o resumo a partir das respostas em comum.
 
 Contrato do **conjunto de avaliação sintético** do KnoBridge e do roteiro que o roda contra uma stack: o corpus, o formato das perguntas com gabarito, como uma resposta é julgada, as métricas, o relatório e a comparação entre duas execuções. Serve para medir o antes e o depois de cada mudança na qualidade das respostas (reranker, [busca em etapas](chat.md#busca-em-etapas), limiar por modelo, instruções dos níveis) sem dados de terceiros no repositório (regra 9 do [AGENTS.md](../../AGENTS.md)). A decisão está no [plano 0011](../planos/0011-qualidade-da-resposta.md) (D5) e no [ADR 0010](../adr/0010-busca-em-etapas-e-reranker.md).
 
-Código previsto: `scripts/eval/` (F4.1), um pacote do projeto `knobridge-scripts`, rodado de dentro de `scripts/` com `uv run python -m eval`, com a dependência nova `httpx` (cliente HTTP e `MockTransport` dos testes), fixada no `uv.lock`. Guia de uso: `docs/guias/avaliar-respostas.md` (F4.2).
+Código: `scripts/eval/` (F4.1; [AGENTS.md](../../scripts/eval/AGENTS.md)), um pacote do projeto `knobridge-scripts`, rodado de dentro de `scripts/` com `uv run python -m eval`, com a dependência nova `httpx` (cliente HTTP e `MockTransport` dos testes), fixada no `uv.lock`. Guia de uso: `docs/guias/avaliar-respostas.md` (F4.2).
 
 ## Princípios
 
@@ -15,15 +17,15 @@ Código previsto: `scripts/eval/` (F4.1), um pacote do projeto `knobridge-script
 
 ## Corpus
 
-Em `scripts/eval/corpus/`, versionado, pequeno (a ordem de grandeza abaixo é um teto, não uma meta):
+Em `scripts/eval/fixtures/corpus/`, versionado, pequeno (a ordem de grandeza abaixo é um teto, não uma meta; a v0.2 tem 8 artigos de manual, 4 documentos internos, 5 arquivos TypeScript, 5 migrações, 2 JSON gerados, 10 chamados e 8 cards). A pasta é só de dados, sem `AGENTS.md` em nenhum nível: um `AGENTS.md` ali seria indexado como documento da fonte. Os nomes das fontes levam o rótulo (`eval-<rótulo>-manual` e assim por diante), porque o nome de uma fonte é único no workspace.
 
 | Pasta ou arquivo | Fonte criada | Tipo e nível mínimo | Conteúdo |
 |---|---|---|---|
-| `manual/` | `eval-manual` | `folder`, `end_user` (padrão) | Até 15 artigos em Markdown do manual do usuário: telas, passo a passo, mensagens de erro, regras de negócio em linguagem simples. Nomes `manual-<assunto>.md`. |
-| `interno/` | `eval-interno` | `folder`, `support` (explícito) | Até 6 documentos internos em Markdown: o **esquema do banco** (`interno-esquema-do-banco.md`, com as tabelas e colunas em blocos de código SQL dentro do Markdown, para não virar código e subir para `product_dev`), runbooks e validações. Nomes `interno-<assunto>.md`. |
-| `codigo/` | `eval-codigo` | `folder`, `product_dev` (código detectado sobe para `product_dev` de qualquer forma) | Até 12 arquivos de código de exemplo em `src/` (TypeScript) e as migrações em `migrations/` (SQL), mais a pasta `gerado/` com 2 ou 3 arquivos JSON grandes e repetitivos, para exercitar o [aviso de arquivos que dominam o índice](indexacao.md#arquivos-que-dominam-o-índice). |
-| `chamados.jsonl` | `eval-chamados` | `tickets`, `support` | Até 40 chamados no formato de [chamados.md](chamados.md), com dados pessoais fictícios (a anonimização roda). `external_id` `EVAL-T-<nnn>`. |
-| `cards.jsonl` | `eval-cards` | `cards`, `product_dev` | Até 15 cards no formato de [cards.md](cards.md), alguns concluídos e outros em andamento. `external_id` `EVAL-C-<nnn>`. |
+| `manual/` | `eval-<rótulo>-manual` | `folder`, `end_user` (padrão) | Até 15 artigos em Markdown do manual do usuário: telas, passo a passo, mensagens de erro, regras de negócio em linguagem simples. Nomes `manual-<assunto>.md`. |
+| `interno/` | `eval-<rótulo>-interno` | `folder`, `support` (explícito) | Até 6 documentos internos em Markdown: o **esquema do banco** (`interno-esquema-do-banco.md`, com as tabelas e colunas em blocos de código SQL dentro do Markdown, para não virar código e subir para `product_dev`), runbooks e validações. Nomes `interno-<assunto>.md`. |
+| `codigo/` | `eval-<rótulo>-codigo` | `folder`, `product_dev` (código detectado sobe para `product_dev` de qualquer forma) | Até 12 arquivos de código de exemplo em `src/` (TypeScript) e as migrações em `migrations/` (SQL), mais a pasta `gerado/` com 2 ou 3 arquivos JSON grandes e repetitivos (cerca de 100 trechos cada, para a fonte passar dos 200 trechos abaixo dos quais nada domina), para exercitar o [aviso de arquivos que dominam o índice](indexacao.md#arquivos-que-dominam-o-índice). |
+| `chamados.jsonl` | `eval-<rótulo>-chamados` | `tickets`, `support` | Até 40 chamados no formato de [chamados.md](chamados.md), com dados pessoais fictícios (a anonimização roda). `external_id` `EVAL-T-<nnn>`. |
+| `cards.jsonl` | `eval-<rótulo>-cards` | `cards`, `product_dev` | Até 15 cards no formato de [cards.md](cards.md), alguns concluídos e outros em andamento. `external_id` `EVAL-C-<nnn>`. |
 
 - Os nomes de arquivo são únicos no corpus inteiro, com o prefixo da pasta (`manual-`, `interno-`) ou o caminho (`src/`, `migrations/`, `gerado/`), para o gabarito identificar a fonte pela citação.
 - As pastas de arquivos são lidas pelo worker da stack: a fonte de pasta exige um caminho dentro de `/sources`. O subcomando `copy-corpus` copia `manual/`, `interno/` e `codigo/` para uma pasta do host montada lá (por padrão `deploy/sources/eval/`, que o compose monta em `/sources/eval`).
@@ -95,10 +97,10 @@ Arquivo `scripts/eval/perguntas.json`, validado pelo roteiro antes de qualquer c
 
 O roteiro precisa de um workspace em que o usuário informado seja owner ou admin, de preferência só para a avaliação (ele muda a configuração dos níveis e restaura no fim). Pelas rotas do painel:
 
-1. Login (`POST /v1/auth/login`) e o cookie de CSRF.
-2. Credencial de LLM (`POST .../providers`) com a chave de `KNOBRIDGE_EVAL_CHAT_KEY` (ou nenhuma chave para o `fake`) e, se o provedor de chat não tiver embeddings (Anthropic), uma segunda credencial para o embedding (`KNOBRIDGE_EVAL_EMBEDDING_KEY`).
+1. Login (`POST /v1/auth/login`) e o token de CSRF (`GET /v1/auth/csrf`), mandado no header `X-CSRF-Token`.
+2. Credencial de chat `eval-<rótulo>-chat` (`POST .../providers`) com a chave de `KNOBRIDGE_EVAL_CHAT_KEY` (no `fake`, a chave fictícia `fake-eval-key`, porque a rota exige 8 ou mais caracteres). A coleção usa a mesma credencial quando o provedor de embedding é o mesmo e `KNOBRIDGE_EVAL_EMBEDDING_KEY` não foi definida; senão, uma segunda credencial `eval-<rótulo>-embedding`. `--embedding-provider anthropic` é recusado (código 2): a Anthropic não tem embeddings.
 3. Coleção `eval-<rótulo>` com o modelo de embedding pedido.
-4. As cinco fontes do corpus nessa coleção (as de pasta apontando para `--sources-root`, padrão `/sources/eval`; `eval-interno` com `min_level: support`), o upload de `chamados.jsonl` e `cards.jsonl` pelas rotas de upload, a sincronização de cada fonte e a espera até todas terminarem com sucesso (consulta às execuções a cada 2 s, até `--index-timeout`, padrão 600 s).
+4. As cinco fontes do corpus nessa coleção (as de pasta apontando para `<--sources-root>/manual`, `/interno` e `/codigo`, padrão `/sources/eval`; `interno` com `min_level: support` e `codigo` com `min_level: product_dev`; chamados e cards com o padrão do tipo). As de pasta sincronizam por `POST .../sources/{id}/sync` (se já houver uma execução, `sync_already_running`, o roteiro acompanha a `last_run` da fonte); chamados e cards sobem por `.../tickets/upload` e `.../cards/upload`, que disparam a sincronização e devolvem o `run_id`. Um item recusado no upload, ou upload sem `run_id`, é falha da preparação (código 1). Depois, a espera até todas as execuções terminarem com sucesso (`GET .../runs/{run_id}` a cada 2 s, até `--index-timeout`, padrão 600 s); uma execução `failed` ou `cancelled` é falha da preparação.
 5. Produto `eval-<rótulo>` ligado à coleção, com `rerank` conforme `--rerank` e `min_similarity` nulo (o padrão do modelo), salvo `--min-similarity`.
 6. Leitura da configuração atual dos três níveis (para restaurar) e `PATCH` de cada nível com a credencial, o modelo (`--model <nível>=<modelo>`) e `max_steps` (`--max-steps <nível>=<n>`, padrão o do nível).
 7. Chave de API `eval-<rótulo>` com o produto e `max_level: product_dev`.
@@ -109,7 +111,7 @@ Para cada pergunta, na ordem do arquivo, e para cada repetição (`--repeat`, pa
 
 ### Encerramento (`run`, passo 3)
 
-Restaura os três níveis como estavam (credencial, modelo, temperatura e `max_steps`; as instruções não são tocadas), revoga a chave e, com `--cleanup`, exclui o produto, as fontes, a coleção e as credenciais criadas. Sem `--cleanup`, deixa tudo para inspeção no painel. O encerramento roda mesmo depois de erro ou interrupção (`Ctrl+C`).
+Revoga a chave, restaura os três níveis como estavam (credencial, modelo, temperatura e `max_steps`; as instruções não são tocadas) e, com `--cleanup`, exclui o produto, as fontes, a coleção e as credenciais criadas, nessa ordem (só o que chegou a ser criado). Sem `--cleanup`, deixa tudo para inspeção no painel (rodar de novo com o mesmo rótulo esbarra nos nomes: use outro `--label`). O encerramento roda mesmo depois de erro ou interrupção (`Ctrl+C`, código 1, sem relatório); cada passo que falha é avisado no stdout e não interrompe os outros nem muda o código de saída.
 
 ### Linha de comando
 
@@ -143,9 +145,10 @@ uv run python -m eval compare ../../kb-eval/A/report.json ../../kb-eval/B/report
 | `--index-timeout` | 600 | Segundos de espera pela indexação. |
 | `--label` | `run` | Rótulo dos recursos criados (`eval-<rótulo>`) e do relatório; `[a-z0-9-]`, até 30 caracteres. |
 | `--cleanup` | desligado | Exclui o que criou. |
+| `--redact-answers` | desligado | Grava `answer: null` e as citações só com `index` e `kind` (perguntas com dados reais). |
 | `--out` | (obrigatório) | Pasta do relatório, criada se não existir; **fora do repositório** (o roteiro recusa um caminho dentro dele, código de saída 2). |
 
-Códigos de saída: 0 terminou (mesmo com respostas erradas), 1 falha na preparação ou na indexação, 2 entrada inválida. As senhas e chaves nunca são escritas no relatório nem no stdout.
+Códigos de saída: 0 terminou (mesmo com respostas erradas), 1 falha na preparação ou na indexação (inclusive a stack fora do ar), 2 entrada inválida. As senhas e chaves nunca são escritas no relatório nem no stdout; a linha de comando que traz uma opção com cara de segredo (`--*key*`, `--password`, `--token`…) ou um valor com prefixo de chave (`sk-`, `kbk_`, `kbi_`, `kbr_`, `kbs_`) é recusada com código 2. Uma resposta da REST que não tem o formato de `PublicAnswerOut` vira `verdict: error` com `error_code: invalid_response`.
 
 ## Julgamento de uma resposta
 
@@ -210,10 +213,11 @@ O `run` grava duas saídas em `--out`:
       "support": {"model": "anthropic/claude-sonnet-5.5", "max_steps": 3},
       "product_dev": {"model": "anthropic/claude-opus-5.5", "max_steps": 4}
     },
-    "repeat": 1
+    "repeat": 1,
+    "redacted": false
   },
   "index": {
-    "sources": [{"name": "eval-codigo", "kind": "folder", "documents": 15, "chunks": 210, "dominant": [{"kind": "directory", "pattern": "gerado/**", "share": 0.41}]}]
+    "sources": [{"name": "eval-com-etapas-codigo", "kind": "folder", "documents": 15, "chunks": 210, "dominant": [{"kind": "directory", "pattern": "gerado/**", "share": 0.41}]}]
   },
   "summary": {
     "total": {"questions": 30, "correct": 24, "unknown": 3, "wrong": 3, "leak": 0, "error": 0, "accuracy": 0.8, "…": "…"},
@@ -222,7 +226,8 @@ O `run` grava duas saídas em `--out`:
   },
   "answers": [
     {
-      "question_id": "su-03", "repeat": 1, "level": "support", "kind": "sql", "verdict": "correct",
+      "question_id": "su-03", "repeat": 1, "level": "support", "kind": "sql",
+      "question": "Monte uma consulta…", "answerable": true, "needs_steps": true, "verdict": "correct",
       "status": "completed", "said_unknown": false, "source_hit": true, "include_ok": true, "exclude_ok": true,
       "leaks": [], "steps": 2, "model": "anthropic/claude-sonnet-5.5",
       "input_tokens": 9120, "output_tokens": 640, "cost_usd": 0.024640, "latency_ms": 11840,
@@ -236,7 +241,9 @@ O `run` grava duas saídas em `--out`:
 
 - `answer` traz o texto inteiro (o corpus é sintético). Com `--questions` de fora do repositório (dados reais num ensaio), `--redact-answers` grava `answer: null` e as citações só com `index` e `kind`.
 - `base_url_host` é só host e porta; nenhuma credencial, e-mail, chave ou id de credencial vai para o relatório.
-- `index.sources` vem de `GET .../sources` (com `index_stats`, [indexacao.md](indexacao.md#arquivos-que-dominam-o-índice)).
+- `index.sources` vem de `GET .../sources/{id}` de cada fonte criada (com `index_stats`, [indexacao.md](indexacao.md#arquivos-que-dominam-o-índice)): `documents` é o `document_count`; `chunks` é o `index_stats.chunks` ou, sem estatística (chamados e cards), o `chunks_written` da execução; `dominant` traz `kind`, `pattern` e `share` de cada grupo.
+- `leaks` traz os `index` das citações que casaram um matcher proibido do nível.
+- `question` é o texto da pergunta (mantido com `--redact-answers`); `config.redacted` diz se a execução usou `--redact-answers`.
 
 ### `report.md`
 
@@ -257,7 +264,7 @@ Em pt-BR, para ler e colar num relatório de ensaio:
 - o resumo por nível com as duas colunas e a diferença (acerto, `source_recall`, "não sei", vazamentos, etapas médias, custo médio, latência p50);
 - as perguntas que mudaram de veredito (de `correct` para outro e o contrário), com as etapas e o custo nas duas execuções.
 
-Com `--repeat` maior que 1, a comparação usa a fração de acertos de cada pergunta.
+Com `--repeat` maior que 1, a comparação usa a fração de acertos de cada pergunta. O resumo da comparação é recalculado a partir das respostas das perguntas em comum (respostas, acerto, `source_recall`, taxa de "não sei", vazamentos, etapas médias, custo médio e latência p50), para que as duas colunas meçam o mesmo conjunto; as configurações são comparadas campo a campo, achatadas (`levels.support.max_steps`).
 
 ## Testes
 

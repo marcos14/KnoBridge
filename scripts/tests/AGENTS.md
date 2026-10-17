@@ -6,12 +6,14 @@
 **Não entra aqui**: testes do backend (`backend/tests/`) ou do frontend; dados reais de qualquer tipo.
 
 **Convenções locais**:
-- Árvores de pastas e planos são construídos em `tmp_path` dentro do próprio teste; não há fixtures em disco.
+- Árvores de pastas e planos são construídos em `tmp_path` dentro do próprio teste. A única fixture em disco é `fixtures/eval/` (`report.json`, `report.md` e `compare.md` esperados do `eval`); regenere-a quando o formato do relatório mudar e revise o diff.
 - Testes que dependem do repositório real levam `@pytest.mark.repo`.
 - Testes que precisam do executável `git` são pulados quando ele não existe; nunca dependem de rede.
 - `test_synthetic_tickets.py`: determinismo por semente, campos e instantes dos chamados, gabarito apontando para o texto que contém cada valor, CPF/CNPJ/Luhn/telefone válidos, artigos e perguntas, CLI; o teste `repo` confere que o JSONL do E2E é a saída do gerador (semente 1, 4 chamados).
 - `test_webhook_sink.py`: assinatura (aceita, corpo ou segredo trocados, `t` velho), rotas do receptor falso chamadas direto e um servidor HTTP local em `127.0.0.1` porta 0, parado no fim do teste.
 - `test_fake_reranker.py`: pontuação por palavras da consulta (sem acento), marcador `[[rerank-top]]` no topo, empate pela ordem de entrada, corpos inválidos, rotas chamadas direto e o mesmo servidor HTTP local em porta 0.
+
+- `eval_fake_api.py` (não é teste): a API falsa do KnoBridge servida por `httpx.MockTransport` (rotas do painel com CSRF, upload, execuções, níveis, chaves e a REST pública com respostas roteirizadas por pergunta, com botões para falhas) e um relógio falso. `test_eval_run.py` roda o `run` inteiro contra ela; `test_eval_cli.py` cobre opções, segredos, `--out`, `copy-corpus` e `compare`; `test_eval_questions.py`, `test_eval_judge.py` e `test_eval_jsonx.py` as unidades; `test_eval_corpus.py` (`repo`) valida o corpus e o `perguntas.json` versionados.
 
 **Como testar**: de dentro de `scripts/`, `uv run pytest` (gate de 95% de linhas e branches).
 

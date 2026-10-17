@@ -6,6 +6,7 @@
 - `check_agents_md.py`: falha se alguma pasta não tiver `AGENTS.md` (regra da seção 4 do [AGENTS.md da raiz](../AGENTS.md)).
 - `check_plans.py`: valida o frontmatter de `docs/planos/NNNN-slug.md` contra o [modelo](../docs/planos/0000-modelo.md).
 - `synthetic_tickets/`: gerador determinístico de chamados sintéticos em pt-BR, com gabarito da anonimização, artigos e perguntas (`uv run python -m synthetic_tickets --seed N --tickets 300 --out <pasta fora do repo>`; [AGENTS.md](synthetic_tickets/AGENTS.md)).
+- `eval/`: conjunto de avaliação sintético das respostas (plano 0011): corpus do Vértice ERP, perguntas com gabarito e o roteiro que roda contra uma stack pela API e grava `report.json` e `report.md` (`uv run python -m eval copy-corpus`, `run` e `compare`; [AGENTS.md](eval/AGENTS.md), contrato em [avaliacao.md](../docs/specs/avaliacao.md)). Usa o `httpx` (fixado no `uv.lock`).
 - `webhook_sink.py`: sistema de chamados falso do E2E (só biblioteca padrão): confere a `KnoBridge-Signature` com o segredo recebido em `PUT /secret`, responde `{ticket_id, url}` em `POST /hook` e lista o que chegou em `GET /deliveries` (com a pergunta, o canal e o solicitante de cada pedido assinado). O `docker-compose.e2e.yml` o monta numa imagem Python pequena (serviço `webhook-sink`).
 - `fake_reranker.py`: reranker falso do E2E (só biblioteca padrão), na rota `POST /rerank` do TEI ([indexacao.md](../docs/specs/indexacao.md#e2e-e-testes)): pontua cada texto pela fração das palavras da consulta (minúsculas, sem acento) presentes nele, dá 1,0 ao texto com o marcador `[[rerank-top]]` e devolve `[{index, score}]` da maior para a menor, empate pela ordem de entrada; `GET /health` para o healthcheck. O `docker-compose.e2e.yml` o monta no lugar da imagem do TEI (serviço `reranker`).
 - Outros scripts de checagem ou geração de código usados pela CI ou pelos hooks, cada um com testes em `tests/`.
@@ -19,6 +20,7 @@
 - Caminhos padrão são relativos à raiz do repositório (pai desta pasta), para funcionar de qualquer diretório.
 - Testes montam árvores sintéticas em `tmp_path`; só os testes marcados com `repo` olham o repositório real.
 - `webhook_sink.py` e `fake_reranker.py` só usam a biblioteca padrão e não importam os outros scripts: o compose de E2E os roda sozinhos, montados numa imagem `python` sem dependências.
+- Relatórios do `eval` ficam fora do repositório (o `run` recusa `--out` dentro dele); o corpus e as perguntas versionados são sintéticos.
 - Dados gerados pelo `synthetic_tickets` ficam fora do repositório; o único exemplo versionado é o JSONL do E2E (`frontend/e2e/stack/fixtures/tickets/`).
 
 **Como testar** (de dentro de `scripts/`):

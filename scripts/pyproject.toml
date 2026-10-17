@@ -4,7 +4,10 @@ version = "0.1.0"
 description = "Repository automation for KnoBridge (CI checks)."
 requires-python = ">=3.12"
 license = "Apache-2.0"
-dependencies = ["pyyaml>=6.0.2"]
+dependencies = [
+    "httpx>=0.28",
+    "pyyaml>=6.0.2",
+]
 
 [dependency-groups]
 dev = [
@@ -47,6 +50,8 @@ select = [
 "check_*.py" = ["T201", "S603", "S607"]
 # CLI of the synthetic data generator: it prints a one-line summary.
 "synthetic_tickets/cli.py" = ["T201"]
+# CLI of the evaluation set: progress and the summary go to stdout.
+"eval/cli.py" = ["T201"]
 "tests/**" = ["S101", "S603", "S607"]
 
 [tool.ruff.format]
