@@ -81,7 +81,7 @@ Parâmetros: `from`, `to` (período), `group_by` (obrigatório, abaixo) e, desde
   "totals": {
     "embedding_tokens": 1250000, "embedding_cost_usd": 0.025, "runs": 14, "unpriced_runs": 0,
     "chat_input_tokens": 98000, "chat_output_tokens": 12000, "chat_cost_usd": 0.0584,
-    "answers": 120, "unpriced_answers": 3,
+    "answers": 120, "chat_searches": 180, "unpriced_answers": 3,
     "cost_usd": 0.0834
   },
   "rows": [
@@ -89,7 +89,7 @@ Parâmetros: `from`, `to` (período), `group_by` (obrigatório, abaixo) e, desde
       "key": "6f1c…", "label": "ERP",
       "embedding_tokens": null, "embedding_cost_usd": null, "runs": null, "unpriced_runs": null,
       "chat_input_tokens": 98000, "chat_output_tokens": 12000, "chat_cost_usd": 0.0584,
-      "answers": 120, "unpriced_answers": 3,
+      "answers": 120, "chat_searches": 180, "unpriced_answers": 3,
       "cost_usd": 0.0584
     }
   ]
@@ -139,9 +139,9 @@ Desde a v0.3, `product_id` (um produto do workspace; outro id dá linhas vazias,
 Mesmos parâmetros. Resposta 200 `text/csv; charset=utf-8`, com `Content-Disposition: attachment; filename="knobridge-uso-<group_by>-<from>-<to>.csv"` (datas `AAAA-MM-DD`), separador vírgula, cabeçalho na primeira linha, uma linha por `rows` e uma última linha `total`:
 
 ```text
-key,label,embedding_tokens,embedding_cost_usd,runs,unpriced_runs,chat_input_tokens,chat_output_tokens,chat_cost_usd,answers,unpriced_answers,cost_usd
-6f1c…,Suporte ERP,,,,,98000,12000,0.058400,120,3,0.058400
-total,Total,1250000,0.025000,14,0,98000,12000,0.058400,120,3,0.083400
+key,label,embedding_tokens,embedding_cost_usd,runs,unpriced_runs,chat_input_tokens,chat_output_tokens,chat_cost_usd,answers,chat_searches,unpriced_answers,cost_usd
+6f1c…,Suporte ERP,,,,,98000,12000,0.058400,120,180,3,0.058400
+total,Total,1250000,0.025000,14,0,98000,12000,0.058400,120,180,3,0.083400
 ```
 
 Campos nulos ficam vazios. Texto com vírgula, aspas ou quebra de linha vai entre aspas (RFC 4180). Valores que começam com `=`, `+`, `-` ou `@` ganham um `'` antes, contra injeção de fórmula em planilha. Sem BOM.

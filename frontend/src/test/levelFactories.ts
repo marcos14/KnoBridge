@@ -57,6 +57,9 @@ export function makeWorkspaceLevel(overrides: Partial<WorkspaceLevel> = {}): Wor
     price: { input_usd_per_mtok: 0.4, output_usd_per_mtok: 1.6 },
     estimated_cost_per_answer_usd: 0.00256,
     updated_at: "2026-10-13T10:00:00Z",
+    max_steps: 2,
+    estimated_max_cost_per_answer_usd: 0.00484,
+    tools_supported: null,
     ...overrides,
   };
 }

@@ -14,6 +14,7 @@ export function makeUsageTotals(overrides: Partial<UsageTotals> = {}): UsageTota
     chat_cost_usd: 0.0584,
     answers: 120,
     unpriced_answers: 3,
+    chat_searches: 0,
     cost_usd: 0.0834,
     ...overrides,
   };
@@ -33,6 +34,7 @@ export function makeUsageRow(overrides: Partial<UsageRow> = {}): UsageRow {
     chat_cost_usd: null,
     answers: null,
     unpriced_answers: null,
+    chat_searches: null,
     cost_usd: 0,
     ...overrides,
   };

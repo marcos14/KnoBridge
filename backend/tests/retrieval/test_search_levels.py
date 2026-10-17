@@ -166,7 +166,7 @@ async def _sources(
     query = RetrievalQuery(
         workspace_id=workspace_id, product_id=product_id, level=level, user_id=None, text=QUERY
     )
-    return await retriever.retrieve(session, query)
+    return (await retriever.retrieve(session, query)).sources
 
 
 def test_retriever_never_hands_a_chunk_above_the_level_to_the_context(

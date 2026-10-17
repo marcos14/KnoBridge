@@ -29,6 +29,7 @@ from knobridge.api.deps import (
     WorkspaceContext,
     WorkspaceContextDep,
 )
+from knobridge.api.message_retrieval import RetrievalOut, retrieval_out
 from knobridge.api.ticket_requests import TicketRequestOut, ticket_request_out
 from knobridge.apikeys.models import ApiKey
 from knobridge.conversations.models import (
@@ -205,6 +206,10 @@ class MessageOut(BaseModel):
     # The ticket requested about this answer, if any (``null`` for questions). Always sent;
     # the default only keeps the field additive in the published schema (plan 0005).
     ticket_request: TicketRequestOut | None = None
+    # Searches of an answer and their summary (plan 0011); null for questions and older
+    # answers.
+    steps: int | None = None
+    retrieval: RetrievalOut | None = None
 
 
 class MessagePage(BaseModel):
@@ -278,6 +283,8 @@ def _message_out(view: MessageView, request: TicketRequest | None) -> MessageOut
         created_at=message.created_at,
         feedback=None if view.feedback is None else _feedback_out(view.feedback),
         ticket_request=None if request is None else ticket_request_out(request),
+        steps=message.steps,
+        retrieval=retrieval_out(message.retrieval),
     )
 
 

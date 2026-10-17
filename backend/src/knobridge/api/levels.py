@@ -7,7 +7,10 @@ instructions of one. ``provider_id`` and ``model`` are set or cleared together (
 ``level_provider_invalid``). ``instructions: null`` restores the KnoBridge default text, which
 every answer also carries in ``default_instructions``. ``price`` and
 ``estimated_cost_per_answer_usd`` (a reference answer of 4000 input and 600 output tokens) come
-from the chat price table (``KNOBRIDGE_CHAT_PRICES``).
+from the chat price table (``KNOBRIDGE_CHAT_PRICES``). ``max_steps`` (1 to 6) is the most
+searches of an answer (multi-step search), with ``estimated_max_cost_per_answer_usd`` for an
+answer that uses them all; ``tools_supported`` is ``false`` once the level's model refused tool
+calls (changing the model or the credential clears the mark).
 """
 
 from __future__ import annotations
@@ -20,7 +23,13 @@ from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field, StringConstraints, model_validator
 
 from knobridge.api.deps import ClientIpDep, WorkspaceContext, get_settings_from_app, require_role
-from knobridge.levels.level import MAX_TEMPERATURE, MIN_TEMPERATURE, ResponseLevel
+from knobridge.levels.level import (
+    MAX_MAX_STEPS,
+    MAX_TEMPERATURE,
+    MIN_MAX_STEPS,
+    MIN_TEMPERATURE,
+    ResponseLevel,
+)
 from knobridge.levels.workspace import LevelChanges, LevelView, WorkspaceLevelService
 from knobridge.llm.chat_pricing import ChatPriceTable
 from knobridge.llm.models import ProviderKind
@@ -43,6 +52,7 @@ ModelId = Annotated[
 ]
 Temperature = Annotated[float, Field(ge=MIN_TEMPERATURE, le=MAX_TEMPERATURE, allow_inf_nan=False)]
 Instructions = Annotated[str, StringConstraints(strip_whitespace=True, max_length=20000)]
+MaxSteps = Annotated[int, Field(ge=MIN_MAX_STEPS, le=MAX_MAX_STEPS, strict=True)]
 
 _ERRORS: dict[int | str, dict[str, object]] = {
     401: {"description": "No live session (standard error shape)."},
@@ -74,6 +84,13 @@ class WorkspaceLevelOut(BaseModel):
     price: LevelPrice | None
     estimated_cost_per_answer_usd: float | None
     updated_at: datetime
+    # Most searches of an answer (multi-step search, plan 0011); the defaults keep the
+    # fields additive in the published schema.
+    max_steps: int = 1
+    # A reference answer that uses every step (``null`` without a price).
+    estimated_max_cost_per_answer_usd: float | None = None
+    # ``false`` when the level's model refused tool calls; ``null`` while unknown.
+    tools_supported: bool | None = None
 
 
 class WorkspaceLevelList(BaseModel):
@@ -88,13 +105,15 @@ class WorkspaceLevelUpdate(BaseModel):
     model: ModelId | None = None
     temperature: Temperature | None = None
     instructions: Instructions | None = None
+    max_steps: MaxSteps | None = None
 
     @model_validator(mode="after")
     def _not_empty(self) -> WorkspaceLevelUpdate:
         if not self.model_fields_set:
             raise ValueError("Give at least one field to change.")
-        if "temperature" in self.model_fields_set and self.temperature is None:
-            raise ValueError("temperature cannot be null.")
+        for name in ("temperature", "max_steps"):
+            if name in self.model_fields_set and getattr(self, name) is None:
+                raise ValueError(f"{name} cannot be null.")
         return self
 
 
@@ -125,6 +144,13 @@ def _out(view: LevelView) -> WorkspaceLevelOut:
             else float(view.estimated_cost_per_answer_usd)
         ),
         updated_at=view.updated_at,
+        max_steps=view.max_steps,
+        estimated_max_cost_per_answer_usd=(
+            None
+            if view.estimated_max_cost_per_answer_usd is None
+            else float(view.estimated_max_cost_per_answer_usd)
+        ),
+        tools_supported=view.tools_supported,
     )
 
 
@@ -178,6 +204,7 @@ async def update_level(
             temperature=body.temperature,
             instructions=body.instructions,
             instructions_given="instructions" in given,
+            max_steps=body.max_steps,
         ),
         ip=ip,
     )

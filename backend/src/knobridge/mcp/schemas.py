@@ -164,6 +164,8 @@ class AskOut(BaseModel):
     ticket_enabled: bool
     model: str | None
     cost_usd: float | None
+    # Searches of the answer, the first one included (mcp.md v0.2).
+    steps: int | None
 
 
 RequesterName = Annotated[

@@ -121,6 +121,8 @@ class ChatUsage:
     cost_usd: Decimal = ZERO
     answers: int = 0
     unpriced_answers: int = 0
+    # Searches of the answers (``messages.steps``; null counts 0).
+    searches: int = 0
 
 
 @dataclass(frozen=True)
@@ -202,13 +204,14 @@ def _count(where: ColumnElement[bool] | None = None) -> ColumnElement[int]:
 
 
 def _embedding_values() -> tuple[ColumnElement[Any], ...]:
-    """Five generic columns, aligned with ``_chat_values`` for the union of the rows."""
+    """Six generic columns, aligned with ``_chat_values`` for the union of the rows."""
     return (
         _int_sum(Run.embedding_tokens),
         cast(literal(0), BigInteger),
         _cost_sum(Run.cost_usd),
         _count(),
         _count(Run.cost_usd.is_(None)),
+        cast(literal(0), BigInteger),
     )
 
 
@@ -219,6 +222,7 @@ def _chat_values() -> tuple[ColumnElement[Any], ...]:
         _cost_sum(Message.cost_usd),
         _count(),
         _count(Message.cost_usd.is_(None)),
+        _int_sum(Message.steps),
     )
 
 
@@ -235,6 +239,7 @@ def _chat(values: Sequence[Any]) -> ChatUsage:
         cost_usd=values[2],
         answers=values[3],
         unpriced_answers=values[4],
+        searches=values[5],
     )
 
 
@@ -256,7 +261,7 @@ async def usage_totals(
             select(*embedding.c, *answers.c).select_from(embedding.join(answers, true()))
         )
     ).one()
-    return UsageTotals(embedding=_embedding(row[:5]), chat=_chat(row[5:]))
+    return UsageTotals(embedding=_embedding(row[:6]), chat=_chat(row[6:]))
 
 
 def _day(column: ColumnExpressionArgument[Any]) -> ColumnElement[str]:

@@ -16,6 +16,7 @@ from pydantic import BaseModel
 
 from knobridge.api.conversations import CitationOut
 from knobridge.api.deps import ClockDep, WorkspaceContext, require_role
+from knobridge.api.message_retrieval import RetrievalOut, retrieval_out
 from knobridge.conversations.admin import (
     AdminConversation,
     AdminConversationFilter,
@@ -116,6 +117,10 @@ class AdminMessageOut(BaseModel):
     created_at: datetime
     # Everyone's feedback on this message, oldest first.
     feedback: list[AdminFeedbackOut]
+    # Searches of an answer and their summary, with the model's queries (plan 0011); null
+    # for questions and older answers.
+    steps: int | None = None
+    retrieval: RetrievalOut | None = None
 
 
 class AdminMessagePage(BaseModel):
@@ -195,6 +200,8 @@ def _message_out(item: AdminMessage) -> AdminMessageOut:
             )
             for entry in item.feedback
         ],
+        steps=message.steps,
+        retrieval=retrieval_out(message.retrieval),
     )
 
 

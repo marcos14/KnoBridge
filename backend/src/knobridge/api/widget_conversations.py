@@ -47,7 +47,7 @@ from knobridge.api.widget_wire import (
     ticket_request_out,
 )
 from knobridge.conversations.access import ProductInactiveError, WidgetReader
-from knobridge.conversations.turn import ChatEvent, DoneEvent
+from knobridge.conversations.turn import ChatEvent, DoneEvent, StepEvent
 from knobridge.core.crypto import SecretBox
 from knobridge.core.db import scoped_session
 from knobridge.core.logging import get_logger
@@ -130,10 +130,13 @@ def _identity(
 
 
 async def _visitor_frames(events: AsyncIterator[ChatEvent]) -> AsyncGenerator[bytes]:
-    """The SSE frames of chat-sse.md, with ``done`` leaving model, tokens and cost out."""
+    """The SSE frames of chat-sse.md, with ``done`` leaving model, tokens and cost out and
+    ``step`` leaving the model's query out."""
     async for event in events:
         if isinstance(event, DoneEvent):
             event = replace(event, model=None, input_tokens=None, output_tokens=None, cost_usd=None)
+        elif isinstance(event, StepEvent):
+            event = replace(event, query=None)
         yield sse_frame(event)
 
 

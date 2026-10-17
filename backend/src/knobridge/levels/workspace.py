@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from knobridge.audit.actions import AuditAction
@@ -33,6 +33,19 @@ from knobridge.llm.models import ProviderCredential, ProviderKind
 # Reference answer of the cost estimate shown next to each level.
 REFERENCE_INPUT_TOKENS = 4000
 REFERENCE_OUTPUT_TOKENS = 600
+# Each search round of the multi-step estimate reads this much more (the new sources) and
+# writes this much (the tool call).
+REFERENCE_STEP_INPUT_TOKENS = 1500
+REFERENCE_STEP_OUTPUT_TOKENS = 50
+
+
+def max_answer_tokens(max_steps: int) -> tuple[int, int]:
+    """Input and output tokens of the reference answer that uses every step: ``max_steps``
+    calls, call ``r`` reading ``4000 + 1500 * (r - 1)``, writing ``50 * (N - 1) + 600``."""
+    calls = range(max_steps)
+    input_tokens = sum(REFERENCE_INPUT_TOKENS + REFERENCE_STEP_INPUT_TOKENS * r for r in calls)
+    output_tokens = REFERENCE_STEP_OUTPUT_TOKENS * (max_steps - 1) + REFERENCE_OUTPUT_TOKENS
+    return input_tokens, output_tokens
 
 
 class LevelProviderInvalidError(ValidationError):
@@ -61,6 +74,10 @@ class LevelView:
     price: ModelPrice | None
     estimated_cost_per_answer_usd: Decimal | None
     updated_at: datetime
+    max_steps: int
+    estimated_max_cost_per_answer_usd: Decimal | None
+    # ``False`` when the current model refused tool calls; ``None`` while unknown.
+    tools_supported: bool | None
 
     @property
     def configured(self) -> bool:
@@ -79,18 +96,22 @@ class LevelChanges:
     temperature: float | None = None
     instructions: str | None = None
     instructions_given: bool = False
+    max_steps: int | None = None
 
 
 @dataclass(frozen=True)
 class AnswerSettings:
-    """What an answer of a level uses: the credential, model and temperature, and the
-    instructions (the workspace's text, or the KnoBridge default)."""
+    """What an answer of a level uses: the credential, model and temperature, the
+    instructions (the workspace's text, or the KnoBridge default), the most searches and
+    whether the model is known to refuse tool calls (then the answer searches once)."""
 
     level: ResponseLevel
     credential: ProviderCredential
     model: str
     temperature: float
     instructions: str
+    max_steps: int = 1
+    tools_unsupported: bool = False
 
 
 def _invalid(field: str, message: str) -> ValidationError:
@@ -140,6 +161,24 @@ async def answer_settings(
         instructions=(
             default_instructions(level) if settings.instructions is None else settings.instructions
         ),
+        max_steps=settings.max_steps,
+        tools_unsupported=settings.tools_unsupported_model == model,
+    )
+
+
+async def mark_tools_unsupported(
+    db: AsyncSession, *, workspace_id: uuid.UUID, level: ResponseLevel, model: str
+) -> None:
+    """Remember that ``model`` refused tool calls at ``level``, if it is still the level's
+    model (an admin may have changed it meanwhile). Not audited: written by the chat turn."""
+    await db.execute(
+        update(WorkspaceLevel)
+        .where(
+            WorkspaceLevel.workspace_id == workspace_id,
+            WorkspaceLevel.level == level,
+            WorkspaceLevel.model == model,
+        )
+        .values(tools_unsupported_model=model)
     )
 
 
@@ -188,12 +227,17 @@ class WorkspaceLevelService:
             "model": (changes.model_given, changes.model),
             "temperature": (changes.temperature is not None, changes.temperature),
             "instructions": (changes.instructions_given, changes.instructions),
+            "max_steps": (changes.max_steps is not None, changes.max_steps),
         }
+        previous_steps = row.max_steps
         fields: list[str] = []
         for attribute, (given, value) in wanted.items():
             if given and value != getattr(row, attribute):
                 setattr(row, attribute, value)
                 fields.append("provider_id" if attribute == "credential_id" else attribute)
+        if "provider_id" in fields or "model" in fields:
+            # Another model or credential may accept tool calls: try the steps again.
+            row.tools_unsupported_model = None
         if fields:
             await db.flush()
             # ``updated_at`` is set by the database; load it now (no lazy IO in async code).
@@ -205,6 +249,8 @@ class WorkspaceLevelService:
                 )
             if "model" in fields:
                 metadata["model"] = row.model
+            if "max_steps" in fields:
+                metadata["max_steps"] = {"from": previous_steps, "to": row.max_steps}
             await self._audit.record(
                 db,
                 action=AuditAction.WORKSPACE_LEVEL_UPDATED,
@@ -238,6 +284,15 @@ class WorkspaceLevelService:
                 row.model, REFERENCE_INPUT_TOKENS, REFERENCE_OUTPUT_TOKENS
             ),
             updated_at=row.updated_at,
+            max_steps=row.max_steps,
+            estimated_max_cost_per_answer_usd=self._prices.cost(
+                row.model, *max_answer_tokens(row.max_steps)
+            ),
+            tools_supported=(
+                False
+                if row.model is not None and row.tools_unsupported_model == row.model
+                else None
+            ),
         )
 
     @staticmethod

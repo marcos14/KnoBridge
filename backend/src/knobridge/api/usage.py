@@ -57,6 +57,8 @@ class UsageTotalsOut(BaseModel):
     chat_cost_usd: float
     answers: int
     unpriced_answers: int
+    # Searches of the answers (sum of their steps; plan 0011).
+    chat_searches: int = 0
     cost_usd: float
 
 
@@ -73,6 +75,8 @@ class UsageReportTotalsOut(BaseModel):
     chat_cost_usd: float
     answers: int
     unpriced_answers: int
+    # Searches of the answers (sum of their steps; plan 0011).
+    chat_searches: int = 0
     cost_usd: float
 
 
@@ -89,6 +93,7 @@ class UsageRowOut(BaseModel):
     chat_cost_usd: float | None
     answers: int | None
     unpriced_answers: int | None
+    chat_searches: int | None = None
     cost_usd: float
 
 
@@ -120,6 +125,7 @@ def _chat_fields(usage: ChatUsage | None) -> dict[str, int | float | None]:
                 "chat_cost_usd",
                 "answers",
                 "unpriced_answers",
+                "chat_searches",
             )
         )
     return {
@@ -128,6 +134,7 @@ def _chat_fields(usage: ChatUsage | None) -> dict[str, int | float | None]:
         "chat_cost_usd": float(usage.cost_usd),
         "answers": usage.answers,
         "unpriced_answers": usage.unpriced_answers,
+        "chat_searches": usage.searches,
     }
 
 

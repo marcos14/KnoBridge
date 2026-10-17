@@ -15,10 +15,11 @@ from api_support import ApiEnv
 from mcp_chat_support import COST, MODEL, QUESTION, ask_args, ask_world, scripted
 from mcp_support import call_tools, structured, tool_error, world_key
 
-from fakes.llm_provider import ScriptedLLMProvider
+from fakes.llm_provider import RecordingFactory, ScriptedLLMProvider
 from knobridge.conversations.models import ConversationChannel, MessageRole, MessageStatus
 from knobridge.levels.level import ResponseLevel
 from knobridge.llm.errors import ProviderUnavailableError
+from knobridge.llm.fake import FakeLLMProvider, TextStep, ToolCallStep
 from knobridge.mcp import answers
 
 pytestmark = pytest.mark.integration
@@ -72,6 +73,24 @@ def test_ask_without_level_uses_the_keys_maximum(api: ApiEnv) -> None:
     assert [item["path"] for item in citations] == ["manual/caixa.md"]
 
 
+def test_ask_searches_again_and_returns_the_steps(api: ApiEnv) -> None:
+    world = ask_world(api)
+    key = world_key(api, world.mcp)
+    script = [ToolCallStep("relatório Z suporte"), TextStep("Confira o relatório Z [1].")]
+    llm = RecordingFactory(FakeLLMProvider(script=script))
+
+    (result,) = call_tools(api, key, ask_args("ERP", level="support"), llm_factory=llm)
+
+    body = structured(result)
+    assert (body["status"], body["steps"]) == ("completed", 2)
+    assert body["answer"] == "Confira o relatório Z [1]."
+    assert body["model"] == MODEL
+    assert "retrieval" not in body
+    _, messages = stored_conversation(api, str(body["conversation_id"]))
+    assert messages[1].steps == 2
+    assert messages[1].retrieval is not None
+
+
 def test_ask_without_sources_answers_no_source_without_the_llm(api: ApiEnv) -> None:
     world = ask_world(api)
     key = world_key(api, world.mcp)
@@ -81,6 +100,7 @@ def test_ask_without_sources_answers_no_source_without_the_llm(api: ApiEnv) -> N
     body = structured(result)
     assert body["status"] == "no_source"
     assert (body["citations"], body["model"], body["cost_usd"]) == ([], None, None)
+    assert body["steps"] == 0
     assert body["answer"]
     _, messages = stored_conversation(api, str(body["conversation_id"]))
     assert messages[1].status is MessageStatus.NO_SOURCE

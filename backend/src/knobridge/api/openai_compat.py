@@ -11,6 +11,8 @@ in OpenAI's shape (``openai_errors.OpenAIRoute``); the wire format is in ``opena
 
 from __future__ import annotations
 
+from collections.abc import AsyncGenerator
+
 import anyio
 from fastapi import APIRouter, Response
 
@@ -30,6 +32,7 @@ from knobridge.api.openai_wire import (
     OpenAIModel,
     OpenAIModelExtra,
     OpenAIModelList,
+    OpenAIUsage,
     map_messages,
     refuse_parameters,
     sources_footer,
@@ -40,7 +43,7 @@ from knobridge.apikeys.auth import ApiKeyIdentity
 from knobridge.apikeys.conversations import create_key_conversation, get_message
 from knobridge.apikeys.products import KeyModel, key_models, list_key_products, resolve_model
 from knobridge.conversations.chat import ChatService
-from knobridge.conversations.turn import ErrorEvent, PreparedTurn
+from knobridge.conversations.turn import ChatEvent, ErrorEvent, PreparedTurn, StepEvent
 from knobridge.core.clock import Clock
 from knobridge.core.db import scoped_session
 from knobridge.core.errors import KnoBridgeError
@@ -162,7 +165,7 @@ class _SavedAnswer:
     ) -> None:
         self._factory, self._clock, self._turn, self._model = factory, clock, turn, model
 
-    async def read(self) -> tuple[str, OpenAICompletionExtra, int | None, int | None]:
+    async def read(self) -> tuple[str, OpenAICompletionExtra, OpenAIUsage | None]:
         turn = self._turn
         async with scoped_session(
             self._factory, workspace_id=turn.workspace_id, user_id=None
@@ -182,11 +185,13 @@ class _SavedAnswer:
             status=view.status,
             citations=[CitationOut.model_validate(item) for item in message.citations],
             cost_usd=None if message.cost_usd is None else float(message.cost_usd),
+            steps=message.steps,
         )
-        return message.content, extra, message.input_tokens, message.output_tokens
+        usage = usage_of(view.status, message.input_tokens, message.output_tokens, message.model)
+        return message.content, extra, usage
 
     async def cost(self) -> float | None:
-        _, extra, _, _ = await self.read()
+        _, extra, _ = await self.read()
         return extra.cost_usd
 
 
@@ -228,13 +233,11 @@ async def create_chat_completion(
             include_usage=body.stream_options is not None and body.stream_options.include_usage,
             cost=saved.cost,
         )
-        return ChatEventStream(
-            chat.stream(turn), on_close=lambda: chat.settle(turn), frames=stream.frames
-        )
+        return await _streamed(chat, turn, stream)
     failure = await _consume(chat, turn)
     if failure is not None:
         raise _failure_error(failure)
-    content, extra, prompt, completion = await saved.read()
+    content, extra, usage = await saved.read()
     if append_sources:
         content += sources_footer([item.model_dump() for item in extra.citations])
     return OpenAIChatCompletion(
@@ -242,9 +245,47 @@ async def create_chat_completion(
         created=created,
         model=body.model,
         choices=[OpenAIChoice(message=OpenAIAnswerMessage(content=content))],
-        usage=usage_of(extra.status, prompt, completion),
+        usage=usage,
         knobridge=extra,
     )
+
+
+async def _first_chunk(events: AsyncGenerator[ChatEvent]) -> ChatEvent:
+    """The first event that becomes a chunk (search steps have none); every turn ends with
+    ``done`` or ``error``."""
+    event = await anext(events)
+    while isinstance(event, StepEvent):
+        event = await anext(events)
+    return event
+
+
+async def _replay(head: ChatEvent, events: AsyncGenerator[ChatEvent]) -> AsyncGenerator[ChatEvent]:
+    yield head
+    async for event in events:
+        yield event
+
+
+async def _streamed(chat: ChatService, turn: PreparedTurn, stream: CompletionStream) -> Response:
+    """The streamed completion, started only at its first chunk: after the search steps, so a
+    provider error in a search round still leaves as a mapped JSON error with its status."""
+    events = chat.stream(turn)
+
+    async def close() -> None:
+        # Shielded: a client gone mid-answer still leaves the message settled.
+        with anyio.CancelScope(shield=True):
+            await events.aclose()
+            await chat.settle(turn)
+
+    started = False
+    try:
+        head = await _first_chunk(events)
+        if isinstance(head, ErrorEvent):
+            raise _failure_error(head)
+        started = True
+    finally:
+        if not started:
+            await close()
+    return ChatEventStream(_replay(head, events), on_close=close, frames=stream.frames)
 
 
 def _failure_error(failure: ErrorEvent) -> KnoBridgeError:

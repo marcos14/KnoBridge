@@ -17,6 +17,8 @@ from knobridge.products.models import ProductTone
 
 TITLE_LENGTH = 80
 _ELLIPSIS = "…"
+# The sources message when the first search found nothing and the model may search again.
+NO_SOURCES_YET = "(nenhuma fonte encontrada para a pergunta; use search_sources)"
 
 # The fixed rules are in pt-BR, the language of the product's users; the answer language is
 # still the product's (``language``), stated explicitly in the rules.
@@ -45,9 +47,25 @@ class HistoryItem:
     content: str
 
 
-def instructions(profile: AnswerProfile) -> str:
+def _search_rules(search_calls: int) -> tuple[str, ...]:
+    """The rules of an answer that may call ``search_sources`` up to ``search_calls`` times."""
+    return (
+        f"- Você pode chamar a ferramenta search_sources até {search_calls} vezes nesta "
+        "resposta para buscar mais fontes. Chame-a quando as fontes não bastarem: reformule "
+        "com outros termos (sinônimos, nomes de telas, campos, mensagens, rotinas, tabelas ou "
+        "colunas), sem repetir a pergunta.",
+        "- Para buscar, chame a ferramenta sem escrever nada antes. Quando for responder, "
+        "responda direto, sem anunciar buscas.",
+        "- Só responda a mensagem de sem fonte depois de tentar buscar com outra formulação.",
+        "- Cite as fontes novas da ferramenta com os números que ela informar, como as demais.",
+    )
+
+
+def instructions(profile: AnswerProfile, search_calls: int | None = None) -> str:
     """The level's instructions, the product's extra text (when not empty) and then the fixed
-    rules of every answer, which no editable text replaces."""
+    rules of every answer, which no editable text replaces. With ``search_calls`` (multi-step
+    search), the rules of the ``search_sources`` tool come before the language line."""
+    search = () if search_calls is None else _search_rules(search_calls)
     rules = "\n".join(
         (
             "Regras obrigatórias desta resposta:",
@@ -65,6 +83,7 @@ def instructions(profile: AnswerProfile) -> str:
             "entrega.",
             "- Se as fontes não bastarem para responder com segurança, não chute: responda "
             f"exatamente com esta mensagem e nada mais: {profile.no_source_message}",
+            *search,
             f"- Responda no idioma {profile.language}. {_TONES[profile.tone]}",
         )
     )
@@ -90,8 +109,22 @@ def source_block(index: int, source: Source) -> str:
 
 
 def numbered_sources(sources: Sequence[Source]) -> str:
+    """``Fontes:`` and the numbered blocks; without sources (only with multi-step search),
+    a line telling the model to search."""
+    if not sources:
+        return f"Fontes:\n\n{NO_SOURCES_YET}"
     blocks = [source_block(index, source) for index, source in enumerate(sources, start=1)]
     return "Fontes:\n\n" + "\n\n".join(blocks)
+
+
+def system_messages(
+    profile: AnswerProfile, sources: Sequence[Source], search_calls: int | None = None
+) -> tuple[ChatMessage, ChatMessage]:
+    """The two system messages: the instructions and the numbered sources."""
+    return (
+        ChatMessage(ChatRole.SYSTEM, instructions(profile, search_calls)),
+        ChatMessage(ChatRole.SYSTEM, numbered_sources(sources)),
+    )
 
 
 def build_messages(
@@ -99,12 +132,10 @@ def build_messages(
     sources: Sequence[Source],
     history: Sequence[HistoryItem],
     question: str,
+    search_calls: int | None = None,
 ) -> list[ChatMessage]:
     """System instructions, the sources, the history window (oldest first), the question."""
-    messages = [
-        ChatMessage(ChatRole.SYSTEM, instructions(profile)),
-        ChatMessage(ChatRole.SYSTEM, numbered_sources(sources)),
-    ]
+    messages = list(system_messages(profile, sources, search_calls))
     messages.extend(
         ChatMessage(
             ChatRole.USER if item.role is MessageRole.USER else ChatRole.ASSISTANT, item.content

@@ -131,6 +131,7 @@ async def ask(call: McpCall, request: AskIn) -> AskOut:
         ticket_enabled=turn.ticket_requests_enabled,
         model=message.model,
         cost_usd=None if message.cost_usd is None else float(message.cost_usd),
+        steps=message.steps,
     )
 
 

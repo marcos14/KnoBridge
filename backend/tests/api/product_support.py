@@ -68,15 +68,20 @@ def seed_level(
     *,
     level: ResponseLevel = ResponseLevel.PRODUCT_DEV,
     model: str = "fake-model",
+    max_steps: int | None = None,
 ) -> None:
-    """Like ``configure_level``, straight in the database, for tests whose user is below admin."""
+    """Like ``configure_level``, straight in the database, for tests whose user is below admin
+    (``max_steps`` omitted keeps the level's)."""
+    values: dict[str, object] = {"credential_id": uuid.UUID(provider_id), "model": model}
+    if max_steps is not None:
+        values["max_steps"] = max_steps
 
     async def scenario(factory: SessionFactory) -> None:
         async with system_session(factory) as db:
             await db.execute(
                 update(WorkspaceLevel)
                 .where(WorkspaceLevel.workspace_id == workspace_id, WorkspaceLevel.level == level)
-                .values(credential_id=uuid.UUID(provider_id), model=model)
+                .values(**values)
             )
 
     run_db(api.database_url, scenario)

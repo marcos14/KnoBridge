@@ -2642,8 +2642,11 @@ export interface components {
             model: string | null;
             /** Output Tokens */
             output_tokens: number | null;
+            retrieval?: components["schemas"]["RetrievalOut"] | null;
             role: components["schemas"]["MessageRole"];
             status: components["schemas"]["MessageStatus"];
+            /** Steps */
+            steps?: number | null;
         };
         /** AdminMessagePage */
         AdminMessagePage: {
@@ -3870,6 +3873,11 @@ export interface components {
             chat_input_tokens: number;
             /** Chat Output Tokens */
             chat_output_tokens: number;
+            /**
+             * Chat Searches
+             * @default 0
+             */
+            chat_searches: number;
             /** Cost Usd */
             cost_usd: number;
             /** Embedding Cost Usd */
@@ -4246,8 +4254,11 @@ export interface components {
             model: string | null;
             /** Output Tokens */
             output_tokens: number | null;
+            retrieval?: components["schemas"]["RetrievalOut"] | null;
             role: components["schemas"]["MessageRole"];
             status: components["schemas"]["MessageStatus"];
+            /** Steps */
+            steps?: number | null;
             ticket_request?: components["schemas"]["TicketRequestOut"] | null;
         };
         /** MessagePage */
@@ -4426,6 +4437,8 @@ export interface components {
              */
             product_id: string;
             status: components["schemas"]["MessageStatus"];
+            /** Steps */
+            steps?: number | null;
         };
         /** OpenAIContentPart */
         OpenAIContentPart: {
@@ -4938,6 +4951,8 @@ export interface components {
             output_tokens: number | null;
             role: components["schemas"]["MessageRole"];
             status: components["schemas"]["MessageStatus"];
+            /** Steps */
+            steps?: number | null;
         };
         /** PublicMessagePage */
         PublicMessagePage: {
@@ -5020,6 +5035,38 @@ export interface components {
          * @enum {string}
          */
         ResponseLevel: "end_user" | "support" | "product_dev";
+        /** RetrievalOut */
+        RetrievalOut: {
+            /** Reranked */
+            reranked: boolean;
+            /** Searches */
+            searches: components["schemas"]["RetrievalSearchOut"][];
+            /**
+             * Tools
+             * @enum {string}
+             */
+            tools: "off" | "unsupported" | "offered" | "used";
+            /** Version */
+            version: number;
+        };
+        /** RetrievalSearchOut */
+        RetrievalSearchOut: {
+            /** Duration Ms */
+            duration_ms: number;
+            /** New Sources */
+            new_sources: number;
+            /** Query */
+            query: string | null;
+            /** Sources */
+            sources: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "empty" | "failed";
+            /** Step */
+            step: number;
+        };
         /**
          * ReviewAction
          * @enum {string}
@@ -6627,6 +6674,11 @@ export interface components {
             chat_input_tokens: number;
             /** Chat Output Tokens */
             chat_output_tokens: number;
+            /**
+             * Chat Searches
+             * @default 0
+             */
+            chat_searches: number;
             /** Cost Usd */
             cost_usd: number;
             /** Embedding Cost Usd */
@@ -6650,6 +6702,8 @@ export interface components {
             chat_input_tokens: number | null;
             /** Chat Output Tokens */
             chat_output_tokens: number | null;
+            /** Chat Searches */
+            chat_searches?: number | null;
             /** Cost Usd */
             cost_usd: number;
             /** Embedding Cost Usd */
@@ -7151,11 +7205,18 @@ export interface components {
             default_instructions: string;
             /** Estimated Cost Per Answer Usd */
             estimated_cost_per_answer_usd: number | null;
+            /** Estimated Max Cost Per Answer Usd */
+            estimated_max_cost_per_answer_usd?: number | null;
             /** Instructions */
             instructions: string;
             /** Instructions Is Default */
             instructions_is_default: boolean;
             level: components["schemas"]["ResponseLevel"];
+            /**
+             * Max Steps
+             * @default 1
+             */
+            max_steps: number;
             /** Model */
             model: string | null;
             price: components["schemas"]["LevelPrice"] | null;
@@ -7166,6 +7227,8 @@ export interface components {
             provider_name: string | null;
             /** Temperature */
             temperature: number;
+            /** Tools Supported */
+            tools_supported?: boolean | null;
             /**
              * Updated At
              * Format: date-time
@@ -7180,6 +7243,8 @@ export interface components {
         WorkspaceLevelUpdate: {
             /** Instructions */
             instructions?: string | null;
+            /** Max Steps */
+            max_steps?: number | null;
             /** Model */
             model?: string | null;
             /** Provider Id */

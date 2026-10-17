@@ -171,14 +171,16 @@ def test_chunk_above_the_level_never_reaches_the_llm(api: ApiEnv, chat: ChatOver
     assert [item["path"] for item in stored] == ["docs/caixa.md"]  # type: ignore[union-attr]
 
 
-def test_chat_below_threshold_returns_fallback_without_llm_call(
+def test_chat_below_threshold_with_one_step_returns_fallback_without_llm_call(
     api: ApiEnv, chat: ChatOverrides
 ) -> None:
     llm = chat.provider(UnreachableLLMProvider())
     embeddings = chat.embeddings(RecordingEmbeddingFactory())
     world = build_search_world(api, Role.OWNER)
     add_passages(api, world, CODE, COMMIT)
-    conversation_id = start(api, _assistant(api, world, world.collection_id))
+    assistant = _assistant(api, world, world.collection_id)
+    configure_level(api, world.workspace_id, str(world.provider_id), max_steps=1)
+    conversation_id = start(api, assistant)
 
     response = ask(api, world.workspace_id, conversation_id, "Receita de bolo de chocolate")
 

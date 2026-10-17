@@ -27,6 +27,7 @@ from sqlalchemy import (
     Index,
     Integer,
     Numeric,
+    SmallInteger,
     String,
     Text,
     UniqueConstraint,
@@ -38,7 +39,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from knobridge.audit.models import JSONValue
 from knobridge.core.models import Base, TimestampMixin, UUIDPrimaryKeyMixin, str_enum
-from knobridge.levels.level import ResponseLevel
+from knobridge.levels.level import MAX_MAX_STEPS, ResponseLevel
 
 TITLE_MAX_LENGTH = 200
 FEEDBACK_COMMENT_MAX_LENGTH = 2000
@@ -173,6 +174,11 @@ class Message(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         CheckConstraint("cost_usd >= 0", name="cost_usd_not_negative"),
         # Only an answer has a cost; a question never does.
         CheckConstraint("cost_usd IS NULL OR role = 'assistant'", name="cost_usd_only_answers"),
+        # Searches of an answer (multi-step search): 0 without collections, up to the most a
+        # level allows; a question has neither the count nor the summary.
+        CheckConstraint(f"steps >= 0 AND steps <= {MAX_MAX_STEPS}", name="steps_range"),
+        CheckConstraint("steps IS NULL OR role = 'assistant'", name="steps_only_answers"),
+        CheckConstraint("retrieval IS NULL OR role = 'assistant'", name="retrieval_only_answers"),
     )
 
     workspace_id: Mapped[uuid.UUID] = mapped_column(
@@ -196,6 +202,10 @@ class Message(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     latency_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     # Estimated cost of an answer (chat price table); ``None`` when unknown, never zero.
     cost_usd: Mapped[Decimal | None] = mapped_column(Numeric(12, 6), nullable=True)
+    # Searches of an answer and their summary (``version``, ``tools``, ``reranked``,
+    # ``searches``; never chunk content); ``None`` for questions and older answers.
+    steps: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    retrieval: Mapped[dict[str, JSONValue] | None] = mapped_column(JSONB, nullable=True)
     # Product and level of the conversation, kept on each message for usage sums.
     product_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
     level: Mapped[ResponseLevel] = mapped_column(str_enum(ResponseLevel, "level"), nullable=False)

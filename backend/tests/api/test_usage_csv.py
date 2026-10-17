@@ -24,7 +24,7 @@ pytestmark = pytest.mark.integration
 PARAMS = {"from": "2026-09-01T00:00:00Z", "to": "2026-09-03T00:00:00Z"}
 HEADER = (
     "key,label,embedding_tokens,embedding_cost_usd,runs,unpriced_runs,chat_input_tokens,"
-    "chat_output_tokens,chat_cost_usd,answers,unpriced_answers,cost_usd"
+    "chat_output_tokens,chat_cost_usd,answers,chat_searches,unpriced_answers,cost_usd"
 )
 
 
@@ -50,9 +50,9 @@ def test_usage_csv_has_rows_and_a_total_line(api: ApiEnv) -> None:
     assert not response.content.startswith(b"\xef\xbb\xbf")
     assert response.text.split("\r\n") == [
         HEADER,
-        f'{risky},"\'=HYPERLINK(""http://x"")",1000,0.000020,1,0,,,,,,0.000020',
-        f'{quoted},"Repo, ""principal""\nnovo",10,0.000000,1,1,,,,,,0.000000',
-        "total,Total,1010,0.000020,2,1,100,20,0.000072,1,0,0.000092",
+        f'{risky},"\'=HYPERLINK(""http://x"")",1000,0.000020,1,0,,,,,,,0.000020',
+        f'{quoted},"Repo, ""principal""\nnovo",10,0.000000,1,1,,,,,,,0.000000',
+        "total,Total,1010,0.000020,2,1,100,20,0.000072,1,0,0,0.000092",
         "",
     ]
 
@@ -75,6 +75,6 @@ def test_usage_csv_by_day_lists_empty_days(api: ApiEnv) -> None:
     response = api.client.get(usage_path(world, "usage.csv"), params={**PARAMS, "group_by": "day"})
 
     lines = response.text.split("\r\n")
-    assert lines[1] == "2026-09-01,2026-09-01,0,0.000000,0,0,0,0,0.000000,0,0,0.000000"
+    assert lines[1] == "2026-09-01,2026-09-01,0,0.000000,0,0,0,0,0.000000,0,0,0,0.000000"
     assert lines[2].startswith("2026-09-02,")
     assert lines[3].startswith("total,Total,0,")

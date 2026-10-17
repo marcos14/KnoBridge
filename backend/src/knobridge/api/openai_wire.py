@@ -23,6 +23,7 @@ from knobridge.conversations.turn import (
     CitationsEvent,
     DeltaEvent,
     DoneEvent,
+    ErrorEvent,
     PreparedTurn,
 )
 from knobridge.levels.level import ResponseLevel
@@ -130,6 +131,8 @@ class OpenAICompletionExtra(BaseModel):
     status: MessageStatus
     citations: list[CitationOut]
     cost_usd: float | None
+    # Searches of the answer (multi-step search, api-publica v0.4); null in older answers.
+    steps: int | None = None
 
 
 class OpenAIChatCompletion(BaseModel):
@@ -245,10 +248,11 @@ def sources_footer(citations: Citations) -> str:
 
 
 def usage_of(
-    status: MessageStatus, prompt: int | None, completion: int | None
+    status: MessageStatus, prompt: int | None, completion: int | None, model: str | None
 ) -> OpenAIUsage | None:
-    """Zeros without a source; ``None`` when the provider did not count the tokens."""
-    if status is MessageStatus.NO_SOURCE:
+    """Zeros without a source and without the LLM; ``None`` when the provider did not count
+    the tokens. A "no source" answer after search steps (``model`` set) has their tokens."""
+    if status is MessageStatus.NO_SOURCE and model is None:
         return OpenAIUsage(prompt_tokens=0, completion_tokens=0, total_tokens=0)
     if prompt is None or completion is None:
         return None
@@ -323,9 +327,11 @@ class CompletionStream:
                 case DoneEvent():
                     for frame in await self._ending(event, citations):
                         yield frame
-                case _:  # ErrorEvent: the HTTP status is gone, the stream ends without [DONE]
+                case ErrorEvent():  # the HTTP status is gone, the stream ends without [DONE]
                     error = classify(event.code, 500, event.message)
                     yield data_frame(error.body())
+                case _:  # StepEvent: no chunk of its own, OpenAI's clients would not expect it
+                    pass
 
     async def _ending(self, done: DoneEvent, citations: Citations) -> list[bytes]:
         frames: list[bytes] = []
@@ -333,11 +339,15 @@ class CompletionStream:
         if footer:
             frames.append(self.frame({"content": footer}))
         extra: dict[str, JsonValue] = {
-            "knobridge": {"status": done.status.value, "cost_usd": await self.cost()}
+            "knobridge": {
+                "status": done.status.value,
+                "cost_usd": await self.cost(),
+                "steps": done.steps,
+            }
         }
         frames.append(self.frame({}, "stop", extra))
         if self.include_usage:
-            usage = usage_of(done.status, done.input_tokens, done.output_tokens)
+            usage = usage_of(done.status, done.input_tokens, done.output_tokens, done.model)
             frames.append(
                 self.frame(None, extra={"usage": None if usage is None else usage.model_dump()})
             )

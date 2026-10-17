@@ -234,6 +234,7 @@ def test_widget_answer_streams_without_model_tokens_nor_cost(
         "cost_usd": None,
         "latency_ms": 0,
         "ticket_requests_enabled": False,
+        "steps": 1,
     }
     query = retriever.queries[0]
     assert (query.level, query.user_id) == (ResponseLevel.END_USER, None)

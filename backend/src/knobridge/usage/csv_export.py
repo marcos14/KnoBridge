@@ -23,6 +23,7 @@ HEADER = (
     "chat_output_tokens",
     "chat_cost_usd",
     "answers",
+    "chat_searches",
     "unpriced_answers",
     "cost_usd",
 )
@@ -47,12 +48,13 @@ def _embedding_cells(usage: EmbeddingUsage | None) -> list[str]:
 
 def _chat_cells(usage: ChatUsage | None) -> list[str]:
     if usage is None:
-        return ["", "", "", "", ""]
+        return ["", "", "", "", "", ""]
     return [
         str(usage.input_tokens),
         str(usage.output_tokens),
         usd(usage.cost_usd),
         str(usage.answers),
+        str(usage.searches),
         str(usage.unpriced_answers),
     ]
 

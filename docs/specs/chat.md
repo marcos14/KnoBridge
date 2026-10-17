@@ -46,9 +46,9 @@ Interface em `conversations/retrieval.py`:
 | Tipo | Papel |
 |---|---|
 | `RetrievalQuery` | `workspace_id`, `product_id`, `level` (o nível da conversa, v0.4), `user_id` (para filtrar por ACL da fonte, seção 9 do AGENTS.md), o texto (a pergunta ou, numa etapa, a consulta da ferramenta) e, desde a v0.6, `max_context_tokens` (orçamento das fontes devolvidas; `None` = `MAX_CONTEXT_TOKENS`, 6000; as etapas usam `STEP_CONTEXT_TOKENS`, 3000). |
-| `Retrieval` (v0.6, F2.3) | O que `retrieve` devolve: `sources` (as fontes, da melhor para a pior), `searched` (`False` quando o produto não tem coleção e nada foi buscado: a rodada nunca chama o LLM) e `reranked` (`True` quando o reranker reordenou esta busca). Até a F2.3, `retrieve` devolve só a sequência de fontes. |
+| `Retrieval` (v0.6, F2.3) | O que `retrieve` devolve: `sources` (as fontes, da melhor para a pior), `searched` (`False` quando o produto não tem coleção e nada foi buscado: a rodada nunca chama o LLM) e `reranked` (`True` quando o reranker reordenou esta busca). |
 | `Source` | `title`, `content`, `uri`, `document_id` e a localização opcional (`kind`, `path`, `symbol`, `start_line`, `end_line`, `language`, `sha`, `author`, `date`; `confidence` e `evidence` (`EvidenceRef`) em item de conhecimento; `ticket_number`, `ticket_status`, `ticket_date_kind`, `url` e `context_line` (só para o LLM) em chamado; `card_number`, `card_type`, `card_status`, `card_sprint`, `card_date_kind`, `url` e `context_line` em card). |
-| `Retriever` (`Protocol`) | `async retrieve(db, query) -> Retrieval` (até a F2.3, `-> Sequence[Source]`): fontes do texto, da melhor para a pior; vazia quando nada é relevante. `db` é a sessão do chamador, com o escopo de RLS do workspace. |
+| `Retriever` (`Protocol`) | `async retrieve(db, query) -> Retrieval`: fontes do texto, da melhor para a pior; vazia quando nada é relevante. `db` é a sessão do chamador, com o escopo de RLS do workspace. |
 | `HybridRetriever` | Implementação de produção (`retrieval/retriever.py`, seção anterior), montada em `api/deps.py:get_retriever` com o `Reranker` da instância (ou nenhum); os testes trocam por um retriever fixo. |
 
 O reranker (seção 7.4 da visão) fica dentro do `HybridRetriever` desde a v0.6 (F2.1), sem mudar o motor do chat: a busca inicial e as etapas passam por ele do mesmo jeito.
@@ -224,7 +224,7 @@ O histórico das próximas perguntas não guarda as rodadas de ferramenta: só a
 | `reranked` | `true` se alguma busca da resposta foi reordenada pelo reranker. |
 | `searches[]` | Uma por etapa, em ordem. `query`: `null` na etapa 1 (é a pergunta, já gravada) e a consulta da ferramenta (até 500 caracteres) nas demais. `status`: `ok`, `empty` (nenhum trecho) ou `failed`. `sources`: trechos devolvidos pela busca; `new_sources`: os que entraram na lista. `duration_ms`: da busca, com o reranker. |
 
-- Logs: `chat_turn_finished` ganha `steps`, `tools` e `reranked`; cada etapa loga `chat_step_finished` com `step`, `status`, `sources`, `new_sources` e `duration_ms`, **nunca a consulta**.
+- Logs: `chat_turn_finished` ganha `steps`, `tools` e `reranked`; cada etapa loga `chat_step_finished` com `step`, `status`, `sources`, `new_sources` e `duration_ms`, **nunca a consulta**; a busca que falha loga `chat_step_failed` só com o tipo do erro, e uma chamada de ferramenta sem os argumentos completos encerra a resposta como `failed` com `chat_failed` (log `chat_tool_call_incomplete`).
 
 ### Fake com roteiro
 

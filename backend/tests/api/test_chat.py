@@ -104,6 +104,7 @@ def test_no_source_returns_fallback_without_llm_call(api: ApiEnv, chat: ChatOver
         "cost_usd": None,
         "latency_ms": 0,
         "ticket_requests_enabled": False,
+        "steps": 0,
     }
     assert factory.calls == []
     question, answer = messages(api, world.workspace_id, conversation_id)
@@ -145,6 +146,7 @@ def test_with_sources_streams_and_saves_citations(api: ApiEnv, chat: ChatOverrid
             "cost_usd": None,
             "latency_ms": 300,
             "ticket_requests_enabled": False,
+            "steps": 1,
         },
     )
     answer = messages(api, world.workspace_id, conversation_id)[1]

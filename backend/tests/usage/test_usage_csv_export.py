@@ -48,6 +48,7 @@ def test_usage_csv_lines() -> None:
         cost_usd=Decimal("0.0584"),
         answers=120,
         unpriced_answers=3,
+        searches=180,
     )
     report = UsageReport(
         period=PERIOD,
@@ -66,9 +67,9 @@ def test_usage_csv_lines() -> None:
 
     assert lines == [
         ",".join(HEADER),
-        '6f1c,"Suporte, ERP",,,,,98000,12000,0.058400,120,3,0.058400',
-        "7a2d,'-Vendas,0,0.000000,0,0,,,,,,0.000000",
-        "total,Total,1250000,0.025000,14,0,98000,12000,0.058400,120,3,0.083400",
+        '6f1c,"Suporte, ERP",,,,,98000,12000,0.058400,120,180,3,0.058400',
+        "7a2d,'-Vendas,0,0.000000,0,0,,,,,,,0.000000",
+        "total,Total,1250000,0.025000,14,0,98000,12000,0.058400,120,180,3,0.083400",
         "",
     ]
 

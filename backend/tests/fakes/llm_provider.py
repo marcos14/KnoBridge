@@ -116,6 +116,75 @@ class ScriptedLLMProvider:
         self.closed = True
 
 
+@dataclass
+class RecordingLLMProvider:
+    """Records each call to ``inner`` (messages, tools and ``tool_choice``) and passes its
+    events through: e.g. a ``FakeLLMProvider`` with a script of tool calls."""
+
+    inner: LLMProvider
+    calls: list[StreamCall] = field(default_factory=lambda: [])
+    closed: bool = False
+
+    async def stream_chat(
+        self,
+        messages: Sequence[ChatMessage],
+        model: str,
+        params: ChatParams | None = None,
+        *,
+        tools: Sequence[ToolSpec] | None = None,
+        tool_choice: ToolChoice = "auto",
+    ) -> AsyncIterator[ChatEvent]:
+        self.calls.append(
+            StreamCall(list(messages), model, params, tuple(tools or ()), tool_choice)
+        )
+        async for event in self.inner.stream_chat(
+            messages, model, params, tools=tools, tool_choice=tool_choice
+        ):
+            yield event
+
+    async def list_models(self) -> list[str]:
+        return await self.inner.list_models()
+
+    async def check_connection(self) -> None:
+        await self.inner.check_connection()
+
+    async def aclose(self) -> None:
+        self.closed = True
+
+
+@dataclass
+class EventsLLMProvider:
+    """Yields the given events per call, in order (one list per call; the last one repeats),
+    to play what no fake writes: text then a tool call, several calls in one round."""
+
+    rounds: Sequence[Sequence[ChatEvent]]
+    calls: list[StreamCall] = field(default_factory=lambda: [])
+
+    async def stream_chat(
+        self,
+        messages: Sequence[ChatMessage],
+        model: str,
+        params: ChatParams | None = None,
+        *,
+        tools: Sequence[ToolSpec] | None = None,
+        tool_choice: ToolChoice = "auto",
+    ) -> AsyncIterator[ChatEvent]:
+        self.calls.append(
+            StreamCall(list(messages), model, params, tuple(tools or ()), tool_choice)
+        )
+        for event in self.rounds[min(len(self.calls), len(self.rounds)) - 1]:
+            yield event
+
+    async def list_models(self) -> list[str]:
+        return ["events"]
+
+    async def check_connection(self) -> None:
+        return None
+
+    async def aclose(self) -> None:
+        return None
+
+
 class FailingLLMProvider:
     """Every call raises ``error``; ``closed`` tells whether the caller released it."""
 

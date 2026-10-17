@@ -15,7 +15,13 @@ import anyio
 from fastapi.responses import StreamingResponse
 from starlette.types import Receive, Scope, Send
 
-from knobridge.conversations.turn import ChatEvent, CitationsEvent, DeltaEvent, DoneEvent
+from knobridge.conversations.turn import (
+    ChatEvent,
+    CitationsEvent,
+    DeltaEvent,
+    DoneEvent,
+    StepEvent,
+)
 
 SSE_MEDIA_TYPE = "text/event-stream"
 # Turns the events into the body's bytes (default: the SSE frames of chat-sse.md).
@@ -26,6 +32,14 @@ def sse_frame(event: ChatEvent) -> bytes:
     """One event in the ``text/event-stream`` wire format (``event:`` + JSON ``data:``)."""
     payload: dict[str, object]
     match event:
+        case StepEvent():
+            name = "step"
+            payload = {
+                "message_id": str(event.message_id),
+                "step": event.step,
+                "max_steps": event.max_steps,
+                "query": event.query,
+            }
         case CitationsEvent():
             name = "citations"
             payload = {
@@ -49,6 +63,7 @@ def sse_frame(event: ChatEvent) -> bytes:
                 "cost_usd": None if event.cost_usd is None else float(event.cost_usd),
                 "latency_ms": event.latency_ms,
                 "ticket_requests_enabled": event.ticket_requests_enabled,
+                "steps": event.steps,
             }
         case _:  # ErrorEvent, the only type left
             name = "error"

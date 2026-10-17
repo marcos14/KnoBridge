@@ -18,18 +18,23 @@ from sqlalchemy import (
     ForeignKey,
     ForeignKeyConstraint,
     Index,
+    SmallInteger,
     String,
     Text,
     Uuid,
     text,
 )
+from sqlalchemy.engine.default import DefaultExecutionContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
 from knobridge.core.models import Base, TimestampMixin, str_enum
 from knobridge.levels.level import (
+    DEFAULT_MAX_STEPS,
     DEFAULT_TEMPERATURE,
+    MAX_MAX_STEPS,
     MAX_TEMPERATURE,
+    MIN_MAX_STEPS,
     MIN_TEMPERATURE,
     ResponseLevel,
 )
@@ -41,6 +46,11 @@ from knobridge.tenancy.models import Membership, Workspace
 # wherever these models are used alone (otherwise the flush fails with
 # ``NoReferencedTableError``).
 REFERENCED_MODELS = (Workspace, Membership, Product, ProviderCredential)
+
+
+def _default_max_steps(context: DefaultExecutionContext) -> int:
+    """The level's own default (no database default: it differs per level)."""
+    return DEFAULT_MAX_STEPS[ResponseLevel(context.get_current_parameters()["level"])]
 
 
 class WorkspaceLevel(TimestampMixin, Base):
@@ -59,6 +69,10 @@ class WorkspaceLevel(TimestampMixin, Base):
             f"temperature >= {MIN_TEMPERATURE} AND temperature <= {MAX_TEMPERATURE}",
             name="temperature_range",
         ),
+        CheckConstraint(
+            f"max_steps >= {MIN_MAX_STEPS} AND max_steps <= {MAX_MAX_STEPS}",
+            name="max_steps_range",
+        ),
         # Serves the ``NO ACTION`` check when a credential is deleted.
         Index(None, "workspace_id", "credential_id"),
     )
@@ -76,6 +90,11 @@ class WorkspaceLevel(TimestampMixin, Base):
         server_default=text(str(DEFAULT_TEMPERATURE)),
     )
     instructions: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Most searches of an answer at this level (multi-step search, docs/specs/chat.md).
+    max_steps: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=_default_max_steps)
+    # The model that refused tool calls at this level (written by the chat turn); while it is
+    # the level's model, answers use the single search. Cleared when the model changes.
+    tools_unsupported_model: Mapped[str | None] = mapped_column(String(200), nullable=True)
 
 
 class MemberProductLevel(TimestampMixin, Base):

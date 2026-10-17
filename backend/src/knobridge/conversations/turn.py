@@ -12,6 +12,8 @@ from decimal import Decimal
 
 from knobridge.audit.models import JSONValue
 from knobridge.conversations.models import MessageStatus
+from knobridge.conversations.retrieval import Source
+from knobridge.conversations.tools import ToolsState
 from knobridge.core.errors import KnoBridgeError
 from knobridge.levels.level import ResponseLevel
 from knobridge.llm.provider import ChatMessage, ChatParams, LLMProvider
@@ -24,6 +26,17 @@ class ChatFailedError(KnoBridgeError):
 
     code = "chat_failed"
     status_code = 500
+
+
+@dataclass(frozen=True)
+class StepEvent:
+    """A search the model asked for (step 2 onwards), sent when the search starts. ``query``
+    is the model's query (``None`` once a public channel hides it), never what it found."""
+
+    message_id: uuid.UUID
+    step: int
+    max_steps: int
+    query: str | None
 
 
 @dataclass(frozen=True)
@@ -51,8 +64,10 @@ class DoneEvent:
     latency_ms: int | None
     # The assistant offers to open a ticket (its webhook has a URL and a secret).
     ticket_requests_enabled: bool = False
-    # Estimated USD of the answer; ``None`` for ``no_source``, without tokens or price.
+    # Estimated USD of the answer; ``None`` without the LLM, without tokens or price.
     cost_usd: Decimal | None = None
+    # Searches of the answer, the first one included (chat-sse v0.11).
+    steps: int | None = None
 
 
 @dataclass(frozen=True)
@@ -64,17 +79,23 @@ class ErrorEvent:
     details: object
 
 
-type ChatEvent = CitationsEvent | DeltaEvent | DoneEvent | ErrorEvent
+type ChatEvent = StepEvent | CitationsEvent | DeltaEvent | DoneEvent | ErrorEvent
 
 
 @dataclass(frozen=True)
 class LLMCall:
-    """What the stream sends to the provider; the provider is opened only when streaming."""
+    """What the stream sends to the provider; the provider is opened only when streaming.
+
+    ``messages`` start with the two system messages (instructions and sources, with the rules
+    of the search tool when it is offered); ``plain_head`` holds both without those rules, for
+    a model that refuses tool calls (the turn falls back to the single search).
+    """
 
     open_provider: Callable[[], LLMProvider]
     model: str
     messages: list[ChatMessage]
     params: ChatParams
+    plain_head: tuple[ChatMessage, ...] = ()
 
 
 @dataclass
@@ -98,3 +119,14 @@ class PreparedTurn:
     # The conversation's product and level, sent in the ``citations`` event.
     product_id: uuid.UUID | None = None
     level: ResponseLevel | None = None
+    # Multi-step search: the first search's sources, its record and how many searches ran
+    # (0 without collections), the level's maximum, whether the tool is offered and the
+    # product's "no source" message (the answer when no step finds a source).
+    sources: list[Source] = field(default_factory=lambda: [])
+    searches: list[JSONValue] = field(default_factory=lambda: [])
+    steps: int = 1
+    max_steps: int = 1
+    tools: ToolsState = "off"
+    reranked: bool = False
+    with_evidence: bool = True
+    no_source_message: str = ""

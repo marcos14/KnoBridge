@@ -227,7 +227,7 @@ def test_completion_streams_through_the_sdk(api: ApiEnv, chat: ChatOverrides) ->
     assert text == "Answer with sources [1]" + FOOTER
     final = chunks[-2]
     assert final.choices[0].finish_reason == "stop"
-    assert _extra(final.model_extra) == {"status": "completed", "cost_usd": None}
+    assert _extra(final.model_extra) == {"status": "completed", "cost_usd": None, "steps": 1}
     assert chunks[-1].choices == []
     assert chunks[-1].usage is not None
     assert chunks[-1].usage.total_tokens == 49

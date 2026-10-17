@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from fakes.embedding_provider import RecordingEmbeddingFactory
 from fakes.reranker import FakeReranker, fake_instance
-from knobridge.conversations.retrieval import RetrievalQuery, Source
+from knobridge.conversations.retrieval import Retrieval, RetrievalQuery, Source
 from knobridge.core.db import scoped_session
 from knobridge.levels.level import ResponseLevel
 from knobridge.products.models import Product, ProductCollection, ProductTone
@@ -74,6 +74,20 @@ async def _retrieve(
     retriever: HybridRetriever | None = None,
     level: ResponseLevel = ResponseLevel.PRODUCT_DEV,
 ) -> Sequence[Source]:
+    found = await _retrieval(db, space, assistant_id, query, retriever=retriever, level=level)
+    return found.sources
+
+
+async def _retrieval(
+    db: Db,
+    space: Space,
+    assistant_id: uuid.UUID,
+    query: str = QUERY,
+    *,
+    retriever: HybridRetriever | None = None,
+    level: ResponseLevel = ResponseLevel.PRODUCT_DEV,
+    budget: int | None = None,
+) -> Retrieval:
     used = retriever or HybridRetriever(SearchService(credential_service()))
     async with scoped_session(db.factory, workspace_id=space.workspace_id, user_id=None) as s:
         return await used.retrieve(
@@ -84,6 +98,7 @@ async def _retrieve(
                 level=level,
                 user_id=uuid.uuid4(),
                 text=query,
+                max_context_tokens=budget,
             ),
         )
 
@@ -160,20 +175,39 @@ def test_retriever_null_min_similarity_uses_the_model_default(app_database_url: 
 def test_retriever_without_collections_does_not_embed(app_database_url: str) -> None:
     factory = RecordingEmbeddingFactory()
 
-    async def scenario(db: Db) -> tuple[Sequence[Source], Sequence[Source]]:
+    async def scenario(db: Db) -> tuple[Retrieval, Retrieval]:
         space = await db.collection(await db.workspace())
         await db.chunks(space, [ChunkSpec(BOTH)])
         assistant_id = await _assistant(db, space, [])
         retriever = HybridRetriever(SearchService(credential_service(), factory))
-        bare = await _retrieve(db, space, assistant_id, retriever=retriever)
-        missing = await _retrieve(db, space, uuid.uuid4(), retriever=retriever)
+        bare = await _retrieval(db, space, assistant_id, retriever=retriever)
+        missing = await _retrieval(db, space, uuid.uuid4(), retriever=retriever)
         return bare, missing
 
     bare, missing = run_db(app_database_url, scenario)
 
-    assert bare == ()
-    assert missing == ()
+    assert bare == Retrieval(sources=(), searched=False)
+    assert missing == Retrieval(sources=(), searched=False)
     assert factory.calls == []
+
+
+def test_retriever_uses_the_budget_of_the_query(app_database_url: str) -> None:
+    async def scenario(db: Db) -> tuple[Retrieval, Retrieval]:
+        space = await db.collection(await db.workspace())
+        await db.chunks(
+            space, [ChunkSpec(BOTH, key="docs/a.md"), ChunkSpec(VECTOR_ONLY, key="docs/b.md")]
+        )
+        assistant_id = await _assistant(db, space, [space.collection_id])
+        full = await _retrieval(db, space, assistant_id)
+        # Room for the first source only: a step's budget overrides the retriever's.
+        step = await _retrieval(db, space, assistant_id, budget=20)
+        return full, step
+
+    full, step = run_db(app_database_url, scenario)
+
+    assert [source.title for source in full.sources] == ["docs/a.md", "docs/b.md"]
+    assert [source.title for source in step.sources] == ["docs/a.md"]
+    assert (full.searched, full.reranked, step.searched) == (True, False, True)
 
 
 def test_retriever_keeps_search_order_within_the_budget(app_database_url: str) -> None:
@@ -228,18 +262,19 @@ def test_retriever_reranks_the_candidates_when_the_product_has_the_option(
 ) -> None:
     fake = FakeReranker()
 
-    async def scenario(db: Db) -> Sequence[Source]:
+    async def scenario(db: Db) -> Retrieval:
         space = await db.collection(await db.workspace())
         await db.chunks(
             space, [ChunkSpec(BOTH, key="docs/a.md"), ChunkSpec(VECTOR_ONLY, key="docs/b.md")]
         )
         assistant_id = await _assistant(db, space, [space.collection_id])
         # Limit 1: only the reranker's candidates (30) let the second hit reach it.
-        return await _retrieve(db, space, assistant_id, retriever=_reranking(fake, limit=1))
+        return await _retrieval(db, space, assistant_id, retriever=_reranking(fake, limit=1))
 
-    sources = run_db(app_database_url, scenario)
+    found = run_db(app_database_url, scenario)
 
-    assert [source.title for source in sources] == ["docs/b.md"]
+    assert [source.title for source in found.sources] == ["docs/b.md"]
+    assert found.reranked
     (call,) = fake.calls
     assert (call.query, len(call.chunk_ids), call.limit) == (QUERY, 2, 1)
 

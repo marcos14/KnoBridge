@@ -20,7 +20,7 @@
 **Convenções locais**:
 - A chave pública é buscada só em modo de sistema; o resto da requisição pública roda no workspace do widget. Chave desconhecida e origem recusada respondem sem CORS; daí em diante, com CORS para a origem recebida.
 - O segredo `kbs_` nunca é gravado em claro, logado, auditado nem devolvido depois da criação; o IP nunca é gravado (entra só no HMAC da chave do contador); o token `kbv_` só em hash e nunca em log, nem a identidade (o log `widget_identity_rejected` leva só `widget_id` e `reason`).
-- O visitante nunca recebe dado interno: sem modelo, tokens, custo, latência, canal nem `error_code`.
+- O visitante nunca recebe dado interno: sem modelo, tokens, custo, latência, canal nem `error_code`; o evento `step` da busca em etapas vai com `query: null` (`api/widget_conversations.py: _visitor_frames`).
 - `conversations/` não importa este pacote: `conversations.widget_id` aponta para `widgets` pelo nome, e `api/conversations.py` carrega `Widget` (`REFERENCED_MODELS`).
 - Relógio sempre injetado (`Clock`); mudou modelo: migração nova e [modelo de dados](../../../../docs/specs/modelo-de-dados.md#widget-e-limite-de-requisições) na mesma entrega.
 

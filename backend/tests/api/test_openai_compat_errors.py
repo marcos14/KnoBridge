@@ -6,7 +6,6 @@ the 1 MiB body limit. Through the official SDK where it surfaces the error, raw 
 from __future__ import annotations
 
 import uuid
-from collections.abc import Sequence
 
 import httpx2 as httpx
 import pytest
@@ -27,7 +26,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from fakes.llm_provider import ScriptedLLMProvider, UnreachableLLMProvider
 from fakes.retriever import StaticRetriever
-from knobridge.conversations.retrieval import RetrievalQuery, Source
+from knobridge.conversations.retrieval import Retrieval, RetrievalQuery
 from knobridge.llm.errors import (
     EmbeddingResponseError,
     LLMProviderError,
@@ -53,7 +52,7 @@ class _FailingRetriever(StaticRetriever):
         super().__init__()
         self.error = error
 
-    async def retrieve(self, db: AsyncSession, query: RetrievalQuery) -> Sequence[Source]:
+    async def retrieve(self, db: AsyncSession, query: RetrievalQuery) -> Retrieval:
         raise self.error
 
 

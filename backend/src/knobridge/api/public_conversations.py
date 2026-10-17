@@ -116,6 +116,9 @@ class PublicMessageOut(BaseModel):
     latency_ms: int | None
     channel: ConversationChannel
     created_at: datetime
+    # Searches of an answer (multi-step search, api-publica v0.4); null for questions and
+    # older answers. The queries of the steps stay in the panel.
+    steps: int | None = None
 
 
 class PublicMessagePage(BaseModel):
@@ -168,6 +171,7 @@ def _message_out(view: KeyMessage) -> PublicMessageOut:
         latency_ms=message.latency_ms,
         channel=message.channel,
         created_at=message.created_at,
+        steps=message.steps,
     )
 
 

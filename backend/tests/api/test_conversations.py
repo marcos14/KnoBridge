@@ -137,6 +137,8 @@ def test_get_conversation_paginates_messages(api: ApiEnv) -> None:
         "created_at",
         "feedback",
         "ticket_request",
+        "steps",
+        "retrieval",
     }
     assert only["ticket_request"] is None
     assert response.json()["ticket_requests_enabled"] is False

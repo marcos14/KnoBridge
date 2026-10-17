@@ -23,6 +23,15 @@ MIN_TEMPERATURE = 0.0
 MAX_TEMPERATURE = 2.0
 DEFAULT_TEMPERATURE = 0.2
 
+# Most searches of one answer (multi-step search, docs/specs/chat.md): 1 is the single search.
+MIN_MAX_STEPS = 1
+MAX_MAX_STEPS = 6
+DEFAULT_MAX_STEPS = {
+    ResponseLevel.END_USER: 2,
+    ResponseLevel.SUPPORT: 3,
+    ResponseLevel.PRODUCT_DEV: 4,
+}
+
 
 def level_rank(level: ResponseLevel) -> int:
     """``end_user`` = 0, ``support`` = 1, ``product_dev`` = 2."""

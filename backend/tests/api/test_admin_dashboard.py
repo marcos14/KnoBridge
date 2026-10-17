@@ -147,6 +147,7 @@ def test_admin_dashboard_usage_of_the_period(api: ApiEnv) -> None:
         "chat_cost_usd": 2.1,
         "answers": 3,
         "unpriced_answers": 1,
+        "chat_searches": 0,
         "cost_usd": 4.2,
     }
     by_workspace: list[dict[str, object]] = usage["by_workspace"]  # type: ignore[assignment]

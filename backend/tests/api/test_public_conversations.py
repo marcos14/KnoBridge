@@ -130,6 +130,7 @@ def test_public_answer_without_source_skips_llm(api: ApiEnv, chat: ChatOverrides
         "latency_ms": 0,
         "channel": "api",
         "created_at": message["created_at"],
+        "steps": 0,
     }
     assert factory.calls == []
     conversation, stored = stored_conversation(api, conversation_id)

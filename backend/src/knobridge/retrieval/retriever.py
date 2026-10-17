@@ -14,12 +14,10 @@ RRF order). Runs in the caller's workspace-scoped session.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from knobridge.conversations.retrieval import RetrievalQuery, Source
+from knobridge.conversations.retrieval import Retrieval, RetrievalQuery
 from knobridge.core.logging import get_logger
 from knobridge.products.models import Product, ProductCollection
 from knobridge.retrieval.context import MAX_CONTEXT_TOKENS, fit_to_budget, source_from_hit
@@ -43,7 +41,7 @@ class HybridRetriever:
         self._limit = limit
         self._max_context_tokens = max_context_tokens
 
-    async def retrieve(self, db: AsyncSession, query: RetrievalQuery) -> Sequence[Source]:
+    async def retrieve(self, db: AsyncSession, query: RetrievalQuery) -> Retrieval:
         rows = (
             await db.execute(
                 select(Product.min_similarity, Product.rerank, ProductCollection.collection_id)
@@ -58,7 +56,7 @@ class HybridRetriever:
         ).all()
         collection_ids = [row.collection_id for row in rows if row.collection_id is not None]
         if not collection_ids:
-            return ()
+            return Retrieval(searched=False)
         active = self._reranker if rows[0].rerank else None
         try:
             found = await self._search.search(
@@ -72,7 +70,7 @@ class HybridRetriever:
             )
         except CollectionNotFoundError:
             # A collection deleted between the two statements: its link is gone too.
-            return ()
+            return Retrieval()
         outcome = await rerank_hits(
             active,
             query.text,
@@ -82,7 +80,8 @@ class HybridRetriever:
             product_id=query.product_id,
         )
         hits = outcome.hits
-        sources = fit_to_budget([source_from_hit(hit) for hit in hits], self._max_context_tokens)
+        budget = query.max_context_tokens or self._max_context_tokens
+        sources = fit_to_budget([source_from_hit(hit) for hit in hits], budget)
         _log.info(
             "chat_retrieval_finished",
             workspace_id=str(query.workspace_id),
@@ -93,4 +92,4 @@ class HybridRetriever:
             sources=len(sources),
             reranked=outcome.reranked,
         )
-        return sources
+        return Retrieval(sources=sources, reranked=outcome.reranked)

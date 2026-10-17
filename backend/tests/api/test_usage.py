@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime, timedelta
+from typing import cast
 
 import pytest
 from admin_chat_support import count_statements
@@ -53,6 +54,7 @@ _EMPTY_CHAT: dict[str, object] = {
     "chat_cost_usd": None,
     "answers": None,
     "unpriced_answers": None,
+    "chat_searches": None,
 }
 
 
@@ -66,7 +68,12 @@ def _embedding(tokens: int, cost: float, runs: int, unpriced: int) -> dict[str, 
 
 
 def _chat(
-    input_tokens: int, output_tokens: int, cost: float, answers: int, unpriced: int
+    input_tokens: int,
+    output_tokens: int,
+    cost: float,
+    answers: int,
+    unpriced: int,
+    searches: int = 0,
 ) -> dict[str, object]:
     return {
         "chat_input_tokens": input_tokens,
@@ -74,6 +81,7 @@ def _chat(
         "chat_cost_usd": cost,
         "answers": answers,
         "unpriced_answers": unpriced,
+        "chat_searches": searches,
     }
 
 
@@ -238,8 +246,8 @@ def test_usage_csv_name_carries_the_level(api: ApiEnv, seeded: Seeded) -> None:
         'attachment; filename="knobridge-uso-product-2026-09-01-2026-09-04-support.csv"'
     )
     lines = response.text.split("\r\n")
-    assert lines[1] == f"{seeded.sales},Vendas,,,,,10,5,0.000035,1,0,0.000035"
-    assert lines[2] == "total,Total,,,,,10,5,0.000035,1,0,0.000035"
+    assert lines[1] == f"{seeded.sales},Vendas,,,,,10,5,0.000035,1,0,0,0.000035"
+    assert lines[2] == "total,Total,,,,,10,5,0.000035,1,0,0,0.000035"
 
 
 def test_usage_by_source_and_collection(api: ApiEnv, seeded: Seeded) -> None:
@@ -380,6 +388,24 @@ def test_usage_empty_workspace_has_zero_totals_and_seeded_rows(api: ApiEnv) -> N
     assert [row["key"] for row in body["rows"]] == ["api", "mcp", "panel", "widget"]  # type: ignore[union-attr]
     assert [row["key"] for row in days] == ["2026-09-01", "2026-09-02", "2026-09-03"]
     assert _rows(api, world, "source") == []
+
+
+def test_usage_chat_searches_sum_the_steps_of_the_answers(api: ApiEnv) -> None:
+    world = usage_world(api, Role.OWNER)
+    panel = add_conversation(api, world)
+    support = add_conversation(api, world, level=ResponseLevel.SUPPORT)
+    add_answer(api, world, panel, at=_at(1), steps=3, cost="0.01")
+    add_answer(api, world, support, at=_at(1), steps=2, cost="0.01")
+    # Without a model (no LLM) the answer is not counted; older answers have no steps.
+    add_answer(api, world, panel, at=_at(2), model=None, tokens=None, steps=1)
+    add_answer(api, world, panel, at=_at(2), cost="0.01")
+
+    body = _report(api, world, "level")
+
+    totals = cast(dict[str, object], body["totals"])
+    assert (totals["answers"], totals["chat_searches"]) == (3, 5)
+    rows = {row["key"]: row["chat_searches"] for row in _rows(api, world, "level")}
+    assert rows == {"end_user": 0, "support": 2, "product_dev": 3}
 
 
 def test_usage_day_rows_of_an_unaligned_period(api: ApiEnv) -> None:

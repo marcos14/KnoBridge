@@ -588,11 +588,32 @@
             ],
             "title": "Output Tokens"
           },
+          "retrieval": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RetrievalOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "role": {
             "$ref": "#/components/schemas/MessageRole"
           },
           "status": {
             "$ref": "#/components/schemas/MessageStatus"
+          },
+          "steps": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Steps"
           }
         },
         "required": [
@@ -4293,6 +4314,11 @@
             "title": "Chat Output Tokens",
             "type": "integer"
           },
+          "chat_searches": {
+            "default": 0,
+            "title": "Chat Searches",
+            "type": "integer"
+          },
           "cost_usd": {
             "title": "Cost Usd",
             "type": "number"
@@ -5231,11 +5257,32 @@
             ],
             "title": "Output Tokens"
           },
+          "retrieval": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RetrievalOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "role": {
             "$ref": "#/components/schemas/MessageRole"
           },
           "status": {
             "$ref": "#/components/schemas/MessageStatus"
+          },
+          "steps": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Steps"
           },
           "ticket_request": {
             "anyOf": [
@@ -5718,6 +5765,17 @@
           },
           "status": {
             "$ref": "#/components/schemas/MessageStatus"
+          },
+          "steps": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Steps"
           }
         },
         "required": [
@@ -7069,6 +7127,17 @@
           },
           "status": {
             "$ref": "#/components/schemas/MessageStatus"
+          },
+          "steps": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Steps"
           }
         },
         "required": [
@@ -7291,6 +7360,93 @@
         ],
         "title": "ResponseLevel",
         "type": "string"
+      },
+      "RetrievalOut": {
+        "properties": {
+          "reranked": {
+            "title": "Reranked",
+            "type": "boolean"
+          },
+          "searches": {
+            "items": {
+              "$ref": "#/components/schemas/RetrievalSearchOut"
+            },
+            "title": "Searches",
+            "type": "array"
+          },
+          "tools": {
+            "enum": [
+              "off",
+              "unsupported",
+              "offered",
+              "used"
+            ],
+            "title": "Tools",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "tools",
+          "reranked",
+          "searches"
+        ],
+        "title": "RetrievalOut",
+        "type": "object"
+      },
+      "RetrievalSearchOut": {
+        "properties": {
+          "duration_ms": {
+            "title": "Duration Ms",
+            "type": "integer"
+          },
+          "new_sources": {
+            "title": "New Sources",
+            "type": "integer"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Query"
+          },
+          "sources": {
+            "title": "Sources",
+            "type": "integer"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "empty",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "step": {
+            "title": "Step",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "step",
+          "query",
+          "status",
+          "sources",
+          "new_sources",
+          "duration_ms"
+        ],
+        "title": "RetrievalSearchOut",
+        "type": "object"
       },
       "ReviewAction": {
         "enum": [
@@ -11882,6 +12038,11 @@
             "title": "Chat Output Tokens",
             "type": "integer"
           },
+          "chat_searches": {
+            "default": 0,
+            "title": "Chat Searches",
+            "type": "integer"
+          },
           "cost_usd": {
             "title": "Cost Usd",
             "type": "number"
@@ -11995,6 +12156,17 @@
               }
             ],
             "title": "Chat Output Tokens"
+          },
+          "chat_searches": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chat Searches"
           },
           "cost_usd": {
             "title": "Cost Usd",
@@ -13429,6 +13601,17 @@
             ],
             "title": "Estimated Cost Per Answer Usd"
           },
+          "estimated_max_cost_per_answer_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Max Cost Per Answer Usd"
+          },
           "instructions": {
             "title": "Instructions",
             "type": "string"
@@ -13439,6 +13622,11 @@
           },
           "level": {
             "$ref": "#/components/schemas/ResponseLevel"
+          },
+          "max_steps": {
+            "default": 1,
+            "title": "Max Steps",
+            "type": "integer"
           },
           "model": {
             "anyOf": [
@@ -13498,6 +13686,17 @@
             "title": "Temperature",
             "type": "number"
           },
+          "tools_supported": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tools Supported"
+          },
           "updated_at": {
             "format": "date-time",
             "title": "Updated At",
@@ -13536,6 +13735,19 @@
               }
             ],
             "title": "Instructions"
+          },
+          "max_steps": {
+            "anyOf": [
+              {
+                "maximum": 6.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Steps"
           },
           "model": {
             "anyOf": [

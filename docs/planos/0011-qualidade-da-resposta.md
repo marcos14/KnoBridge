@@ -20,7 +20,7 @@ fases:
         status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-17
-        concluida_em: 2026-10-13
+        concluida_em: 2026-10-17
         commit: feb0eb2
   - id: F2
     titulo: Backend
@@ -31,28 +31,28 @@ fases:
         status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-17
-        concluida_em: 2026-10-13
+        concluida_em: 2026-10-17
         commit: 43de0ff
       - id: F2.2
         titulo: Chamada de ferramentas nos provedores de LLM (OpenAI, Anthropic, OpenRouter e fake)
         status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-17
-        concluida_em: 2026-10-13
+        concluida_em: 2026-10-17
         commit: 881b200
       - id: F2.3
         titulo: Rodada de chat em várias etapas em todos os canais, com limite por nível
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-17
-        concluida_em: null
+        concluida_em: 2026-10-17
         commit: null
       - id: F2.4
         titulo: Limiar de similaridade por modelo de embedding e aviso de arquivos gerados
         status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-17
-        concluida_em: 2026-10-13
+        concluida_em: 2026-10-17
         commit: b070873
   - id: F3
     titulo: Painel
@@ -141,14 +141,14 @@ decisoes:
     alternativas: modelo carregado no processo da API (sentence-transformers); reranker real no E2E
     adr: docs/adr/0010-busca-em-etapas-e-reranker.md
   - id: D8
-    data: 2026-10-13
+    data: 2026-10-17
     por: agente
     decisao: "F1.1 (ADR 0010): TEI cpu-1.9.4 com BAAI/bge-reranker-v2-m3 (volume reranker-models, 4g), POST /rerank com os 30 melhores depois da fusão e devolve 10, timeout 10 s e queda para a ordem do RRF; products.rerank padrão true, vale na busca inicial, em cada etapa, no search_knowledge e no Testar busca; etapa 1 = busca de hoje, as seguintes pela ferramenta interna search_sources {query}, max_steps 1 a 6 (2/3/4), última rodada com tool_choice none, até 3000 tokens e 30 fontes, citações acumuladas sem repetir; modelo sem ferramentas: ToolsUnsupportedError, refaz sem ferramentas e marca tools_unsupported_model no nível; min_similarity nulo = padrão do modelo (0,35 OpenAI, 0,60 gemini-embedding-001, 0,57 gemini-embedding-2), produtos com exatamente 0,35 passam a nulo; aviso de arquivos dominantes em sources.index_stats ao fim de execução bem-sucedida; migrações 0022 (F2.1), 0023 (F2.3) e 0024 (F2.4); E2E com scripts/fake_reranker.py"
     motivo: "contrato implementável"
     alternativas: "migração única; reranker só na busca inicial"
     adr: null
   - id: D9
-    data: 2026-10-13
+    data: 2026-10-17
     por: agente
     decisao: "ordem das migrações conforme a integração: F2.1 = 0022, F2.4 = 0023, F2.3 = 0024 (a F2.3 roda depois da F2.1 e da F2.4); cada agente ajusta os números nas specs"
     motivo: "F2.1, F2.2 e F2.4 em paralelo"
@@ -169,25 +169,60 @@ decisoes:
     alternativas: "manter 0,35 nos existentes"
     adr: null
   - id: D12
-    data: 2026-10-13
+    data: 2026-10-17
     por: agente
     decisao: "F2.2: ToolChoice como Literal (auto, required, none); OpenAI envia tools sem strict, tool_choice e parallel_tool_calls=false só com ferramentas e abre nova chamada por index ou por id novo (backends do OpenRouter mandam tudo no index 0); Anthropic com input_schema e disable_parallel_tool_use, resultados consecutivos num turno user; ToolsUnsupportedError pelos dois adaptadores via tools_refused, só quando havia ferramentas; o fake roteirizado avança um passo por chamada e ToolCallStep chama a ferramenta mesmo com tool_choice none; os adaptadores não somam custo (cada chamada termina no seu ChatUsage e a rodada soma na F2.3); um assert de tipo em conversations/chat.py até a F2.3 reescrever o laço"
     motivo: "spec chat.md conferida contra os SDKs fixados"
     alternativas: "enum; somar custo no adaptador"
     adr: null
   - id: D13
-    data: 2026-10-13
+    data: 2026-10-17
     por: agente
     decisao: "F2.1: HttpReranker valida a resposta do TEI (um item por texto, índices distintos, score finito) e ordena por score com empate pela ordem do RRF; disponibilidade = KNOBRIDGE_RERANKER_URL definida (sem checagem de saúde por busca; a saúde fica em /v1/admin/health com o status novo disabled); Testar busca com rerank nulo = ligado se disponível e true sem reranker = 422 reranker_unavailable; serviço reranker com TEI cpu-1.9.4 e revisão do modelo fixada (953dc6f), mem_limit 4g, healthcheck por curl com start_period 15 min, api e worker não dependem dele; KNOBRIDGE_RERANKER_URL vazia no .env desliga; camada E2E com scripts/fake_reranker.py em python alpine"
     motivo: "spec indexacao.md"
     alternativas: "checar saúde a cada busca"
     adr: null
   - id: D14
-    data: 2026-10-13
+    data: 2026-10-17
     por: agente
     decisao: "F2.4: limiar efetivo resolvido por grupo (credencial, modelo) em cada busca, número explícito vale para todos; KNOBRIDGE_MIN_SIMILARITY_DEFAULTS sobrescreve a tabela (source model) e modelo fora dela usa o fallback 0,35; PATCH com null volta ao padrão do modelo (campo omitido mantém); uma consulta a mais por página de produtos para effective_min_similarity; suggested_exclude_globs recalculado na resposta contra os exclude_globs atuais; migração 0023 troca 0,35 por nulo e o downgrade devolve 0,35"
     motivo: "spec indexacao.md e D11"
     alternativas: "limiar único por produto"
+    adr: null
+  - id: D15
+    data: 2026-10-17
+    por: agente
+    decisao: "na rodada em etapas, uma chamada ao LLM que falha ou é cortada deixa tokens e custo da resposta nulos (desconhecidos); a chamada recusada com ToolsUnsupportedError não entra na soma"
+    motivo: "um total parcial pareceria exato e subestimaria o custo; a recusa não gera cobrança"
+    alternativas: "somar só as chamadas com uso conhecido; estimar a chamada falha"
+    adr: null
+  - id: D16
+    data: 2026-10-17
+    por: agente
+    decisao: "a queda para a busca única por ToolsUnsupportedError só vale na primeira rodada, antes de qualquer saída, e grava a marca tools_unsupported_model só se o modelo ainda for o do nível; recusa numa rodada posterior falha a resposta com provider_tools_unsupported"
+    motivo: "depois de texto ou de uma busca já emitidos ao cliente, recomeçar sem ferramentas duplicaria a saída; a condição evita marcar um modelo trocado no meio da rodada"
+    alternativas: "cair para a busca única em qualquer rodada; não gravar marca"
+    adr: null
+  - id: D17
+    data: 2026-10-17
+    por: agente
+    decisao: "lista de fontes cheia (30) responde 'limite atingido' sem buscar e sem contar etapa; chamada de ferramenta sem argumentos completos termina em chat_failed; rodada só com espaços conta como resposta final em branco"
+    motivo: "casos de borda determinísticos, cobertos por teste, sem laço infinito nem custo sem fonte nova"
+    alternativas: "buscar mesmo com a lista cheia; ignorar a chamada incompleta"
+    adr: null
+  - id: D18
+    data: 2026-10-17
+    por: agente
+    decisao: "na API compatível com OpenAI em streaming, a resposta HTTP só começa no primeiro evento que não é step, para um erro do provedor numa etapa de busca voltar como erro JSON com o status certo"
+    motivo: "depois do primeiro chunk o status 200 já foi enviado e o cliente oficial não distingue o erro"
+    alternativas: "começar o stream na hora e mandar o erro como chunk"
+    adr: null
+  - id: D19
+    data: 2026-10-17
+    por: agente
+    decisao: "Uso e custos ganha chat_searches como sexta coluna (0 do lado de embeddings), logo depois de answers no CSV e também nos totais do painel da instância; estimated_max_cost_per_answer_usd soma os tokens de todas as chamadas do máximo de etapas"
+    motivo: "o custo extra das etapas precisa ficar visível onde o custo já é lido"
+    alternativas: "contar buscas só no detalhe da conversa"
     adr: null
 pendencias_usuario: []
 ---
@@ -434,14 +469,15 @@ Nenhuma.
 
 - 2026-10-17 — plano criado na branch `plano/0011-qualidade-da-resposta` (a partir de `main`); aguardando aprovação.
 - 2026-10-17 — plano aprovado pelo usuário ("Aprovado"); F1.1 iniciada (agente em worktree).
-- 2026-10-13 — F1.1 concluída: ADR 0010, spec avaliacao.md e nove specs atualizadas, visão com D20; links, âncoras e tabelas conferidos
+- 2026-10-17 — F1.1 concluída: ADR 0010, spec avaliacao.md e nove specs atualizadas, visão com D20; links, âncoras e tabelas conferidos
 - 2026-10-17 — F2.1 iniciada (agente em worktree).
 - 2026-10-17 — F2.2 iniciada (agente em worktree).
 - 2026-10-17 — F2.4 iniciada (agente em worktree).
-- 2026-10-13 — F2.2 concluída: chamada de ferramentas nos provedores OpenAI/OpenRouter, Anthropic e fake, com streaming e ToolsUnsupportedError; corpo sem ferramentas idêntico ao de hoje; gates do agente: ruff, pyright e 244 testes direcionados, módulos de llm/ em 100%; orquestrador: ruff, pyright e tests/llm na integração (a suíte inteira roda na próxima integração)
-- 2026-10-13 — F2.1 concluída: reranker self-host (TEI com bge-reranker-v2-m3) no compose, HttpReranker com queda para a ordem do RRF, opção por produto (0022), saúde da instância e reranker falso no E2E; gates do agente: backend 3168 passed + 1 stub corrigido (25/25), 99,85%, scripts 99,81%, frontend 1711; orquestrador: ruff, pyright, 278 testes direcionados e compose nas duas camadas
-- 2026-10-13 — F2.4 concluída: limiar de similaridade por modelo de embedding (0023, produtos com 0,35 passam ao padrão do modelo) e aviso de arquivos que dominam o índice em sources.index_stats; integrada sobre F2.1 e F2.2: backend 3245 passed com 99%, frontend 1711
+- 2026-10-17 — F2.2 concluída: chamada de ferramentas nos provedores OpenAI/OpenRouter, Anthropic e fake, com streaming e ToolsUnsupportedError; corpo sem ferramentas idêntico ao de hoje; gates do agente: ruff, pyright e 244 testes direcionados, módulos de llm/ em 100%; orquestrador: ruff, pyright e tests/llm na integração (a suíte inteira roda na próxima integração)
+- 2026-10-17 — F2.1 concluída: reranker self-host (TEI com bge-reranker-v2-m3) no compose, HttpReranker com queda para a ordem do RRF, opção por produto (0022), saúde da instância e reranker falso no E2E; gates do agente: backend 3168 passed + 1 stub corrigido (25/25), 99,85%, scripts 99,81%, frontend 1711; orquestrador: ruff, pyright, 278 testes direcionados e compose nas duas camadas
+- 2026-10-17 — F2.4 concluída: limiar de similaridade por modelo de embedding (0023, produtos com 0,35 passam ao padrão do modelo) e aviso de arquivos que dominam o índice em sources.index_stats; integrada sobre F2.1 e F2.2: backend 3245 passed com 99%, frontend 1711
 - 2026-10-17 — F2.3 iniciada (agente em worktree).
+- 2026-10-17 — F2.3 concluída: busca em etapas com search_sources até max_steps do nível em todos os canais, reformulação com busca vazia, evento step, steps/retrieval na mensagem, chat_searches em Uso e custos, migração 0024; backend 3.303 testes (99%), frontend 1.711
 
 ## 8. Encerramento
 

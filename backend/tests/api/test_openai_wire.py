@@ -35,6 +35,7 @@ from knobridge.conversations.turn import (
     ErrorEvent,
     LLMCall,
     PreparedTurn,
+    StepEvent,
 )
 from knobridge.levels.level import ResponseLevel
 from knobridge.llm.provider import ChatMessage, ChatParams, ChatRole
@@ -212,15 +213,19 @@ def test_sources_footer() -> None:
 
 
 def test_usage_of() -> None:
-    counted = usage_of(MessageStatus.COMPLETED, 3, 4)
-    no_source = usage_of(MessageStatus.NO_SOURCE, None, None)
+    counted = usage_of(MessageStatus.COMPLETED, 3, 4, "m")
+    no_source = usage_of(MessageStatus.NO_SOURCE, None, None, None)
+    after_steps = usage_of(MessageStatus.NO_SOURCE, 8, 2, "m")
 
     assert counted is not None
     assert counted.model_dump() == {"prompt_tokens": 3, "completion_tokens": 4, "total_tokens": 7}
     assert no_source is not None
     assert no_source.model_dump() == {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
-    assert usage_of(MessageStatus.COMPLETED, 3, None) is None
-    assert usage_of(MessageStatus.COMPLETED, None, 4) is None
+    # A "no source" answer after search steps carries the tokens of its rounds.
+    assert after_steps is not None
+    assert after_steps.total_tokens == 10
+    assert usage_of(MessageStatus.COMPLETED, 3, None, "m") is None
+    assert usage_of(MessageStatus.COMPLETED, None, 4, "m") is None
 
 
 async def _cost() -> float | None:
@@ -254,6 +259,7 @@ def _done(status: MessageStatus, tokens: int | None) -> DoneEvent:
         input_tokens=tokens,
         output_tokens=tokens,
         latency_ms=1,
+        steps=2,
     )
 
 
@@ -273,6 +279,7 @@ def _run(stream: CompletionStream, items: Sequence[ChatEvent]) -> list[object]:
 
 def test_stream_frames_with_footer_and_usage() -> None:
     items: list[ChatEvent] = [
+        StepEvent(MESSAGE_ID, 2, 3, "consulta"),
         CitationsEvent(MESSAGE_ID, uuid.uuid4(), CITATIONS),
         DeltaEvent("Resposta [1]"),
         _done(MessageStatus.COMPLETED, 5),
@@ -308,7 +315,7 @@ def test_stream_frames_with_footer_and_usage() -> None:
         {
             **common,
             "choices": choice({}, "stop"),
-            "knobridge": {"status": "completed", "cost_usd": 0.25},
+            "knobridge": {"status": "completed", "cost_usd": 0.25, "steps": 2},
         },
         {
             **common,

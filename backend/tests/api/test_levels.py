@@ -13,7 +13,7 @@ from api_support import ApiEnv, SeededUser
 from product_support import create_provider, levels_path
 
 from knobridge.levels.defaults import DEFAULT_INSTRUCTIONS
-from knobridge.levels.level import ResponseLevel
+from knobridge.levels.level import DEFAULT_MAX_STEPS, ResponseLevel
 from knobridge.tenancy.models import Role
 
 pytestmark = pytest.mark.integration
@@ -69,6 +69,9 @@ def test_new_workspace_has_three_unconfigured_levels(api: ApiEnv) -> None:
         "price",
         "estimated_cost_per_answer_usd",
         "updated_at",
+        "max_steps",
+        "estimated_max_cost_per_answer_usd",
+        "tools_supported",
     }
     for item in items:
         level = ResponseLevel(item["level"])
@@ -83,6 +86,9 @@ def test_new_workspace_has_three_unconfigured_levels(api: ApiEnv) -> None:
         assert item["instructions_is_default"] is True
         assert item["price"] is None
         assert item["estimated_cost_per_answer_usd"] is None
+        assert item["max_steps"] == DEFAULT_MAX_STEPS[level]
+        assert item["estimated_max_cost_per_answer_usd"] is None
+        assert item["tools_supported"] is None
 
 
 def test_default_instructions_follow_the_spec() -> None:
@@ -234,6 +240,11 @@ def test_provider_in_use_by_a_level_cannot_be_deleted(api: ApiEnv) -> None:
         {"model": "m" * 201},
         {"instructions": "i" * 20001},
         {"provider_id": "not-a-uuid"},
+        {"max_steps": None},
+        {"max_steps": 0},
+        {"max_steps": 7},
+        {"max_steps": "3"},
+        {"max_steps": 2.5},
     ],
 )
 def test_level_update_rejects_invalid_body(api: ApiEnv, body: dict[str, object]) -> None:

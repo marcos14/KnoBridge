@@ -2,8 +2,10 @@
 
 Production uses ``retrieval.retriever.HybridRetriever`` (hybrid search over the product's
 collections at the level of the conversation, ``docs/01-visao-do-projeto.md`` section 7.4).
-When it finds nothing, the answer is the product's "no source" message without calling the
-LLM (rule 8 of AGENTS.md: no answer without a source). Tests inject a fake through
+The first search runs on the question; with multi-step search the model may search again with
+its own query (``conversations/steps.py``), always at the conversation's level. When no search
+finds anything, the answer is the product's "no source" message and no text of the LLM is kept
+(rule 8 of AGENTS.md: no answer without a source). Tests inject a fake through
 ``api.deps.get_retriever``.
 """
 
@@ -86,18 +88,32 @@ class Source:
 class RetrievalQuery:
     """What to search for and on whose behalf: in the product's collections, only what a
     question at ``level`` may read (permissions are filtered by ``user_id``; ``None`` for an
-    API key, whose access is its scope over the products)."""
+    API key, whose access is its scope over the products). ``text`` is the question or, in a
+    later step, the model's query; ``max_context_tokens`` is the budget of the sources
+    returned (``None``: the retriever's default)."""
 
     workspace_id: uuid.UUID
     product_id: uuid.UUID
     level: ResponseLevel
     user_id: uuid.UUID | None
     text: str
+    max_context_tokens: int | None = None
+
+
+@dataclass(frozen=True)
+class Retrieval:
+    """What one search found: the sources, best first; ``searched`` ``False`` when the product
+    has no collection and nothing was searched (the turn then never calls the LLM);
+    ``reranked`` when the reranker reordered this search."""
+
+    sources: Sequence[Source] = ()
+    searched: bool = True
+    reranked: bool = False
 
 
 class Retriever(Protocol):
-    async def retrieve(self, db: AsyncSession, query: RetrievalQuery) -> Sequence[Source]:
-        """Sources for the question, best first; empty when nothing relevant was found.
+    async def retrieve(self, db: AsyncSession, query: RetrievalQuery) -> Retrieval:
+        """Sources for the text, best first; empty when nothing relevant was found.
 
         ``db`` is the caller's session, scoped (RLS) to ``query.workspace_id``.
         """

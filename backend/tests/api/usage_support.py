@@ -200,6 +200,7 @@ def add_answer(
     status: MessageStatus = MessageStatus.COMPLETED,
     channel: ConversationChannel = ConversationChannel.PANEL,
     cited: bool = False,
+    steps: int | None = None,
 ) -> uuid.UUID:
     """An assistant message (``model=None`` for a ``no_source`` one)."""
 
@@ -222,6 +223,7 @@ def add_answer(
                 output_tokens=None if tokens is None else tokens[1],
                 cost_usd=None if cost is None else Decimal(cost),
                 channel=channel,
+                steps=steps,
                 created_at=at,
                 updated_at=at,
             )

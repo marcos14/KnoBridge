@@ -74,6 +74,7 @@ export function makeInstanceDashboard(
       chat_cost_usd: 2.5,
       answers: 120,
       unpriced_answers: 0,
+      chat_searches: 0,
       cost_usd: 2.75,
       by_workspace: [
         {
