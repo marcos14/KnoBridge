@@ -47,6 +47,9 @@ x-backend: &backend
     # Extra chat prices (USD per million tokens) over the built-in table, for the estimated cost
     # of each answer (docs/specs/uso-e-custos.md). JSON; the default {} adds none.
     KNOBRIDGE_CHAT_PRICES: ${KNOBRIDGE_CHAT_PRICES:-{}}
+    # Default minimum similarity per embedding model over the built-in table, for products whose
+    # threshold is blank (docs/specs/indexacao.md, "Limiar por modelo de embedding"). JSON.
+    KNOBRIDGE_MIN_SIMILARITY_DEFAULTS: ${KNOBRIDGE_MIN_SIMILARITY_DEFAULTS:-{}}
     # MCP server at /v1/mcp (docs/specs/mcp.md): extra Host values it accepts (empty = the host
     # of KNOBRIDGE_PUBLIC_BASE_URL, localhost:* and 127.0.0.1:*) and browser origins (empty = none).
     KNOBRIDGE_MCP_ALLOWED_HOSTS: ${KNOBRIDGE_MCP_ALLOWED_HOSTS:-}

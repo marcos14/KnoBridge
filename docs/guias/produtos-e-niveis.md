@@ -1,6 +1,8 @@
 # Produtos e níveis de resposta
 
-> Rascunho v0.1 · 2026-10-13 · Em uso (plano 0009)
+> Rascunho v0.2 · 2026-10-17 · Em uso (planos 0009 e 0011)
+>
+> **Mudanças da v0.2** (plano 0011): máximo de buscas por nível, "Reordenar trechos" e similaridade mínima pelo padrão do modelo no produto, e a nova seção [Como o produto busca](#como-o-produto-busca), com a comparação em "Testar busca" e as buscas de cada resposta em Conversas.
 
 Passo a passo para organizar as respostas por **produto** (o sistema sobre o qual as pessoas perguntam, como "ERP" ou "Portal do Cliente") e por **nível de resposta** (quanto detalhe técnico a resposta pode ter e quais fontes ela usa): configurar os três níveis do workspace, criar produtos, definir o nível máximo de cada membro, ajustar o nível mínimo das fontes, conversar num nível e chamar um produto num nível pela API.
 
@@ -112,11 +114,49 @@ Exemplo: a mesma pergunta "Como emitir a segunda via do boleto?" num produto com
 
 Nível acima do máximo da chave é recusado com 403 `level_not_allowed`. Exemplos completos em [usar-a-api.md](usar-a-api.md).
 
+## Como o produto busca
+
+Desde o plano 0011, três ajustes mudam quais trechos chegam ao modelo ([ADR 0010](../adr/0010-busca-em-etapas-e-reranker.md)). Os três valem em todos os canais: chat do painel, API, MCP e widget.
+
+### Busca em etapas (por nível)
+
+A primeira busca usa o texto da pergunta. Se os trechos não bastarem, o modelo do nível pode buscar de novo com outras palavras (nomes de telas, campos, tabelas, sinônimos) antes de responder ou de dizer que não sabe, até o **Máximo de buscas por resposta** do nível (passo 1). Cada busca respeita o nível da conversa: uma consulta reformulada nunca traz trecho acima dele.
+
+| Nível | Máximo padrão | Por quê |
+|---|---|---|
+| Usuário final | 2 | Perguntas de uso costumam se resolver na primeira busca; a segunda cobre outra forma de dizer. |
+| Suporte | 3 | Consultas SQL e mensagens de erro pedem achar o esquema ou a rotina pelo nome técnico. |
+| Desenvolvimento e produto | 4 | Planejamento e "já foi tratado?" cruzam código, cards e documentos. |
+
+- **Custo**: cada busca a mais é uma chamada a mais ao modelo, com os trechos novos na entrada. O cartão do nível mostra o custo de uma resposta e o custo **Com todas as buscas**. O valor 1 dá uma busca só, o comportamento anterior ao plano 0011.
+- **Modelos sem chamada de ferramentas**: o KnoBridge percebe na primeira recusa, marca o modelo e passa a responder com uma busca só, com o aviso no cartão do nível, até você trocar o modelo.
+- **Onde ver**: no chat, "Buscando: <consulta>" enquanto a busca roda e, no fim, "N buscas" (clique para ver as consultas); em **Conversas**, as mesmas consultas em cada resposta. No widget, o visitante vê só "Buscando mais informações…", sem a consulta.
+
+### Reordenação (por produto)
+
+Com **Reordenar trechos** ligado (o padrão) e um reranker na instância (o serviço `reranker` do compose, [subir-ambiente.md](subir-ambiente.md#reranker)), cada busca pega os 30 melhores candidatos da busca híbrida e o reranker os reordena pela relevância para a pergunta; os 10 primeiros vão ao modelo. Costuma acertar mais a fonte, com um a alguns segundos a mais por busca em CPU. Se o reranker estiver fora do ar, a busca segue na ordem original, sem erro.
+
+Para ver a diferença antes de mudar um produto: em **Coleções**, abra a coleção, escreva a pergunta em **Testar busca** e busque com **Com reranker** e depois com **Sem reranker**. A tela diz se os trechos foram reordenados e mostra a pontuação do reranker de cada um.
+
+### Similaridade mínima (padrão do modelo de embedding)
+
+Com a **Similaridade mínima** em branco (o padrão), cada coleção usa o limiar do seu modelo de embedding, porque a escala da similaridade muda de um modelo para outro ([indexacao.md](../specs/indexacao.md#limiar-por-modelo-de-embedding)):
+
+| Modelo de embedding | Limiar padrão |
+|---|---|
+| `text-embedding-3-small` e `text-embedding-3-large` (OpenAI, também pelo OpenRouter) | 0,35 |
+| `gemini-embedding-001` | 0,60 |
+| `gemini-embedding-2` | 0,57 |
+| Qualquer outro (inclusive o `fake`) | 0,35 |
+
+Ao editar o produto, a tela mostra o limiar em uso em cada modelo. Preencha um número só para fixar o mesmo limiar em todas as coleções do produto. Quem opera a instância muda os padrões com `KNOBRIDGE_MIN_SIMILARITY_DEFAULTS` ([subir-ambiente.md](subir-ambiente.md#configuração-da-api-e-do-worker)). Na atualização, os produtos que estavam com 0,35 (o padrão antigo) passaram ao padrão do modelo: em coleções OpenAI nada muda; em coleções Gemini, o limiar sobe para o do modelo. Em **Testar busca**, a similaridade em branco também usa o padrão do modelo da coleção.
+
 ## Como verificar
 
 - **Início**: o passo "Configure a credencial e o modelo do nível Usuário final" sai da lista depois do passo 1, e "Crie um produto ativo ligado a uma coleção" depois do passo 2.
 - **Chat**: um leitor vê Suporte e Desenvolvimento e produto desabilitados; um owner vê os três.
 - **Uso e custos**: **Agrupar por > Produto** ou **Nível** mostra respostas, tokens e custo de cada um; os filtros de produto e nível valem para as respostas do chat.
+- **Busca**: no chat, cada resposta mostra "1 busca" ou mais; em **Coleções > Testar busca**, **Com reranker** diz "Reordenados pelo reranker." quando a instância tem reranker.
 - **Auditoria**: `workspace_level.updated`, `product.created`, `member_level.updated` e `source.min_level_changed`.
 
 ## Workspaces que tinham assistentes
@@ -140,4 +180,7 @@ O `model` com o nome ou o id do assistente continua valendo na API compatível c
 - **"Esta conversa … não aceita novas perguntas"**: o seu máximo baixou depois que a conversa começou. Abra uma nova conversa num nível permitido.
 - **A resposta de Usuário final não cita um arquivo que eu esperava**: o arquivo é código (sobe para Desenvolvimento e produto) ou a fonte tem nível mínimo acima. Confira o nível na lista de **Fontes**.
 - **O campo Nível mínimo está desabilitado**: só owner e admin mudam o nível de uma fonte.
+- **"O modelo deste nível não aceita busca em etapas"** no cartão do nível: o provedor recusou a chamada de ferramentas desse modelo. As respostas seguem com uma busca só; troque para um modelo com ferramentas, ou deixe assim se a busca única basta.
+- **"Reordenar trechos" está desabilitado**: a instância não tem reranker (`KNOBRIDGE_RERANKER_URL` vazia). Veja [subir-ambiente.md](subir-ambiente.md#reranker).
+- **Numa coleção Gemini, perguntas que antes tinham fonte agora caem em "sem fonte"**: o limiar passou a ser o do modelo (0,60 no `gemini-embedding-001`), que corta trechos pouco parecidos. Confira em **Testar busca** com a similaridade em branco e, se precisar, fixe um número no produto.
 - **O nome do produto é recusado**: nomes que terminam em `:end_user`, `:support` ou `:product_dev` não são aceitos, porque o `:` indica o nível no `model` da API.

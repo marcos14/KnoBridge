@@ -1,19 +1,21 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 import { FormAlert } from "@/components/FormAlert";
 import { TextField } from "@/components/TextField";
 import { Button } from "@/components/ui/button";
-import { Form } from "@/components/ui/form";
+import { Form, FormDescription, FormField, FormItem } from "@/components/ui/form";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { translateApiError } from "@/i18n/apiErrors";
 import { type SearchResult, useSearchCollection } from "@/lib/api/collections";
 
 import {
-  DEFAULT_MIN_SIMILARITY,
-  effectiveMinSimilarity,
   formatScore,
+  parseMinSimilarity,
+  RERANK_CHOICES,
   resultLanguage,
   resultLocation,
   searchBody,
@@ -25,6 +27,7 @@ import {
 const FUSED_DIGITS = 4;
 const VECTOR_DIGITS = 2;
 const FTS_DIGITS = 3;
+const RERANK_DIGITS = 3;
 
 interface SearchPanelProps {
   workspaceId: string;
@@ -32,22 +35,26 @@ interface SearchPanelProps {
 }
 
 /**
- * "Testar busca" (any member): a query, an optional minimum similarity and the chunks the hybrid
- * search returns, best first, with their scores, where they come from and the snippet.
+ * "Testar busca" (any member): a query, an optional minimum similarity (blank: the default of the
+ * collection's embedding model), the reranking (instance default, on or off, to compare the order)
+ * and the chunks the search returns, best first, with their scores, where they come from and the
+ * snippet.
  */
 export function SearchPanel({ workspaceId, collectionId }: SearchPanelProps) {
   const { t, i18n } = useTranslation();
   const search = useSearchCollection(workspaceId, collectionId);
-  const [threshold, setThreshold] = useState(DEFAULT_MIN_SIMILARITY);
+  // The threshold of the last search: `null` when it was the embedding model's default.
+  const [threshold, setThreshold] = useState<number | null>(null);
+  const rerankLabelId = useId();
   const schema = useMemo(() => searchFormSchema(t), [t]);
   const form = useForm<SearchFormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { query: "", minSimilarity: "" },
+    defaultValues: { query: "", minSimilarity: "", rerank: "default" },
   });
   const locale = i18n.language;
 
   function onSubmit(values: SearchFormValues) {
-    setThreshold(effectiveMinSimilarity(values));
+    setThreshold(parseMinSimilarity(values.minSimilarity));
     search.mutate(searchBody(values));
   }
 
@@ -77,11 +84,36 @@ export function SearchPanel({ workspaceId, collectionId }: SearchPanelProps) {
               name="minSimilarity"
               inputMode="decimal"
               label={t("collections.search.minSimilarity")}
-              description={t("collections.search.minSimilarityHint", {
-                default: formatScore(DEFAULT_MIN_SIMILARITY, 2, locale),
-              })}
+              description={t("collections.search.minSimilarityHint")}
             />
           </div>
+          <FormField
+            control={form.control}
+            name="rerank"
+            render={({ field }) => (
+              <FormItem>
+                <span id={rerankLabelId} className="text-sm font-medium">
+                  {t("collections.search.rerank")}
+                </span>
+                <RadioGroup
+                  aria-labelledby={rerankLabelId}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  className="flex flex-wrap gap-4"
+                >
+                  {RERANK_CHOICES.map((choice) => (
+                    <div key={choice} className="flex items-center gap-2">
+                      <RadioGroupItem value={choice} id={`${rerankLabelId}-${choice}`} />
+                      <Label htmlFor={`${rerankLabelId}-${choice}`}>
+                        {t(`collections.search.rerankChoices.${choice}`)}
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+                <FormDescription>{t("collections.search.rerankHint")}</FormDescription>
+              </FormItem>
+            )}
+          />
           <div>
             <Button type="submit" disabled={search.isPending}>
               {search.isPending
@@ -93,20 +125,25 @@ export function SearchPanel({ workspaceId, collectionId }: SearchPanelProps) {
       </Form>
       {search.isError && <FormAlert message={translateApiError(search.error, t)} />}
       {search.isSuccess &&
-        (search.data.length === 0 ? (
+        (search.data.results.length === 0 ? (
           <p
             role="status"
             className="text-muted-foreground rounded-md border border-dashed p-4 text-sm"
           >
-            {t("collections.search.empty", { threshold: formatScore(threshold, 2, locale) })}
+            {threshold === null
+              ? t("collections.search.emptyDefault")
+              : t("collections.search.empty", { threshold: formatScore(threshold, 2, locale) })}
           </p>
         ) : (
           <div className="flex flex-col gap-3">
             <p role="status" className="text-sm">
-              {t("collections.search.resultCount", { count: search.data.length })}
+              {t("collections.search.resultCount", { count: search.data.results.length })}{" "}
+              {search.data.reranked
+                ? t("collections.search.reranked")
+                : t("collections.search.notReranked")}
             </p>
             <ol aria-label={t("collections.search.resultsLabel")} className="flex flex-col gap-3">
-              {search.data.map((result) => (
+              {search.data.results.map((result) => (
                 <SearchResultItem key={result.chunk_id} result={result} locale={locale} />
               ))}
             </ol>
@@ -135,6 +172,10 @@ function SearchResultItem({ result, locale }: { result: SearchResult; locale: st
             vector: formatScore(result.scores.vector, VECTOR_DIGITS, locale),
             fts: formatScore(result.scores.fts, FTS_DIGITS, locale),
           })}
+          {result.rerank_score !== null &&
+            ` · ${t("collections.search.rerankScore", {
+              score: formatScore(result.rerank_score, RERANK_DIGITS, locale),
+            })}`}
         </span>
       </div>
       {(result.symbol !== null || language !== undefined) && (

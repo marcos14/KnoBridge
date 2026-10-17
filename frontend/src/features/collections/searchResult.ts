@@ -6,12 +6,11 @@ import type { SearchRequest, SearchResult } from "@/lib/api/collections";
 /** Limits and defaults of the search route (`api/search.py`, `retrieval/search.py`). */
 export const QUERY_MAX_LENGTH = 2000;
 export const SEARCH_LIMIT = 10;
-export const DEFAULT_MIN_SIMILARITY = 0.35;
 const SHORT_SHA_LENGTH = 7;
 
 /**
  * Minimum similarity typed as text, with a comma or a dot ("0,45"): `null` when it is not a plain
- * number from 0 to 1. Blank means "the API default" and is handled by the caller.
+ * number from 0 to 1 (blank included: the search then uses the embedding model's default).
  */
 export function parseMinSimilarity(text: string): number | null {
   const normalized = text.trim().replace(",", ".");
@@ -22,9 +21,14 @@ export function parseMinSimilarity(text: string): number | null {
   return value <= 1 ? value : null;
 }
 
+/** Reranking of the search test: the instance default, forced on or forced off. */
+export const RERANK_CHOICES = ["default", "on", "off"] as const;
+export type RerankChoice = (typeof RERANK_CHOICES)[number];
+
 export interface SearchFormValues {
   query: string;
   minSimilarity: string;
+  rerank: RerankChoice;
 }
 
 export function searchFormSchema(t: TFunction) {
@@ -39,20 +43,23 @@ export function searchFormSchema(t: TFunction) {
       .refine((value) => value.trim() === "" || parseMinSimilarity(value) !== null, {
         error: t("collections.search.validation.minSimilarityInvalid"),
       }),
+    rerank: z.enum(RERANK_CHOICES),
   });
 }
 
-/** Threshold of the search: the typed one or, left blank, the API default. */
-export function effectiveMinSimilarity(values: SearchFormValues): number {
-  return parseMinSimilarity(values.minSimilarity) ?? DEFAULT_MIN_SIMILARITY;
-}
+const RERANK_BODY: Record<RerankChoice, boolean | null> = { default: null, on: true, off: false };
 
-/** Body of the search, with the threshold always explicit (the screen shows which it used). */
+/**
+ * Body of the search. A blank threshold goes as `null`, so the API applies the default of the
+ * collection's embedding model (docs/specs/indexacao.md, "Limiar por modelo de embedding"); the
+ * default reranking also goes as `null` (on when the instance has a reranker).
+ */
 export function searchBody(values: SearchFormValues): SearchRequest {
   return {
     query: values.query,
     limit: SEARCH_LIMIT,
-    min_similarity: effectiveMinSimilarity(values),
+    min_similarity: parseMinSimilarity(values.minSimilarity),
+    rerank: RERANK_BODY[values.rerank],
     // Every chunk of the collection, as before the levels (the level choice comes later).
     level: "product_dev",
   };

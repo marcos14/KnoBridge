@@ -186,14 +186,14 @@ export function deleteCollectionFails(status: number, code: string) {
 }
 
 /**
- * POST .../search answering with `results` (default: a code chunk and a commit); `bodies` keeps
- * each request body, to assert what the screen sent.
+ * POST .../search answering with `results` (default: a code chunk and a commit) and `reranked`;
+ * `bodies` keeps each request body, to assert what the screen sent.
  */
-export function searchRecorder(results: SearchResult[] = makeSearchResults()) {
+export function searchRecorder(results: SearchResult[] = makeSearchResults(), reranked = false) {
   const bodies: SearchRequest[] = [];
   const handler = http.post(SEARCH, async ({ request }) => {
     bodies.push((await request.json()) as SearchRequest);
-    return HttpResponse.json({ results });
+    return HttpResponse.json({ results, reranked });
   });
   return { handler, bodies };
 }

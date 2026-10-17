@@ -2,11 +2,11 @@
 
 Plataforma open source (Apache 2.0) que conecta repositórios de código, sistemas de chamados e documentações, transforma tudo em índices para RAG e responde em linguagem natural, sempre citando a fonte. Sem fonte, o assistente diz que não sabe e oferece abrir um chamado.
 
-> **Status**: em desenvolvimento; Fase 0 do roadmap concluída. Já funcionam painel, workspaces, indexação de pastas, repositórios Git, código (via runner), chamados e cards de desenvolvimento, produtos com três níveis de resposta (usuário final, suporte, desenvolvimento e produto), chat com citações, uso e custos, API pública (REST e compatível com OpenAI), servidor MCP para assistentes de código (Claude Code, Cursor, Codex) e widget embutível para sites e sistemas; ainda não há canvas de pipelines nem Slack e Google Chat. O que mudou está no [CHANGELOG.md](CHANGELOG.md).
+> **Status**: em desenvolvimento; Fase 0 do roadmap concluída. Já funcionam painel, workspaces, indexação de pastas, repositórios Git, código (via runner), chamados e cards de desenvolvimento, produtos com três níveis de resposta (usuário final, suporte, desenvolvimento e produto), chat com citações (com busca em várias etapas e reordenação dos trechos por um reranker próprio), uso e custos, API pública (REST e compatível com OpenAI), servidor MCP para assistentes de código (Claude Code, Cursor, Codex) e widget embutível para sites e sistemas; ainda não há canvas de pipelines nem Slack e Google Chat. O que mudou está no [CHANGELOG.md](CHANGELOG.md).
 
 ## Requisitos
 
-- Docker com Compose v2 (`docker compose version` responde 2.x) e cerca de 4 GB de RAM livres.
+- Docker com Compose v2 (`docker compose version` responde 2.x) e cerca de 8 GB de RAM livres (até 4 GB são do reranker, que baixa um modelo de cerca de 2,3 GB na primeira subida).
 - Uma chave de API do [OpenRouter](https://openrouter.ai/) (cobre embeddings e chat), ou da OpenAI.
 
 ## Início rápido
@@ -27,7 +27,7 @@ Da instância vazia a uma resposta com citação sobre os seus próprios documen
    docker compose up -d --build --wait
    ```
 
-   A primeira vez constrói as imagens e leva alguns minutos. O comando volta quando tudo está saudável; confira com `docker compose ps -a` (`migrate` aparece `exited (0)`).
+   A primeira vez constrói as imagens e baixa o modelo do reranker, e leva alguns minutos. O comando volta quando tudo está saudável; confira com `docker compose ps -a` (`migrate` aparece `exited (0)`).
 
 3. **Crie o superadmin e o workspace.** Abra o painel em <http://localhost:5173>. Na tela **Configuração inicial**, informe nome, e-mail (fictício serve, ex.: `voce@example.test`), senha de 12 caracteres ou mais e o **Nome do workspace**, e clique em **Criar conta e entrar**. O painel abre o **Início** do workspace, com a lista **Primeiros passos** (os passos abaixo), e o topo deve mostrar **API: disponível**.
 
@@ -41,7 +41,7 @@ Da instância vazia a uma resposta com citação sobre os seus próprios documen
 
 7. **Configure os níveis de resposta.** Cada pergunta é respondida num nível (**Usuário final**, **Suporte** ou **Desenvolvimento e produto**), e é o nível que tem o modelo. Em **Configurações** > **Níveis de resposta**, em cada um dos três cartões, escolha a **Credencial** do passo 4, informe o **Modelo** `openai/gpt-4.1-mini` (qualquer modelo de chat do OpenRouter serve, com o prefixo do fornecedor) e clique em **Salvar nível**.
 
-8. **Crie o produto.** O produto é o sistema sobre o qual se pergunta. Em **Produtos** > **Novo produto**: **Nome** (ex.: `Meu sistema`) e, em **Coleções**, marque a coleção do passo 5. A **Similaridade mínima** padrão (0,35) é calibrada para o embedding da OpenAI; deixe como está. Clique em **Salvar**.
+8. **Crie o produto.** O produto é o sistema sobre o qual se pergunta. Em **Produtos** > **Novo produto**: **Nome** (ex.: `Meu sistema`) e, em **Coleções**, marque a coleção do passo 5. Deixe a **Similaridade mínima** em branco: vale o padrão do modelo de embedding da coleção. Clique em **Salvar**.
 
 9. **Pergunte.** Em **Chat**, escolha o **Produto** e o **Nível de resposta** (o seu máximo vem marcado), escreva uma pergunta sobre os seus documentos e clique em **Enviar**. A resposta chega em streaming com marcadores `[1]`, `[2]`... e, abaixo dela, as **Fontes**: clique numa para ver o trecho e o arquivo. Uma pergunta sem relação com os documentos volta com "Respondida sem fonte: o assistente ofereceu abrir chamado." Arquivos de código numa pasta só aparecem em **Desenvolvimento e produto**: o usuário final nunca recebe código.
 
@@ -58,6 +58,7 @@ Se o chat responder "sem fonte" para uma pergunta que deveria ter resposta, abra
 - **Chamar os produtos de outro sistema** com uma chave de API (com nível máximo), pela REST ou pelo SDK oficial da OpenAI (`model` = `produto:nível`), com as citações na resposta: [usar-a-api.md](docs/guias/usar-a-api.md).
 - **Usar os produtos no Claude Code, no Cursor ou no Codex** pelo servidor MCP (`/v1/mcp`), com a mesma chave de API: busca com citações sem custo de LLM, resposta pronta e abrir chamado: [conectar-pelo-mcp.md](docs/guias/conectar-pelo-mcp.md).
 - **Pôr o chat no seu site ou sistema** com o widget (uma linha de `<script>` e um elemento, sempre no nível Usuário final, com avaliação, abrir chamado e identidade assinada opcional): [embutir-o-widget.md](docs/guias/embutir-o-widget.md).
+- **Medir a qualidade das respostas** antes e depois de uma mudança, com o conjunto de avaliação sintético: [avaliar-respostas.md](docs/guias/avaliar-respostas.md).
 - Convidar pessoas, papéis, painel da instância, uso e custos e outros fluxos de conta: [primeiro-acesso.md](docs/guias/primeiro-acesso.md).
 
 ## Parar e limpar
@@ -65,7 +66,7 @@ Se o chat responder "sem fonte" para uma pergunta que deveria ter resposta, abra
 ```bash
 docker compose stop      # para os contêineres; `docker compose up -d --wait` retoma
 docker compose down      # remove os contêineres, mantém os dados (volumes)
-docker compose down -v   # apaga também banco, MinIO e clones; deploy/sources/ não é tocada
+docker compose down -v   # apaga também banco, MinIO, clones e o modelo do reranker; deploy/sources/ não é tocada
 ```
 
 Depois de `down -v`, a próxima subida volta à **Configuração inicial**.

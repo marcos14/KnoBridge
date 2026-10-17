@@ -78,10 +78,10 @@ fases:
         commit: 6c6ea8e
       - id: F4.2
         titulo: E2E da stack, guias e documentação
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-17
-        concluida_em: null
+        concluida_em: 2026-10-17
         commit: null
       - id: F4.3
         titulo: Ensaio no Minski contra a linha de base dos ensaios 0005 e 0006
@@ -251,6 +251,13 @@ decisoes:
     decisao: "na F3.1, a disponibilidade do reranker na criação de produto vem do rerank_available do primeiro produto da página; aplicar a sugestão de exclusão faz PATCH só com exclude_globs, sem segundo botão de sincronizar; o total de buscas aparece a partir de 1"
     motivo: "não há rota da instância para a disponibilidade e o backend ignora a opção sem reranker; o PATCH parcial é o que indexacao.md descreve; o cabeçalho já tem Sincronizar agora"
     alternativas: "rota nova de capacidades da instância; botão próprio de sincronizar"
+    adr: null
+  - id: D24
+    data: 2026-10-17
+    por: agente
+    decisao: "KNOBRIDGE_MIN_SIMILARITY_DEFAULTS passa pelo x-backend do compose (padrão {}); o Testar busca ganha a escolha com e sem reranker (a API já tinha rerank/reranked) e, em branco, usa o padrão do modelo sem mostrar o número; o E2E segura o stream depois do primeiro step para ver o Buscando, sem espera por tempo"
+    motivo: "a variável estava no .env.example mas nunca chegava aos contêineres; a coleção não expõe o limiar padrão e copiar a tabela no frontend duplicaria a regra; o fake é rápido demais para o texto da etapa aparecer"
+    alternativas: "deixar a variável só para quem roda fora do Docker; mostrar o número copiado; waitForTimeout"
     adr: null
 pendencias_usuario: []
 ---
@@ -511,6 +518,7 @@ Nenhuma.
 - 2026-10-17 — F4.1 concluída: scripts/eval com corpus sintético do Vértice ERP, 30 perguntas com gabarito, run/compare/copy-corpus e testes contra API falsa (264 testes, 99,9%); rodado contra uma stack isolada com o provedor fake: 5 fontes indexadas, aviso gerado/** na fonte de código, nenhum vazamento, limpeza e níveis restaurados; a validação achou e corrigiu dois defeitos do compose (a01bc74 reranker sem memória, c613051 IP do painel)
 - 2026-10-17 — F3.1 concluída: máximo de buscas e custo com todas as buscas nos níveis, Reordenar trechos e limiar em branco = padrão do modelo no produto, Buscando: … e N buscas no chat e em Conversas, arquivos dominantes com Excluir nas fontes, widget com Buscando mais informações…; frontend 1.753 testes (99,9/98,7), widget 186 (100%, 17,9 KiB gzip)
 - 2026-10-17 — F4.2 iniciada (inclui o Testar busca da coleção com limiar em branco = padrão do modelo, deixado de fora da F3.1)
+- 2026-10-17 — F4.2 concluída: quality.spec.ts (busca em três etapas com Buscando e 3 buscas, reordenação ligada e desligada no chat e no Testar busca, aviso de relatório gerado de 211 trechos excluído pelo painel), E2E da stack verde duas vezes (10/10 cada), Testar busca com limiar em branco = padrão do modelo e com e sem reranker, KNOBRIDGE_MIN_SIMILARITY_DEFAULTS no compose, guia avaliar-respostas.md, guias, README, CHANGELOG e seções 1 e 12 do AGENTS.md raiz; frontend 1.759 testes (99,9/98,7)
 
 ## 8. Encerramento
 

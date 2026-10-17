@@ -28,24 +28,41 @@ describe("searchResult", () => {
     expect(parseMinSimilarity(text)).toBeNull();
   });
 
-  it("test_search_body_uses_default_threshold_when_blank", () => {
-    expect(searchBody({ query: "caixa", minSimilarity: "" })).toEqual({
+  it("test_search_body_sends_null_threshold_when_blank", () => {
+    expect(searchBody({ query: "caixa", minSimilarity: " ", rerank: "default" })).toEqual({
       query: "caixa",
       limit: 10,
-      min_similarity: 0.35,
+      min_similarity: null,
+      rerank: null,
       level: "product_dev",
     });
-    expect(searchBody({ query: "caixa", minSimilarity: "0,6" }).min_similarity).toBe(0.6);
+    expect(
+      searchBody({ query: "caixa", minSimilarity: "0,6", rerank: "default" }).min_similarity,
+    ).toBe(0.6);
+  });
+
+  it.each([
+    ["default", null],
+    ["on", true],
+    ["off", false],
+  ] as const)("test_search_body_maps_rerank_%s", (rerank, sent) => {
+    expect(searchBody({ query: "caixa", minSimilarity: "", rerank }).rerank).toBe(sent);
   });
 
   it("test_search_form_schema_validates_query_and_threshold", () => {
-    const result = searchFormSchema(t).safeParse({ query: "  ", minSimilarity: "2" });
+    const result = searchFormSchema(t).safeParse({
+      query: "  ",
+      minSimilarity: "2",
+      rerank: "default",
+    });
 
     expect(result.error?.issues.map((issue) => issue.message)).toEqual([
       "Digite o que deseja buscar.",
       "Informe um número de 0 a 1.",
     ]);
-    expect(searchFormSchema(t).safeParse({ query: "x", minSimilarity: " " }).success).toBe(true);
+    expect(
+      searchFormSchema(t).safeParse({ query: "x", minSimilarity: " ", rerank: "off" }).success,
+    ).toBe(true);
   });
 
   it("test_result_location_for_files_and_commits", () => {

@@ -6,6 +6,7 @@ import type { Role } from "@/lib/api/auth";
 import {
   COLLECTION_ID,
   makeMe,
+  makeSearchResult,
   makeSource,
   makeWorkspace,
   OTHER_COLLECTION_ID,
@@ -176,7 +177,7 @@ describe("CollectionDetail", () => {
     expect(screen.queryByRole("button", { name: /Editar/ })).not.toBeInTheDocument();
     await search(user, "fechar caixa");
 
-    expect(await screen.findByText("Trechos encontrados: 2")).toBeInTheDocument();
+    expect(await screen.findByText(/^Trechos encontrados: 2./)).toBeInTheDocument();
   });
 });
 
@@ -287,7 +288,13 @@ describe("CollectionDetail search", () => {
     expect(commit).toHaveTextContent("commit abcdef1");
     expect(commit).toHaveTextContent("Fusão 0,0161 · Vetorial — · Texto 0,250");
     expect(recorder.bodies).toEqual([
-      { query: "como fechar o caixa", limit: 10, min_similarity: 0.35, level: "product_dev" },
+      {
+        query: "como fechar o caixa",
+        limit: 10,
+        min_similarity: null,
+        rerank: null,
+        level: "product_dev",
+      },
     ]);
   });
 
@@ -303,15 +310,21 @@ describe("CollectionDetail search", () => {
       await screen.findByText(/Nenhum trecho passou do limiar de similaridade \(0,80\)/),
     ).toHaveRole("status");
     expect(recorder.bodies).toEqual([
-      { query: "previsão do tempo", limit: 10, min_similarity: 0.8, level: "product_dev" },
+      {
+        query: "previsão do tempo",
+        limit: 10,
+        min_similarity: 0.8,
+        rerank: null,
+        level: "product_dev",
+      },
     ]);
   });
 
-  it("test_search_hint_shows_default_threshold", async () => {
+  it("test_search_hint_says_blank_uses_model_default", async () => {
     await renderDetail();
 
     expect(screen.getByLabelText("Similaridade mínima (opcional)")).toHaveAccessibleDescription(
-      "De 0 a 1; em branco, 0,35. Trechos abaixo dela entram só se casarem com todos os termos da busca.",
+      "De 0 a 1; em branco, o padrão do modelo de embedding da coleção. Trechos abaixo dela entram só se casarem com todos os termos da busca.",
     );
   });
 
@@ -327,6 +340,63 @@ describe("CollectionDetail search", () => {
     expect(await screen.findByText("Digite o que deseja buscar.")).toBeInTheDocument();
     expect(screen.getByText("Informe um número de 0 a 1.")).toBeInTheDocument();
     expect(recorder.bodies).toEqual([]);
+  });
+
+  it("test_search_empty_with_blank_threshold_mentions_model_default", async () => {
+    const user = userEvent.setup();
+    server.use(searchRecorder([]).handler);
+    await renderDetail();
+
+    await search(user, "previsão do tempo");
+
+    expect(
+      await screen.findByText(/limiar de similaridade padrão do modelo de embedding da coleção/),
+    ).toHaveRole("status");
+  });
+
+  it("test_search_sends_rerank_choice_and_shows_order_source", async () => {
+    const user = userEvent.setup();
+    const recorder = searchRecorder([makeSearchResult()]);
+    server.use(recorder.handler);
+    await renderDetail();
+
+    expect(screen.getByRole("radio", { name: "Padrão da instância" })).toBeChecked();
+    await user.click(screen.getByRole("radio", { name: "Sem reranker" }));
+    await search(user, "caixa");
+
+    expect(
+      await screen.findByText("Trechos encontrados: 1. Na ordem da busca híbrida, sem reranker."),
+    ).toHaveRole("status");
+    expect(screen.getByRole("list", { name: "Resultados da busca" })).not.toHaveTextContent(
+      "Reranker",
+    );
+
+    const reranked = searchRecorder([makeSearchResult({ rerank_score: 0.9123 })], true);
+    server.use(reranked.handler);
+    await user.click(screen.getByRole("radio", { name: "Com reranker" }));
+    await user.click(screen.getByRole("button", { name: "Buscar" }));
+
+    expect(
+      await screen.findByText("Trechos encontrados: 1. Reordenados pelo reranker."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("list", { name: "Resultados da busca" })).toHaveTextContent(
+      "Fusão 0,0328 · Vetorial 0,52 · Texto 0,120 · Reranker 0,912",
+    );
+    expect(recorder.bodies.map((body) => body.rerank)).toEqual([false]);
+    expect(reranked.bodies.map((body) => body.rerank)).toEqual([true]);
+  });
+
+  it("test_search_without_instance_reranker_shows_error", async () => {
+    const user = userEvent.setup();
+    server.use(searchFails(422, "reranker_unavailable"));
+    await renderDetail();
+
+    await user.click(screen.getByRole("radio", { name: "Com reranker" }));
+    await search(user, "caixa");
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Esta instância não tem reranker configurado.",
+    );
   });
 
   it("test_search_disables_button_while_searching", async () => {

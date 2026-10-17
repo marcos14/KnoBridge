@@ -7,7 +7,7 @@
 - `planos/NNNN-slug.md`: um plano por pedido do usuário (fluxo da seção 3 do `AGENTS.md` da raiz), com andamento, decisões e pendências no frontmatter. Modelo em `planos/0000-modelo.md`; convenções em `planos/AGENTS.md`.
 - `adr/NNNN-titulo-curto.md`: decisões de arquitetura (contexto, decisão, alternativas, consequências, status). Numeração sequencial com 4 dígitos.
 - `specs/`: contratos. OpenAPI, modelo de dados, formato do `.md` de conhecimento e seu frontmatter, protocolo dos conectores, schema JSON do harness, formato do grafo do canvas.
-- `guias/`: como operar. Subir o ambiente, indexar fontes, rodar o harness, receber chamados, usar a API, conectar pelo MCP, embutir o widget e, no futuro, conectar Slack ou Google Chat e criar um conector.
+- `guias/`: como operar. Subir o ambiente, indexar fontes, rodar o harness, receber chamados, usar a API, conectar pelo MCP, embutir o widget, avaliar as respostas e, no futuro, conectar Slack ou Google Chat e criar um conector.
 - `pesquisa/`: comparativos e notas de investigação, com data e links.
 - `eval/` (só na fase 3): conjuntos de perguntas e respostas esperadas, sintéticos.
 

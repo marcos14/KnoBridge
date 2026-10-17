@@ -1,6 +1,8 @@
 # Indexar uma fonte: de uma pasta ou repositório às respostas com citação
 
-> Rascunho v0.1 · 2026-10-11 · Em uso (plano 0003)
+> Rascunho v0.2 · 2026-10-17 · Em uso (planos 0003 e 0011)
+>
+> **Mudanças da v0.2** (plano 0011): o aviso de [arquivos que dominam o índice](#arquivos-que-dominam-o-índice) com a exclusão pelo painel, e "Testar busca" com o limiar padrão do modelo de embedding e a comparação com e sem reranker.
 
 Passo a passo pelo painel para pôr conhecimento no KnoBridge: montar a pasta de fontes, cadastrar um provedor com embeddings (OpenRouter), criar uma coleção, cadastrar uma fonte Git ou de pasta, sincronizar, acompanhar as execuções, testar a busca e ligar a coleção a um produto, até ver as citações no chat.
 
@@ -129,6 +131,25 @@ docker compose logs -f worker
 
 O histórico do workflow `ingestion-<id da fonte>` fica na Temporal UI (<http://localhost:8080>, porta padrão).
 
+#### Arquivos que dominam o índice
+
+Relatórios gerados, exportações em JSON, código minificado e snapshots costumam virar centenas de trechos parecidos, que ocupam as vagas das respostas sem acrescentar nada (no [ensaio com dados reais](../pesquisa/0001-ensaio-minski.md), 34 relatórios gerados eram 23% dos trechos). Ao fim de cada sincronização concluída de uma fonte de pasta ou Git, o KnoBridge procura esses grupos ([indexacao.md](../specs/indexacao.md#arquivos-que-dominam-o-índice)):
+
+| Grupo | Quando aparece |
+|---|---|
+| Arquivo | Um arquivo com ao menos 5% dos trechos da fonte e 50 trechos ou mais. |
+| Diretório | Um diretório (com tudo abaixo dele) com ao menos 15% dos trechos, 200 trechos ou mais, dois arquivos ou mais e três vezes mais trechos por arquivo que a média da fonte. |
+| Arquivo gerado conhecido | Arquivos com cara de gerados (`*.min.js`, `*.min.css`, `*.map`, `*.snap`, `coverage/`, `__generated__/`, `*.generated.*`, `*.g.cs`, `*.Designer.cs`, `*_pb2.py`, `*.pb.go`) com ao menos 2% dos trechos e 20 trechos ou mais. |
+
+Fontes com menos de 200 trechos nunca recebem o aviso. Quando há grupos:
+
+1. A lista de **Fontes** mostra o selo "1 grupo domina o índice" (ou "N grupos…") na linha da fonte.
+2. O detalhe da fonte mostra a seção **Arquivos que dominam o índice**, com o padrão de cada grupo, o tipo, os arquivos, os trechos e a parte do índice, e a data do cálculo.
+3. Se o grupo não interessa às respostas, quem edita a fonte (editor ou acima) clica em **Excluir** na linha: o padrão vai para as exclusões da fonte (o mesmo campo de globs de exclusão do passo 4) e a linha passa a dizer "Já excluído; some na próxima sincronização".
+4. Clique em **Sincronizar agora**. A sincronização tira os trechos dos arquivos excluídos do índice e recalcula o aviso, que some quando nada mais domina.
+
+Se o grupo for útil (um JSON de configuração que as pessoas perguntam, por exemplo), deixe como está: o aviso é só uma sugestão e não muda a busca. Para desfazer uma exclusão, edite a fonte, apague o padrão dos globs de exclusão e sincronize de novo.
+
 ### 7. Testar a busca
 
 1. Vá em **Coleções**, abra a coleção e use **Testar busca**.
@@ -136,10 +157,12 @@ O histórico do workflow `ingestion-<id da fonte>` fica na Temporal UI (<http://
 3. Cada resultado mostra:
    - o documento, o caminho com as linhas ou o commit;
    - o símbolo e a linguagem, em código;
-   - as pontuações: fusão, vetorial e texto;
+   - as pontuações: fusão, vetorial e texto e, com reordenação, a do reranker;
    - o trecho.
 
-Um trecho entra quando a similaridade vetorial alcança o limiar (padrão 0,35, calibrado pelo [ensaio com dados reais](../pesquisa/0001-ensaio-minski.md)) **ou** quando ele contém todos os termos da busca. Nada é gravado. Use esta tela para calibrar a **Similaridade mínima** antes de ligar a coleção ao produto: se perguntas relacionadas voltam vazias, baixe o limiar; se aparecem trechos sem relação, suba.
+Um trecho entra quando a similaridade vetorial alcança o limiar **ou** quando ele contém todos os termos da busca. Com **Similaridade mínima** em branco, o limiar é o padrão do modelo de embedding da coleção (0,35 no `text-embedding-3-small`, 0,60 no `gemini-embedding-001`; tabela em [produtos-e-niveis.md](produtos-e-niveis.md#similaridade-mínima-padrão-do-modelo-de-embedding)). Nada é gravado. Use esta tela para calibrar a **Similaridade mínima** antes de ligar a coleção ao produto: se perguntas relacionadas voltam vazias, informe um limiar mais baixo; se aparecem trechos sem relação, um mais alto.
+
+Em **Reordenação**, **Padrão da instância** reordena os melhores trechos com o reranker quando a instância tem um; **Com reranker** e **Sem reranker** forçam um ou outro, para comparar a ordem na mesma pergunta antes de decidir a opção **Reordenar trechos** do produto. A linha do total diz se os trechos foram reordenados. **Com reranker** numa instância sem reranker mostra o erro "Esta instância não tem reranker configurado".
 
 ### 8. Ligar a coleção ao produto
 
@@ -165,7 +188,7 @@ Sem nenhuma coleção marcada, o produto responde sempre "sem fonte".
 - **Coleções** mostra, por coleção, a quantidade de fontes, documentos e trechos.
 - A execução da fonte termina **Concluída**, com documentos novos e trechos maiores que zero. Uma segunda sincronização sem mudanças na fonte termina com zero documentos novos e zero tokens.
 - **Testar busca** devolve trechos do material para uma pergunta relacionada e volta vazio para uma sem relação.
-- Se poucos arquivos ou um diretório ocuparem uma parte desproporcional dos trechos (relatórios gerados, código minificado), a lista de fontes mostra o selo "… dominam o índice" e o detalhe da fonte, a seção **Arquivos que dominam o índice**, com a participação de cada grupo e o padrão sugerido. Quem edita a fonte clica em **Excluir** para acrescentar o padrão às exclusões e depois em **Sincronizar agora**: os trechos saem do índice.
+- Se poucos arquivos ou um diretório ocuparem uma parte desproporcional dos trechos, a lista de fontes mostra o selo "… domina(m) o índice" e o detalhe da fonte, a seção **Arquivos que dominam o índice** ([passo 6](#arquivos-que-dominam-o-índice)). Depois de **Excluir** e sincronizar, a seção some.
 - **Auditoria** (owner/admin) registra a criação da coleção, da fonte e as sincronizações pedidas.
 
 ## Como desfazer
@@ -196,7 +219,8 @@ Sem nenhuma coleção marcada, o produto responde sempre "sem fonte".
 - **"O serviço de sincronização está indisponível"** (`sync_unavailable`): o Temporal não respondeu. Confira `docker compose ps temporal worker`. Fontes salvas nesse meio tempo têm o agendamento acertado quando o worker sobe de novo.
 - **"Esta fonte já está sincronizando"**: só uma execução por fonte roda de cada vez. Espere terminar ou cancele. Disparos agendados nesse meio tempo são pulados sem erro.
 - **Um arquivo não foi indexado**: veja se ele é ignorado pelo `.gitignore`, pelos globs, pelo tamanho (2 MiB para texto, 20 MiB para PDF/Office) ou por ser binário. No Git, só entra o que está commitado na branch: mudanças locais não commitadas não aparecem.
-- **O chat responde "sem fonte" para uma pergunta que deveria ter resposta**: confira se a coleção está marcada no produto, se a execução concluiu, se **Testar busca** encontra trechos e se o nível da conversa alcança o nível mínimo da fonte (código e chamados não chegam ao Usuário final). Se só aparecerem trechos com pontuação vetorial abaixo do limiar, baixe a **Similaridade mínima** do produto.
+- **O chat responde "sem fonte" para uma pergunta que deveria ter resposta**: confira se a coleção está marcada no produto, se a execução concluiu, se **Testar busca** encontra trechos e se o nível da conversa alcança o nível mínimo da fonte (código e chamados não chegam ao Usuário final). Se só aparecerem trechos com pontuação vetorial abaixo do limiar, informe uma **Similaridade mínima** mais baixa no produto.
+- **As respostas citam sempre o mesmo relatório ou arquivo gerado**: ele domina o índice. Veja a seção **Arquivos que dominam o índice** no detalhe da fonte e exclua o padrão ([passo 6](#arquivos-que-dominam-o-índice)).
 
 ## Referências
 

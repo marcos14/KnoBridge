@@ -9,6 +9,7 @@ export type CollectionInput = components["schemas"]["CollectionCreate"];
 export type CollectionChanges = components["schemas"]["CollectionUpdate"];
 export type SearchRequest = components["schemas"]["SearchRequest"];
 export type SearchResult = components["schemas"]["SearchResult"];
+export type SearchResponse = components["schemas"]["SearchResponse"];
 export type CollectionSync = components["schemas"]["CollectionSyncOut"];
 export type SyncSkipReason = components["schemas"]["SkipReason"];
 
@@ -141,8 +142,8 @@ export function useDeleteCollection(workspaceId: string) {
 
 /**
  * `POST /v1/workspaces/{id}/collections/{collection_id}/search` (any member): the chunks that best
- * answer the query, best first, with their scores; an empty list when nothing reaches the
- * threshold. Changes nothing, so it refreshes nothing.
+ * answer the query, best first, with their scores (an empty list when nothing reaches the
+ * threshold) and whether the reranker reordered them. Changes nothing, so it refreshes nothing.
  */
 export function useSearchCollection(workspaceId: string, collectionId: string) {
   return useMutation({
@@ -152,6 +153,6 @@ export function useSearchCollection(workspaceId: string, collectionId: string) {
           params: { path: { workspace_id: workspaceId, collection_id: collectionId } },
           body,
         }),
-      ).results,
+      ),
   });
 }

@@ -18,4 +18,4 @@
 
 **Como testar** (de `scripts/`): `uv run pytest tests/test_eval_*.py` (o gate de 95% vale para o projeto inteiro: `uv run pytest`). Contra a stack: `uv run python -m eval copy-corpus` e `uv run python -m eval run --help`.
 
-**Leia também**: [scripts/AGENTS.md](../AGENTS.md); [docs/specs/avaliacao.md](../../docs/specs/avaliacao.md); [docs/specs/api-publica.md](../../docs/specs/api-publica.md).
+**Leia também**: [scripts/AGENTS.md](../AGENTS.md); [docs/specs/avaliacao.md](../../docs/specs/avaliacao.md); o guia [docs/guias/avaliar-respostas.md](../../docs/guias/avaliar-respostas.md) (stack isolada, `run`, relatório e `compare`); [docs/specs/api-publica.md](../../docs/specs/api-publica.md).

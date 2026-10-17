@@ -6,7 +6,7 @@
 
 Contrato do **conjunto de avaliação sintético** do KnoBridge e do roteiro que o roda contra uma stack: o corpus, o formato das perguntas com gabarito, como uma resposta é julgada, as métricas, o relatório e a comparação entre duas execuções. Serve para medir o antes e o depois de cada mudança na qualidade das respostas (reranker, [busca em etapas](chat.md#busca-em-etapas), limiar por modelo, instruções dos níveis) sem dados de terceiros no repositório (regra 9 do [AGENTS.md](../../AGENTS.md)). A decisão está no [plano 0011](../planos/0011-qualidade-da-resposta.md) (D5) e no [ADR 0010](../adr/0010-busca-em-etapas-e-reranker.md).
 
-Código: `scripts/eval/` (F4.1; [AGENTS.md](../../scripts/eval/AGENTS.md)), um pacote do projeto `knobridge-scripts`, rodado de dentro de `scripts/` com `uv run python -m eval`, com a dependência nova `httpx` (cliente HTTP e `MockTransport` dos testes), fixada no `uv.lock`. Guia de uso: `docs/guias/avaliar-respostas.md` (F4.2).
+Código: `scripts/eval/` (F4.1; [AGENTS.md](../../scripts/eval/AGENTS.md)), um pacote do projeto `knobridge-scripts`, rodado de dentro de `scripts/` com `uv run python -m eval`, com a dependência nova `httpx` (cliente HTTP e `MockTransport` dos testes), fixada no `uv.lock`. Guia de uso: [avaliar-respostas.md](../guias/avaliar-respostas.md) (F4.2).
 
 ## Princípios
 
