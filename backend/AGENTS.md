@@ -40,7 +40,7 @@ backend/
 - SQLAlchemy 2 tipado e async; uma sessão por requisição ou activity; `workspace_id` em toda tabela de dados; RLS ativada nas migrações; nenhuma consulta sem escopo de workspace (helper central obrigatório, lint próprio quando possível).
 - Alembic: uma migração por mudança de modelo, reversível, com teste de upgrade e downgrade.
 - Temporal: workflows determinísticos (sem IO), IO só em activities; activities idempotentes com política de retry explícita; nomes de workflow e activity estáveis (versione quando mudar).
-- Provedores externos sempre atrás de `Protocol` em `llm/`, `connectors/`, `channels/`. Adaptador novo = implementar a interface e passar na suíte de contrato correspondente.
+- Provedores externos sempre atrás de `Protocol` em `llm/`, `connectors/`, `channels/`. `LLMProvider` com chamada de ferramentas (`ToolSpec`, `ToolCall`, `ToolChoice`, eventos `ToolCallStart`/`ToolCallEvent`, `ToolsUnsupportedError` `provider_tools_unsupported`) nos adaptadores OpenAI/OpenRouter e Anthropic; o `FakeLLMProvider` chama ferramentas por roteiro (construtor) ou pelos marcadores `[[buscar: ...]]`. Adaptador novo = implementar a interface e passar na suíte de contrato correspondente.
 - Harness: subprocesso somente leitura, `--json-schema` (Claude Code) ou `--output-schema` (Codex), orçamento e timeout por job, log JSONL por execução, detecção de limite de franquia com espera, verificação mecânica de `arquivo:linhas` antes de escrever qualquer `.md`. Item sem fonte válida é rejeitado e registrado. Ver seção 7.1.1 da visão.
 - Logging com `structlog` (ou equivalente) em JSON; nunca `print` fora de `cli/`.
 - Settings via `pydantic-settings`, num único módulo em `core/`.

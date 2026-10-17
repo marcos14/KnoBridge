@@ -22,6 +22,8 @@ from knobridge.llm.provider import (
     ChatUsage,
     LLMProvider,
     TextDelta,
+    ToolChoice,
+    ToolSpec,
 )
 
 
@@ -29,7 +31,13 @@ class UnreachableLLMProvider:
     """Fails the test if anything calls it (rule 8: no LLM call without sources)."""
 
     def stream_chat(
-        self, messages: Sequence[ChatMessage], model: str, params: ChatParams | None = None
+        self,
+        messages: Sequence[ChatMessage],
+        model: str,
+        params: ChatParams | None = None,
+        *,
+        tools: Sequence[ToolSpec] | None = None,
+        tool_choice: ToolChoice = "auto",
     ) -> AsyncIterator[ChatEvent]:
         raise AssertionError("the LLM must not be called")
 
@@ -48,6 +56,8 @@ class StreamCall:
     messages: list[ChatMessage]
     model: str
     params: ChatParams | None
+    tools: tuple[ToolSpec, ...] = ()
+    tool_choice: ToolChoice = "auto"
 
 
 @dataclass
@@ -72,9 +82,17 @@ class ScriptedLLMProvider:
     release: asyncio.Event = field(default_factory=asyncio.Event)
 
     async def stream_chat(
-        self, messages: Sequence[ChatMessage], model: str, params: ChatParams | None = None
+        self,
+        messages: Sequence[ChatMessage],
+        model: str,
+        params: ChatParams | None = None,
+        *,
+        tools: Sequence[ToolSpec] | None = None,
+        tool_choice: ToolChoice = "auto",
     ) -> AsyncIterator[ChatEvent]:
-        self.calls.append(StreamCall(list(messages), model, params))
+        self.calls.append(
+            StreamCall(list(messages), model, params, tuple(tools or ()), tool_choice)
+        )
         for sent, delta in enumerate(self.deltas):
             if self.error is not None and sent == self.fail_after:
                 raise self.error
@@ -106,7 +124,13 @@ class FailingLLMProvider:
         self.closed = False
 
     async def stream_chat(
-        self, messages: Sequence[ChatMessage], model: str, params: ChatParams | None = None
+        self,
+        messages: Sequence[ChatMessage],
+        model: str,
+        params: ChatParams | None = None,
+        *,
+        tools: Sequence[ToolSpec] | None = None,
+        tool_choice: ToolChoice = "auto",
     ) -> AsyncIterator[ChatEvent]:
         raise self.error
         yield  # unreachable; only makes this method an async generator

@@ -8,6 +8,7 @@ part of the API key. No error uses 401, which the panel reads as "your session e
 from __future__ import annotations
 
 from http import HTTPStatus
+from typing import cast
 
 from knobridge.core.errors import KnoBridgeError
 
@@ -46,6 +47,36 @@ class ProviderRequestError(LLMProviderError):
     """The provider rejected the request itself (unknown model, invalid parameters)."""
 
     code = "provider_request_failed"
+
+
+class ToolsUnsupportedError(ProviderRequestError):
+    """The provider refused a request with tools because the model cannot call them."""
+
+    code = "provider_tools_unsupported"
+
+    def __init__(self, *, provider: str, status: int) -> None:
+        super().__init__("The model does not support tool calls.", provider=provider, status=status)
+
+
+def tools_refused(status: int, error_body: object) -> bool:
+    """Whether a 400 or 404 refused the request because of its tools: the error body's
+    ``param``, ``code`` or ``message`` names them (OpenAI: 400 with ``param`` ``tools``;
+    OpenRouter: 404 when no endpoint of the model takes tools).
+
+    Only classifies the refusal: the text itself is never repeated or logged.
+    """
+    if status not in (HTTPStatus.BAD_REQUEST, HTTPStatus.NOT_FOUND):
+        return False
+    if not isinstance(error_body, dict):
+        return False
+    body = cast(dict[str, object], error_body)
+    nested = body.get("error")
+    if isinstance(nested, dict):
+        body = cast(dict[str, object], nested)
+    return any(
+        isinstance(value, str) and "tool" in value.lower()
+        for value in (body.get("param"), body.get("code"), body.get("message"))
+    )
 
 
 def error_for_status(status: int, provider: str) -> LLMProviderError:

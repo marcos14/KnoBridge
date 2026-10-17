@@ -230,7 +230,7 @@ O histórico das próximas perguntas não guarda as rodadas de ferramenta: só a
 
 O `FakeLLMProvider` (`llm/fake.py`, F2.2) continua determinístico e sem rede, e ganha um roteiro de chamadas de ferramenta, para os testes e para o E2E da stack:
 
-- **Pelo construtor** (testes): `FakeLLMProvider(script=[...])`, uma lista de passos, um por rodada: `ToolCallStep(query)` (emite `ToolCallStart` e `ToolCallEvent` da primeira ferramenta oferecida, com `{"query": ...}`), `TextStep(text)` (emite o texto em pedaços por palavra) ou `ErrorStep(error)` (levanta o erro). Rodadas além do roteiro respondem o texto padrão.
+- **Pelo construtor** (testes): `FakeLLMProvider(script=[...])`, uma lista de passos, um por chamada a `stream_chat` (a instância guarda a posição): `ToolCallStep(query)` (emite `ToolCallStart` e `ToolCallEvent` da primeira ferramenta oferecida, com `{"query": ...}`, mesmo com `tool_choice: none`, para simular o provedor que ignora o `none`; sem ferramentas oferecidas, responde o texto padrão), `TextStep(text)` (emite o texto em pedaços por palavra) ou `ErrorStep(error)` (levanta o erro). Rodadas além do roteiro respondem o texto padrão. Com roteiro, os marcadores da pergunta não valem.
 - **Pela pergunta** (stack e E2E, onde não há como injetar o construtor): cada marcador `[[buscar: <consulta>]]` na última mensagem `user` é uma chamada roteirizada, na ordem. Com ferramentas oferecidas e `tool_choice` diferente de `none`, se o número de resultados de ferramenta já presentes nas mensagens (`k`) for menor que o número de marcadores, a rodada chama a ferramenta com a consulta do marcador `k + 1`; senão, responde o texto padrão (`Fake reply to: <pergunta>`, com os marcadores). Sem marcadores, com `tool_choice: required`, chama a ferramenta com a pergunta sem os marcadores; com `auto`, responde texto.
 - Os ids das chamadas são `fake-call-<n>` (n a partir de 1). O uso de cada rodada conta as palavras das mensagens (inclusive os resultados de ferramenta) e da saída, como hoje.
 
@@ -252,7 +252,7 @@ A interface `LLMProvider` (`llm/provider.py`, F2.2) ganha ferramentas sem mudar 
 | Evento | Quando |
 |---|---|
 | `TextDelta(text)` | Como hoje, assim que o texto chega. |
-| `ToolCallStart(id, name)` | Assim que o provedor começa um bloco de chamada (OpenAI: o primeiro pedaço de `delta.tool_calls[i]` com `id`; Anthropic: `content_block_start` com `type: tool_use`). |
+| `ToolCallStart(id, name)` | Assim que o provedor começa um bloco de chamada (OpenAI: o primeiro pedaço de cada `index` em `delta.tool_calls`, com `id` e `function.name`; um `id` novo no mesmo `index` também abre outra chamada, porque alguns provedores do OpenRouter mandam todas com `index` 0; servidor compatível que omite o `id` recebe `call_<index>`; Anthropic: `content_block_start` com `type: tool_use`). |
 | `ToolCallEvent(call)` | A chamada completa, com os pedaços de `arguments` juntados, no fim do bloco (Anthropic: `content_block_stop`; OpenAI: fim do stream ou começo da chamada seguinte), na ordem das chamadas. |
 | `ChatUsage(input_tokens, output_tokens)` | Sempre o último, uma vez por chamada, como hoje. |
 
@@ -270,7 +270,7 @@ A interface `LLMProvider` (`llm/provider.py`, F2.2) ganha ferramentas sem mudar 
 
 #### Recusa por ferramentas e custo
 
-- `ToolsUnsupportedError` só é levantado quando a requisição levava `tools` e o provedor recusou com 400 ou 404 cujo corpo de erro (`error.param`, `error.code` ou `error.message`) menciona `tool` (sem diferenciar maiúsculas). Exemplos: o OpenRouter responde 404 quando nenhum provedor do modelo aceita ferramentas; a OpenAI responde 400 com `param` `tools` em modelos sem suporte. A mensagem do provedor serve só para classificar; nunca é repetida nem logada. A Anthropic aceita ferramentas em todos os modelos de chat.
+- `ToolsUnsupportedError` só é levantado quando a requisição levava `tools` e o provedor recusou com 400 ou 404 cujo corpo de erro (`error.param`, `error.code` ou `error.message`) menciona `tool` (sem diferenciar maiúsculas). Exemplos: o OpenRouter responde 404 quando nenhum provedor do modelo aceita ferramentas; a OpenAI responde 400 com `param` `tools` em modelos sem suporte. A mensagem do provedor serve só para classificar; nunca é repetida nem logada. A regra vale nos dois adaptadores (`errors.tools_refused`): a Anthropic aceita ferramentas em todos os modelos de chat, mas um gateway na API dela (`base_url`) pode recusar. Sem `tools` na requisição, o mesmo erro continua `provider_request_failed`.
 - Cada chamada termina no seu `ChatUsage`; quem soma é a rodada ([Custo e canal por resposta](#custo-e-canal-por-resposta)). O preço é o do modelo do nível, igual para todas as rodadas.
 
 ## Estados das mensagens

@@ -275,6 +275,7 @@ class ChatService:
                         parts.append(event.text)
                         yield DeltaEvent(event.text)
                     else:
+                        assert isinstance(event, ChatUsage)  # noqa: S101 - no tools offered
                         usage = event
                 status = MessageStatus.COMPLETED
             except LLMProviderError as exc:

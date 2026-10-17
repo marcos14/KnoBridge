@@ -35,10 +35,10 @@ fases:
         commit: null
       - id: F2.2
         titulo: Chamada de ferramentas nos provedores de LLM (OpenAI, Anthropic, OpenRouter e fake)
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-17
-        concluida_em: null
+        concluida_em: 2026-10-13
         commit: null
       - id: F2.3
         titulo: Rodada de chat em várias etapas em todos os canais, com limite por nível
@@ -153,6 +153,27 @@ decisoes:
     decisao: "ordem das migrações conforme a integração: F2.1 = 0022, F2.4 = 0023, F2.3 = 0024 (a F2.3 roda depois da F2.1 e da F2.4); cada agente ajusta os números nas specs"
     motivo: "F2.1, F2.2 e F2.4 em paralelo"
     alternativas: "esperar para numerar"
+    adr: null
+  - id: D10
+    data: 2026-10-17
+    por: usuario
+    decisao: "com a busca inicial sem nenhuma fonte, o modelo do nível é chamado para reformular e buscar de novo antes do não sei, em todos os canais (inclusive o widget); a resposta sem fonte passa a ter custo de LLM e entra em Uso e custos (regra 8: sem fonte, nenhum texto do LLM)"
+    motivo: "pode achar o que a primeira formulação perdeu"
+    alternativas: "manter não sei imediato sem LLM; reformular só fora do widget"
+    adr: null
+  - id: D11
+    data: 2026-10-17
+    por: usuario
+    decisao: "produtos com similaridade mínima exatamente 0,35 passam a seguir o padrão do modelo de embedding da coleção (nulo); valores ajustados à mão ficam"
+    motivo: "quem nunca mexeu ganha o valor certo para o modelo (ensaio 0004)"
+    alternativas: "manter 0,35 nos existentes"
+    adr: null
+  - id: D12
+    data: 2026-10-13
+    por: agente
+    decisao: "F2.2: ToolChoice como Literal (auto, required, none); OpenAI envia tools sem strict, tool_choice e parallel_tool_calls=false só com ferramentas e abre nova chamada por index ou por id novo (backends do OpenRouter mandam tudo no index 0); Anthropic com input_schema e disable_parallel_tool_use, resultados consecutivos num turno user; ToolsUnsupportedError pelos dois adaptadores via tools_refused, só quando havia ferramentas; o fake roteirizado avança um passo por chamada e ToolCallStep chama a ferramenta mesmo com tool_choice none; os adaptadores não somam custo (cada chamada termina no seu ChatUsage e a rodada soma na F2.3); um assert de tipo em conversations/chat.py até a F2.3 reescrever o laço"
+    motivo: "spec chat.md conferida contra os SDKs fixados"
+    alternativas: "enum; somar custo no adaptador"
     adr: null
 pendencias_usuario: []
 ---
@@ -403,6 +424,7 @@ Nenhuma.
 - 2026-10-17 — F2.1 iniciada (agente em worktree).
 - 2026-10-17 — F2.2 iniciada (agente em worktree).
 - 2026-10-17 — F2.4 iniciada (agente em worktree).
+- 2026-10-13 — F2.2 concluída: chamada de ferramentas nos provedores OpenAI/OpenRouter, Anthropic e fake, com streaming e ToolsUnsupportedError; corpo sem ferramentas idêntico ao de hoje; gates do agente: ruff, pyright e 244 testes direcionados, módulos de llm/ em 100%; orquestrador: ruff, pyright e tests/llm na integração (a suíte inteira roda na próxima integração)
 
 ## 8. Encerramento
 
