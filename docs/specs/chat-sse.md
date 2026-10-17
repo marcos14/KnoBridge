@@ -1,6 +1,8 @@
 # Chat em streaming (SSE)
 
-> Rascunho v0.10 · 2026-10-14 · Plano 0002, F4.4 (v0.1; v0.2, F4.5: resposta `streaming` órfã lida como `interrupted`; v0.3, plano 0003 F4.2: campos de localização nas citações e erros do provedor de embedding antes do stream; v0.4, plano 0003 F6.1: autor e data nas citações de commit; v0.5, plano 0004 F2.4: citação de item de conhecimento com confiança e evidências; v0.6, plano 0005 F1.1: citação de chamado, implementada na F2.3; v0.7, plano 0005 F3.2: `ticket_requests_enabled` no `done`; v0.8, plano 0008 F1.1: `cost_usd` no `done`; v0.9, plano 0009 F1.1: produto e nível no `citations`, citação de card; v0.10, plano 0010 F1.1: os mesmos eventos no widget)
+> Rascunho v0.11 · 2026-10-17 · Plano 0002, F4.4 (v0.1; v0.2, F4.5: resposta `streaming` órfã lida como `interrupted`; v0.3, plano 0003 F4.2: campos de localização nas citações e erros do provedor de embedding antes do stream; v0.4, plano 0003 F6.1: autor e data nas citações de commit; v0.5, plano 0004 F2.4: citação de item de conhecimento com confiança e evidências; v0.6, plano 0005 F1.1: citação de chamado, implementada na F2.3; v0.7, plano 0005 F3.2: `ticket_requests_enabled` no `done`; v0.8, plano 0008 F1.1: `cost_usd` no `done`; v0.9, plano 0009 F1.1: produto e nível no `citations`, citação de card; v0.10, plano 0010 F1.1: os mesmos eventos no widget; v0.11, plano 0011 F1.1: evento `step` e `steps` no `done`)
+>
+> **Mudanças da v0.11** (plano 0011, F1.1; implementação na F2.3; [ADR 0010](../adr/0010-busca-em-etapas-e-reranker.md)): com a [busca em etapas](chat.md#busca-em-etapas), o stream pode começar com eventos [`step`](#step), um por busca feita pelo modelo (com a consulta reformulada, nunca com o conteúdo dos trechos), antes do `citations`; o `citations` traz as fontes de todas as etapas; o `done` ganha `steps` e passa a somar tokens e custo de todas as chamadas ao LLM; uma resposta `no_source` depois de etapas tem `model`, tokens e custo. No widget, o `step` vai sem a consulta. Clientes devem ignorar eventos que não conhecem.
 >
 > **Mudanças da v0.10** (plano 0010, F1.1; implementação na F3.2): os mesmos eventos servem à conversa do **widget** (`POST /v1/widget/{public_key}/conversations/{id}/messages`, [widget.md](widget.md)), com o `done` sem modelo, tokens e custo e o `ticket_requests_enabled` do widget ([No canal widget](#no-canal-widget)). O MCP não usa SSE: `ask` devolve a resposta inteira, com as mesmas citações ([mcp.md](mcp.md#ask)).
 >
@@ -38,6 +40,9 @@ Antes do primeiro byte do stream, a pergunta e o ponto de partida da resposta j�
 Resposta `200` com `Content-Type: text/event-stream`, `Cache-Control: no-cache` e `X-Accel-Buffering: no`. Cada evento tem uma linha `event:` com o nome e uma linha `data:` com um objeto JSON (UTF-8, numa linha só), seguidas de uma linha em branco:
 
 ```text
+event: step
+data: {"message_id":"…","step":2,"max_steps":3,"query":"tabela de fechamento do caixa"}
+
 event: citations
 data: {"message_id":"…","user_message_id":"…","product_id":"…","level":"support","citations":[…]}
 
@@ -45,7 +50,7 @@ event: delta
 data: {"text":"Para fechar o caixa, "}
 
 event: done
-data: {"message_id":"…","status":"completed","model":"gpt-4.1-mini","input_tokens":812,"output_tokens":64,"cost_usd":0.000427,"latency_ms":2310,"ticket_requests_enabled":false}
+data: {"message_id":"…","status":"completed","model":"gpt-4.1-mini","input_tokens":1812,"output_tokens":84,"cost_usd":0.000859,"latency_ms":4310,"ticket_requests_enabled":false,"steps":2}
 ```
 
 Como a rota é `POST`, o cliente lê o corpo com `fetch` e um leitor de stream (o `EventSource` do navegador só faz `GET`). O servidor não manda `id:` nem `retry:`; não há retomada: se a conexão cair, o cliente recarrega a conversa por `GET .../conversations/{id}`.
@@ -54,11 +59,27 @@ Como a rota é `POST`, o cliente lê o corpo com `fetch` e um leitor de stream (
 
 Sempre nesta ordem:
 
-1. Um `citations`.
-2. Zero ou mais `delta`.
-3. Exatamente um evento final: `done` ou `error`. Depois dele o stream termina.
+1. Zero ou mais `step` (v0.11; só quando o modelo busca de novo, [chat.md](chat.md#busca-em-etapas)).
+2. Um `citations`, exceto quando um erro acontece antes dele (abaixo).
+3. Zero ou mais `delta`.
+4. Exatamente um evento final: `done` ou `error`. Depois dele o stream termina.
+
+Desde a v0.11, com a ferramenta oferecida, o `citations` só sai quando a rodada decide responder com texto. Um erro do provedor antes disso (numa rodada de ferramenta ou na primeira rodada, antes de qualquer texto) gera o `error` direto, depois dos `step` que houver, sem `citations`. Os clientes não podem depender de o primeiro evento ser `citations`: o `message_id` vem também em cada `step` e no `error`. Sem a ferramenta (busca única), a sequência é a da v0.10.
 
 ## Eventos
+
+### `step`
+
+Desde a v0.11. Um por etapa feita pela ferramenta `search_sources` (a busca inicial, etapa 1, não gera evento), emitido **quando a busca começa**, para o cliente mostrar "Buscando: …" enquanto ela roda. Uma chamada de ferramenta recusada (consulta inválida, segunda chamada da rodada) não é etapa e não gera evento.
+
+| Campo | Tipo | Descrição |
+|---|---|---|
+| `message_id` | uuid | Id da mensagem do assistente desta resposta (a mesma do `citations` e do `done`). |
+| `step` | inteiro | Número da etapa, de 2 a `max_steps`. |
+| `max_steps` | inteiro | O máximo de etapas do nível da conversa (de 2 a 6 quando há evento). |
+| `query` | texto ou `null` | A consulta reformulada pelo modelo, até 500 caracteres. `null` no canal `widget` ([No canal widget](#no-canal-widget)). **Nunca** traz conteúdo, títulos nem quantidade dos trechos encontrados. |
+
+O painel mostra, enquanto a resposta não começa, "Buscando: <consulta>" (a última recebida) e, no fim, o total de buscas pelo `steps` do `done`.
 
 ### `citations`
 
@@ -68,7 +89,7 @@ Sempre nesta ordem:
 | `user_message_id` | uuid | Id da mensagem com a pergunta. |
 | `product_id` | uuid | Produto da conversa (v0.9). |
 | `level` | `end_user`, `support` ou `product_dev` | Nível da conversa, que decidiu as fontes, as instruções e o modelo desta resposta (v0.9). |
-| `citations` | lista | Fontes numeradas da resposta; vazia quando não há fonte. |
+| `citations` | lista | Fontes numeradas da resposta; vazia quando não há fonte. Desde a v0.11, as de todas as etapas, na numeração acumulada ([chat.md](chat.md#citações-acumuladas)). |
 
 Cada citação:
 
@@ -115,10 +136,11 @@ Os campos marcados com v0.3, v0.4, v0.5, v0.6 e v0.9 são aditivos e compatívei
 |---|---|---|
 | `message_id` | uuid | Id da mensagem do assistente. |
 | `status` | `completed` ou `no_source` | `completed`: o LLM respondeu com base nas fontes. `no_source`: veja abaixo. |
-| `model` | texto ou `null` | Modelo que respondeu; `null` em `no_source`. |
-| `input_tokens`, `output_tokens` | inteiro ou `null` | Uso informado pelo provedor; `null` quando ele não informa e em `no_source`. |
-| `cost_usd` | número ou `null` | Custo estimado em US$ (6 casas) pela tabela de preços de chat; `null` em `no_source`, sem tokens ou com modelo sem preço (v0.8; [chat.md](chat.md#custo-e-canal-por-resposta)). |
-| `latency_ms` | inteiro | Do recebimento da pergunta ao fim da resposta (relógio do servidor). |
+| `model` | texto ou `null` | Modelo do nível que respondeu; `null` em `no_source` sem LLM (desde a v0.11, preenchido em `no_source` depois de etapas, porque o LLM foi chamado para buscar). |
+| `input_tokens`, `output_tokens` | inteiro ou `null` | Uso informado pelo provedor, somado em todas as chamadas da resposta (v0.11); `null` quando alguma chamada não informa e em `no_source` sem LLM. |
+| `cost_usd` | número ou `null` | Custo estimado em US$ (6 casas) pela tabela de preços de chat, somado em todas as chamadas (v0.11); `null` em `no_source` sem LLM, sem tokens ou com modelo sem preço (v0.8; [chat.md](chat.md#custo-e-canal-por-resposta)). |
+| `latency_ms` | inteiro | Do recebimento da pergunta ao fim da resposta (relógio do servidor), com todas as etapas. |
+| `steps` | inteiro | Etapas (buscas) feitas na resposta, inclusive a inicial: `0` quando o produto não tem coleção, `1` na busca única (v0.11; [chat.md](chat.md#termos)). |
 | `ticket_requests_enabled` | booleano | O produto oferece abrir chamado: o webhook de chamados dele tem URL e segredo (v0.7; desde a v0.9, o do produto; o mesmo valor de `ticket_requests_enabled` em `GET .../conversations/{id}`). O painel oferece o pedido nas respostas `no_source` ([chamados.md](chamados.md#pedido-no-chat)). |
 
 ### `error`
@@ -143,7 +165,7 @@ Códigos possíveis em `error.code`:
 
 ## Sem fonte (regra 8)
 
-Quando a recuperação não encontra nenhuma fonte (o produto não tem coleção, ou nenhum trecho permitido ao nível da conversa alcança a similaridade mínima do produto nem casa a busca textual), o LLM **não é chamado**. A resposta é a mensagem de "sem fonte" configurada no produto (por padrão, diz que não sabe e oferece abrir um chamado):
+Quando a recuperação não encontra nenhuma fonte (o produto não tem coleção, ou nenhum trecho permitido ao nível da conversa alcança a similaridade mínima do produto nem casa a busca textual) e não há busca em etapas, o LLM **não é chamado**. Com a busca em etapas (v0.11), o modelo pode ser chamado para buscar de novo, e o stream começa com os `step` dessas buscas; se nenhuma achar fonte, a resposta é a mesma abaixo, nenhum texto do modelo é enviado e o `done` traz `model`, tokens, custo e `steps` das rodadas ([chat.md](chat.md#regra-de-citações-regra-8-do-agentsmd)). A resposta é a mensagem de "sem fonte" configurada no produto (por padrão, diz que não sabe e oferece abrir um chamado):
 
 ```text
 event: citations
@@ -153,7 +175,7 @@ event: delta
 data: {"text":"Não encontrei essa informação nas fontes que tenho disponíveis, …"}
 
 event: done
-data: {"message_id":"…","status":"no_source","model":null,"input_tokens":null,"output_tokens":null,"cost_usd":null,"latency_ms":3,"ticket_requests_enabled":true}
+data: {"message_id":"…","status":"no_source","model":null,"input_tokens":null,"output_tokens":null,"cost_usd":null,"latency_ms":3,"ticket_requests_enabled":true,"steps":1}
 ```
 
 A mensagem fica gravada com `status: no_source` e `citations: []`. O painel usa esse status para mostrar a oferta de abrir chamado, que usa o webhook de saída do produto quando ele está configurado ([chamados.md](chamados.md#abrir-chamado-webhook-de-saída)).
@@ -163,8 +185,9 @@ A mensagem fica gravada com `status: no_source` e `citations: []`. O painel usa 
 Desde a v0.10, a rota de mensagens do widget ([widget.md](widget.md#post-conversationsconversation_idmessages)) devolve exatamente estes eventos, na mesma ordem, com estas diferenças:
 
 - **Requisição**: sem sessão nem CSRF; `Authorization: Bearer kbv_…` (token da conversa do visitante) e `Origin` permitido. Os erros antes do stream são os da [tabela da requisição](#requisição) com os códigos do widget no lugar dos do painel: 401 `invalid_visitor_token`, 404 `not_found` ou `widget_unavailable` (no lugar de `product_inactive`), 429 `rate_limited`, além de `level_not_configured`, `validation_error` e os do provedor de embedding.
+- **`step`** (v0.11): vai com `query: null`. A consulta reformulada não é mostrada ao visitante (plano 0011, F3.1); o widget mostra só "Buscando mais informações…" no lugar de "Digitando…" até o primeiro `delta`.
 - **`citations`**: `level` é sempre `end_user`; citação de conhecimento com `evidence: null`.
-- **`done`**: `model`, `input_tokens`, `output_tokens` e `cost_usd` vêm sempre `null` (o custo é gravado na mensagem, mas não vai ao visitante); `ticket_requests_enabled` é o do widget (o widget oferece chamado **e** o produto tem o webhook).
+- **`done`**: `model`, `input_tokens`, `output_tokens` e `cost_usd` vêm sempre `null` (o custo é gravado na mensagem, mas não vai ao visitante); `steps` vem como nos demais canais; `ticket_requests_enabled` é o do widget (o widget oferece chamado **e** o produto tem o webhook).
 - **`error`**: igual; o widget mostra uma mensagem genérica, sem o código.
 
 ## Estados da mensagem do assistente
@@ -173,7 +196,7 @@ Desde a v0.10, a rota de mensagens do widget ([widget.md](widget.md#post-convers
 |---|---|
 | `streaming` | O LLM está respondendo (só enquanto o stream está aberto). Se o processo do servidor morrer no meio do stream, a mensagem ficaria `streaming` para sempre: por isso, uma resposta `streaming` sem atualização há mais de 5 minutos é lida como `interrupted` em `GET .../conversations/{id}` (e nas rotas administrativas), e a próxima pergunta da conversa grava `interrupted` nela antes de seguir. |
 | `completed` | Resposta completa, com citações. |
-| `no_source` | Resposta de "sem fonte", sem chamar o LLM. |
+| `no_source` | Resposta de "sem fonte": sem chamar o LLM ou, desde a v0.11, depois de etapas que não acharam fonte (sem nenhum texto do modelo). |
 | `failed` | Erro do provedor ou do servidor; `error_code` diz qual. |
 | `interrupted` | O cliente desconectou antes do fim; o conteúdo é o que chegou a ser gerado. |
 

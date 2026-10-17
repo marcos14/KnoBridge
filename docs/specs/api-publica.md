@@ -1,6 +1,8 @@
 # API pública
 
-> Rascunho v0.3 · 2026-10-14 · Planos 0008 (F1.1; implementação nas F2.3 e F2.4), 0009 (F1.1; implementação na F2.4) e 0010 (F1.1; implementação nas F2.1 e F2.2)
+> Rascunho v0.4 · 2026-10-17 · Planos 0008 (F1.1; implementação nas F2.3 e F2.4), 0009 (F1.1; implementação na F2.4), 0010 (F1.1; implementação nas F2.1 e F2.2) e 0011 (F1.1; implementação na F2.3)
+>
+> **Mudanças da v0.4** (plano 0011, F1.1; [ADR 0010](../adr/0010-busca-em-etapas-e-reranker.md)): as respostas da API usam a [busca em etapas](chat.md#busca-em-etapas) do nível, como o painel. Na REST própria, a mensagem ganha `steps` e o SSE pode trazer eventos `step` antes do `citations`; na API compatível com OpenAI, `knobridge.steps` na resposta e no chunk final, sem chunks de etapa, e o primeiro chunk sai depois das buscas ([Busca em etapas na API](#busca-em-etapas-na-api)).
 >
 > **Mudanças da v0.3** (plano 0010, F1.1): a chave `kbk_` também abre o **servidor MCP** em `/v1/mcp`, com o mesmo escopo de produtos, o mesmo `max_level` e a mesma autenticação ([mcp.md](mcp.md), [ADR 0009](../adr/0009-canais-mcp-e-widget.md)); as conversas criadas pela ferramenta `ask` são da chave, com `channel = mcp` ([Conversas da API](#conversas-da-api)). O widget não usa chave `kbk_`: tem a chave pública `kbp_` própria ([widget.md](widget.md)).
 >
@@ -130,7 +132,7 @@ Corpo:
 
 A rodada é a mesma do painel ([chat.md](chat.md#orquestração-em-duas-fases)): busca, regra 8, histórico das 10 mensagens mais recentes da conversa e as duas fases. Erros de acesso e de estado saem antes da resposta, como JSON: 404 `not_found` (conversa inexistente, de outra chave ou de outro workspace), 409 `product_inactive` (produto desativado depois de criada a conversa; se ele saiu do escopo da chave, 404 `not_found`; até a v0.1, `assistant_inactive`), 403 `level_not_allowed` (o `max_level` da chave baixou para menos que o nível da conversa), 409 `level_not_configured`, 422 `validation_error` e os erros do provedor de embedding (422, 429, 502, 503 `provider_*`/`embedding_*`, como em [chat-sse.md](chat-sse.md#requisição)).
 
-**Com `stream: true`**: 200 `text/event-stream` com exatamente os eventos de [chat-sse.md](chat-sse.md) (`citations`, `delta`…, `done` ou `error`), inclusive `cost_usd` no `done`.
+**Com `stream: true`**: 200 `text/event-stream` com exatamente os eventos de [chat-sse.md](chat-sse.md) (`step`… desde a v0.4, `citations`, `delta`…, `done` ou `error`), inclusive `cost_usd` e `steps` no `done`. O `step` traz a consulta reformulada (a chave tem o nível da conversa, então a consulta só usa termos que esse nível pode ler).
 
 **Com `stream: false`**: o servidor consome a rodada inteira e responde 200 `PublicAnswerOut`:
 
@@ -142,12 +144,12 @@ A rodada é a mesma do painel ([chat.md](chat.md#orquestração-em-duas-fases)):
     "citations": [{"index": 1, "title": "src/caixa/fechamento.ts", "uri": "src/caixa/fechamento.ts#L10-L42", "…": "…"}],
     "status": "completed", "error_code": null, "model": "gpt-4.1-mini",
     "input_tokens": 812, "output_tokens": 64, "cost_usd": 0.000427, "latency_ms": 2310,
-    "channel": "api", "created_at": "…"
+    "channel": "api", "steps": 1, "created_at": "…"
   }
 }
 ```
 
-`message` tem o formato de `MessageOut` do painel sem `feedback` e `ticket_request`; `citations` no formato de [chat-sse.md](chat-sse.md#citations). Uma falha do provedor durante a geração **não** muda o HTTP: a resposta é 200 com `status: failed`, `error_code` (`provider_*` ou `chat_failed`) e o conteúdo parcial, igual ao que fica gravado. Sem fonte, `status: no_source`, `citations: []` e `content` = mensagem de "sem fonte" do produto.
+`message` tem o formato de `MessageOut` do painel sem `feedback`, `ticket_request` e `retrieval` (as consultas das etapas ficam só no painel); `citations` no formato de [chat-sse.md](chat-sse.md#citations); `steps` desde a v0.4 (`null` nas respostas antigas). Uma falha do provedor durante a geração **não** muda o HTTP: a resposta é 200 com `status: failed`, `error_code` (`provider_*` ou `chat_failed`) e o conteúdo parcial, igual ao que fica gravado. Sem fonte, `status: no_source`, `citations: []` e `content` = mensagem de "sem fonte" do produto.
 
 ### `GET /v1/conversations/{conversation_id}`
 
@@ -209,7 +211,7 @@ Resposta 200 com as combinações permitidas à chave, por nome do produto e, de
 | `stream_options.include_usage` | Com `stream: true`, manda o chunk final de uso (abaixo). |
 | `knobridge.append_sources` | Extensão, padrão `true`: acrescenta a lista de fontes ao fim do texto (abaixo). Pelo SDK Python, vai em `extra_body`. |
 
-**Parâmetros aceitos e ignorados** (quem decide é a configuração do nível e do produto): `temperature`, `top_p`, `max_tokens`, `max_completion_tokens`, `presence_penalty`, `frequency_penalty`, `logit_bias`, `logprobs`, `top_logprobs`, `seed`, `stop`, `user`, `metadata`, `store`, `service_tier`, `reasoning_effort`, `parallel_tool_calls`, `tools`, `functions`, `tool_choice` (`none` ou `auto`), `response_format` com `type: "text"`, `n` igual a 1, e qualquer campo desconhecido. O KnoBridge nunca chama ferramentas.
+**Parâmetros aceitos e ignorados** (quem decide é a configuração do nível e do produto): `temperature`, `top_p`, `max_tokens`, `max_completion_tokens`, `presence_penalty`, `frequency_penalty`, `logit_bias`, `logprobs`, `top_logprobs`, `seed`, `stop`, `user`, `metadata`, `store`, `service_tier`, `reasoning_effort`, `parallel_tool_calls`, `tools`, `functions`, `tool_choice` (`none` ou `auto`), `response_format` com `type: "text"`, `n` igual a 1, e qualquer campo desconhecido. O KnoBridge nunca chama ferramentas do cliente (a ferramenta de busca da [busca em etapas](chat.md#busca-em-etapas) é interna e nunca aparece na resposta).
 
 **Parâmetros recusados** (400, `param` com o nome): `n` maior que 1 (`unsupported_parameter`); `response_format` com `json_object` ou `json_schema` (`unsupported_parameter`); `tool_choice` `required` ou com uma função (`unsupported_parameter`); `modalities` com `audio` ou `audio` presente (`unsupported_parameter`).
 
@@ -221,7 +223,7 @@ Resposta 200 com as combinações permitidas à chave, por nome do produto e, de
 4. **A pergunta é a última mensagem**, que tem de ser `user` com texto não vazio (senão, 400 `invalid_messages`). Até 8000 caracteres depois de tirar os espaços das pontas (senão, 400 `question_too_long`). A busca usa só ela.
 5. **Histórico**: as mensagens `user` e `assistant` antes da pergunta, as 10 mais recentes (a mesma janela do painel), na ordem recebida, cada uma cortada em 8000 caracteres. Vão ao LLM depois das fontes, como o histórico do painel. Como o cliente pode mandar o que quiser como "resposta anterior", o histórico é contexto, não fonte: a regra das citações continua valendo só para as fontes.
 6. **Gravação**: cada chamada cria uma conversa `channel = api` da chave, com título pela pergunta, e grava só a pergunta e a resposta. O histórico do cliente não é gravado.
-7. **Regra 8**: sem fonte, o LLM não é chamado; a resposta é a `no_source_message` do produto, com `finish_reason: "stop"` e `knobridge.status: "no_source"`.
+7. **Regra 8**: sem fonte, nenhum texto do LLM sai (desde a v0.4, o LLM pode ter sido chamado para buscar de novo; [chat.md](chat.md#regra-de-citações-regra-8-do-agentsmd)); a resposta é a `no_source_message` do produto, com `finish_reason: "stop"` e `knobridge.status: "no_source"`.
 
 **Resposta sem streaming** (200):
 
@@ -248,7 +250,8 @@ Resposta 200 com as combinações permitidas à chave, por nome do produto e, de
     "level": "support",
     "status": "completed",
     "citations": [{"index": 1, "title": "src/caixa/fechamento.ts", "uri": "src/caixa/fechamento.ts#L10-L42", "…": "…"}],
-    "cost_usd": 0.000427
+    "cost_usd": 0.000427,
+    "steps": 1
   }
 }
 ```
@@ -257,7 +260,8 @@ Resposta 200 com as combinações permitidas à chave, por nome do produto e, de
 - `knobridge.product_id` e `knobridge.level` (v0.2): o produto e o nível efetivo da resposta (com `model` sem nível, o `max_level` da chave).
 - `knobridge.citations`: a mesma lista do evento `citations` de [chat-sse.md](chat-sse.md#citations). `knobridge.status`: `completed` ou `no_source`.
 - **Fontes no texto** (`append_sources`, padrão ligado; a visão manda as citações "no texto e num campo extra"): com citações, o conteúdo ganha `\n\nFontes:\n` e uma linha `[n] título (uri)` por citação (sem `(uri)` quando ela é nula). Desligado, o conteúdo é só o texto do LLM. A resposta gravada no KnoBridge nunca inclui esse rodapé.
-- `usage`: os tokens informados pelo provedor; em `no_source`, `{"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}`; quando o provedor não informa, `usage: null`.
+- `usage`: os tokens informados pelo provedor, somados em todas as chamadas da resposta (v0.4); em `no_source` sem LLM, `{"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}`; em `no_source` depois de etapas, os tokens das rodadas; quando o provedor não informa, `usage: null`.
+- `knobridge.steps` (v0.4): as etapas da resposta ([chat-sse.md](chat-sse.md#done)).
 - Falha do provedor durante a geração: a mensagem é gravada `failed` e a resposta é o erro mapeado (tabela de erros), não um 200.
 
 **Resposta com streaming** (200 `text/event-stream`, `Cache-Control: no-cache`, `X-Accel-Buffering: no`). Linhas `data: <json>` separadas por linha em branco, sem `event:`, terminando em `data: [DONE]`:
@@ -265,7 +269,7 @@ Resposta 200 com as combinações permitidas à chave, por nome do produto e, de
 1. Primeiro chunk: `choices[0].delta = {"role": "assistant", "content": ""}` e `knobridge = {"conversation_id", "message_id", "product_id", "level", "citations"}` (`product_id` e `level` desde a v0.2) (as citações chegam antes do texto, como no painel).
 2. Um chunk por pedaço do LLM: `choices[0].delta = {"content": "…"}`, `finish_reason: null`. Em `no_source`, um chunk só, com a mensagem de "sem fonte".
 3. Com `append_sources` e citações, um chunk com o rodapé de fontes.
-4. Chunk final: `delta: {}`, `finish_reason: "stop"`, `knobridge = {"status", "cost_usd"}`.
+4. Chunk final: `delta: {}`, `finish_reason: "stop"`, `knobridge = {"status", "cost_usd", "steps"}` (`steps` desde a v0.4).
 5. Com `stream_options.include_usage: true`, mais um chunk com `choices: []` e `usage` (igual ao sem streaming).
 6. `data: [DONE]`.
 
@@ -282,6 +286,14 @@ data: [DONE]
 ```
 
 Erro do provedor depois de começar o stream (o HTTP já é 200): um `data: {"error": {…}}` no formato da tabela abaixo, e o stream fecha sem `[DONE]`. A mensagem fica gravada `failed` com o conteúdo parcial. Cliente que desconecta deixa a mensagem `interrupted`, como no painel.
+
+### Busca em etapas na API
+
+Desde a v0.4 ([chat.md](chat.md#busca-em-etapas)): a rodada é a mesma do painel, com o `max_steps` do nível da conversa.
+
+- **REST própria**: os eventos `step` vão no SSE (com `stream: true`); sem streaming, só `message.steps`.
+- **API compatível com OpenAI**: **sem chunks de etapa**, para não quebrar clientes que esperam o formato da OpenAI. Com `stream: true`, o primeiro chunk (o que leva `role` e as citações) sai quando a rodada decide responder, depois de todas as buscas, então pode demorar alguns segundos a mais que a busca única. As etapas aparecem só em `knobridge.steps` (resposta sem streaming e chunk final).
+- **Erro do provedor antes do primeiro chunk**, com `stream: true`: a API só começa a resposta HTTP no primeiro chunk, então um erro numa rodada de ferramenta sai como o erro mapeado em JSON (tabela abaixo), com o HTTP de erro, como na resposta sem streaming. Depois do primeiro chunk, vale a linha `data: {"error": …}` acima. A mensagem fica gravada `failed` nos dois casos.
 
 ### Erros no formato OpenAI
 

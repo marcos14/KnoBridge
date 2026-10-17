@@ -1,6 +1,8 @@
 # Widget embutível
 
-> Rascunho v0.1 · 2026-10-14 · Plano 0010 (F1.1; implementação nas F3.1, F3.2, F4.1, F4.2 e F4.3)
+> Rascunho v0.2 · 2026-10-17 · Plano 0010 (F1.1; implementação nas F3.1, F3.2, F4.1, F4.2 e F4.3); plano 0011 (F1.1; implementação nas F2.3 e F3.1)
+>
+> **Mudanças da v0.2** (plano 0011; [ADR 0010](../adr/0010-busca-em-etapas-e-reranker.md)): a conversa do widget usa a [busca em etapas](chat.md#busca-em-etapas) do nível `end_user` (padrão de 2 etapas) e o reranker do produto; o stream pode trazer eventos `step` **sem a consulta**, e o widget mostra "Buscando mais informações…" ([Comportamento](#comportamento)).
 
 Contrato do widget do KnoBridge: a configuração no painel, a chave pública `kbp_` e o segredo de assinatura `kbs_`, domínios permitidos e CORS, limites de requisição, as rotas públicas `/v1/widget/*` (configuração, conversa com SSE, leitura, feedback e chamado), o token de conversa do visitante, a identidade assinada, o elemento `<knobridge-chat>` (atributos, métodos, eventos, aparência e comportamento), onde o JS é servido, a prévia no painel, privacidade e acessibilidade. A decisão de arquitetura está no [ADR 0009](../adr/0009-canais-mcp-e-widget.md); as escolhas do usuário, no [plano 0010](../planos/0010-canais-mcp-e-widget.md) (D3, D4, D5 e D6).
 
@@ -264,9 +266,10 @@ Corpo `{"content": "…"}` (1 a 8000 caracteres sem os espaços das pontas; corp
 
 Erros antes do stream, como JSON (com CORS): 401 `invalid_visitor_token`, 404 `not_found` ou `widget_unavailable` (widget ou produto desativado depois), 403 `level_not_allowed` (não acontece com `end_user`, mas a checagem roda), 409 `level_not_configured`, 422 `validation_error`, 429 `rate_limited` e os erros do provedor de embedding (422, 429, 502, 503 `provider_*`/`embedding_*`, como em [chat-sse.md](chat-sse.md#requisição)).
 
-Resposta 200 `text/event-stream` com os eventos de [chat-sse.md](chat-sse.md) (`citations`, `delta`…, `done` ou `error`), com duas diferenças no canal `widget` ([chat-sse.md](chat-sse.md#no-canal-widget)):
+Resposta 200 `text/event-stream` com os eventos de [chat-sse.md](chat-sse.md) (desde a v0.2, `step`…, depois `citations`, `delta`…, `done` ou `error`), com estas diferenças no canal `widget` ([chat-sse.md](chat-sse.md#no-canal-widget)):
 
-- `done` traz `model`, `input_tokens`, `output_tokens` e `cost_usd` sempre `null` (o custo fica gravado; só não vai ao visitante);
+- `step` traz `query: null`: a consulta reformulada pelo modelo não vai ao visitante (v0.2);
+- `done` traz `model`, `input_tokens`, `output_tokens` e `cost_usd` sempre `null` (o custo fica gravado; só não vai ao visitante), e `steps` como nos demais canais;
 - `ticket_requests_enabled` é o do widget (`ticket_available`), não só o do produto.
 
 As mensagens ficam gravadas com `channel = widget`, `product_id`, `level = end_user` e `cost_usd`. Cliente que desconecta deixa a resposta `interrupted`, como no painel.
@@ -494,7 +497,7 @@ Valor inválido num atributo é ignorado (vale o do painel), com um aviso no `co
 |---|---|---|
 | `knobridge-ready` | `{mode, ticketEnabled, feedbackEnabled}` | Configuração carregada. |
 | `knobridge-open`, `knobridge-close` | `{}` | Balão aberto ou fechado. |
-| `knobridge-message-sent` | `{conversationId, messageId}` | Pergunta aceita (evento `citations` recebido). |
+| `knobridge-message-sent` | `{conversationId, messageId}` | Pergunta aceita (primeiro evento recebido com `message_id`: `step` ou `citations`; desde a v0.2). |
 | `knobridge-answer` | `{conversationId, messageId, status, citations}` | Resposta terminou (`status` = `completed`, `no_source`, `failed` ou `interrupted`; `citations` = quantidade). |
 | `knobridge-feedback` | `{messageId, rating}` | Feedback gravado. |
 | `knobridge-ticket-requested` | `{ticketRequestId, messageId}` | Pedido de chamado aceito (202). |
@@ -527,7 +530,7 @@ Modos: **`bubble`**, botão redondo fixo no canto (`position`) que abre um paine
 
 - **Carregar**: lê `GET /config`. Falhou (404, 403, rede): no `bubble`, não mostra o botão; no `inline`, mostra "Chat indisponível no momento." Emite `knobridge-error`.
 - **Primeira pergunta**: cria a conversa (com `identity`, se houver), guarda o token e envia a pergunta.
-- **Resposta**: mostra a pergunta na hora, um indicador "Digitando…" até o primeiro `delta`, e o texto crescendo a cada `delta`. O campo fica desabilitado até `done` ou `error`. Pergunta acima de `question_max_chars` não é enviada (contador de caracteres).
+- **Resposta**: mostra a pergunta na hora, um indicador "Digitando…" até o primeiro `delta` (desde a v0.2, depois de um evento `step`, o indicador passa a "Buscando mais informações…", sem a consulta nem a contagem de buscas), e o texto crescendo a cada `delta`. Evento desconhecido é ignorado. O campo fica desabilitado até `done` ou `error`. Pergunta acima de `question_max_chars` não é enviada (contador de caracteres).
 - **Texto da resposta**: renderizado com um subconjunto seguro de Markdown (parágrafos, listas, negrito, itálico, código em linha e em bloco, links `http`/`https` com `target="_blank" rel="noopener noreferrer"`). **Nunca** HTML do servidor como HTML: todo texto vai escapado (sem `innerHTML` com conteúdo da API). Os marcadores `[n]` viram botões que levam à citação `n`.
 - **Citações**: lista "Fontes" abaixo da resposta, `[n] título`; cada item abre um detalhe com o `snippet` e, quando `url` é `http(s)`, o link "Abrir" (nova aba). Sem `url`, só o detalhe. Toda resposta `completed` tem citações (regra 8).
 - **Sem fonte** (`status: no_source`): a resposta é a mensagem de "sem fonte" do produto; com `ticket_enabled`, aparece logo abaixo o botão "Abrir chamado".

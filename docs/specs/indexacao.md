@@ -1,6 +1,8 @@
 # Indexação e busca
 
-> Rascunho v0.4 · 2026-10-13 · Em uso (planos 0003, 0004, 0008 e 0009)
+> Rascunho v0.5 · 2026-10-17 · Em uso (planos 0003, 0004, 0008 e 0009; plano 0011 em implementação)
+>
+> **Mudanças da v0.5** (plano 0011, F1.1; implementação nas F2.1 e F2.4; [ADR 0010](../adr/0010-busca-em-etapas-e-reranker.md)): o [reranker](#reranker) self-host (TEI com o `bge-reranker-v2-m3`) reordena os 30 melhores depois da fusão quando o produto tem a opção e a instância tem reranker, com queda para a ordem do RRF em falha; o [limiar](#limiar-por-modelo-de-embedding) ganha padrão por modelo de embedding (0,35 OpenAI, 0,60 `gemini-embedding-001`); a ingestão calcula os [arquivos que dominam o índice](#arquivos-que-dominam-o-índice) de cada fonte de pasta ou Git e sugere globs de exclusão; "testar busca" aceita `rerank` e o limiar opcional.
 >
 > **Mudanças da v0.4** (plano 0009, F1.1; implementação nas F1.2, F2.2 e F2.3): cada trecho tem um [nível mínimo](#nível-mínimo) (o maior entre o da fonte, o do documento e o do trecho), a [busca híbrida](#busca-híbrida) filtra pelo nível da pergunta no SQL dos dois braços, a lista de fontes filtra por `min_level`, "testar busca" exige editor e aceita `level`, e as fontes [`cards`](#cards) entram como as de chamados.
 >
@@ -154,7 +156,7 @@ Desde a v0.4 (plano 0009; contrato em [produtos-e-niveis.md](produtos-e-niveis.m
 
 - **A coleção define o embedding** (ADR 0004): credencial de provedor e modelo. A credencial tem de ser do mesmo workspace e de um tipo com embeddings (OpenAI, OpenRouter ou, fora de produção, `fake`). A Anthropic não oferece embeddings: `provider_embeddings_unsupported` (422).
 - **Dimensão fixa de 1536** (`chunks.embedding vector(1536)`, índice HNSW `vector_cosine_ops`). O modelo padrão é `openai/text-embedding-3-small` no OpenRouter (`text-embedding-3-small` na OpenAI direta). Vetor de outra dimensão é `embedding_dimension_mismatch`; resposta com quantidade diferente de vetores, `embedding_invalid_response`.
-- **Gemini pelo OpenRouter** (plano 0005): `google/gemini-embedding-001` e `google/gemini-embedding-2` devolvem 3072 dimensões por padrão. Para os modelos `gemini-embedding*` (com ou sem o prefixo do fornecedor), o adaptador envia `dimensions: 1536` e o provedor trunca o vetor (Matryoshka); a dimensão da resposta continua conferida, e qualquer outra vira `embedding_dimension_mismatch`. Os demais modelos não recebem `dimensions`. Os lotes desses modelos têm no máximo 100 textos, o limite da API do Google (os demais seguem com 128). **Limiar**: com os Gemini, perguntas sem relação chegam a 0,49–0,55 de similaridade; o padrão de 0,35, calibrado para o OpenAI, não separa "sem fonte". Ajuste a similaridade mínima do assistente para cerca de 0,60 com o `gemini-embedding-001` ([pesquisa 0004](../pesquisa/0004-embeddings-openai-x-gemini.md)).
+- **Gemini pelo OpenRouter** (plano 0005): `google/gemini-embedding-001` e `google/gemini-embedding-2` devolvem 3072 dimensões por padrão. Para os modelos `gemini-embedding*` (com ou sem o prefixo do fornecedor), o adaptador envia `dimensions: 1536` e o provedor trunca o vetor (Matryoshka); a dimensão da resposta continua conferida, e qualquer outra vira `embedding_dimension_mismatch`. Os demais modelos não recebem `dimensions`. Os lotes desses modelos têm no máximo 100 textos, o limite da API do Google (os demais seguem com 128). **Limiar**: com os Gemini, perguntas sem relação chegam a 0,49–0,55 de similaridade; o padrão de 0,35, calibrado para o OpenAI, não separa "sem fonte" ([pesquisa 0004](../pesquisa/0004-embeddings-openai-x-gemini.md)). Desde a v0.5, o limiar tem [padrão por modelo](#limiar-por-modelo-de-embedding) (0,60 para o `gemini-embedding-001`) e o produto não precisa mais de ajuste manual.
 - **Troca de modelo travada.** Com documentos na coleção, credencial e modelo não mudam mais (`collection_embedding_locked`, 409): para outro modelo, crie outra coleção e cadastre as fontes nela. Cada trecho registra o modelo que o gerou (`chunks.embedding_model`).
 - **Lotes.** O motor faz uma chamada `embed` por lote de documentos. O adaptador divide o pedido em requisições de até 128 textos e 100 mil tokens estimados (`plan_batches`; um texto maior vai sozinho) e devolve os vetores na ordem da entrada.
 - **Cache por hash.** Antes de chamar o provedor, o motor procura na mesma coleção trechos com o mesmo `content_hash` e o mesmo modelo e reaproveita o vetor. Só o que falta vai ao provedor. Documento sem mudança nem chega ao chunking: é pulado pelo hash do conteúdo (`documents.content_hash`).
@@ -281,13 +283,64 @@ Cada execução guarda `embedding_tokens` (soma dos tokens das chamadas de embed
 
 `KNOBRIDGE_EMBEDDING_PRICES` (JSON, ex.: `{"openai/text-embedding-3-small": 0.02}`) sobrescreve ou acrescenta preços. Modelo sem preço tem custo desconhecido (`null`), nunca zero. Documentos pulados pelo hash e trechos achados no cache não custam nada. O painel mostra tokens, custo, duração e as contagens de cada execução na tela da fonte.
 
+## Arquivos que dominam o índice
+
+Desde a v0.5 (plano 0011, D6, F2.4). No [ensaio 0001](../pesquisa/0001-ensaio-minski.md), 34 relatórios gerados de uma pasta (`docs/resumos`) eram 23% de todos os trechos e ocupavam as vagas das respostas sem acrescentar nada. A saída era excluir a pasta com `exclude_globs`, mas nada avisava. Agora a ingestão calcula, por fonte, os arquivos e diretórios com participação desproporcional e sugere o glob de exclusão.
+
+### Quando e onde
+
+- **Fontes** `folder` e `git` (as de arquivos). Nas demais (`runner`, `tickets`, `cards`), `index_stats` fica `null`.
+- **Quando**: na activity `finish_run`, só em execução `succeeded` (`ingestion/index_stats.py`), numa consulta agregada sobre os trechos da fonte: `SELECT documents.natural_key, count(chunks.id) … WHERE documents.source_id = :fonte AND documents.kind = 'file' GROUP BY documents.natural_key`, mais o total de trechos da fonte (todos os tipos, inclusive commits). O resultado vai para `sources.index_stats` (JSON) na mesma transação que fecha a execução. Execução que falha ou é cancelada não muda o valor anterior. Uma fonte nunca sincronizada com sucesso tem `null`.
+- **Na API**: `SourceOut` ganha `index_stats` (objeto abaixo ou `null`) em `GET .../sources` e `GET .../sources/{id}` (o valor gravado, sem consulta extra: o número de statements da lista não muda) e `dominant_count` (quantidade de itens em `index_stats.dominant`, `0` sem estatísticas), para a lista mostrar o selo.
+
+### Critérios
+
+Constantes em `ingestion/index_stats.py`. `T` = trechos da fonte; `F` = trechos de arquivos; `N` = arquivos com trechos; `média` = `F / N`; a participação (`share`) de um grupo é `trechos do grupo / T`.
+
+| Tipo (`kind`) | Grupo | Entra quando | Glob sugerido |
+|---|---|---|---|
+| `file` | Um arquivo | `share ≥ 0,05` e ao menos 50 trechos. | O caminho do arquivo (`docs/relatorio-anual.json`). |
+| `directory` | Um diretório (qualquer profundidade, menos a raiz), com tudo abaixo dele | `share ≥ 0,15`, ao menos 200 trechos, ao menos 2 arquivos e trechos por arquivo no diretório `≥ 3 × média`. | `<diretório>/**` (`docs/resumos/**`). |
+| `known_generated` | Os arquivos que casam um padrão conhecido de arquivo gerado (abaixo) | `share ≥ 0,02` e ao menos 20 trechos. | O próprio padrão. |
+
+- **Fonte pequena**: com `T < 200`, `dominant` fica vazio (nada domina um índice desse tamanho).
+- **Diretórios, do mais fundo para o mais raso**: um diretório que entra tem os arquivos dele descontados dos ancestrais antes de testá-los; assim `docs/resumos/**` aparece e `docs/**` só aparece se ainda passar sem os resumos.
+- **Sem repetição**: um arquivo dentro de um diretório que entrou não aparece como `file`; um grupo `known_generated` cujos arquivos estão todos dentro de grupos já listados não aparece.
+- **Padrões conhecidos** (sintaxe do `.gitignore`, a mesma de `exclude_globs`; os lockfiles e os diretórios `dist`, `build`, `vendor` e `node_modules` nem são lidos pelos conectores, [conectores.md](conectores.md#seleção-de-arquivos)): `*.min.js`, `*.min.css`, `*.map`, `*.snap`, `coverage/`, `__generated__/`, `*.generated.*`, `*.g.cs`, `*.Designer.cs`, `*_pb2.py`, `*.pb.go`.
+- **Ordem e limite**: `dominant` por `share` decrescente, empate pelo `pattern`; no máximo 10 itens. `top_files`: os 10 arquivos com mais trechos, por trechos decrescentes e depois pelo caminho, com ou sem aviso.
+- **Sugestão**: `suggested_exclude_globs` = os `pattern` de `dominant` que ainda não estão em `exclude_globs` da fonte, na mesma ordem.
+
+### Formato de `index_stats`
+
+```json
+{
+  "version": 1,
+  "computed_at": "2026-10-17T12:00:00Z",
+  "run_id": "…",
+  "chunks": 19729,
+  "file_chunks": 19100,
+  "files": 2106,
+  "top_files": [{"path": "docs/resumos/2026-09.json", "chunks": 412, "share": 0.0209}],
+  "dominant": [
+    {"kind": "directory", "pattern": "docs/resumos/**", "files": 34, "chunks": 4661, "share": 0.2363, "chunks_per_file": 137.1}
+  ],
+  "suggested_exclude_globs": ["docs/resumos/**"]
+}
+```
+
+`share` com 4 casas; `chunks_per_file` com 1 casa; `computed_at` pelo relógio injetado; `run_id` = a execução que calculou.
+
+### Aplicar a sugestão
+
+Não há rota nova: o painel aplica com o `PATCH .../sources/{id}` de hoje (editor ou acima), acrescentando o padrão a `exclude_globs` (até 100 padrões), e oferece sincronizar. Na sincronização seguinte, o conector lista os arquivos que deixaram de ser selecionados como removidos ([conectores.md](conectores.md#conector-de-pasta)), os trechos saem do índice e o `index_stats` é recalculado. A auditoria é a do `PATCH` (`source.updated` com `exclude_globs` em `fields`).
+
 ## Busca híbrida
 
-`SearchService.search` (`retrieval/search.py`) serve a rota "testar busca" (`POST .../collections/{id}/search`, editor ou acima desde a v0.4, antes qualquer membro; `query` até 2000 caracteres, `limit` padrão 10 e máximo 50, `level` padrão `product_dev` (v0.4), `min_similarity` padrão 0,35, calibrado pelo [ensaio com dados reais](../pesquisa/0001-ensaio-minski.md)) e o `HybridRetriever` do chat.
+`SearchService.search` (`retrieval/search.py`) serve a rota "testar busca" (`POST .../collections/{id}/search`, editor ou acima desde a v0.4, antes qualquer membro; `query` até 2000 caracteres, `limit` padrão 10 e máximo 50, `level` padrão `product_dev` (v0.4), `min_similarity` opcional (desde a v0.5, omitido ou `null` = o [padrão do modelo](#limiar-por-modelo-de-embedding) da coleção; até a v0.4, padrão 0,35, calibrado pelo [ensaio com dados reais](../pesquisa/0001-ensaio-minski.md)) e `rerank` opcional (v0.5, [abaixo](#testar-busca-com-reranker))), o `HybridRetriever` do chat e o `search_knowledge` do MCP.
 
 1. **Coleções e credenciais** numa consulta. Coleção ausente ou de outro workspace: 404 `not_found`.
 2. **Embedding da pergunta**, um por par (credencial, modelo). Coleções com o mesmo modelo compartilham o vetor; vetores de modelos diferentes nunca se comparam.
-3. **Braço vetorial**, por modelo: os `candidatos` mais próximos por distância de cosseno (`<=>`, índice HNSW, só trechos com aquele `embedding_model`). Os candidatos são `limit × 4`, entre 40 e 200, com `hnsw.ef_search` = 1000 (o máximo do pgvector) na transação, para compensar o filtro de workspace e coleção aplicado depois do índice e a recall do HNSW: no ensaio do plano 0004, 100 perdeu o trecho mais próximo de uma pergunta real numa coleção de 20 mil trechos (recall@10 de 0,90 contra a varredura exata; 0,98 com 1000). Um candidato só segue se `1 - distância >= min_similarity`. Desde a v0.4, a consulta filtra também `chunks.min_level = ANY(:allowed_levels)` (os níveis de `end_user` até o da pergunta).
+3. **Braço vetorial**, por modelo: os `candidatos` mais próximos por distância de cosseno (`<=>`, índice HNSW, só trechos com aquele `embedding_model`). Os candidatos são `limit × 4`, entre 40 e 200, com `hnsw.ef_search` = 1000 (o máximo do pgvector) na transação, para compensar o filtro de workspace e coleção aplicado depois do índice e a recall do HNSW: no ensaio do plano 0004, 100 perdeu o trecho mais próximo de uma pergunta real numa coleção de 20 mil trechos (recall@10 de 0,90 contra a varredura exata; 0,98 com 1000). Um candidato só segue se `1 - distância >= min_similarity` (desde a v0.5, o limiar do modelo deste grupo quando a busca recebe `min_similarity = None`). Desde a v0.4, a consulta filtra também `chunks.min_level = ANY(:allowed_levels)` (os níveis de `end_user` até o da pergunta).
 4. **Braço textual (FTS)**, numa consulta: `websearch_to_tsquery` em `portuguese` OU em `simple` OU em `simple` sobre a pergunta com `/` e `.` trocados por espaço, contra `chunks.tsv`, ordenado por `ts_rank_cd`, com o mesmo filtro de `chunks.min_level` (v0.4). `chunks.tsv` é uma coluna gerada pelo banco: `to_tsvector('portuguese', content)` mais `to_tsvector('simple', ...)` sobre o caminho (inteiro e quebrado em `/` e `.`) e o símbolo, com índice GIN.
 5. **Fusão RRF** (Reciprocal Rank Fusion, `fusion.py`) sobre todos os rankings: `soma de 1 / (60 + posição)`. Não exige normalizar pontuações, que no cosseno e no `ts_rank_cd` vivem em escalas sem relação.
 6. **Vizinhos removidos**: trecho do mesmo documento em posição adjacente, ou com faixa de linhas que se cruza, sai em favor do mais bem colocado.
@@ -295,13 +348,100 @@ Cada execução guarda `embedding_tokens` (soma dos tokens das chamadas de embed
 
 **Nível** (v0.4): o filtro de `chunks.min_level` entra no SQL dos dois braços, antes da fusão; nunca se filtra depois. Um trecho acima do nível da pergunta não é candidato, não entra na fusão nem tira vaga de um trecho permitido ([produtos-e-niveis.md](produtos-e-niveis.md#o-filtro-na-busca)).
 
-**Limiar** (decisão D12 do plano 0003): um trecho entra se alcança `min_similarity` **ou** se casa a busca textual. `websearch_to_tsquery` é conjuntivo: exige todos os termos da pergunta, fora stop words. Casar o FTS já é sinal forte, e é o que acha identificadores exatos que o embedding perde. Uma pergunta sem relação com o índice não passa em nenhum dos dois e volta vazia. Trechos de modelo diferente do da coleção só aparecem pelo FTS. O reranker (`retrieval/rerank.py`) existe só como interface, sem uso.
+**Limiar** (decisão D12 do plano 0003): um trecho entra se alcança `min_similarity` **ou** se casa a busca textual. `websearch_to_tsquery` é conjuntivo: exige todos os termos da pergunta, fora stop words. Casar o FTS já é sinal forte, e é o que acha identificadores exatos que o embedding perde. Uma pergunta sem relação com o índice não passa em nenhum dos dois e volta vazia. Trechos de modelo diferente do da coleção só aparecem pelo FTS. Até a v0.4, o reranker (`retrieval/rerank.py`) existia só como interface; desde a v0.5, ele entra depois da busca ([Reranker](#reranker)).
 
-Cada resultado traz `vector_similarity`, `fts_rank`, `fused_score`, o documento (tipo, chave natural, título, URI), `path`, `symbol`, linhas e `snippet` (corpo sem o cabeçalho, até 600 caracteres).
+Cada resultado traz `vector_similarity`, `fts_rank`, `fused_score`, o documento (tipo, chave natural, título, URI), `path`, `symbol`, linhas e `snippet` (corpo sem o cabeçalho, até 600 caracteres) e, desde a v0.5, `rerank_score` (`null` sem reordenação).
+
+## Limiar por modelo de embedding
+
+Desde a v0.5 (plano 0011, D6, F2.4). A similaridade de cosseno muda de escala com o modelo: no [ensaio 0004](../pesquisa/0004-embeddings-openai-x-gemini.md), as perguntas sem relação ficaram em até 0,30 com o `text-embedding-3-small` e entre 0,49 e 0,55 com os Gemini. Um limiar único ou deixa passar fontes irrelevantes (Gemini com 0,35, quebrando a regra 8) ou corta fontes boas (OpenAI com 0,60).
+
+**Tabela de padrões** (`retrieval/thresholds.py`). A chave é o nome do modelo em minúsculas, sem o prefixo do fornecedor (o que vem antes da última `/`: `openai/text-embedding-3-small` e `text-embedding-3-small` são o mesmo):
+
+| Modelo | Padrão | Base |
+|---|---|---|
+| `text-embedding-3-small` | 0,35 | Ensaios [0001](../pesquisa/0001-ensaio-minski.md) (relacionadas 0,364–0,664, sem relação 0,196–0,300) e 0004 (sem relação até 0,302). |
+| `text-embedding-3-large` | 0,35 | Mesma família; não medido. |
+| `gemini-embedding-001` | 0,60 | Ensaio 0004: relacionadas a partir de 0,682, sem relação até 0,544. |
+| `gemini-embedding-2` | 0,57 | Ensaio 0004: relacionadas a partir de 0,594, sem relação até 0,552. Folga de só 0,04; o ensaio não recomenda o modelo. |
+| qualquer outro (inclusive o `fake` e o `text-embedding-ada-002`) | 0,35 | `fallback`: o padrão antigo, sem medição. |
+
+- **`KNOBRIDGE_MIN_SIMILARITY_DEFAULTS`** (JSON, ex.: `{"gemini-embedding-001": 0.62}`) sobrescreve ou acrescenta padrões, com a mesma normalização de nome. Valores de 0 a 1; JSON inválido ou fora da faixa impede a subida (erro de settings). Entra no `.env.example`.
+- **Onde vale**: `SearchService.search(..., min_similarity=None)` usa, em cada grupo (credencial, modelo), o padrão do modelo do grupo. Um número explícito vale para todos os grupos, como até a v0.4. O braço textual não usa limiar.
+- **Produto**: `products.min_similarity` nulo (o padrão desde a v0.5) = o padrão do modelo de cada coleção; a API mostra o que vale por modelo em `effective_min_similarity` ([produtos-e-niveis.md](produtos-e-niveis.md#campos)). O `HybridRetriever` e o `search_knowledge` do MCP passam o valor do produto (nulo ou número) para a busca.
+- **Migração `0024`**: `products.min_similarity` passa a aceitar nulo e perde o padrão do banco; os produtos com exatamente 0,35 (o padrão antigo, que ninguém escolheu de propósito na maioria dos casos) ficam nulos. Em coleções OpenAI nada muda; em coleções Gemini, o limiar sobe para o do modelo. O `downgrade` grava 0,35 nos nulos.
+
+## Reranker
+
+Desde a v0.5 (plano 0011, D1 a D3, F2.1; [ADR 0010](../adr/0010-busca-em-etapas-e-reranker.md)). Um cross-encoder lê a pergunta e cada trecho juntos e dá uma pontuação de relevância, mais fina que a ordem do RRF. O KnoBridge usa o `BAAI/bge-reranker-v2-m3` (multilíngue, Apache 2.0) servido pelo Text Embeddings Inference (TEI), em CPU.
+
+### Quando aplica
+
+- A **instância tem reranker** quando `KNOBRIDGE_RERANKER_URL` está definida (o compose define). A disponibilidade é essa configuração, não uma checagem de saúde a cada busca: um reranker fora do ar cai na ordem do RRF (abaixo).
+- O **produto tem a opção** (`products.rerank`, padrão `true`; [produtos-e-niveis.md](produtos-e-niveis.md#campos)).
+- Com as duas, toda busca do produto é reordenada: a etapa 1 e cada etapa da [busca em etapas](chat.md#busca-em-etapas) (pelo `HybridRetriever`) e o `search_knowledge` do MCP. Sem uma delas, a busca é a da v0.4.
+
+### Como aplica
+
+1. `SearchService.search` roda com `limit = KNOBRIDGE_RERANKER_CANDIDATES` (padrão 30) no lugar do limite do chamador. Tudo antes da fusão é igual (filtro de nível no SQL, limiar, FTS, vizinhos), então o reranker só vê candidatos permitidos e nunca acrescenta nenhum.
+2. Com 1 candidato ou nenhum, o reranker não é chamado (`reranked = false`).
+3. O cliente (`retrieval/rerank.py`, `HttpReranker`, atrás do `Protocol Reranker` que já existe: `rerank(query, hits, *, limit) -> list[SearchHit]`) manda `POST {KNOBRIDGE_RERANKER_URL}/rerank`:
+
+```json
+{"query": "como fechar o caixa", "texts": ["<trecho 1>", "<trecho 2>", "…"], "raw_scores": false, "return_text": false, "truncate": true}
+```
+
+   - `texts[i]` é o corpo do candidato `i` sem o cabeçalho de embedding (`display_text`), precedido do título do documento numa linha, cortado em `KNOBRIDGE_RERANKER_MAX_CHARS` (padrão 2000) caracteres. O corte limita o tempo da CPU; `truncate: true` deixa o TEI cortar o que ainda passar do limite do modelo.
+   - `query` é o texto buscado (a pergunta ou a consulta da etapa), até 2000 caracteres.
+4. Resposta 200 do TEI: lista `[{"index": 0, "score": 0.997}, …]`, ordenada da maior para a menor pontuação, `score` de 0 a 1 (`raw_scores: false`), `index` = posição em `texts`. O cliente confere que há exatamente um item por texto, com `index` distintos e dentro da faixa, e `score` numérico; senão, é resposta inválida.
+5. Os candidatos voltam na ordem do `score` (empate: a ordem do RRF), cortados no limite do chamador (10 no chat; o `limit` do `search_knowledge`), cada um com `rerank_score`. Depois, a montagem das fontes e o orçamento de contexto seguem como antes.
+
+### Falha e queda para a ordem original
+
+- Timeout (`KNOBRIDGE_RERANKER_TIMEOUT`, padrão 10 s, conexão e leitura), erro de conexão, status diferente de 200, JSON inválido ou resposta inválida levantam `RerankerError` dentro do cliente. Quem chama (`rerank_hits`, junto do `HybridRetriever`) captura, registra o log `reranker_failed` (com `workspace_id`, `product_id`, `error_type`, `candidates` e `duration_ms`; nunca a consulta nem os trechos) e devolve os primeiros candidatos **na ordem do RRF**, cortados no limite, com `reranked = false`. A resposta do chat continua normalmente.
+- Sem novas tentativas: um reranker lento numa pergunta seria lento na repetição.
+- Logs de sucesso: `reranker_finished` com `candidates`, `duration_ms` e `workspace_id`.
+
+### Testar busca com reranker
+
+`POST .../collections/{id}/search` aceita `rerank` (booleano ou `null`; padrão `null` = ligado quando a instância tem reranker; `true` sem reranker na instância é 422 `reranker_unavailable`). A resposta ganha `reranked` (booleano: houve reordenação; `false` também na queda por falha) e `rerank_score` em cada resultado. Assim o painel compara a ordem com e sem reranker na mesma consulta.
+
+### Serviço no compose
+
+Serviço `reranker` no `docker-compose.yml` (D2: sempre ligado, em desenvolvimento e produção):
+
+| Item | Valor |
+|---|---|
+| Imagem | `${RERANKER_IMAGE:-ghcr.io/huggingface/text-embeddings-inference:cpu-1.9.4}` (x86_64; em ARM, `cpu-arm64-1.9.4`) |
+| Comando | `--model-id ${RERANKER_MODEL_ID:-BAAI/bge-reranker-v2-m3} --revision ${RERANKER_MODEL_REVISION} --port 80 --max-client-batch-size 128` (o padrão de `RERANKER_MODEL_REVISION` é o hash do commit atual do repositório do modelo no Hugging Face, fixado pela F2.1, para a subida ser reproduzível) |
+| Volume | `reranker-models:/data` (cache do modelo; a primeira subida baixa cerca de 2,3 GB, as seguintes não) |
+| Memória | `mem_limit: ${RERANKER_MEMORY_LIMIT:-4g}` (pesos em fp32 de 568 M parâmetros, cerca de 2,3 GB, mais a execução) |
+| Porta | só na rede do compose (`http://reranker:80`), sem porta no host |
+| Saúde | healthcheck por `GET /health` (o TEI só abre a porta depois de carregar o modelo), `start_period` de 15 min para a primeira subida, intervalo de 10 s. A F2.1 escolhe o comando conforme o que a imagem traz (`curl`, ou um teste de porta no `bash`). |
+| Dependências | `api` e `worker` **não** dependem do `reranker`: a API sobe sem ele (e cai na ordem do RRF até ele ficar saudável); o worker não o usa. `docker compose up --wait` espera o `reranker` ficar saudável. |
+
+Variáveis da API (`settings.py` e `.env.example`, F2.1):
+
+| Variável | Padrão | Uso |
+|---|---|---|
+| `KNOBRIDGE_RERANKER_URL` | vazia (o compose define `http://reranker:80`) | Base do TEI. Vazia: a instância não tem reranker. Só `http` ou `https`. |
+| `KNOBRIDGE_RERANKER_TIMEOUT` | 10 | Segundos por chamada (1 a 60). |
+| `KNOBRIDGE_RERANKER_CANDIDATES` | 30 | Candidatos depois da fusão enviados ao reranker (10 a 100). |
+| `KNOBRIDGE_RERANKER_MAX_CHARS` | 2000 | Caracteres por texto enviado (200 a 8000). |
+| `KNOBRIDGE_RERANKER_MODEL` | `BAAI/bge-reranker-v2-m3` | Só informativo: o nome que a saúde da instância e o painel mostram. |
+
+Variáveis só do compose (`.env.example`): `RERANKER_IMAGE`, `RERANKER_MODEL_ID`, `RERANKER_MODEL_REVISION`, `RERANKER_MEMORY_LIMIT`.
+
+**Latência e memória**: em CPU, reordenar 30 trechos leva de um a alguns segundos, conforme a máquina e o tamanho dos textos; cada etapa reordena de novo. O corte em `KNOBRIDGE_RERANKER_MAX_CHARS` e o timeout dão o teto; o ensaio da F4.3 mede no índice real. O painel da instância mostra o estado do serviço ([uso-e-custos.md](uso-e-custos.md#get-v1adminhealth)).
+
+### E2E e testes
+
+- **Suíte padrão**: um `Reranker` fake atrás da interface (ordem trocada de forma determinística, falha sob demanda) e um teste de contrato do `HttpReranker` contra um servidor HTTP falso (corpo enviado, resposta válida, resposta inválida, timeout, status de erro). Nenhum teste chama o TEI.
+- **E2E da stack**: a camada `docker-compose.e2e.yml` troca o serviço `reranker` por `scripts/fake_reranker.py` (biblioteca padrão do Python, imagem `python:3.12.13-alpine3.22`, como o receptor de webhook), sem o volume do modelo, com `entrypoint` e `command` próprios e healthcheck em `GET /health`. Ele responde `POST /rerank` no formato do TEI, determinístico: a pontuação de cada texto é a fração das palavras da consulta (minúsculas, sem acento) presentes no texto; um texto com o marcador `[[rerank-top]]` recebe 1,0; empate pela ordem de entrada. As fixtures do E2E têm um documento com o marcador, para o teste ver a ordem mudar com a opção ligada e voltar com ela desligada.
 
 ## Da busca à citação
 
-O `HybridRetriever` (`retrieval/retriever.py`) lê as coleções e a similaridade mínima do produto e busca no nível da conversa. Sem coleção, devolve vazio sem chamar o embedding. Com coleções, busca até 10 trechos e transforma cada um numa fonte (`retrieval/context.py`):
+O `HybridRetriever` (`retrieval/retriever.py`) lê as coleções, a similaridade mínima e a opção `rerank` do produto e busca no nível da conversa. Sem coleção, devolve vazio sem chamar o embedding. Com coleções, busca até 10 trechos (desde a v0.5, com o [reranker](#reranker), 30 candidatos reordenados e cortados em 10) e transforma cada um numa fonte (`retrieval/context.py`):
 
 | Campo da citação | Origem |
 |---|---|

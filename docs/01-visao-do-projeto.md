@@ -1,6 +1,8 @@
 # KnoBridge — Visão do Projeto
 
-> Rascunho v0.7 · 2026-10-14 · Status: ideia em definição (ver seção 13, "Perguntas em aberto")
+> Rascunho v0.8 · 2026-10-17 · Status: ideia em definição (ver seção 13, "Perguntas em aberto")
+>
+> **Mudanças da v0.8**: **reranker** decidido: `bge-reranker-v2-m3` self-host pelo Text Embeddings Inference (imagem de CPU), sempre ligado no compose, aplicado aos top-30 depois da fusão e opcional por produto, com queda para a ordem do RRF em falha; **busca em etapas**: o modelo do nível reformula e busca de novo por uma ferramenta, até o máximo de etapas do nível, com o filtro de nível em cada busca; limiar de similaridade com padrão por modelo de embedding e aviso de arquivos que dominam o índice ([ADR 0010](adr/0010-busca-em-etapas-e-reranker.md); D20, seções 7.4 e 8).
 >
 > **Mudanças da v0.7**: canais **MCP** e **widget** decididos: servidor MCP no processo da API com a chave `kbk_` e cinco ferramentas (`list_products`, `search_knowledge`, `get_document`, `ask`, `open_ticket`), widget em Lit com chave pública por widget, domínios permitidos, limite de requisições, identidade assinada opcional e sempre no nível de usuário final ([ADR 0009](adr/0009-canais-mcp-e-widget.md); D19, seção 7.6, [mcp.md](specs/mcp.md) e [widget.md](specs/widget.md)).
 >
@@ -212,10 +214,10 @@ Ordem de grandeza observada no projeto de referência (Delphi, modelo Sonnet, ef
 
 ### 7.4 Recuperação
 
-1. Reescrita de consulta (opcional): expandir siglas, traduzir, gerar variações.
-2. Busca híbrida: top-k vetorial + top-k BM25 → fusão por RRF.
-3. Filtros: workspace, coleção, permissões do usuário, versão do sistema, tipo de fonte.
-4. Reranker (cross-encoder) nos top-30: default self-host **bge-reranker-v2-m3**; alternativas Qwen3-Reranker, Cohere Rerank, Voyage.
+1. Reescrita de consulta: o modelo do nível reformula e busca de novo por uma ferramenta, até o máximo de etapas do nível (busca em etapas, [ADR 0010](adr/0010-busca-em-etapas-e-reranker.md)).
+2. Busca híbrida: top-k vetorial + top-k BM25 → fusão por RRF, com limiar de similaridade por modelo de embedding.
+3. Filtros: workspace, coleção, nível de resposta, permissões do usuário, versão do sistema, tipo de fonte.
+4. Reranker (cross-encoder) nos top-30: **bge-reranker-v2-m3** self-host pelo Text Embeddings Inference, opcional por produto ([ADR 0010](adr/0010-busca-em-etapas-e-reranker.md)); alternativas Qwen3-Reranker, Cohere Rerank, Voyage.
 5. Montagem do contexto: dedup, agrupamento por documento, limite de tokens, citações numeradas.
 6. Opcional (v2): grafo de relações (chamado ↔ commit ↔ doc) para "pular" entre fontes correlatas.
 
@@ -275,7 +277,7 @@ Quando entrar (fase 3): OpenTelemetry + Langfuse para traces; conjunto de avalia
 | **Mapeamento de código** | **Harness de agente**: Claude Code headless (`claude -p`) ou Codex CLI (`codex exec`), somente leitura, JSON Schema, verificação de evidência | **tree-sitter** (fallback obrigatório e chunking por AST) | Produz conhecimento explicado com `arquivo:linhas` verificado (7.1.1); tree-sitter cobre dezenas de linguagens quando não há harness. |
 | **Web** | trafilatura (extração), crawler próprio com sitemap | crawl4ai | |
 | **Embeddings** | **API**: OpenAI `text-embedding-3-small`/`-large` ou **Gemini Embedding** | BGE-M3 / Qwen3-Embedding self-host (ambientes sem API) | Sem GPU; multilíngue; comparar os dois em PT-BR com uma amostra antes de fixar. Registrar o modelo no índice para reindexar depois. |
-| **Reranker** | **bge-reranker-v2-m3** (self-host) | Qwen3-Reranker; Cohere Rerank; Voyage rerank | Apache 2.0, roda em GPU de consumo ou CPU com paciência. |
+| **Reranker** | **bge-reranker-v2-m3** (self-host) servido pelo **Text Embeddings Inference** (imagem de CPU), sempre ligado no compose ([ADR 0010](adr/0010-busca-em-etapas-e-reranker.md)) | Qwen3-Reranker; Cohere Rerank; Voyage rerank | Apache 2.0, roda em GPU de consumo ou CPU com paciência. |
 | **LLM** | Interface própria + adaptadores **OpenAI**, **Anthropic**, **OpenRouter**; **assinatura OpenAI** (conta ChatGPT via Codex CLI) para harness e desenvolvimento | Ollama/vLLM via endpoint compatível com OpenAI; proxy LiteLLM ou Bifrost opcional | Default sugerido: Claude Haiku 5.5 para triagem/classificação/enriquecimento (US$ 0,10 / 0,50 por MTok), Claude Sonnet 5.5 (US$ 2 / 10) ou Opus 5.5 (US$ 4 / 20) para respostas. Sempre configurável. |
 | **Framework de RAG/agente** | Nenhum pesado. SDKs oficiais + MCP SDK | LlamaIndex só pelos readers | Menos lock-in; o canvas já é a abstração. |
 | **MCP** | SDK oficial (Python) | — | Expor busca e ações a IDEs/agentes. |
@@ -313,6 +315,7 @@ Quando entrar (fase 3): OpenTelemetry + Langfuse para traces; conjunto de avalia
 | D17 | Entrada de chamados e abertura de chamado | Conector por provedor / mapeamento do webhook nativo / push num formato padrão | **Push num formato KnoBridge** (JSON Schema), pela API com token por fonte ou por upload JSON/JSONL, numa caixa de entrada no Postgres processada pelo conector interno `tickets` no workflow de ingestão; bruto apagado após indexar; abrir chamado por **webhook de saída por produto** (HMAC-SHA256, retentativas no Temporal, proteção contra SSRF) ([ADR 0006](adr/0006-chamados-por-push.md)) | Médio (o formato é contrato público) |
 | D18 | Público da resposta e controle de acesso ao conhecimento | Assistente por público / estilo só no prompt / nível com filtro de fontes | **Produto** (substitui o assistente) com **três níveis de resposta** (`end_user`, `support`, `product_dev`); nível máximo por pessoa e produto e por chave de API; cada trecho do índice tem um **nível mínimo** (fonte com padrão por tipo, refinado por documento e trecho) filtrado **no SQL da busca**; modelo e instruções por nível no workspace; canal público só `end_user`; cards de desenvolvimento por push ([ADR 0008](adr/0008-produtos-e-niveis.md)) | Médio (migração de dados) |
 | D19 | Canais MCP e widget | MCP em processo separado / no processo da API; widget em React, Preact, Lit ou iframe; limite em memória, Redis ou Postgres | **MCP no processo da API** (`/v1/mcp`, Streamable HTTP sem estado, SDK oficial Python 2.x) com a chave `kbk_` (produtos e nível máximo dela) e as ferramentas `list_products`, `search_knowledge`, `get_document`, `ask` e `open_ticket`, sem OAuth; **widget em Lit**, um JS servido pela instância, com chave pública `kbp_` por widget, domínios permitidos, limite de requisições numa janela fixa no Postgres, token de conversa `kbv_` do visitante e identidade assinada opcional (HMAC com o segredo `kbs_`), **sempre no nível `end_user`**; canais `mcp` e `widget` nas conversas ([ADR 0009](adr/0009-canais-mcp-e-widget.md)) | Fácil (adaptadores sobre a rodada de chat) |
+| D20 | Qualidade da resposta: reranker, reescrita de consulta e limiar | Reranker self-host, externo ou nenhum; no processo da API ou em contêiner; reformulação fixa ou pelo modelo; limiar único ou por modelo | **Reranker `bge-reranker-v2-m3` self-host no Text Embeddings Inference (CPU)**, contêiner sempre ligado, top-30 depois da fusão, opção por produto (ligada por padrão), queda para a ordem do RRF em falha e reranker falso no E2E; **busca em etapas** pela chamada de ferramentas do provedor (OpenAI, OpenRouter, Anthropic), com o máximo de etapas por nível (2, 3 e 4), o filtro de nível no SQL de cada busca, citações acumuladas e busca única para modelos sem ferramentas; **limiar com padrão por modelo de embedding**; **aviso de arquivos que dominam o índice**; avaliação sintética sob demanda ([ADR 0010](adr/0010-busca-em-etapas-e-reranker.md)) | Fácil (opções por produto e por nível) |
 
 ## 10. Fluxos de exemplo
 
@@ -442,6 +445,7 @@ Respostas aqui mudam decisões de arquitetura. As mais importantes estão primei
 - Comparativo OpenAI x Gemini embedding (2026): https://ofox.ai/blog/text-embedding-models-compared-2026/
 - Embeddings 2026 (self-host): https://www.datallmlab.com/blog/best-embedding-models.html · https://aiindigo.com/blog/qwen3-embedding-review-a-multilingual-powerhouse-for-rag-in-2026
 - Rerankers 2026: https://futureagi.com/blog/best-rerankers-for-rag-2026/ · https://presenc.ai/research/best-open-weight-reranker-models-2026
+- Text Embeddings Inference (servidor do reranker): https://github.com/huggingface/text-embeddings-inference
 - Gateways LLM: https://dupple.com/learn/best-llm-gateways · https://llmgateway.io/blog/litellm-alternatives
 - Frameworks RAG (ou nenhum): https://techsy.io/en/blog/best-rag-framework-2026 · https://kanerika.com/blogs/llamaindex-vs-langchain-vs-haystack/
 

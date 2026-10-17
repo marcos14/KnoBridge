@@ -1,6 +1,8 @@
 # Servidor MCP
 
-> Rascunho v0.1 · 2026-10-14 · Plano 0010 (F1.1; implementação nas F2.1 e F2.2)
+> Rascunho v0.2 · 2026-10-17 · Plano 0010 (F1.1; implementação nas F2.1 e F2.2); plano 0011 (F1.1; implementação nas F2.1, F2.3 e F2.4)
+>
+> **Mudanças da v0.2** (plano 0011; [ADR 0010](../adr/0010-busca-em-etapas-e-reranker.md)): `ask` usa a [busca em etapas](chat.md#busca-em-etapas) do nível e devolve `steps`; `search_knowledge` passa pelo reranker quando o produto tem a opção e a instância tem reranker, e usa o limiar por modelo quando o produto não fixa um ([`search_knowledge`](#search_knowledge)).
 
 Contrato do servidor MCP do KnoBridge: transporte, autenticação, as cinco ferramentas (`list_products`, `search_knowledge`, `get_document`, `ask` e `open_ticket`) com entrada, saída, erros e limites, o formato das citações, como o nível é escolhido e a configuração nos clientes. A decisão de arquitetura está no [ADR 0009](../adr/0009-canais-mcp-e-widget.md); as escolhas do usuário, no [plano 0010](../planos/0010-canais-mcp-e-widget.md) (D2 e D6).
 
@@ -121,7 +123,7 @@ Comportamento:
 
 1. Resolve o produto e confere o nível (erros acima), **antes** de qualquer embedding.
 2. Produto sem coleção: `results: []`, sem chamar o embedding (como o `HybridRetriever`).
-3. `SearchService.search` nas coleções do produto, com o `min_similarity` do produto, o nível pedido e `limit`. Os dois braços filtram `chunks.min_level` no SQL.
+3. `SearchService.search` nas coleções do produto, com o `min_similarity` do produto (desde a v0.2, nulo = o padrão do modelo de cada coleção; [indexacao.md](indexacao.md#limiar-por-modelo-de-embedding)), o nível pedido e `limit`. Os dois braços filtram `chunks.min_level` no SQL. Desde a v0.2, com o reranker do produto ligado e disponível na instância, a busca pede `KNOBRIDGE_RERANKER_CANDIDATES` candidatos e o reranker devolve os `limit` primeiros, com queda para a ordem do RRF em falha ([indexacao.md](indexacao.md#reranker)); `score` continua sendo o `fused_score`, e a ordem dos resultados é a do reranker.
 4. Cada acerto vira uma fonte com `retrieval/context.py: source_from_hit` e uma citação com `conversations/retrieval.py: citation(index, source, with_evidence=level != end_user)`, a mesma função das respostas do chat. **Sem** o corte por orçamento de contexto do chat (`fit_to_budget`): o `limit` já limita.
 
 Saída:
@@ -207,7 +209,7 @@ Entrada:
 Comportamento:
 
 - Sem `conversation_id`: cria a conversa da chave como a REST própria ([api-publica.md](api-publica.md#post-v1conversations)), mas com **`channel = mcp`**, `api_key_id` = a chave e `user_id` nulo, título pela pergunta. Com `conversation_id`: usa a conversa existente, com o histórico das 10 mensagens mais recentes ([chat.md](chat.md#histórico-enviado-ao-llm)).
-- A rodada é a do painel e da API (`ChatService` com o `ApiKeyReader` da chave, consumida inteira, como a REST com `stream: false`): checagens (`product_inactive`, `level_not_allowed`, `level_not_configured`), busca com o filtro de nível, regra 8 (sem fonte, sem LLM, a `no_source_message` do produto), gravação das mensagens com `channel = mcp`, `product_id`, `level` e `cost_usd`.
+- A rodada é a do painel e da API (`ChatService` com o `ApiKeyReader` da chave, consumida inteira, como a REST com `stream: false`): checagens (`product_inactive`, `level_not_allowed`, `level_not_configured`), busca com o filtro de nível, desde a v0.2 a [busca em etapas](chat.md#busca-em-etapas) com o `max_steps` do nível (o filtro de nível vale em cada etapa), regra 8 (sem fonte, nenhum texto do LLM: a `no_source_message` do produto), gravação das mensagens com `channel = mcp`, `product_id`, `level`, `cost_usd` (somado nas rodadas) e `steps`.
 - Falha do provedor durante a geração: a mensagem fica `failed` (como no painel) e a ferramenta devolve erro com o código do provedor e `details` com `message_id` e `conversation_id`.
 
 Saída:
@@ -224,11 +226,13 @@ Saída:
   "citations": [{"index": 1, "title": "src/caixa/fechamento.ts", "uri": "src/caixa/fechamento.ts#L10-L42", "…": "…"}],
   "ticket_enabled": true,
   "model": "gpt-4.1-mini",
-  "cost_usd": 0.000427
+  "cost_usd": 0.000427,
+  "steps": 2
 }
 ```
 
-- `status`: `completed` ou `no_source`. Em `no_source`, `citations: []`, `answer` = a mensagem de "sem fonte" do produto, `model` e `cost_usd` nulos.
+- `status`: `completed` ou `no_source`. Em `no_source`, `citations: []` e `answer` = a mensagem de "sem fonte" do produto; `model` e `cost_usd` nulos quando o LLM não foi chamado e preenchidos quando foi chamado para buscar de novo (v0.2).
+- `steps` (v0.2): etapas da resposta ([chat-sse.md](chat-sse.md#done)). As consultas das etapas não saem pelo MCP (ficam na visão administrativa).
 - `citations`: formato de [chat-sse.md](chat-sse.md#citations), as mesmas gravadas na mensagem.
 - `ticket_enabled`: o produto oferece abrir chamado (o mesmo `ticket_requests_enabled` do chat).
 
@@ -257,7 +261,7 @@ Não há ferramenta para acompanhar o pedido nesta versão; owner e admin veem o
 
 ## Citações
 
-Toda citação que sai do MCP (`search_knowledge`, `get_document`, `ask`) é o objeto de [chat-sse.md](chat-sse.md#citations), gerado pela mesma função do chat (`conversations/retrieval.py: citation`): `index`, `title`, `uri`, `snippet`, `document_id`, `kind`, localização (`path`, `symbol`, `start_line`, `end_line`, `language`, `sha`, `author`, `date`) e os campos de conhecimento, chamado e card. No nível `end_user`, `evidence` é `null`. A regra 8 vale para o MCP assim: `ask` nunca responde sem fonte (o LLM não é chamado), e `search_knowledge` sem resultado traz a `note` que manda não responder sem fonte.
+Toda citação que sai do MCP (`search_knowledge`, `get_document`, `ask`) é o objeto de [chat-sse.md](chat-sse.md#citations), gerado pela mesma função do chat (`conversations/retrieval.py: citation`): `index`, `title`, `uri`, `snippet`, `document_id`, `kind`, localização (`path`, `symbol`, `start_line`, `end_line`, `language`, `sha`, `author`, `date`) e os campos de conhecimento, chamado e card. No nível `end_user`, `evidence` é `null`. A regra 8 vale para o MCP assim: `ask` nunca responde sem fonte (nenhum texto do LLM sai sem fonte; desde a v0.2, o LLM pode ser chamado só para buscar de novo), e `search_knowledge` sem resultado traz a `note` que manda não responder sem fonte.
 
 ## Conversas, uso e custos
 

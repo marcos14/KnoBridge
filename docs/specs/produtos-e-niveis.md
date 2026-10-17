@@ -1,6 +1,8 @@
 # Produtos e níveis de resposta
 
-> v1.0 · 2026-10-13 · Implementado (plano 0009, F1.1 a F3.3; o ensaio da F4.2 acrescentou a proibição de planejar ao texto padrão do usuário final)
+> v1.1 · 2026-10-17 · Implementado até a v1.0 (plano 0009, F1.1 a F3.3; o ensaio da F4.2 acrescentou a proibição de planejar ao texto padrão do usuário final); v1.1 em implementação (plano 0011)
+>
+> **Mudanças da v1.1** (plano 0011, F1.1; implementação nas F2.1, F2.3 e F2.4; [ADR 0010](../adr/0010-busca-em-etapas-e-reranker.md)): o produto ganha a opção **`rerank`** (reordenar os trechos pelo reranker, ligada por padrão; vale quando a instância tem reranker) e o `min_similarity` passa a aceitar nulo, que é o padrão do modelo de embedding de cada coleção, explicado em `effective_min_similarity` ([Campos](#campos)); cada nível ganha o **máximo de etapas** da [busca em etapas](chat.md#busca-em-etapas) (`max_steps`, padrões 2, 3 e 4), o aviso `tools_supported` e o custo estimado máximo com as etapas ([Configuração dos níveis](#campos-1)). O filtro de nível vale em cada etapa ([O filtro na busca](#o-filtro-na-busca)).
 
 Contrato dos **produtos** (que substituem os assistentes) e dos **níveis de resposta**: o que é um produto, os três níveis e a configuração deles no workspace, o nível máximo de cada membro em cada produto, o nível mínimo das fontes e dos documentos e o filtro na busca, o chat com produto e nível, a migração dos assistentes, a compatibilidade das rotas antigas, papéis e auditoria. A decisão de arquitetura está no [ADR 0008](../adr/0008-produtos-e-niveis.md); as escolhas do usuário, no [plano 0009](../planos/0009-produtos-e-niveis.md) (D1 a D13).
 
@@ -37,7 +39,10 @@ Código previsto: `backend/src/knobridge/products/` (no lugar de `assistants/`: 
 | `language` | texto | Tag BCP 47 das respostas; padrão `pt-BR`. |
 | `tone` | `neutral`, `formal` ou `friendly` | Padrão `neutral`. |
 | `no_source_message` | texto | Resposta quando não há fonte (regra 8); vazio ou `null` grava a mensagem padrão em pt-BR. |
-| `min_similarity` | número | De 0 a 1, padrão 0,35 ([chat.md](chat.md#recuperação-de-fontes)). |
+| `min_similarity` | número ou `null` | De 0 a 1. Desde a v1.1 (F2.4), `null` (o padrão na criação) significa **o padrão do modelo de embedding de cada coleção** do produto ([indexacao.md](indexacao.md#limiar-por-modelo-de-embedding)); um número vale para todas as coleções. No `PATCH`, `min_similarity: null` volta ao padrão do modelo (omitido fica como está). Até a v1.0, número obrigatório com padrão 0,35; a migração `0024` troca para `null` os produtos com exatamente 0,35 ([chat.md](chat.md#recuperação-de-fontes)). |
+| `effective_min_similarity` | lista | Só leitura (v1.1, F2.4): o limiar que vale em cada modelo de embedding das coleções do produto, `[{"embedding_model", "value", "source"}]`, um item por modelo distinto, por nome do modelo. `source`: `product` (o `min_similarity` do produto), `model` (o padrão da tabela por modelo) ou `fallback` (modelo fora da tabela: 0,35). Lista vazia sem coleção. |
+| `rerank` | booleano | Desde a v1.1 (F2.1): reordenar os trechos de toda busca do produto pelo reranker da instância (chat, etapas, `search_knowledge` do MCP). Padrão `true` (D3 do plano 0011). Sem reranker na instância, o valor fica gravado e não faz efeito. |
+| `rerank_available` | booleano | Só leitura (v1.1, F2.1): a instância tem reranker (`KNOBRIDGE_RERANKER_URL` definida). O painel mostra a opção desabilitada, com a explicação, quando é `false`. A reordenação acontece quando `rerank` e `rerank_available` são verdadeiros ([indexacao.md](indexacao.md#reranker)). |
 | `active` | booleano | Padrão `true`. Inativo some para o leitor e não aceita conversa nova nem mensagem (409 `product_inactive`). |
 | `ticket_webhook_url` | texto ou `null` | Webhook de abrir chamado do produto (D12), com as regras de [chamados.md](chamados.md#configuração-no-produto). |
 | `ticket_webhook_configured` | booleano | Só leitura: URL e segredo presentes. |
@@ -82,7 +87,10 @@ Cada workspace tem **exatamente três** configurações de nível, uma por níve
 | `default_instructions` | texto | Só leitura: o texto padrão do KnoBridge para o nível (abaixo), para o painel mostrar e restaurar. |
 | `configured` | booleano | Só leitura: `provider_id` e `model` presentes. |
 | `price` | objeto ou `null` | Só leitura: `{"input_usd_per_mtok", "output_usd_per_mtok"}` da tabela de preços do chat ([uso-e-custos.md](uso-e-custos.md#preços-do-chat)); `null` sem modelo ou sem preço. |
-| `estimated_cost_per_answer_usd` | número ou `null` | Só leitura: custo de uma resposta de referência com 4000 tokens de entrada e 600 de saída (6 casas), para a tela comparar os níveis. `null` sem preço. |
+| `estimated_cost_per_answer_usd` | número ou `null` | Só leitura: custo de uma resposta de referência com 4000 tokens de entrada e 600 de saída (6 casas), para a tela comparar os níveis. `null` sem preço. É a resposta com uma busca só. |
+| `max_steps` | inteiro | Desde a v1.1 (F2.3): o máximo de etapas da [busca em etapas](chat.md#busca-em-etapas) nas respostas do nível, de 1 a 6 (fora disso, 422 `validation_error`). Padrões: `end_user` 2, `support` 3, `product_dev` 4 (D4 do plano 0011), gravados na criação dos níveis e pela migração `0023`. `1` desliga a busca em etapas no nível. |
+| `estimated_max_cost_per_answer_usd` | número ou `null` | Só leitura (v1.1, F2.3): custo estimado de uma resposta que usa todas as etapas, para a tela mostrar ao lado do custo simples. Com `N = max_steps`: `N` chamadas; a chamada `r` (de 1 a `N`) com `4000 + 1500 × (r − 1)` tokens de entrada; saída de `50 × (N − 1) + 600` tokens no total. Com `N = 1`, igual a `estimated_cost_per_answer_usd`. `null` sem preço. |
+| `tools_supported` | booleano ou `null` | Só leitura (v1.1, F2.3): `false` quando a última resposta do nível mostrou que o modelo atual não aceita chamada de ferramentas (`tools_unsupported_model` igual ao `model`); `null` enquanto não se sabe. Com `false`, as respostas usam a busca única e a tela avisa "O modelo deste nível não aceita busca em etapas; as respostas usam uma busca só." ([chat.md](chat.md#modelo-sem-chamada-de-ferramentas)). |
 | `updated_at` | data | |
 
 **Nível sem modelo** (`configured = false`): conversa nova ou mensagem nesse nível responde 409 `level_not_configured` (`details.level`), antes de qualquer embedding. Um workspace novo nasce com os três níveis sem modelo; o checklist do Início pede a configuração ([uso-e-custos.md](uso-e-custos.md#checklist-de-primeiros-passos)).
@@ -92,9 +100,9 @@ Cada workspace tem **exatamente três** configurações de nível, uma por níve
 | Rota | Papel | Efeito |
 |---|---|---|
 | `GET /v1/workspaces/{workspace_id}/levels` | admin | `{"items": [WorkspaceLevelOut, …]}` com os três, na ordem dos níveis. |
-| `PATCH /v1/workspaces/{workspace_id}/levels/{level}` | admin, CSRF | Corpo com `provider_id`, `model`, `temperature` e/ou `instructions` (omitido fica; `instructions: null` volta ao padrão; corpo vazio é 422). Resposta 200 `WorkspaceLevelOut`. Nível desconhecido no caminho: 422 `validation_error`. |
+| `PATCH /v1/workspaces/{workspace_id}/levels/{level}` | admin, CSRF | Corpo com `provider_id`, `model`, `temperature`, `instructions` e/ou, desde a v1.1, `max_steps` (omitido fica; `instructions: null` volta ao padrão; `max_steps: null` é 422; corpo vazio é 422). Resposta 200 `WorkspaceLevelOut`. Nível desconhecido no caminho: 422 `validation_error`. |
 
-Mudar o modelo ou as instruções vale para as perguntas seguintes; as respostas gravadas mantêm o `model` com que foram geradas.
+Mudar o modelo ou as instruções vale para as perguntas seguintes; as respostas gravadas mantêm o `model` com que foram geradas. Mudar `provider_id` ou `model` limpa a marca de modelo sem ferramentas (`tools_unsupported_model`), e a busca em etapas volta a ser tentada (v1.1).
 
 ### Textos padrão das instruções
 
@@ -265,7 +273,7 @@ A citação `kind: knowledge` carrega as evidências (caminhos, linhas e excerto
 - braço textual: a mesma condição;
 - `:allowed_levels` = os níveis de `end_user` até o da pergunta (`{end_user}`, `{end_user, support}` ou os três).
 
-Nunca se filtra depois da busca: um trecho acima do nível não entra nos candidatos, na fusão, nas citações nem no contexto do LLM. Os testes provam isso nos dois braços e na fusão (F2.2), com número constante de statements. O `hnsw.ef_search` de 1000 já compensa o filtro extra aplicado depois do índice ([indexacao.md](indexacao.md#busca-híbrida)).
+Nunca se filtra depois da busca: um trecho acima do nível não entra nos candidatos, na fusão, nas citações nem no contexto do LLM. Desde a v1.1, o mesmo vale para **cada etapa** da [busca em etapas](chat.md#busca-em-etapas): a consulta escrita pelo modelo passa pelo mesmo `HybridRetriever`, com o nível da conversa, e nunca muda o nível; e o reranker só reordena os candidatos que o SQL já filtrou. Há teste com Postgres real em que um trecho acima do nível não chega ao contexto em nenhuma etapa (F2.3). Os testes provam isso nos dois braços e na fusão (F2.2), com número constante de statements. O `hnsw.ef_search` de 1000 já compensa o filtro extra aplicado depois do índice ([indexacao.md](indexacao.md#busca-híbrida)).
 
 A rota "testar busca" das coleções (`POST .../collections/{id}/search`) passa a exigir **editor** (era qualquer membro, e um leitor com nível `end_user` leria trechos de código por ela) e aceita `level` (padrão `product_dev`, tudo). Quem gerencia fontes vê o conteúdo delas nas telas de administração; os níveis governam o chat e a API.
 
@@ -359,11 +367,11 @@ Matriz completa em [autenticacao.md](autenticacao.md#matriz-de-permissões).
 | Evento | Quando | `details` |
 |---|---|---|
 | `product.created` | Criar ou duplicar | `name`, `collection_ids`, `duplicated_from` (só ao duplicar) |
-| `product.updated` | Editar | `name`, `fields` (nomes dos campos alterados; nunca o texto das instruções nem a URL do webhook) |
+| `product.updated` | Editar | `name`, `fields` (nomes dos campos alterados, inclusive `rerank` e `min_similarity` desde a v1.1; nunca o texto das instruções nem a URL do webhook) |
 | `product.deleted` | Excluir | `name`, `conversation_count` |
 | `product.ticket_webhook_secret_rotated` | Gerar segredo | `name` |
 | `product.ticket_webhook_tested` | Testar webhook | `name`, `ok`, `status`, `error_code` |
-| `workspace_level.updated` | `PATCH .../levels/{level}` | `level`, `fields`, `provider_id` e `model` (quando mudaram); nunca o texto das instruções |
+| `workspace_level.updated` | `PATCH .../levels/{level}` | `level`, `fields`, `provider_id` e `model` (quando mudaram), `max_steps` (`{from, to}`, quando mudou; v1.1); nunca o texto das instruções. A marca de modelo sem ferramentas, gravada pela rodada do chat, não é auditada (só o log `chat_tools_unsupported`). |
 | `member_level.updated` | `PUT .../members/{id}/product-levels` | `user_id`, `changes` (`[{product_id, from, to}]`, com `null` para "padrão") |
 | `source.min_level_changed` | Mudar o nível mínimo de uma fonte | `name`, `from`, `to` |
 | `invitation.created` | Convidar | os campos de hoje mais `product_levels` |

@@ -1,6 +1,8 @@
 # Uso e custos, painel do workspace e painel da instância
 
-> Rascunho v0.4 · 2026-10-14 · Planos 0008 (F1.1; implementado na F2.2), 0009 (F1.1) e 0010 (F1.1)
+> Rascunho v0.5 · 2026-10-17 · Planos 0008 (F1.1; implementado na F2.2), 0009 (F1.1), 0010 (F1.1) e 0011 (F1.1; implementação nas F2.1 e F2.3)
+
+> **Mudanças da v0.5** (plano 0011; [ADR 0010](../adr/0010-busca-em-etapas-e-reranker.md)): com a [busca em etapas](chat.md#busca-em-etapas), o custo de uma resposta é a soma de todas as chamadas ao LLM dela, e uma resposta `no_source` depois de etapas conta como resposta com custo ([Custo das etapas e do reranker](#custo-das-etapas-e-do-reranker)); o relatório ganha `chat_searches`; a saúde da instância ganha o serviço `reranker` ([`GET /v1/admin/health`](#get-v1adminhealth)).
 
 > **Mudanças da v0.4** (plano 0010, F1.1; implementação nas F2.2, F3.2 e F4.3): canais **`mcp`** e **`widget`**: `group_by=channel` traz sempre as quatro linhas, `group_by=api_key` conta os canais `api` e `mcp`, e há o agrupamento novo `group_by=widget` ([Canais MCP e widget](#canais-mcp-e-widget)).
 
@@ -20,7 +22,7 @@ Código previsto: `backend/src/knobridge/llm/chat_pricing.py` (preços), `backen
 - **Preço desconhecido nunca vira zero.** Execução ou resposta com modelo sem preço tem `cost_usd` nulo; os totais somam só os valores conhecidos e informam quantos itens ficaram sem preço (`unpriced_runs`, `unpriced_answers`) e seus tokens, para a tela avisar "custo parcial".
 - **Período semiaberto `[from, to)`**, em UTC, com datas ISO 8601 (`2026-10-01T00:00:00Z`). Sem `from`, os 30 dias antes de `to`; sem `to`, o relógio do servidor (injetado). `from >= to` dá 422 `validation_error`; período maior que 366 dias dá 422 `usage_period_too_long`.
 - **Em que data cada custo cai**: embeddings, pelo `runs.finished_at` (o custo só é calculado ao fechar a execução; execuções ainda abertas não entram); chat, pelo `created_at` da mensagem do assistente.
-- **Quem conta como resposta do chat**: mensagens `role = assistant` com `model` preenchido (as que chamaram o LLM: `completed`, `failed`, `interrupted`). `no_source` não chama o LLM e não tem custo; entra só na contagem de respostas do painel.
+- **Quem conta como resposta do chat**: mensagens `role = assistant` com `model` preenchido (as que chamaram o LLM: `completed`, `failed`, `interrupted` e, desde a v0.5, `no_source` depois de etapas, que chamou o LLM para buscar de novo). `no_source` sem LLM não tem custo nem `model`; entra só na contagem de respostas do painel.
 - **Isolamento**: rotas de workspace filtram por `workspace_id` e rodam no escopo do workspace (RLS); rotas da instância rodam em modo de sistema, só para superadmin. Toda consulta nova tem teste de isolamento e de número constante de statements.
 
 ## Preços do chat
@@ -53,6 +55,15 @@ KNOBRIDGE_CHAT_PRICES='{"gpt-4.1-mini": {"input": 0.40, "output": 1.60}, "anthro
 Valores ≥ 0; JSON inválido, campo faltando ou negativo impede a subida (erro de settings). Entra em `.env.example`.
 
 Mudar a tabela não recalcula o passado: o custo é gravado na resposta (`messages.cost_usd`), como o das execuções.
+
+### Custo das etapas e do reranker
+
+Desde a v0.5 (plano 0011, D4):
+
+- **Etapas**: uma resposta com a [busca em etapas](chat.md#busca-em-etapas) faz até `max_steps` chamadas ao LLM do nível. `messages.input_tokens`, `output_tokens` e `cost_usd` são as somas de todas essas chamadas, cada uma com o preço do modelo do nível ([chat.md](chat.md#custo-e-canal-por-resposta)). As somas do relatório não mudam de forma: continuam somando as colunas da mensagem.
+- **Reranker**: self-host, sem custo por chamada; nada é somado. O custo dele é a máquina (CPU e memória do contêiner), fora destas contas.
+- **Embedding das consultas** (a pergunta e as consultas das etapas): não é registrado, como até a v0.4.
+- **Estimativa por nível**: a tela Níveis de resposta mostra o custo de uma resposta simples e o máximo com as etapas ([produtos-e-niveis.md](produtos-e-niveis.md#campos-1)).
 
 ## Uso e custos do workspace
 
@@ -97,6 +108,7 @@ Parâmetros: `from`, `to` (período), `group_by` (obrigatório, abaixo) e, desde
 | `model` | Uma por modelo (de embedding ou de chat) | modelo / modelo | as do tipo do modelo |
 | `day` | Um dia UTC por linha, do primeiro ao último do período, inclusive dias vazios (com zeros) | `2026-10-01` / a mesma data | todas |
 
+- **`chat_searches`** (v0.5, F2.3): coluna de chat em `totals` e nas linhas, a soma de `messages.steps` das respostas contadas (as com `model`; `steps` nulo conta 0). Dividida por `answers`, dá a média de buscas por resposta. Vai também no CSV, depois de `answers`.
 - Colunas que não se aplicam ao agrupamento vêm `null` (não zero). `cost_usd` da linha é a soma dos custos conhecidos que se aplicam; sem nenhum custo conhecido, a soma é `0` e `unpriced_runs`/`unpriced_answers` dizem quantos itens ficaram de fora. `totals` é sempre do período inteiro, com todas as colunas.
 - `channel` traz sempre as quatro linhas (`panel`, `api`, `mcp` e `widget`, nessa ordem quando os custos empatam) e `level` sempre as três, com zeros quando não houve resposta; em `model`, um modelo usado nos dois papéis vem numa linha só, com os dois lados.
 - Linhas ordenadas por `cost_usd` decrescente (nulos por último) e depois por `label`; em `day`, pela data; em `level`, pela ordem dos níveis. Sem paginação: o número de linhas é limitado pelo agrupamento (fontes, produtos, chaves, níveis) ou pelo período (até 367 dias).
@@ -193,8 +205,9 @@ Separado do painel para a tela carregar os números sem esperar as checagens. Re
 | `database` | `SELECT 1` (o mesmo `ping` de `/v1/health/ready`). | `ok`, `error` |
 | `temporal` | Descrição do namespace pelo cliente Temporal. | `ok`, `error` |
 | `worker` | Descrição da fila de tarefas do worker (`DescribeTaskQueue`): `ok` se algum poller foi visto nos últimos 60 s, `error` se não há poller recente, `unknown` se o Temporal está fora. | `ok`, `error`, `unknown` |
+| `reranker` | v0.5 (F2.1): `GET {KNOBRIDGE_RERANKER_URL}/health` do TEI ([indexacao.md](indexacao.md#reranker)); `disabled` quando a variável está vazia (a instância não tem reranker). | `ok`, `error`, `disabled` |
 
-Corpo: `{"version", "api", "database", "temporal", "worker"}`. Cada item: `{"status", "checked_at", "detail"}`, com `detail` curto e nosso, nunca a mensagem do driver: `null` em `ok`; `database unreachable`, `temporal unreachable`, `task queue unreadable`, `no worker polling the task queue`, `check timed out` em `error`; `temporal down` no worker `unknown`. As checagens rodam em paralelo, cada uma com timeout de 2 s (timeout = `error`). Falhas são logadas só pelo tipo da exceção.
+Corpo: `{"version", "api", "database", "temporal", "worker", "reranker"}` (`reranker` desde a v0.5; o item traz também `model`, o `KNOBRIDGE_RERANKER_MODEL`, ou `null` em `disabled`). Cada item: `{"status", "checked_at", "detail"}`, com `detail` curto e nosso, nunca a mensagem do driver: `null` em `ok`; `database unreachable`, `temporal unreachable`, `task queue unreadable`, `no worker polling the task queue`, `reranker unreachable`, `reranker not ready` (status diferente de 200, como na primeira subida enquanto o modelo baixa), `check timed out` em `error`; `temporal down` no worker `unknown`; `reranker not configured` em `disabled`. As checagens rodam em paralelo, cada uma com timeout de 2 s (timeout = `error`). Falhas são logadas só pelo tipo da exceção.
 
 ## Papéis e auditoria
 

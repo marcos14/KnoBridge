@@ -17,10 +17,10 @@ fases:
     subfases:
       - id: F1.1
         titulo: ADR e specs da busca em etapas, do reranker, do limiar por modelo, do aviso de arquivos gerados e da avaliação
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-17
-        concluida_em: null
+        concluida_em: 2026-10-13
         commit: null
   - id: F2
     titulo: Backend
@@ -140,6 +140,13 @@ decisoes:
     motivo: reaproveitar a interface existente e manter a CI leve e determinística
     alternativas: modelo carregado no processo da API (sentence-transformers); reranker real no E2E
     adr: docs/adr/0010-busca-em-etapas-e-reranker.md
+  - id: D8
+    data: 2026-10-13
+    por: agente
+    decisao: "F1.1 (ADR 0010): TEI cpu-1.9.4 com BAAI/bge-reranker-v2-m3 (volume reranker-models, 4g), POST /rerank com os 30 melhores depois da fusão e devolve 10, timeout 10 s e queda para a ordem do RRF; products.rerank padrão true, vale na busca inicial, em cada etapa, no search_knowledge e no Testar busca; etapa 1 = busca de hoje, as seguintes pela ferramenta interna search_sources {query}, max_steps 1 a 6 (2/3/4), última rodada com tool_choice none, até 3000 tokens e 30 fontes, citações acumuladas sem repetir; modelo sem ferramentas: ToolsUnsupportedError, refaz sem ferramentas e marca tools_unsupported_model no nível; min_similarity nulo = padrão do modelo (0,35 OpenAI, 0,60 gemini-embedding-001, 0,57 gemini-embedding-2), produtos com exatamente 0,35 passam a nulo; aviso de arquivos dominantes em sources.index_stats ao fim de execução bem-sucedida; migrações 0022 (F2.1), 0023 (F2.3) e 0024 (F2.4); E2E com scripts/fake_reranker.py"
+    motivo: "contrato implementável"
+    alternativas: "migração única; reranker só na busca inicial"
+    adr: null
 pendencias_usuario: []
 ---
 
@@ -385,6 +392,7 @@ Nenhuma.
 
 - 2026-10-17 — plano criado na branch `plano/0011-qualidade-da-resposta` (a partir de `main`); aguardando aprovação.
 - 2026-10-17 — plano aprovado pelo usuário ("Aprovado"); F1.1 iniciada (agente em worktree).
+- 2026-10-13 — F1.1 concluída: ADR 0010, spec avaliacao.md e nove specs atualizadas, visão com D20; links, âncoras e tabelas conferidos
 
 ## 8. Encerramento
 
