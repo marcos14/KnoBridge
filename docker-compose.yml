@@ -178,6 +178,11 @@ services:
       - "80"
       - --max-client-batch-size
       - "128"
+      # Caps each query + passage pair (auto-truncate is on) and the warmup batch. Without it TEI
+      # warms up at the model's 8,192-token maximum, whose attention needs more than the 4 GB
+      # limit and the container is OOM-killed in a loop; search chunks are far shorter than this.
+      - --max-batch-tokens
+      - "2048"
     volumes:
       - reranker-models:/data
     mem_limit: ${RERANKER_MEMORY_LIMIT:-4g}
