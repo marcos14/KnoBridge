@@ -82,12 +82,12 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-17
         concluida_em: 2026-10-17
-        commit: null
+        commit: 6c90e43
       - id: F4.3
         titulo: Ensaio no Minski contra a linha de base dos ensaios 0005 e 0006
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: orquestrador
+        iniciada_em: 2026-10-17
         concluida_em: null
         commit: null
 decisoes:
@@ -259,7 +259,27 @@ decisoes:
     motivo: "a variável estava no .env.example mas nunca chegava aos contêineres; a coleção não expõe o limiar padrão e copiar a tabela no frontend duplicaria a regra; o fake é rápido demais para o texto da etapa aparecer"
     alternativas: "deixar a variável só para quem roda fora do Docker; mostrar o número copiado; waitForTimeout"
     adr: null
-pendencias_usuario: []
+  - id: D25
+    data: 2026-10-17
+    por: usuario
+    decisao: "o reranker passa a ser opcional e desligado por padrão: o serviço sai da subida padrão do compose (perfil reranker), a reordenação dos produtos novos vem desligada e a instância sem reranker segue na ordem do RRF; muda a D2 e ganha ADR"
+    motivo: "medido na F4.3: o bge-reranker-v2-m3 em CPU leva 34 s (30 trechos de 900 caracteres) a 96 s (30 de 2.000) com 16 CPUs, acima do tempo limite de 10 s, e precisa de mais de 4 GB para aquecer"
+    alternativas: "trocar já por um modelo menor com ONNX (fica para um próximo plano, conforme o ganho medido no ensaio); manter ligado reordenando 10 trechos curtos (cerca de 11 s e 6 a 8 GB)"
+    adr: null
+  - id: D26
+    data: 2026-10-17
+    por: usuario
+    decisao: "o ensaio da F4.3 roda em três configurações: linha de base (uma busca, sem reranker), busca em etapas (2/3/4) e etapas com reranker num tempo limite alto, só para medir a qualidade"
+    motivo: "saber se a reordenação melhora as respostas decide se vale buscar um reranker mais leve"
+    alternativas: "só sem reranker"
+    adr: null
+pendencias_usuario:
+  - id: P1
+    aberta_em: 2026-10-17
+    pergunta: "O bge-reranker-v2-m3 em CPU leva de 34 a 96 s para reordenar 30 trechos (16 CPUs; sem ONNX na revisão fixada, o TEI usa o backend candle) e não sobe com o limite de 4 GB. Como seguir com o reranker, e o ensaio roda com quais configurações?"
+    status: respondida
+    resposta: "Desligado por padrão: o serviço vira opcional (perfil), produtos novos sem reordenação, com ADR. O ensaio roda em três configurações: linha de base, busca em etapas e etapas com reranker com tempo limite alto só para medir a qualidade."
+    respondida_em: 2026-10-17
 ---
 
 # Plano 0011 — Qualidade da resposta
@@ -519,6 +539,7 @@ Nenhuma.
 - 2026-10-17 — F3.1 concluída: máximo de buscas e custo com todas as buscas nos níveis, Reordenar trechos e limiar em branco = padrão do modelo no produto, Buscando: … e N buscas no chat e em Conversas, arquivos dominantes com Excluir nas fontes, widget com Buscando mais informações…; frontend 1.753 testes (99,9/98,7), widget 186 (100%, 17,9 KiB gzip)
 - 2026-10-17 — F4.2 iniciada (inclui o Testar busca da coleção com limiar em branco = padrão do modelo, deixado de fora da F3.1)
 - 2026-10-17 — F4.2 concluída: quality.spec.ts (busca em três etapas com Buscando e 3 buscas, reordenação ligada e desligada no chat e no Testar busca, aviso de relatório gerado de 211 trechos excluído pelo painel), E2E da stack verde duas vezes (10/10 cada), Testar busca com limiar em branco = padrão do modelo e com e sem reranker, KNOBRIDGE_MIN_SIMILARITY_DEFAULTS no compose, guia avaliar-respostas.md, guias, README, CHANGELOG e seções 1 e 12 do AGENTS.md raiz; frontend 1.759 testes (99,9/98,7)
+- 2026-10-17 — F4.3 iniciada; o reranker real se mostrou lento demais em CPU (34 a 96 s por busca) e sem memória com 4 GB: pendência P1 respondida pelo usuário (D25, D26)
 
 ## 8. Encerramento
 
