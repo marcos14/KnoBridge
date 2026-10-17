@@ -108,7 +108,7 @@ O compose passa para `api`, `worker` e `migrate` as variáveis abaixo, com defau
 | `KNOBRIDGE_SMTP_HOST` / `KNOBRIDGE_SMTP_PORT` | `mailpit` / `1025` | Fixos: neste ambiente o SMTP é sempre o Mailpit |
 | `KNOBRIDGE_ENV` | `local` | Ambiente do backend. Qualquer valor diferente de `production` aceita o provedor de LLM `fake` (sem rede, para testes) |
 | `KNOBRIDGE_COOKIE_SECURE` | `false` | **Só em desenvolvimento**: o painel aqui é HTTP puro, então os cookies não levam `Secure`. Com HTTPS, use `true` (o padrão da aplicação) |
-| `KNOBRIDGE_FORWARDED_ALLOW_IPS` (só `api`) | `${FRONTEND_IPV4}` (`10.213.57.10`) | Proxies cujo `X-Forwarded-For` a API aceita. O nginx do painel repassa `/v1` para a `api`; confiando só nele, o IP do cliente (usado na limitação de tentativas de login) é o do navegador, e não o do proxy |
+| `KNOBRIDGE_FORWARDED_ALLOW_IPS` (só `api`) | `${FRONTEND_IPV4}` (`10.213.57.250`) | Proxies cujo `X-Forwarded-For` a API aceita. O nginx do painel repassa `/v1` para a `api`; confiando só nele, o IP do cliente (usado na limitação de tentativas de login) é o do navegador, e não o do proxy |
 | `KNOBRIDGE_LOCAL_SOURCES_ROOT` | `/sources` | Fixo: fontes de pasta e repositórios Git locais precisam estar abaixo de `/sources`, onde `api` e `worker` montam a pasta do host (abaixo) |
 | `KNOBRIDGE_GIT_WORKDIR` | `/var/lib/knobridge/git` | Fixo: onde o `worker` guarda os clones parciais dos repositórios cadastrados por URL https (volume `source-clones`) |
 | `KNOBRIDGE_CHAT_PRICES` | `{}` | Preços de chat (US$ por milhão de tokens, entrada e saída) acrescentados à tabela embutida, para o custo estimado de cada resposta em **Uso e custos** ([uso-e-custos.md](../specs/uso-e-custos.md#preços-do-chat)). JSON entre aspas simples no `.env`; JSON inválido impede a subida |
@@ -123,7 +123,7 @@ Fontes de pasta e repositórios Git locais são lidos de uma pasta do host, mont
 
 Repositórios por URL https não usam essa pasta: o `worker` clona no volume nomeado `source-clones`, que sobrevive a `down` e some com `down -v`. A imagem do backend traz o `git` e as dependências de parsing (MarkItDown com PDF/DOCX/XLSX/PPTX) e de tree-sitter; o build falha cedo se alguma delas não carregar.
 
-A rede do compose tem sub-rede fixa (`COMPOSE_SUBNET`, padrão `10.213.57.0/24`) e o `frontend` tem endereço fixo nela (`FRONTEND_IPV4`), para a `api` saber qual é o seu proxy. Requisições direto na porta da `api` (`API_PORT`) não passam pelo nginx e contam o IP de quem conectou.
+A rede do compose tem sub-rede fixa (`COMPOSE_SUBNET`, padrão `10.213.57.0/24`) e o `frontend` tem endereço fixo nela (`FRONTEND_IPV4`, padrão `10.213.57.250`), para a `api` saber qual é o seu proxy. O endereço fica no alto da sub-rede porque o Docker distribui os dos outros contêineres a partir do `.2`; um `.env` antigo com `FRONTEND_IPV4` e `KNOBRIDGE_FORWARDED_ALLOW_IPS` em `.10` pode falhar com `Address already in use` ao criar o `frontend` (troque os dois para `.250`). Requisições direto na porta da `api` (`API_PORT`) não passam pelo nginx e contam o IP de quem conectou.
 
 Rodando o backend fora do Docker (`uv run knobridge-api`), os defaults de `backend/.env.example` já apontam o SMTP para `localhost:1025`; suba só o Mailpit com `docker compose up -d --wait mailpit`.
 
@@ -175,7 +175,7 @@ Com a stack em outras portas, informe as URLs: `E2E_BASE_URL` (painel, padrão `
 export FRONTEND_PORT=15173 API_PORT=18000 POSTGRES_PORT=15432 TEMPORAL_PORT=17233 \
   TEMPORAL_UI_PORT=18080 MAILPIT_SMTP_PORT=11025 MAILPIT_UI_PORT=18025 \
   MINIO_API_PORT=19000 MINIO_CONSOLE_PORT=19001 WEBHOOK_SINK_PORT=18090 \
-  COMPOSE_SUBNET=10.213.58.0/24 FRONTEND_IPV4=10.213.58.10
+  COMPOSE_SUBNET=10.213.58.0/24 FRONTEND_IPV4=10.213.58.250
 docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build --wait
 (cd frontend && E2E_BASE_URL=http://localhost:15173 E2E_MAILPIT_URL=http://localhost:18025 \
   E2E_WEBHOOK_SINK_URL=http://localhost:18090 pnpm e2e:stack)

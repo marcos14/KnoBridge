@@ -214,7 +214,7 @@ services:
       KNOBRIDGE_CORS_ORIGINS: '["http://localhost:${FRONTEND_PORT:-5173}"]'
       # The panel's nginx proxies /v1 here; trust its X-Forwarded-For (and only its), so login
       # throttling counts per real client IP instead of per proxy.
-      KNOBRIDGE_FORWARDED_ALLOW_IPS: ${KNOBRIDGE_FORWARDED_ALLOW_IPS:-${FRONTEND_IPV4:-10.213.57.10}}
+      KNOBRIDGE_FORWARDED_ALLOW_IPS: ${KNOBRIDGE_FORWARDED_ALLOW_IPS:-${FRONTEND_IPV4:-10.213.57.250}}
       # The reranker service above (docs/specs/indexacao.md, "Reranker"). Set the URL empty to run
       # without a reranker (searches keep the RRF order and the products' option has no effect).
       KNOBRIDGE_RERANKER_URL: ${KNOBRIDGE_RERANKER_URL-http://reranker:80}
@@ -277,8 +277,10 @@ services:
       - ${BIND_ADDRESS:-127.0.0.1}:${FRONTEND_PORT:-5173}:80
     networks:
       default:
-        # Fixed address: it is the only proxy the API trusts (KNOBRIDGE_FORWARDED_ALLOW_IPS).
-        ipv4_address: ${FRONTEND_IPV4:-10.213.57.10}
+        # Fixed address: it is the only proxy the API trusts (KNOBRIDGE_FORWARDED_ALLOW_IPS). High in
+        # the subnet because Docker hands the other containers addresses from the bottom up; a low
+        # one (.10) was taken by another service once the stack passed nine containers.
+        ipv4_address: ${FRONTEND_IPV4:-10.213.57.250}
     healthcheck:
       test: [CMD, wget, -q, -O, /dev/null, http://127.0.0.1/]
       interval: 5s
