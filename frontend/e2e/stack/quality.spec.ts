@@ -198,11 +198,20 @@ test("test_answer_searches_again_and_reranks_citations", async ({ browser, reque
     );
   });
 
-  await test.step("a plain answer takes one search", async () => {
+  await test.step("with reranking on in the product, a plain answer takes one search", async () => {
+    // New products start without reranking (decision D25): turn it on, the E2E layer has the
+    // fake reranker.
+    const dialog = await editProduct(page, workspaceId, product);
+    const rerank = dialog.getByRole("checkbox", { name: "Reordenar trechos" });
+    await expect(rerank).not.toBeChecked();
+    await rerank.check();
+    await dialog.getByRole("button", { name: "Salvar" }).click();
+    await expect(page.getByText(`Produto ${product} atualizado.`)).toBeVisible();
+
     await ask(page, workspaceId, product, RERANK_QUESTION);
     await waitAnswer(page);
     await expect(page.getByText("1 busca", { exact: true })).toBeVisible();
-    // Reranking is on by default when the instance has a reranker: the FAQ goes first.
+    // The reranker puts the FAQ first.
     await expect(citations(page).first()).toContainText(FAQ);
     await expect(citations(page).filter({ hasText: FOCUSED })).toHaveCount(1);
   });

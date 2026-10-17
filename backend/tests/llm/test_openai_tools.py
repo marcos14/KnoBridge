@@ -99,7 +99,7 @@ def test_openai_tools_request_unchanged_without_tools() -> None:
     empty = FakeHttp(lambda _: _text_stream())
 
     collect(_openai(plain).stream_chat(QUESTION, "gpt-test"))
-    collect(_openai(empty).stream_chat(QUESTION, "gpt-test", tools=[], tool_choice="required"))
+    collect(_openai(empty).stream_chat(QUESTION, "gpt-test", tools=[], tool_choice="none"))
 
     expected = {
         "model": "gpt-test",
@@ -111,7 +111,7 @@ def test_openai_tools_request_unchanged_without_tools() -> None:
     assert empty.body() == expected
 
 
-@pytest.mark.parametrize("choice", ["auto", "required", "none"])
+@pytest.mark.parametrize("choice", ["auto", "none"])
 def test_openai_tools_sent_with_choice_and_no_parallel_calls(choice: ToolChoice) -> None:
     http = FakeHttp(lambda _: _text_stream())
 

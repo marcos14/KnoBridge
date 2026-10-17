@@ -7,7 +7,7 @@ came from the conversation. Tokens are counted as whitespace-separated words.
 Tool calls follow a script (``docs/specs/chat.md``, "Fake com roteiro"): one step per call
 given to the constructor (tests), or one ``[[buscar: <query>]]`` marker per call in the last
 user message (stack and E2E, where nothing can be injected). Without either, it never calls a
-tool unless ``tool_choice`` is ``required``.
+tool.
 """
 
 from __future__ import annotations
@@ -75,18 +75,13 @@ def _calls_made(messages: Sequence[ChatMessage]) -> int:
 
 
 def _marker_query(messages: Sequence[ChatMessage], tool_choice: ToolChoice) -> str | None:
-    """The query of the next unanswered ``[[buscar: ...]]`` marker; without markers, the
-    question itself when the tool is required. ``None`` answers with text."""
+    """The query of the next unanswered ``[[buscar: ...]]`` marker. ``None`` answers with
+    text."""
     if tool_choice == "none":
         return None
-    question = _last_user(messages)
-    markers: list[str] = _MARKER.findall(question)
+    markers: list[str] = _MARKER.findall(_last_user(messages))
     answered = sum(1 for message in messages if message.role is ChatRole.TOOL)
-    if answered < len(markers):
-        return markers[answered]
-    if not markers and tool_choice == "required":
-        return question.strip()
-    return None
+    return markers[answered] if answered < len(markers) else None
 
 
 class FakeLLMProvider:

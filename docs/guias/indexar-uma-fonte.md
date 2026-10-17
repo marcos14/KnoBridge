@@ -2,7 +2,7 @@
 
 > Rascunho v0.2 · 2026-10-17 · Em uso (planos 0003 e 0011)
 >
-> **Mudanças da v0.2** (plano 0011): o aviso de [arquivos que dominam o índice](#arquivos-que-dominam-o-índice) com a exclusão pelo painel, e "Testar busca" com o limiar padrão do modelo de embedding e a comparação com e sem reranker.
+> **Mudanças da v0.2** (plano 0011): o aviso de [arquivos que dominam o índice](#arquivos-que-dominam-o-índice) com a exclusão pelo painel, e "Testar busca" com o limiar padrão do modelo de embedding e a comparação com e sem reranker (opcional, desligado por padrão).
 
 Passo a passo pelo painel para pôr conhecimento no KnoBridge: montar a pasta de fontes, cadastrar um provedor com embeddings (OpenRouter), criar uma coleção, cadastrar uma fonte Git ou de pasta, sincronizar, acompanhar as execuções, testar a busca e ligar a coleção a um produto, até ver as citações no chat.
 
@@ -162,7 +162,7 @@ Se o grupo for útil (um JSON de configuração que as pessoas perguntam, por ex
 
 Um trecho entra quando a similaridade vetorial alcança o limiar **ou** quando ele contém todos os termos da busca. Com **Similaridade mínima** em branco, o limiar é o padrão do modelo de embedding da coleção (0,35 no `text-embedding-3-small`, 0,60 no `gemini-embedding-001`; tabela em [produtos-e-niveis.md](produtos-e-niveis.md#similaridade-mínima-padrão-do-modelo-de-embedding)). Nada é gravado. Use esta tela para calibrar a **Similaridade mínima** antes de ligar a coleção ao produto: se perguntas relacionadas voltam vazias, informe um limiar mais baixo; se aparecem trechos sem relação, um mais alto.
 
-Em **Reordenação**, **Padrão da instância** reordena os melhores trechos com o reranker quando a instância tem um; **Com reranker** e **Sem reranker** forçam um ou outro, para comparar a ordem na mesma pergunta antes de decidir a opção **Reordenar trechos** do produto. A linha do total diz se os trechos foram reordenados. **Com reranker** numa instância sem reranker mostra o erro "Esta instância não tem reranker configurado".
+Em **Reordenação**, **Padrão da instância** reordena os melhores trechos com o reranker quando a instância tem um (o reranker é opcional e vem desligado; para ligar, veja [subir-ambiente.md](subir-ambiente.md#reranker)); **Com reranker** e **Sem reranker** forçam um ou outro, para comparar a ordem na mesma pergunta antes de decidir a opção **Reordenar trechos** do produto. A linha do total diz se os trechos foram reordenados. **Com reranker** numa instância sem reranker mostra o erro "Esta instância não tem reranker configurado". Com o reranker ligado em CPU, cada busca com reordenação pode levar dezenas de segundos.
 
 ### 8. Ligar a coleção ao produto
 

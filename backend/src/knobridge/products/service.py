@@ -63,8 +63,9 @@ class ProductSettings:
     # Empty means the default message.
     no_source_message: str
     active: bool
-    # Reorder the searches with the instance's reranker (when it has one).
-    rerank: bool = True
+    # Reorder the searches with the instance's reranker (when it has one); off by default
+    # (ADR 0011).
+    rerank: bool = False
     # Collections the product answers from (no collection: every answer is "no source").
     collection_ids: tuple[uuid.UUID, ...] = ()
     # ``None``: the default of each collection's embedding model (``retrieval/thresholds.py``).

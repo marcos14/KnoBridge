@@ -164,11 +164,14 @@ services:
       retries: 20
 
   reranker:
-    # Cross-encoder that reorders the best search candidates (docs/specs/indexacao.md, "Reranker";
-    # ADR 0010): Text Embeddings Inference on CPU serving BAAI/bge-reranker-v2-m3. The first start
-    # downloads the model (about 2.3 GB) into the reranker-models volume; later starts reuse it.
-    # No host port: only the api calls it, at http://reranker:80. The api does not wait for it:
-    # until it is healthy, searches keep the RRF order.
+    # Optional cross-encoder that reorders the best search candidates (docs/specs/indexacao.md,
+    # "Reranker"; ADR 0011): Text Embeddings Inference on CPU serving BAAI/bge-reranker-v2-m3.
+    # Off by default: only `docker compose --profile reranker up -d` starts it, and the api uses
+    # it only with KNOBRIDGE_RERANKER_URL=http://reranker:80. On CPU it is slow (tens of seconds
+    # for 30 passages) and needs 6 to 8 GB. The first start downloads the model (about 2.3 GB)
+    # into the reranker-models volume; later starts reuse it. No host port: only the api calls
+    # it. The api does not wait for it: until it is healthy, searches keep the RRF order.
+    profiles: [reranker]
     image: ${RERANKER_IMAGE:-ghcr.io/huggingface/text-embeddings-inference:cpu-1.9.4}
     restart: unless-stopped
     command:
@@ -181,14 +184,15 @@ services:
       - "80"
       - --max-client-batch-size
       - "128"
-      # Caps each query + passage pair (auto-truncate is on) and the warmup batch. Without it TEI
-      # warms up at the model's 8,192-token maximum, whose attention needs more than the 4 GB
-      # limit and the container is OOM-killed in a loop; search chunks are far shorter than this.
+      # Caps the tokens of each batch, so each query + passage pair (auto-truncate is on) and the
+      # warmup batch. Without it TEI warms up at the model's 8,192-token maximum and its attention
+      # alone outgrows any reasonable limit. Even with it, the warmup is OOM-killed under 4 GB:
+      # the container needs about 6 to 8 GB (RERANKER_MEMORY_LIMIT).
       - --max-batch-tokens
       - "2048"
     volumes:
       - reranker-models:/data
-    mem_limit: ${RERANKER_MEMORY_LIMIT:-4g}
+    mem_limit: ${RERANKER_MEMORY_LIMIT:-8g}
     healthcheck:
       # TEI opens the port only after loading the model; the image ships curl.
       test: [CMD, curl, -fsS, http://127.0.0.1:80/health]
@@ -218,9 +222,10 @@ services:
       # The panel's nginx proxies /v1 here; trust its X-Forwarded-For (and only its), so login
       # throttling counts per real client IP instead of per proxy.
       KNOBRIDGE_FORWARDED_ALLOW_IPS: ${KNOBRIDGE_FORWARDED_ALLOW_IPS:-${FRONTEND_IPV4:-10.213.57.250}}
-      # The reranker service above (docs/specs/indexacao.md, "Reranker"). Set the URL empty to run
-      # without a reranker (searches keep the RRF order and the products' option has no effect).
-      KNOBRIDGE_RERANKER_URL: ${KNOBRIDGE_RERANKER_URL-http://reranker:80}
+      # The optional reranker service above (docs/specs/indexacao.md, "Reranker"; ADR 0011).
+      # Empty by default: no reranker, searches keep the RRF order and the products' option has
+      # no effect. To turn it on, set http://reranker:80 and start the `reranker` profile.
+      KNOBRIDGE_RERANKER_URL: ${KNOBRIDGE_RERANKER_URL:-}
       KNOBRIDGE_RERANKER_TIMEOUT: ${KNOBRIDGE_RERANKER_TIMEOUT:-10}
       KNOBRIDGE_RERANKER_CANDIDATES: ${KNOBRIDGE_RERANKER_CANDIDATES:-30}
       KNOBRIDGE_RERANKER_MAX_CHARS: ${KNOBRIDGE_RERANKER_MAX_CHARS:-2000}

@@ -9,9 +9,9 @@ know, shall I open a ticket?" message. ``collection_ids`` are the collections th
 answers from, all of the same workspace (422 ``product_collection_invalid``). ``min_similarity``
 is the retrieval threshold (0 to 1; null, the default on create and what a ``PATCH`` with null
 restores: the default of each collection's embedding model), and ``effective_min_similarity``
-shows the floor that holds per model (``retrieval/thresholds.py``). ``rerank`` (on by
-default) reorders the searches with the instance's reranker; ``rerank_available`` says whether
-the instance has one.
+shows the floor that holds per model (``retrieval/thresholds.py``). ``rerank`` (off by
+default, ADR 0011) reorders the searches with the instance's reranker; ``rerank_available``
+says whether the instance has one.
 ``ticket_webhook_url`` is where ticket requests go (``null``: off), checked against the SSRF
 rules when saved (422 ``webhook_url_invalid`` or ``webhook_destination_blocked``); its signing
 secret and the test event live in ``api/ticket_webhook.py``. ``my_max_level`` is the reader's
@@ -143,8 +143,9 @@ class ProductCreate(BaseModel):
     # Empty or null: the default "no source" message.
     no_source_message: NoSourceMessage | None = None
     active: bool = True
-    # Reorder the searches with the instance's reranker (no effect without one).
-    rerank: bool = True
+    # Reorder the searches with the instance's reranker (no effect without one); off by default
+    # since the reranker became optional (ADR 0011).
+    rerank: bool = False
     collection_ids: CollectionIds = Field(default_factory=lambda: [])
     # Omitted or null: the default of each collection's embedding model.
     min_similarity: MinSimilarity | None = None

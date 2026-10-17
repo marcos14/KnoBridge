@@ -1,10 +1,11 @@
 """The rounds of one answer with multi-step search (``docs/specs/chat.md``, "O laço").
 
 Each round is one provider call. While the level allows more steps, the model may call
-``search_sources`` (``tool_choice`` ``auto``, or ``required`` while no source was found yet);
-the last round goes with ``tool_choice`` ``none``. The first decisive event of a round decides
-it: text (not only spaces) makes it the final answer, a tool call makes it a step and every text
-of the round is dropped. Each step searches in a short session of its own, at the
+``search_sources`` (``tool_choice`` ``auto``, never a forced call; while no source was found,
+the sources message asks for a search with another wording, decision D27); the last round
+goes with ``tool_choice`` ``none``. The first decisive event of a round decides it: text (not
+only spaces) makes it the final answer, a tool call makes it a step and every text of the round
+is dropped. Each step searches in a short session of its own, at the
 conversation's level, and adds the new sources after the ones already listed. Rule 8: without
 any source no text of the model ever reaches the client, and the final round is not even
 called. A model that refuses tool calls on the first round is marked on its level and asked
@@ -16,7 +17,7 @@ saves the outcome from ``TurnState``.
 
 from __future__ import annotations
 
-from collections.abc import AsyncGenerator, Sequence
+from collections.abc import AsyncGenerator
 from contextlib import aclosing
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -80,14 +81,11 @@ def log_step(turn: PreparedTurn, record: JSONValue) -> None:
     )
 
 
-def _tool_choice(*, offered: bool, final: bool, found: Sequence[object]) -> ToolChoice:
-    """``none`` on the final round, ``required`` while nothing was found, else ``auto``
-    (also without tools, where providers ignore it: the plain chat request)."""
-    if offered and final:
-        return "none"
-    if offered and not found:
-        return "required"
-    return "auto"
+def _tool_choice(*, offered: bool, final: bool) -> ToolChoice:
+    """``none`` on the final round, else ``auto`` (also without tools, where providers ignore
+    it: the plain chat request). Never a forced call: models such as Claude 5.5 refuse it
+    (decision D27); while nothing was found, the sources message asks for another search."""
+    return "none" if offered and final else "auto"
 
 
 @dataclass
@@ -165,7 +163,7 @@ class TurnLoop:
             final = tools is None or rounds >= turn.max_steps or self._late()
             if final and not state.sources.items:
                 return  # rule 8: no source, so no final round and no text of the model
-            choice = _tool_choice(offered=tools is not None, final=final, found=state.sources.items)
+            choice = _tool_choice(offered=tools is not None, final=final)
             try:
                 async with aclosing(self._read(messages, tools, choice)) as events:
                     async for event in events:

@@ -18,7 +18,12 @@ from knobridge.products.models import ProductTone
 TITLE_LENGTH = 80
 _ELLIPSIS = "…"
 # The sources message when the first search found nothing and the model may search again.
-NO_SOURCES_YET = "(nenhuma fonte encontrada para a pergunta; use search_sources)"
+# The tool is offered with ``tool_choice`` ``auto`` (decision D27), so this line is what asks
+# for the new search.
+NO_SOURCES_YET = (
+    "(nenhuma fonte encontrada ainda para a pergunta. Antes de responder, chame a ferramenta "
+    "search_sources com outra formulação)"
+)
 
 # The fixed rules are in pt-BR, the language of the product's users; the answer language is
 # still the product's (``language``), stated explicitly in the rules.

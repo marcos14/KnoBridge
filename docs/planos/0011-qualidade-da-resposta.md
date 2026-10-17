@@ -280,6 +280,13 @@ decisoes:
     motivo: "os modelos Claude 5.5 recusam tool_choice any/tool (400 pelo OpenRouter, provedores Bedrock e Claude Platform on AWS), e a pergunta sem relação virava erro no ensaio da F4.3; a D10 continua valendo"
     alternativas: "tentar required e cair para auto no 400 (depende do texto do erro); required só para modelos não Anthropic"
     adr: null
+  - id: D28
+    data: 2026-10-17
+    por: agente
+    decisao: "Tirar required do tipo ToolChoice (fica auto ou none) e reforçar a linha NO_SOURCES_YET da mensagem das fontes em vez de criar outra linha de sistema"
+    motivo: "Com a D27 nada mais usava required; mantê-lo deixaria o adaptador Anthropic capaz de repetir o 400"
+    alternativas: "Manter required sem uso; nova linha no prompt de sistema"
+    adr: null
 pendencias_usuario:
   - id: P1
     aberta_em: 2026-10-17
@@ -547,6 +554,7 @@ Nenhuma.
 - 2026-10-17 — F4.2 iniciada (inclui o Testar busca da coleção com limiar em branco = padrão do modelo, deixado de fora da F3.1)
 - 2026-10-17 — F4.2 concluída: quality.spec.ts (busca em três etapas com Buscando e 3 buscas, reordenação ligada e desligada no chat e no Testar busca, aviso de relatório gerado de 211 trechos excluído pelo painel), E2E da stack verde duas vezes (10/10 cada), Testar busca com limiar em branco = padrão do modelo e com e sem reranker, KNOBRIDGE_MIN_SIMILARITY_DEFAULTS no compose, guia avaliar-respostas.md, guias, README, CHANGELOG e seções 1 e 12 do AGENTS.md raiz; frontend 1.759 testes (99,9/98,7)
 - 2026-10-17 — F4.3 iniciada; o reranker real se mostrou lento demais em CPU (34 a 96 s por busca) e sem memória com 4 GB: pendência P1 respondida pelo usuário (D25, D26)
+- 2026-10-17 — Correções do ensaio integradas: tool_choice auto/none (D27, D28) e reranker opcional atrás do perfil do compose, desligado por padrão, com produtos novos sem reordenar (D25, ADR 0011, migração 0025); backend 3.302 testes (99,86%), frontend 1.760, E2E da stack 10/10.
 
 ## 8. Encerramento
 

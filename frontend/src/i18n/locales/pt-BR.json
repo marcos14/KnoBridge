@@ -624,8 +624,8 @@
         "fallback": "padrão geral, modelo sem padrão próprio"
       },
       "rerank": "Reordenar trechos",
-      "rerankHint": "O reranker da instância reordena os trechos encontrados pela relevância para a pergunta antes da resposta: costuma acertar mais, com um pouco mais de demora.",
-      "rerankUnavailable": "Esta instância não tem reranker configurado. A opção fica gravada como está e passa a valer quando houver um.",
+      "rerankHint": "O reranker da instância reordena os trechos encontrados pela relevância para a pergunta antes da resposta: costuma acertar mais, mas deixa a resposta mais lenta (em CPU, bem mais lenta).",
+      "rerankUnavailable": "Esta instância não tem reranker: ele é opcional e vem desligado. Para ligar, veja a seção Reranker do guia Subir o ambiente (docs/guias/subir-ambiente.md). A opção fica gravada como está e passa a valer quando houver um.",
       "submit": "Salvar",
       "cancel": "Cancelar",
       "validation": {

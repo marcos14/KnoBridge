@@ -345,7 +345,7 @@ describe("ProductsPage create", () => {
         active: false,
         collection_ids: [COLLECTION_ID],
         min_similarity: 0.45,
-        rerank: true,
+        rerank: false,
         ticket_webhook_url: null,
       },
     ]);

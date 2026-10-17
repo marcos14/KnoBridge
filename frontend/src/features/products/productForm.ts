@@ -46,7 +46,8 @@ export interface ProductFormValues {
   collectionIds: string[];
   /** Blank: the default of each collection's embedding model (`min_similarity: null`). */
   minSimilarity: string;
-  /** Reorder the chunks with the instance's reranker (stored even without one). */
+  /** Reorder the chunks with the instance's reranker (stored even without one; off for a new
+   * product, since the reranker is optional: ADR 0011). */
   rerank: boolean;
   /** Whether the chat offers "Abrir chamado" (off sends `ticket_webhook_url: null`). */
   ticketWebhookEnabled: boolean;
@@ -107,7 +108,7 @@ export function productFormDefaults(product: Product | undefined): ProductFormVa
       active: true,
       collectionIds: [],
       minSimilarity: "",
-      rerank: true,
+      rerank: false,
       ticketWebhookEnabled: false,
       ticketWebhookUrl: "",
     };

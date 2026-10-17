@@ -41,7 +41,8 @@ class ToolCall:
     arguments: str
 
 
-type ToolChoice = Literal["auto", "required", "none"]
+# No forced call ("required"): models such as Claude 5.5 refuse it (decision D27).
+type ToolChoice = Literal["auto", "none"]
 
 
 @dataclass(frozen=True)

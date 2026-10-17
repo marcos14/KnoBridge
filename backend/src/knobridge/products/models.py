@@ -95,9 +95,10 @@ class Product(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         Boolean, nullable=False, default=True, server_default=text("true")
     )
     # Reorder every search of the product with the instance's reranker, when it has one
-    # (docs/specs/indexacao.md, "Reranker"; migration 0022).
+    # (docs/specs/indexacao.md, "Reranker"; migration 0022). Off for new products since the
+    # reranker became optional (ADR 0011, migration 0025).
     rerank: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=True, server_default=text("true")
+        Boolean, nullable=False, default=False, server_default=text("false")
     )
     # ``None`` (the default since migration 0023): the default of each collection's embedding
     # model (``retrieval/thresholds.py``); a number holds for every collection.

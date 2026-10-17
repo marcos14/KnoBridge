@@ -145,10 +145,12 @@ O corpus copiado continua em `deploy/sources/eval/` (ignorado pelo Git); apague 
 
 Para medir qualidade, use embeddings e modelos de verdade e, de preferência, o reranker de verdade:
 
-1. Suba a stack isolada **sem** a camada de E2E (o compose de desenvolvimento já monta `deploy/sources/` em `/sources` e sobe o reranker; a primeira subida baixa o modelo, [subir-ambiente.md](subir-ambiente.md#reranker)), com o mesmo `-p knobridge-eval` e as portas trocadas:
+1. Suba a stack isolada **sem** a camada de E2E (o compose de desenvolvimento já monta `deploy/sources/` em `/sources`), com o mesmo `-p knobridge-eval` e as portas trocadas. O reranker é opcional e fica desligado por padrão ([ADR 0011](../adr/0011-reranker-opcional.md)); para medir com ele, defina `KNOBRIDGE_RERANKER_URL=http://reranker:80` e suba com o perfil `reranker` (a primeira subida baixa o modelo, e em CPU cada busca leva dezenas de segundos; [subir-ambiente.md](subir-ambiente.md#reranker)):
 
    ```bash
    docker compose -p knobridge-eval up -d --build --wait
+   # com o reranker:
+   KNOBRIDGE_RERANKER_URL=http://reranker:80 docker compose -p knobridge-eval --profile reranker up -d --build --wait
    ```
 
 2. Ponha as chaves em variáveis de ambiente (nunca na linha de comando): `KNOBRIDGE_EVAL_CHAT_KEY` para o provedor dos níveis e, quando o provedor de embedding for outro, `KNOBRIDGE_EVAL_EMBEDDING_KEY`.

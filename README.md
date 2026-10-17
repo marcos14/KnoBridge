@@ -2,11 +2,11 @@
 
 Plataforma open source (Apache 2.0) que conecta repositórios de código, sistemas de chamados e documentações, transforma tudo em índices para RAG e responde em linguagem natural, sempre citando a fonte. Sem fonte, o assistente diz que não sabe e oferece abrir um chamado.
 
-> **Status**: em desenvolvimento; Fase 0 do roadmap concluída. Já funcionam painel, workspaces, indexação de pastas, repositórios Git, código (via runner), chamados e cards de desenvolvimento, produtos com três níveis de resposta (usuário final, suporte, desenvolvimento e produto), chat com citações (com busca em várias etapas e reordenação dos trechos por um reranker próprio), uso e custos, API pública (REST e compatível com OpenAI), servidor MCP para assistentes de código (Claude Code, Cursor, Codex) e widget embutível para sites e sistemas; ainda não há canvas de pipelines nem Slack e Google Chat. O que mudou está no [CHANGELOG.md](CHANGELOG.md).
+> **Status**: em desenvolvimento; Fase 0 do roadmap concluída. Já funcionam painel, workspaces, indexação de pastas, repositórios Git, código (via runner), chamados e cards de desenvolvimento, produtos com três níveis de resposta (usuário final, suporte, desenvolvimento e produto), chat com citações (com busca em várias etapas e, opcional, reordenação dos trechos por um reranker próprio), uso e custos, API pública (REST e compatível com OpenAI), servidor MCP para assistentes de código (Claude Code, Cursor, Codex) e widget embutível para sites e sistemas; ainda não há canvas de pipelines nem Slack e Google Chat. O que mudou está no [CHANGELOG.md](CHANGELOG.md).
 
 ## Requisitos
 
-- Docker com Compose v2 (`docker compose version` responde 2.x) e cerca de 8 GB de RAM livres (até 4 GB são do reranker, que baixa um modelo de cerca de 2,3 GB na primeira subida).
+- Docker com Compose v2 (`docker compose version` responde 2.x) e cerca de 4 GB de RAM livres. O reranker é opcional e fica desligado por padrão (ligá-lo pede mais 6 a 8 GB e baixa um modelo de cerca de 2,3 GB; veja [subir o ambiente](docs/guias/subir-ambiente.md#reranker)).
 - Uma chave de API do [OpenRouter](https://openrouter.ai/) (cobre embeddings e chat), ou da OpenAI.
 
 ## Início rápido
@@ -27,7 +27,7 @@ Da instância vazia a uma resposta com citação sobre os seus próprios documen
    docker compose up -d --build --wait
    ```
 
-   A primeira vez constrói as imagens e baixa o modelo do reranker, e leva alguns minutos. O comando volta quando tudo está saudável; confira com `docker compose ps -a` (`migrate` aparece `exited (0)`).
+   A primeira vez constrói as imagens e leva alguns minutos. O comando volta quando tudo está saudável; confira com `docker compose ps -a` (`migrate` aparece `exited (0)`).
 
 3. **Crie o superadmin e o workspace.** Abra o painel em <http://localhost:5173>. Na tela **Configuração inicial**, informe nome, e-mail (fictício serve, ex.: `voce@example.test`), senha de 12 caracteres ou mais e o **Nome do workspace**, e clique em **Criar conta e entrar**. O painel abre o **Início** do workspace, com a lista **Primeiros passos** (os passos abaixo), e o topo deve mostrar **API: disponível**.
 
@@ -66,7 +66,7 @@ Se o chat responder "sem fonte" para uma pergunta que deveria ter resposta, abra
 ```bash
 docker compose stop      # para os contêineres; `docker compose up -d --wait` retoma
 docker compose down      # remove os contêineres, mantém os dados (volumes)
-docker compose down -v   # apaga também banco, MinIO, clones e o modelo do reranker; deploy/sources/ não é tocada
+docker compose down -v   # apaga também banco, MinIO, clones e, se o reranker foi ligado, o modelo dele; deploy/sources/ não é tocada
 ```
 
 Depois de `down -v`, a próxima subida volta à **Configuração inicial**.

@@ -1,6 +1,6 @@
-"""The products' ``rerank`` option (plan 0011 F2.1): on by default, stored as given, changed and
-audited by name, copied by "duplicate", and ``rerank_available`` telling whether the instance
-has a reranker (``api.deps.get_reranker``; the tests' settings have none)."""
+"""The products' ``rerank`` option (plan 0011 F2.1): off by default (ADR 0011), stored as
+given, changed and audited by name, copied by "duplicate", and ``rerank_available`` telling
+whether the instance has a reranker (``api.deps.get_reranker``; the tests' settings have none)."""
 
 from __future__ import annotations
 
@@ -43,14 +43,14 @@ def _get(api: ApiEnv, workspace_id: uuid.UUID, product_id: str) -> dict[str, obj
     return body
 
 
-def test_product_rerank_is_on_by_default_without_a_reranker(api: ApiEnv) -> None:
+def test_product_rerank_is_off_by_default_without_a_reranker(api: ApiEnv) -> None:
     workspace_id = _workspace(api)
 
     created = post_product(api, workspace_id).json()
     listed = api.client.get(products_path(workspace_id)).json()["items"]
 
-    assert (created["rerank"], created["rerank_available"]) == (True, False)
-    assert [(item["rerank"], item["rerank_available"]) for item in listed] == [(True, False)]
+    assert (created["rerank"], created["rerank_available"]) == (False, False)
+    assert [(item["rerank"], item["rerank_available"]) for item in listed] == [(False, False)]
 
 
 def test_product_rerank_available_with_the_instance_reranker(
@@ -58,10 +58,10 @@ def test_product_rerank_available_with_the_instance_reranker(
 ) -> None:
     workspace_id = _workspace(api)
 
-    product_id = create_product(api, workspace_id, rerank=False)
+    product_id = create_product(api, workspace_id, rerank=True)
 
     body = _get(api, workspace_id, product_id)
-    assert (body["rerank"], body["rerank_available"]) == (False, True)
+    assert (body["rerank"], body["rerank_available"]) == (True, True)
 
 
 def test_product_rerank_changed_and_audited(api: ApiEnv) -> None:
@@ -70,7 +70,7 @@ def test_product_rerank_changed_and_audited(api: ApiEnv) -> None:
 
     response = api.client.patch(
         products_path(workspace_id, product_id),
-        json={"rerank": False},
+        json={"rerank": True},
         headers=api.csrf_headers(),
     )
     kept = api.client.patch(
@@ -80,22 +80,22 @@ def test_product_rerank_changed_and_audited(api: ApiEnv) -> None:
     )
 
     assert response.status_code == 200, response.text
-    assert response.json()["rerank"] is False
-    assert kept.json()["rerank"] is False
+    assert response.json()["rerank"] is True
+    assert kept.json()["rerank"] is True
     events = [event for event in api.workspace_audit(workspace_id) if event[0] == "product.updated"]
     assert ("product.updated", {"name": "Support", "fields": ["rerank"]}) in events
 
 
 def test_product_duplicate_copies_the_rerank_option(api: ApiEnv) -> None:
     workspace_id = _workspace(api)
-    product_id = create_product(api, workspace_id, rerank=False)
+    product_id = create_product(api, workspace_id, rerank=True)
 
     response = api.client.post(
         f"{products_path(workspace_id, product_id)}/duplicate", headers=api.csrf_headers()
     )
 
     assert response.status_code == 201, response.text
-    assert response.json()["rerank"] is False
+    assert response.json()["rerank"] is True
 
 
 def test_product_rerank_must_be_a_boolean(api: ApiEnv) -> None:

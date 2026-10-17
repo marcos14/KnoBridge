@@ -130,8 +130,6 @@ def _tool_choice(choice: ToolChoice) -> ToolChoiceParam:
     # One call per round: parallel calls stay off.
     if choice == "none":
         return {"type": "none"}
-    if choice == "required":
-        return {"type": "any", "disable_parallel_tool_use": True}
     return {"type": "auto", "disable_parallel_tool_use": True}
 
 

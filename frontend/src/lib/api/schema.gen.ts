@@ -4564,7 +4564,7 @@ export interface components {
             no_source_message?: string | null;
             /**
              * Rerank
-             * @default true
+             * @default false
              */
             rerank: boolean;
             /** Ticket Webhook Url */

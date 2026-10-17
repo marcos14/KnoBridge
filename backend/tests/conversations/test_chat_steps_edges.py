@@ -77,9 +77,12 @@ def test_empty_first_search_reformulates_and_answers(app_database_url: str) -> N
 
     turn = run(app_database_url, scenario)
 
-    assert provider.calls[0].tool_choice == "required"
+    # Never a forced call (decision D27): the sources message asks for the new search.
+    assert [call.tool_choice for call in provider.calls] == ["auto", "auto"]
     assert provider.calls[0].messages[1].content == f"Fontes:\n\n{NO_SOURCES_YET}"
+    assert "search_sources com outra formulação" in NO_SOURCES_YET
     assert turn.message.status is MessageStatus.COMPLETED
+    assert turn.message.content == "Registre [1]."
     assert field_of(turn.message.citations, "title") == ["Sangria"]
     assert turn.message.retrieval is not None
     assert field_of(turn.message.retrieval["searches"], "status") == ["empty", "ok"]
@@ -135,8 +138,8 @@ def test_no_source_after_steps_says_it_does_not_know_with_the_cost(
 
 def test_text_without_any_source_is_never_kept(app_database_url: str) -> None:
     clock = FrozenClock(START)
-    # The provider ignores ``required`` and writes an answer of its own.
-    provider = EventsLLMProvider([text_round("Inventei uma resposta.")])
+    # Asked to search (``auto`` and the sources message), the model answers on its own instead.
+    provider = RecordingLLMProvider(FakeLLMProvider(script=[TextStep("Inventei uma resposta.")]))
 
     async def scenario(factory: SessionFactory) -> Turn:
         seeded = await seed(factory, clock)
@@ -146,6 +149,10 @@ def test_text_without_any_source_is_never_kept(app_database_url: str) -> None:
 
     turn = run(app_database_url, scenario)
 
+    assert [call.tool_choice for call in provider.calls] == ["auto"]
+    assert provider.calls[0].tools == (SEARCH_TOOL,)
+    assert provider.calls[0].messages[1].content == f"Fontes:\n\n{NO_SOURCES_YET}"
+    assert not any("Inventei" in str(event) for event in turn.events)
     deltas = [event.text for event in turn.events if isinstance(event, DeltaEvent)]
     assert deltas == [NO_SOURCE]
     assert (turn.message.status, turn.message.content) == (MessageStatus.NO_SOURCE, NO_SOURCE)

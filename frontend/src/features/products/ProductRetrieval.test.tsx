@@ -11,7 +11,7 @@ import { server } from "@/test/server";
 
 const PATH = `/w/${WORKSPACE_ID}/products`;
 const UNAVAILABLE =
-  "Esta instância não tem reranker configurado. A opção fica gravada como está e passa a valer quando houver um.";
+  "Esta instância não tem reranker: ele é opcional e vem desligado. Para ligar, veja a seção Reranker do guia Subir o ambiente (docs/guias/subir-ambiente.md). A opção fica gravada como está e passa a valer quando houver um.";
 
 type User = ReturnType<typeof userEvent.setup>;
 
@@ -36,22 +36,36 @@ async function openEdit(user: User, name = "Suporte ERP") {
 
 describe("Product retrieval options", () => {
   it.each<Role>(["owner", "admin", "editor"])(
-    "test_product_rerank_can_be_turned_off_by_%s",
+    "test_product_rerank_can_be_turned_on_by_%s",
     async (role) => {
       const { user, store } = await renderProducts(withReranker(makeProducts()), role);
       const dialog = await openEdit(user);
       const rerank = within(dialog).getByRole("checkbox", { name: "Reordenar trechos" });
 
-      expect(rerank).toBeChecked();
+      expect(rerank).not.toBeChecked();
       expect(rerank).toBeEnabled();
       expect(rerank).toHaveAccessibleDescription(/^O reranker da instância reordena/);
       await user.click(rerank);
       await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
 
       expect(await screen.findByText("Produto Suporte ERP atualizado.")).toHaveRole("status");
-      expect(store.changes[0]?.body.rerank).toBe(false);
+      expect(store.changes[0]?.body.rerank).toBe(true);
     },
   );
+
+  it("test_product_rerank_can_be_turned_off", async () => {
+    const products = withReranker([makeProduct({ rerank: true })]);
+    const { user, store } = await renderProducts(products);
+    const dialog = await openEdit(user);
+    const rerank = within(dialog).getByRole("checkbox", { name: "Reordenar trechos" });
+
+    expect(rerank).toBeChecked();
+    await user.click(rerank);
+    await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
+
+    await screen.findByText("Produto Suporte ERP atualizado.");
+    expect(store.changes[0]?.body.rerank).toBe(false);
+  });
 
   it("test_product_rerank_is_disabled_without_a_reranker", async () => {
     const { user } = await renderProducts(makeProducts());
@@ -59,23 +73,24 @@ describe("Product retrieval options", () => {
 
     const rerank = within(dialog).getByRole("checkbox", { name: "Reordenar trechos" });
     expect(rerank).toBeDisabled();
-    expect(rerank).toBeChecked();
+    expect(rerank).not.toBeChecked();
     expect(rerank).toHaveAccessibleDescription(UNAVAILABLE);
   });
 
-  it("test_product_create_reads_the_reranker_of_the_instance", async () => {
+  it("test_product_create_starts_without_reranking_and_can_turn_it_on", async () => {
     const { user, store } = await renderProducts(withReranker(makeProducts()));
     await user.click(screen.getByRole("button", { name: "Novo produto" }));
     const dialog = await screen.findByRole("dialog", { name: "Novo produto" });
 
     const rerank = within(dialog).getByRole("checkbox", { name: "Reordenar trechos" });
     expect(rerank).toBeEnabled();
+    expect(rerank).not.toBeChecked();
     await user.click(rerank);
     await user.type(within(dialog).getByLabelText("Nome"), "Financeiro");
     await user.click(within(dialog).getByRole("button", { name: "Salvar" }));
 
     await screen.findByText("Produto Financeiro criado.");
-    expect(store.created[0]).toMatchObject({ rerank: false, min_similarity: null });
+    expect(store.created[0]).toMatchObject({ rerank: true, min_similarity: null });
   });
 
   it("test_product_create_without_products_offers_the_rerank_option", async () => {

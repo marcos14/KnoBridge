@@ -8,8 +8,8 @@
 - Futuramente: `helm/` (chart de Kubernetes) e scripts de infraestrutura.
 
 **Arquivos do compose, na raiz** (seguem as convenções abaixo):
-- `docker-compose.yml`: o ambiente de desenvolvimento completo (Postgres + pgvector, Temporal, MinIO, Mailpit como SMTP de desenvolvimento, reranker (TEI com o `bge-reranker-v2-m3`), migrações, API, worker e painel); `docker compose up --build`.
-- `docker-compose.e2e.yml`: camada por cima do anterior para o E2E contra a stack (`frontend/e2e/stack/`): projeto próprio (`knobridge-e2e`) e ambiente não produtivo fixado, que aceita o provedor `fake`; monta `frontend/e2e/stack/fixtures/` em `/sources` no lugar de `deploy/sources/`; sobe o `webhook-sink` (sistema de chamados falso, `scripts/webhook_sink.py` montado em `python:3.12.13-alpine3.22`, porta `WEBHOOK_SINK_PORT`) e libera esse host para o webhook dos produtos com `KNOBRIDGE_WEBHOOK_ALLOWED_HOSTS=webhook-sink`; troca a imagem do serviço `reranker` pelo reranker falso (`scripts/fake_reranker.py` em `python:3.12.13-alpine3.22`, com `entrypoint`/`command` próprios, `volumes: !override` sem o volume do modelo e healthcheck rápido), para o E2E não baixar o modelo; sempre com `down -v` ao fim.
+- `docker-compose.yml`: o ambiente de desenvolvimento completo (Postgres + pgvector, Temporal, MinIO, Mailpit como SMTP de desenvolvimento, migrações, API, worker e painel, e o reranker opcional (TEI com o `bge-reranker-v2-m3`) atrás do perfil `reranker`); `docker compose up --build`.
+- `docker-compose.e2e.yml`: camada por cima do anterior para o E2E contra a stack (`frontend/e2e/stack/`): projeto próprio (`knobridge-e2e`) e ambiente não produtivo fixado, que aceita o provedor `fake`; monta `frontend/e2e/stack/fixtures/` em `/sources` no lugar de `deploy/sources/`; sobe o `webhook-sink` (sistema de chamados falso, `scripts/webhook_sink.py` montado em `python:3.12.13-alpine3.22`, porta `WEBHOOK_SINK_PORT`) e libera esse host para o webhook dos produtos com `KNOBRIDGE_WEBHOOK_ALLOWED_HOSTS=webhook-sink`; troca a imagem do serviço `reranker` pelo reranker falso (`scripts/fake_reranker.py` em `python:3.12.13-alpine3.22`, com `entrypoint`/`command` próprios, `volumes: !override` sem o volume do modelo e healthcheck rápido), para o E2E não baixar o modelo, e o deixa sempre ligado (`profiles: !reset []` e `KNOBRIDGE_RERANKER_URL=http://reranker:80` na `api`, cujo `environment` mescla a âncora `x-e2e-env`); sempre com `down -v` ao fim.
 - `.env.example`: todas as variáveis que o compose interpola, com defaults de desenvolvimento; a cópia local é o `.env` da raiz, ignorado pelo Git.
 
 **Não entra aqui**:
@@ -33,7 +33,7 @@
 - `KNOBRIDGE_WEBHOOK_ALLOWED_HOSTS` (na âncora `x-backend`) fica vazia no ambiente de desenvolvimento: o webhook de chamados dos assistentes só alcança `https` público. Só a camada de E2E a preenche, com o nome do receptor falso.
 - MCP e widget (na âncora `x-backend`): `KNOBRIDGE_MCP_ALLOWED_HOSTS` e `KNOBRIDGE_MCP_ALLOWED_ORIGINS` vazias (o host do painel, `localhost:*` e `127.0.0.1:*`; nenhuma origem de navegador) e os limites `KNOBRIDGE_WIDGET_*` com os padrões da spec; guias em [conectar-pelo-mcp.md](../docs/guias/conectar-pelo-mcp.md) e [embutir-o-widget.md](../docs/guias/embutir-o-widget.md).
 - Tabelas em JSON por cima das embutidas (na âncora `x-backend`, padrão `{}`): `KNOBRIDGE_CHAT_PRICES` (preços do chat) e `KNOBRIDGE_MIN_SIMILARITY_DEFAULTS` (similaridade mínima padrão por modelo de embedding). Variável do `.env.example` que a aplicação lê precisa estar no compose: o contêiner só vê o que o `environment` repassa.
-- Reranker ([indexacao.md](../docs/specs/indexacao.md#serviço-no-compose), [ADR 0010](../docs/adr/0010-busca-em-etapas-e-reranker.md)): serviço `reranker` sempre ligado, imagem `RERANKER_IMAGE` (TEI de CPU 1.9.4), modelo `RERANKER_MODEL_ID` na revisão fixada `RERANKER_MODEL_REVISION` (commit do repositório no Hugging Face), cache no volume `reranker-models` (`/data`; a primeira subida baixa cerca de 2,3 GB), `mem_limit` `RERANKER_MEMORY_LIMIT` (4g), sem porta no host e healthcheck por `curl` em `/health` com `start_period` de 15 min. Nem `api` nem `worker` dependem dele: a API sobe sem ele e busca na ordem do RRF até ele ficar saudável. As variáveis `KNOBRIDGE_RERANKER_*` ficam só na `api` (o worker não reordena); `KNOBRIDGE_RERANKER_URL` usa `${VAR-padrão}` (sem dois-pontos) para que vazia no `.env` desligue o reranker.
+- Reranker ([indexacao.md](../docs/specs/indexacao.md#serviço-no-compose), [ADR 0010](../docs/adr/0010-busca-em-etapas-e-reranker.md), [ADR 0011](../docs/adr/0011-reranker-opcional.md)): serviço `reranker` **opcional**, atrás do perfil `reranker` (`profiles: [reranker]`; o `up` padrão não o sobe; ligar = `KNOBRIDGE_RERANKER_URL=http://reranker:80` e `docker compose --profile reranker up -d`), imagem `RERANKER_IMAGE` (TEI de CPU 1.9.4), modelo `RERANKER_MODEL_ID` na revisão fixada `RERANKER_MODEL_REVISION` (commit do repositório no Hugging Face), cache no volume `reranker-models` (`/data`; a primeira subida baixa cerca de 2,3 GB), `mem_limit` `RERANKER_MEMORY_LIMIT` (8g: com 4 GB o aquecimento é morto por falta de memória), sem porta no host e healthcheck por `curl` em `/health` com `start_period` de 15 min. Nem `api` nem `worker` dependem dele: a API sobe sem ele e busca na ordem do RRF até ele ficar saudável. As variáveis `KNOBRIDGE_RERANKER_*` ficam só na `api` (o worker não reordena); `KNOBRIDGE_RERANKER_URL` usa `${KNOBRIDGE_RERANKER_URL:-}`, vazia por padrão (a instância não tem reranker); só a camada de E2E a preenche.
 - Rede com sub-rede fixa (`COMPOSE_SUBNET`) e o `frontend` (nginx, proxy de `/v1`) em endereço fixo (`FRONTEND_IPV4`): é o único proxy cujo `X-Forwarded-For` a `api` aceita (`KNOBRIDGE_FORWARDED_ALLOW_IPS`), para a limitação de login contar o IP do cliente.
 - Scripts de shell com fim de linha LF (garantido pelo `.gitattributes`).
 
@@ -41,7 +41,8 @@
 
 ```bash
 docker compose config -q
-docker compose up -d --build --wait   # a primeira subida espera o reranker baixar o modelo
+docker compose up -d --build --wait
+docker compose config --services | grep -c reranker   # 0: o reranker só entra com --profile reranker
 curl -f http://localhost:8000/v1/health/ready
 curl -f http://localhost:5173/v1/health/ready
 curl -sI http://localhost:5173/widget/v1/knobridge-chat.js   # 200, text/javascript, CORS *
@@ -49,6 +50,7 @@ docker compose down -v
 
 # E2E contra a stack (de frontend/: pnpm e2e:stack)
 docker compose -f docker-compose.yml -f docker-compose.e2e.yml config -q
+docker compose -f docker-compose.yml -f docker-compose.e2e.yml config --services | grep reranker   # o falso, sem perfil
 docker compose -f docker-compose.yml -f docker-compose.e2e.yml up -d --build --wait
 docker compose -f docker-compose.yml -f docker-compose.e2e.yml down -v
 ```

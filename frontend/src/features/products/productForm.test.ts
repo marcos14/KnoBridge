@@ -41,7 +41,7 @@ describe("productForm", () => {
       active: true,
       collectionIds: [],
       minSimilarity: "",
-      rerank: true,
+      rerank: false,
       ticketWebhookEnabled: false,
       ticketWebhookUrl: "",
     });
@@ -64,17 +64,17 @@ describe("productForm", () => {
       active: false,
       collection_ids: [COLLECTION_ID, OTHER_COLLECTION_ID],
       min_similarity: 0.55,
-      rerank: true,
+      rerank: false,
       ticket_webhook_url: null,
     });
   });
 
   it("test_product_body_keeps_the_saved_rerank_option", () => {
-    const product = makeProduct({ rerank: false });
+    const product = makeProduct({ rerank: true });
 
-    expect(productBody(productFormDefaults(product), product).rerank).toBe(false);
-    expect(productBody({ ...productFormDefaults(product), rerank: true }, product).rerank).toBe(
-      true,
+    expect(productBody(productFormDefaults(product), product).rerank).toBe(true);
+    expect(productBody({ ...productFormDefaults(product), rerank: false }, product).rerank).toBe(
+      false,
     );
   });
 

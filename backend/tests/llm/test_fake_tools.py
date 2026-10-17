@@ -109,19 +109,14 @@ def test_fake_tools_markers_need_tools_and_a_choice_other_than_none() -> None:
     assert _call(none) is None
 
 
-def test_fake_tools_without_markers_calls_only_when_required() -> None:
+def test_fake_tools_without_markers_never_calls_a_tool() -> None:
     question = _question("  Where is the cap?  ")
     provider = FakeLLMProvider()
 
     auto = collect(provider.stream_chat(question, "fake-chat", tools=[SEARCH]))
-    required = collect(
-        provider.stream_chat(question, "fake-chat", tools=[SEARCH], tool_choice="required")
-    )
 
     assert _call(auto) is None
-    assert _call(required) == ToolCall(
-        "fake-call-1", "search_sources", '{"query": "Where is the cap?"}'
-    )
+    assert "Where is the cap?" in _text(auto)
 
 
 def test_fake_tools_usage_counts_tool_results() -> None:

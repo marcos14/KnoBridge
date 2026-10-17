@@ -10,6 +10,7 @@ import pytest
 from api_support import ApiEnv
 from mcp_support import (
     QUERY,
+    McpWorld,
     call_tools,
     keys_of,
     mcp_world,
@@ -27,9 +28,20 @@ def _search(product: str) -> tuple[str, dict[str, object]]:
     return "search_knowledge", {"product": product, "query": QUERY, "limit": 2}
 
 
+def _set_rerank(api: ApiEnv, world: McpWorld, *, on: bool) -> None:
+    patched = api.client.patch(
+        f"/v1/workspaces/{world.workspace_id}/products/{world.product_id}",
+        json={"rerank": on},
+        headers=api.csrf_headers(),
+    )
+    assert patched.status_code == 200, patched.text
+
+
 def test_search_knowledge_reranks_with_the_product_option(api: ApiEnv) -> None:
     world = mcp_world(api)
     key = world_key(api, world)
+    # New products start without reranking (ADR 0011).
+    _set_rerank(api, world, on=True)
     (plain,) = call_tools(api, key, _search(world.product_name))
     fake = FakeReranker()
 
@@ -49,12 +61,8 @@ def test_search_knowledge_reranks_with_the_product_option(api: ApiEnv) -> None:
 def test_search_knowledge_keeps_the_order_with_the_option_off(api: ApiEnv) -> None:
     world = mcp_world(api)
     key = world_key(api, world)
-    patched = api.client.patch(
-        f"/v1/workspaces/{world.workspace_id}/products/{world.product_id}",
-        json={"rerank": False},
-        headers=api.csrf_headers(),
-    )
-    assert patched.status_code == 200, patched.text
+    _set_rerank(api, world, on=True)
+    _set_rerank(api, world, on=False)
     (plain,) = call_tools(api, key, _search(world.product_name))
     fake = FakeReranker()
 
@@ -67,6 +75,7 @@ def test_search_knowledge_keeps_the_order_with_the_option_off(api: ApiEnv) -> No
 def test_search_knowledge_keeps_the_order_when_the_reranker_fails(api: ApiEnv) -> None:
     world = mcp_world(api)
     key = world_key(api, world)
+    _set_rerank(api, world, on=True)
     (plain,) = call_tools(api, key, _search(world.product_name))
     fake = FakeReranker(error=RerankerError("The reranker answered 500."))
 

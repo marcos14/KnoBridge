@@ -356,7 +356,7 @@ export function makeProduct(overrides: Partial<Product> = {}): Product {
     tone: "neutral",
     no_source_message: "Não encontrei isso nas fontes. Quer abrir um chamado?",
     active: true,
-    rerank: true,
+    rerank: false,
     rerank_available: false,
     collection_ids: [COLLECTION_ID],
     min_similarity: 0.35,

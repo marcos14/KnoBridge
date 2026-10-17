@@ -156,7 +156,6 @@ def test_anthropic_tools_request_unchanged_without_tools() -> None:
     ("choice", "wire"),
     [
         ("auto", {"type": "auto", "disable_parallel_tool_use": True}),
-        ("required", {"type": "any", "disable_parallel_tool_use": True}),
         ("none", {"type": "none"}),
     ],
 )

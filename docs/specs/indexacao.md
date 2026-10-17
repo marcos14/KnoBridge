@@ -2,6 +2,8 @@
 
 > Rascunho v0.5 · 2026-10-17 · Em uso (planos 0003, 0004, 0008 e 0009; plano 0011 em implementação)
 >
+> **Mudança da v0.5, na F4.3** ([ADR 0011](../adr/0011-reranker-opcional.md)): o reranker passou a ser **opcional e desligado por padrão**: o serviço só sobe com o perfil `reranker` do compose, `KNOBRIDGE_RERANKER_URL` fica vazia por padrão, `mem_limit` de 8 GB e produtos novos sem reordenação ([Serviço no compose](#serviço-no-compose)).
+>
 > **Mudanças da v0.5** (plano 0011, F1.1; implementação nas F2.1 e F2.4; [ADR 0010](../adr/0010-busca-em-etapas-e-reranker.md)): o [reranker](#reranker) self-host (TEI com o `bge-reranker-v2-m3`) reordena os 30 melhores depois da fusão quando o produto tem a opção e a instância tem reranker, com queda para a ordem do RRF em falha; o [limiar](#limiar-por-modelo-de-embedding) ganha padrão por modelo de embedding (0,35 OpenAI, 0,60 `gemini-embedding-001`); a ingestão calcula os [arquivos que dominam o índice](#arquivos-que-dominam-o-índice) de cada fonte de pasta ou Git e sugere globs de exclusão; "testar busca" aceita `rerank` e o limiar opcional.
 >
 > **Mudanças da v0.4** (plano 0009, F1.1; implementação nas F1.2, F2.2 e F2.3): cada trecho tem um [nível mínimo](#nível-mínimo) (o maior entre o da fonte, o do documento e o do trecho), a [busca híbrida](#busca-híbrida) filtra pelo nível da pergunta no SQL dos dois braços, a lista de fontes filtra por `min_level`, "testar busca" exige editor e aceita `level`, e as fontes [`cards`](#cards) entram como as de chamados.
@@ -373,12 +375,12 @@ Desde a v0.5 (plano 0011, D6, F2.4). A similaridade de cosseno muda de escala co
 
 ## Reranker
 
-Desde a v0.5 (plano 0011, D1 a D3, F2.1; [ADR 0010](../adr/0010-busca-em-etapas-e-reranker.md)). Um cross-encoder lê a pergunta e cada trecho juntos e dá uma pontuação de relevância, mais fina que a ordem do RRF. O KnoBridge usa o `BAAI/bge-reranker-v2-m3` (multilíngue, Apache 2.0) servido pelo Text Embeddings Inference (TEI), em CPU.
+Desde a v0.5 (plano 0011, D1 a D3, F2.1; [ADR 0010](../adr/0010-busca-em-etapas-e-reranker.md)); **opcional e desligado por padrão** desde a F4.3 ([ADR 0011](../adr/0011-reranker-opcional.md)). Um cross-encoder lê a pergunta e cada trecho juntos e dá uma pontuação de relevância, mais fina que a ordem do RRF. O KnoBridge usa o `BAAI/bge-reranker-v2-m3` (multilíngue, Apache 2.0) servido pelo Text Embeddings Inference (TEI), em CPU. Em CPU ele é lento (dezenas de segundos para 30 trechos; [Latência e memória](#serviço-no-compose)), por isso a instância padrão não tem reranker e as buscas ficam na ordem do RRF.
 
 ### Quando aplica
 
-- A **instância tem reranker** quando `KNOBRIDGE_RERANKER_URL` está definida (o compose define). A disponibilidade é essa configuração, não uma checagem de saúde a cada busca: um reranker fora do ar cai na ordem do RRF (abaixo).
-- O **produto tem a opção** (`products.rerank`, padrão `true`; [produtos-e-niveis.md](produtos-e-niveis.md#campos)).
+- A **instância tem reranker** quando `KNOBRIDGE_RERANKER_URL` está definida. Por padrão ela fica vazia; para ligar, `http://reranker:80` e o perfil `reranker` do compose ([Serviço no compose](#serviço-no-compose)). A disponibilidade é essa configuração, não uma checagem de saúde a cada busca: um reranker fora do ar cai na ordem do RRF (abaixo).
+- O **produto tem a opção** (`products.rerank`, padrão `false` desde a migração `0025`; os produtos existentes ficam com o valor que tinham; [produtos-e-niveis.md](produtos-e-niveis.md#campos)).
 - Com as duas, toda busca do produto é reordenada: a etapa 1 e cada etapa da [busca em etapas](chat.md#busca-em-etapas) (pelo `HybridRetriever`) e o `search_knowledge` do MCP. Sem uma delas, a busca é a da v0.4.
 
 ### Como aplica
@@ -408,23 +410,33 @@ Desde a v0.5 (plano 0011, D1 a D3, F2.1; [ADR 0010](../adr/0010-busca-em-etapas-
 
 ### Serviço no compose
 
-Serviço `reranker` no `docker-compose.yml` (D2: sempre ligado, em desenvolvimento e produção):
+Serviço `reranker` no `docker-compose.yml`, **atrás do perfil `reranker`** (decisão D25 do plano 0011, [ADR 0011](../adr/0011-reranker-opcional.md); até a F4.3, sempre ligado pela D2): o `docker compose up` padrão não o sobe. Para ligar:
+
+```bash
+# no .env da raiz
+KNOBRIDGE_RERANKER_URL=http://reranker:80
+# e suba com o perfil
+docker compose --profile reranker up -d --build --wait
+```
+
+Depois, ligue "Reordenar trechos" nos produtos que devem reordenar (produtos novos nascem sem a opção).
 
 | Item | Valor |
 |---|---|
+| Perfil | `profiles: [reranker]` (só sobe com `--profile reranker` ou `COMPOSE_PROFILES=reranker`) |
 | Imagem | `${RERANKER_IMAGE:-ghcr.io/huggingface/text-embeddings-inference:cpu-1.9.4}` (x86_64; em ARM, `cpu-arm64-1.9.4`) |
 | Comando | `--model-id ${RERANKER_MODEL_ID:-BAAI/bge-reranker-v2-m3} --revision ${RERANKER_MODEL_REVISION} --port 80 --max-client-batch-size 128 --max-batch-tokens 2048` (o padrão de `RERANKER_MODEL_REVISION` é `953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e`, o commit do repositório do modelo no Hugging Face em 2026-10-17, fixado na F2.1 para a subida ser reproduzível) |
 | Volume | `reranker-models:/data` (cache do modelo; a primeira subida baixa cerca de 2,3 GB, as seguintes não) |
-| Memória | `mem_limit: ${RERANKER_MEMORY_LIMIT:-4g}` (pesos em fp32 de 568 M parâmetros, cerca de 2,3 GB, mais a execução; cerca de 3,2 GB depois de subir). O `--max-batch-tokens 2048` limita o aquecimento e cada par pergunta e trecho (com o corte automático do TEI): sem ele, o TEI aquece no máximo do modelo, 8.192 tokens, passa dos 4 GB e é morto por falta de memória em laço. Os textos enviados têm até `KNOBRIDGE_RERANKER_MAX_CHARS` (2.000 caracteres), bem abaixo de 2.048 tokens. |
+| Memória | `mem_limit: ${RERANKER_MEMORY_LIMIT:-8g}` (pesos em fp32 de 568 M parâmetros, cerca de 2,3 GB, mais a execução). O `--max-batch-tokens 2048` limita os tokens de cada lote, e portanto o aquecimento e cada par pergunta e trecho (com o corte automático do TEI): sem ele, o TEI aquece no máximo do modelo, 8.192 tokens. Mesmo com ele, o aquecimento é morto por falta de memória com 4 GB: no ensaio da F4.3 o contêiner precisou de 6 a 8 GB. Os textos enviados têm até `KNOBRIDGE_RERANKER_MAX_CHARS` (2.000 caracteres). |
 | Porta | só na rede do compose (`http://reranker:80`), sem porta no host |
 | Saúde | healthcheck por `GET /health` (o TEI só abre a porta depois de carregar o modelo), `start_period` de 15 min para a primeira subida, intervalo de 10 s. Comando `curl -fsS http://127.0.0.1:80/health` (a imagem do TEI traz `curl`). |
-| Dependências | `api` e `worker` **não** dependem do `reranker`: a API sobe sem ele (e cai na ordem do RRF até ele ficar saudável); o worker não o usa. `docker compose up --wait` espera o `reranker` ficar saudável. |
+| Dependências | `api` e `worker` **não** dependem do `reranker`: a API sobe sem ele (e cai na ordem do RRF até ele ficar saudável); o worker não o usa. Com o perfil, `docker compose up --wait` espera o `reranker` ficar saudável. |
 
 Variáveis da API (`settings.py` e `.env.example`, F2.1):
 
 | Variável | Padrão | Uso |
 |---|---|---|
-| `KNOBRIDGE_RERANKER_URL` | vazia (o compose define `http://reranker:80`) | Base do TEI. Vazia: a instância não tem reranker. Só `http` ou `https`. |
+| `KNOBRIDGE_RERANKER_URL` | vazia (também no compose e no `.env.example`; só a camada de E2E define `http://reranker:80`) | Base do TEI. Vazia: a instância não tem reranker. Para ligar, `http://reranker:80` com o perfil `reranker`. Só `http` ou `https`. |
 | `KNOBRIDGE_RERANKER_TIMEOUT` | 10 | Segundos por chamada (1 a 60). |
 | `KNOBRIDGE_RERANKER_CANDIDATES` | 30 | Candidatos depois da fusão enviados ao reranker (10 a 100). |
 | `KNOBRIDGE_RERANKER_MAX_CHARS` | 2000 | Caracteres por texto enviado (200 a 8000). |
@@ -432,12 +444,12 @@ Variáveis da API (`settings.py` e `.env.example`, F2.1):
 
 Variáveis só do compose (`.env.example`): `RERANKER_IMAGE`, `RERANKER_MODEL_ID`, `RERANKER_MODEL_REVISION`, `RERANKER_MEMORY_LIMIT`.
 
-**Latência e memória**: em CPU, reordenar 30 trechos leva de um a alguns segundos, conforme a máquina e o tamanho dos textos; cada etapa reordena de novo. O corte em `KNOBRIDGE_RERANKER_MAX_CHARS` e o timeout dão o teto; o ensaio da F4.3 mede no índice real. O painel da instância mostra o estado do serviço ([uso-e-custos.md](uso-e-custos.md#get-v1adminhealth)).
+**Latência e memória**: medido no ensaio da F4.3 numa máquina de 16 CPUs, com a imagem de CPU (sem ONNX na revisão fixada, o TEI usa o backend candle), reordenar 30 trechos de 900 caracteres leva 34 s, e 30 de 2.000 caracteres, 96 s: bem acima do timeout de 10 s, então, com os padrões, a busca quase sempre cai na ordem do RRF depois de esperar o timeout. Cada etapa reordena de novo. Quem ligar o reranker em CPU deve contar com isso (e com 6 a 8 GB de memória); um cross-encoder menor com ONNX fica para um plano futuro ([ADR 0011](../adr/0011-reranker-opcional.md)). O painel da instância mostra o estado do serviço ([uso-e-custos.md](uso-e-custos.md#get-v1adminhealth)).
 
 ### E2E e testes
 
 - **Suíte padrão**: um `Reranker` fake atrás da interface (ordem trocada de forma determinística, falha sob demanda) e um teste de contrato do `HttpReranker` contra um servidor HTTP falso (corpo enviado, resposta válida, resposta inválida, timeout, status de erro). Nenhum teste chama o TEI.
-- **E2E da stack**: a camada `docker-compose.e2e.yml` troca o serviço `reranker` por `scripts/fake_reranker.py` (biblioteca padrão do Python, imagem `python:3.12.13-alpine3.22`, como o receptor de webhook), sem o volume do modelo, com `entrypoint` e `command` próprios e healthcheck em `GET /health`. Ele responde `POST /rerank` no formato do TEI, determinístico: a pontuação de cada texto é a fração das palavras da consulta (minúsculas, sem acento) presentes no texto; um texto com o marcador `[[rerank-top]]` recebe 1,0; empate pela ordem de entrada. As fixtures do E2E têm um documento com o marcador, para o teste ver a ordem mudar com a opção ligada e voltar com ela desligada.
+- **E2E da stack**: a camada `docker-compose.e2e.yml` troca o serviço `reranker` por `scripts/fake_reranker.py` (biblioteca padrão do Python, imagem `python:3.12.13-alpine3.22`, como o receptor de webhook), sem o volume do modelo, com `entrypoint` e `command` próprios e healthcheck em `GET /health`. Na camada de E2E ele fica sempre ligado: `profiles: !reset []` tira o perfil `reranker` e a `api` recebe `KNOBRIDGE_RERANKER_URL=http://reranker:80`; o teste liga "Reordenar trechos" no produto, que nasce sem a opção. Ele responde `POST /rerank` no formato do TEI, determinístico: a pontuação de cada texto é a fração das palavras da consulta (minúsculas, sem acento) presentes no texto; um texto com o marcador `[[rerank-top]]` recebe 1,0; empate pela ordem de entrada. As fixtures do E2E têm um documento com o marcador, para o teste ver a ordem mudar com a opção ligada e voltar com ela desligada.
 
 ## Da busca à citação
 

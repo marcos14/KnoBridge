@@ -2,7 +2,7 @@
 
 > Rascunho v0.2 · 2026-10-17 · Em uso (planos 0009 e 0011)
 >
-> **Mudanças da v0.2** (plano 0011): máximo de buscas por nível, "Reordenar trechos" e similaridade mínima pelo padrão do modelo no produto, e a nova seção [Como o produto busca](#como-o-produto-busca), com a comparação em "Testar busca" e as buscas de cada resposta em Conversas.
+> **Mudanças da v0.2** (plano 0011): máximo de buscas por nível, "Reordenar trechos" (desligado por padrão, como o reranker da instância) e similaridade mínima pelo padrão do modelo no produto, e a nova seção [Como o produto busca](#como-o-produto-busca), com a comparação em "Testar busca" e as buscas de cada resposta em Conversas.
 
 Passo a passo para organizar as respostas por **produto** (o sistema sobre o qual as pessoas perguntam, como "ERP" ou "Portal do Cliente") e por **nível de resposta** (quanto detalhe técnico a resposta pode ter e quais fontes ela usa): configurar os três níveis do workspace, criar produtos, definir o nível máximo de cada membro, ajustar o nível mínimo das fontes, conversar num nível e chamar um produto num nível pela API.
 
@@ -47,7 +47,7 @@ Precisa de papel editor ou acima.
 2. Preencha **Nome** (ex.: `ERP`; único no workspace e sem terminar em `:end_user`, `:support` ou `:product_dev`, porque o nome é o `model` da API) e, se quiser, **Descrição**.
 3. Marque as **Coleções** em que o produto busca. Sem coleção, ele responde sempre "sem fonte".
 4. **Texto extra** (opcional): instruções próprias do produto, acrescentadas depois das do nível da conversa (ex.: "Os módulos se chamam Faturamento, Estoque e Financeiro").
-5. Os demais campos têm padrão: idioma `pt-BR`, tom neutro, **Similaridade mínima** em branco (o padrão do modelo de embedding de cada coleção; ao editar, o produto mostra o limiar em uso por modelo), **Reordenar trechos** ligado (vale quando a instância tem reranker; sem ele, a opção aparece desabilitada com a explicação), ativo. **Mensagem quando não há fonte** em branco usa a mensagem padrão.
+5. Os demais campos têm padrão: idioma `pt-BR`, tom neutro, **Similaridade mínima** em branco (o padrão do modelo de embedding de cada coleção; ao editar, o produto mostra o limiar em uso por modelo), **Reordenar trechos** desligado (vale quando a instância tem reranker, que é opcional e vem desligado; sem ele, a opção aparece desabilitada com a explicação), ativo. **Mensagem quando não há fonte** em branco usa a mensagem padrão.
 6. Clique em **Salvar**.
 
 O produto não tem modelo nem temperatura: vêm do nível da conversa. Na lista, **Duplicar** copia a configuração e as coleções (o webhook vai sem segredo); **Excluir** apaga também as conversas do produto (para guardar o histórico, desative). O webhook de "Abrir chamado" fica no próprio produto ([receber-chamados-por-api.md](receber-chamados-por-api.md#9-receber-abrir-chamado-do-chat)).
@@ -134,7 +134,7 @@ A primeira busca usa o texto da pergunta. Se os trechos não bastarem, o modelo 
 
 ### Reordenação (por produto)
 
-Com **Reordenar trechos** ligado (o padrão) e um reranker na instância (o serviço `reranker` do compose, [subir-ambiente.md](subir-ambiente.md#reranker)), cada busca pega os 30 melhores candidatos da busca híbrida e o reranker os reordena pela relevância para a pergunta; os 10 primeiros vão ao modelo. Costuma acertar mais a fonte, com um a alguns segundos a mais por busca em CPU. Se o reranker estiver fora do ar, a busca segue na ordem original, sem erro.
+Com **Reordenar trechos** ligado no produto (desligado por padrão) e um reranker na instância (o serviço `reranker` do compose, opcional e desligado por padrão: como ligar em [subir-ambiente.md](subir-ambiente.md#reranker); [ADR 0011](../adr/0011-reranker-opcional.md)), cada busca pega os 30 melhores candidatos da busca híbrida e o reranker os reordena pela relevância para a pergunta; os 10 primeiros vão ao modelo. Costuma acertar mais a fonte, mas em CPU leva dezenas de segundos por busca (no ensaio do plano 0011, de 34 s a 96 s para 30 trechos), acima do timeout padrão de 10 s. Se o reranker estiver fora do ar, a busca segue na ordem original, sem erro.
 
 Para ver a diferença antes de mudar um produto: em **Coleções**, abra a coleção, escreva a pergunta em **Testar busca** e busque com **Com reranker** e depois com **Sem reranker**. A tela diz se os trechos foram reordenados e mostra a pontuação do reranker de cada um.
 
@@ -181,6 +181,6 @@ O `model` com o nome ou o id do assistente continua valendo na API compatível c
 - **A resposta de Usuário final não cita um arquivo que eu esperava**: o arquivo é código (sobe para Desenvolvimento e produto) ou a fonte tem nível mínimo acima. Confira o nível na lista de **Fontes**.
 - **O campo Nível mínimo está desabilitado**: só owner e admin mudam o nível de uma fonte.
 - **"O modelo deste nível não aceita busca em etapas"** no cartão do nível: o provedor recusou a chamada de ferramentas desse modelo. As respostas seguem com uma busca só; troque para um modelo com ferramentas, ou deixe assim se a busca única basta.
-- **"Reordenar trechos" está desabilitado**: a instância não tem reranker (`KNOBRIDGE_RERANKER_URL` vazia). Veja [subir-ambiente.md](subir-ambiente.md#reranker).
+- **"Reordenar trechos" está desabilitado**: a instância não tem reranker (`KNOBRIDGE_RERANKER_URL` vazia, o padrão). Para ligar, veja [subir-ambiente.md](subir-ambiente.md#reranker).
 - **Numa coleção Gemini, perguntas que antes tinham fonte agora caem em "sem fonte"**: o limiar passou a ser o do modelo (0,60 no `gemini-embedding-001`), que corta trechos pouco parecidos. Confira em **Testar busca** com a similaridade em branco e, se precisar, fixe um número no produto.
 - **O nome do produto é recusado**: nomes que terminam em `:end_user`, `:support` ou `:product_dev` não são aceitos, porque o `:` indica o nível no `model` da API.

@@ -29,7 +29,10 @@ services:
   migrate:
     environment: *e2e-env
   api:
-    environment: *e2e-env
+    environment:
+      <<: *e2e-env
+      # The fake reranker below is always on in the E2E layer (ADR 0011).
+      KNOBRIDGE_RERANKER_URL: http://reranker:80
     volumes:
       - *e2e-sources
   worker:
@@ -40,8 +43,10 @@ services:
   # Fake reranker (scripts/fake_reranker.py, standard library only) in place of the TEI image:
   # the same POST /rerank, scored by the query words found in each text, with the marker
   # [[rerank-top]] on top (docs/specs/indexacao.md, "E2E e testes"). No model download, so the
-  # model volume and the long start period go away.
+  # model volume and the long start period go away. Unlike the development stack, it is always
+  # on: the overlay drops the `reranker` profile and the api above points at it.
   reranker:
+    profiles: !reset []
     image: python:3.12.13-alpine3.22
     entrypoint: [python, /app/fake_reranker.py]
     command: [--port, "80"]
