@@ -39,6 +39,7 @@ import {
   levelFormDefaults,
   levelFormSchema,
   type LevelFormValues,
+  MAX_STEPS_OPTIONS,
   NO_PROVIDER,
 } from "./levelForm";
 
@@ -169,6 +170,21 @@ function LevelCard({ workspaceId, level, providers }: LevelCardProps) {
               value: formatUsd(level.estimated_cost_per_answer_usd, i18n.language),
             })}
       </p>
+      {level.max_steps > 1 && typeof level.estimated_max_cost_per_answer_usd === "number" && (
+        <p className="text-sm">
+          <span className="font-medium">{t("workspaceSettings.levels.maxCost")}: </span>
+          {t("workspaceSettings.levels.maxCostValue", {
+            count: level.max_steps,
+            value: formatUsd(level.estimated_max_cost_per_answer_usd, i18n.language),
+          })}
+        </p>
+      )}
+      {level.tools_supported === false && (
+        <p className="flex items-start gap-2 rounded-md border border-amber-500/50 px-3 py-2 text-sm">
+          <AlertTriangle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+          <span>{t("workspaceSettings.levels.toolsUnsupported")}</span>
+        </p>
+      )}
       <Form {...form}>
         <form
           noValidate
@@ -186,13 +202,16 @@ function LevelCard({ workspaceId, level, providers }: LevelCardProps) {
             <ProviderField control={form.control} providers={providers} />
             <ModelField control={form.control} providers={providers} />
           </div>
-          <TextField
-            control={form.control}
-            name="temperature"
-            inputMode="decimal"
-            label={t("workspaceSettings.levels.temperature")}
-            description={t("workspaceSettings.levels.temperatureHint")}
-          />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <TextField
+              control={form.control}
+              name="temperature"
+              inputMode="decimal"
+              label={t("workspaceSettings.levels.temperature")}
+              description={t("workspaceSettings.levels.temperatureHint")}
+            />
+            <MaxStepsField control={form.control} />
+          </div>
           <InstructionsField
             control={form.control}
             level={level}
@@ -242,6 +261,38 @@ function ProviderField({ control, providers }: FieldProps) {
               ))}
             </SelectContent>
           </Select>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+}
+
+/** How many searches an answer of the level may make (`max_steps`, 1 to 6). */
+function MaxStepsField({ control }: { control: Control<LevelFormValues> }) {
+  const { t } = useTranslation();
+  return (
+    <FormField
+      control={control}
+      name="maxSteps"
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>{t("workspaceSettings.levels.maxSteps")}</FormLabel>
+          <Select value={field.value} onValueChange={field.onChange}>
+            <FormControl>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+            </FormControl>
+            <SelectContent>
+              {MAX_STEPS_OPTIONS.map((count) => (
+                <SelectItem key={count} value={String(count)}>
+                  {t("workspaceSettings.levels.maxStepsOption", { count })}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <FormDescription>{t("workspaceSettings.levels.maxStepsHint")}</FormDescription>
           <FormMessage />
         </FormItem>
       )}

@@ -383,6 +383,7 @@ export function makeProducts(): Product[] {
       tone: "friendly",
       active: false,
       collection_ids: [],
+      effective_min_similarity: [],
     }),
     makeProduct(),
   ];
@@ -657,6 +658,52 @@ export function makeCollections(): Collection[] {
       chunk_count: 0,
     }),
   ];
+}
+
+/**
+ * `index_stats` of a source with three dominant groups (19.729 chunks): `docs/resumos/**` (34
+ * files, 23,6%) and `*.min.js` suggested, and `docs/relatorio-anual.json`, already excluded.
+ */
+export function makeIndexStats(
+  overrides: Partial<NonNullable<Source["index_stats"]>> = {},
+): NonNullable<Source["index_stats"]> {
+  return {
+    version: 1,
+    computed_at: "2026-10-17T12:00:00Z",
+    run_id: RUN_ID,
+    chunks: 19729,
+    file_chunks: 19100,
+    files: 2106,
+    top_files: [{ path: "docs/resumos/2026-09.json", chunks: 412, share: 0.0209 }],
+    dominant: [
+      {
+        kind: "directory",
+        pattern: "docs/resumos/**",
+        files: 34,
+        chunks: 4661,
+        share: 0.2363,
+        chunks_per_file: 137.1,
+      },
+      {
+        kind: "file",
+        pattern: "docs/relatorio-anual.json",
+        files: 1,
+        chunks: 1200,
+        share: 0.0608,
+        chunks_per_file: 1200,
+      },
+      {
+        kind: "known_generated",
+        pattern: "*.min.js",
+        files: 12,
+        chunks: 600,
+        share: 0.0304,
+        chunks_per_file: 50,
+      },
+    ],
+    suggested_exclude_globs: ["docs/resumos/**", "*.min.js"],
+    ...overrides,
+  };
 }
 
 /** One item of `GET .../sources`: by default the Git repository of Código ERP, synced. */

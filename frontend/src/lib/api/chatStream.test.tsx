@@ -97,6 +97,7 @@ describe("useChatStream", () => {
         kind: "done",
         status: "completed",
         ticketRequestsEnabled: false,
+        steps: 1,
       });
     });
     expect(result.current.pending?.text).toBe("Confira os lançamentos [1].");
@@ -113,6 +114,39 @@ describe("useChatStream", () => {
     expect(request?.headers.get("Accept")).toBe("text/event-stream");
     expect(await request?.json()).toEqual({ content: "Como fecho o caixa?" });
     expect(result.current.failure).toBeNull();
+  });
+
+  it("test_use_chat_stream_keeps_the_last_step_and_the_steps_of_done", async () => {
+    const source = controlledStream();
+    streamed(source.stream);
+    const { result, refresh } = renderStream();
+    const [first, second, citations, done] = answerFrames({
+      searches: ["tabela do caixa", "fechamento diário"],
+    });
+
+    act(() => {
+      void result.current.send(CONVERSATION_ID, "Como fecho o caixa?");
+    });
+    act(() => {
+      source.push(`${first ?? ""}${second ?? ""}`);
+    });
+
+    await waitFor(() => {
+      expect(result.current.pending?.step).toEqual({
+        step: 3,
+        maxSteps: 3,
+        query: "fechamento diário",
+      });
+    });
+    expect(result.current.pending?.messageId).toBe(ANSWER_ID);
+    act(() => {
+      source.push(`${citations ?? ""}${done ?? ""}`);
+      source.close();
+    });
+    await waitFor(() => {
+      expect(result.current.pending?.outcome).toMatchObject({ kind: "done", steps: 3 });
+    });
+    refresh.release();
   });
 
   it("test_use_chat_stream_reports_error_event_as_outcome", async () => {

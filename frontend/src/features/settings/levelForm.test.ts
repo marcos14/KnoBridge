@@ -36,6 +36,7 @@ describe("levelForm", () => {
       model: "gpt-4.1-mini",
       temperature: "0.2",
       instructions: "Você atende o usuário final. Nunca mostre código.",
+      maxSteps: "2",
     });
     expect(levelFormDefaults(makeUnconfiguredLevel("support"))).toMatchObject({
       providerId: NO_PROVIDER,
@@ -60,7 +61,19 @@ describe("levelForm", () => {
       model: "gpt-4.1-mini",
       temperature: 0.2,
       instructions: null,
+      max_steps: 2,
     });
+  });
+
+  it("test_level_body_sends_the_chosen_max_steps", () => {
+    expect(levelBody(form({ maxSteps: "6" }), makeWorkspaceLevel()).max_steps).toBe(6);
+  });
+
+  it("test_level_form_accepts_max_steps_from_1_to_6", () => {
+    expect(errorsOf(form({ maxSteps: "1" }))).toEqual({});
+    expect(errorsOf(form({ maxSteps: "6" }))).toEqual({});
+    expect(errorsOf(form({ maxSteps: "7" }))).toEqual({ maxSteps: "Escolha de 1 a 6 buscas." });
+    expect(errorsOf(form({ maxSteps: "0" }))).toEqual({ maxSteps: "Escolha de 1 a 6 buscas." });
   });
 
   it("test_level_body_sends_edited_instructions_and_parsed_temperature", () => {

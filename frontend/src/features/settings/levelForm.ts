@@ -7,6 +7,8 @@ import type { WorkspaceLevel, WorkspaceLevelChanges } from "@/lib/api/levels";
 export const MODEL_MAX_LENGTH = 200;
 export const LEVEL_INSTRUCTIONS_MAX_LENGTH = 20000;
 export const MAX_TEMPERATURE = 2;
+/** Range of the maximum searches per answer of a level (`max_steps`). */
+export const MAX_STEPS_OPTIONS: readonly number[] = [1, 2, 3, 4, 5, 6];
 
 /** Value of the credential picker for "no credential" (a `Select` item cannot be empty). */
 export const NO_PROVIDER = "none";
@@ -30,6 +32,8 @@ export interface LevelFormValues {
   model: string;
   temperature: string;
   instructions: string;
+  /** Maximum searches per answer, one of `MAX_STEPS_OPTIONS` as text (a `Select` value). */
+  maxSteps: string;
 }
 
 export function levelFormSchema(t: TFunction) {
@@ -48,6 +52,9 @@ export function levelFormSchema(t: TFunction) {
       instructions: z
         .string()
         .max(LEVEL_INSTRUCTIONS_MAX_LENGTH, tooLong(LEVEL_INSTRUCTIONS_MAX_LENGTH)),
+      maxSteps: z.string().refine((value) => MAX_STEPS_OPTIONS.includes(Number(value)), {
+        error: t("workspaceSettings.levels.validation.maxStepsInvalid"),
+      }),
     })
     .superRefine((values, ctx) => {
       // The credential and the model go together: both set, or both empty (the level is off).
@@ -76,6 +83,7 @@ export function levelFormDefaults(level: WorkspaceLevel): LevelFormValues {
     model: level.model ?? "",
     temperature: String(level.temperature),
     instructions: level.instructions,
+    maxSteps: String(level.max_steps),
   };
 }
 
@@ -95,5 +103,6 @@ export function levelBody(values: LevelFormValues, level: WorkspaceLevel): Works
     model: hasProvider ? values.model : null,
     temperature: parseTemperature(values.temperature) ?? level.temperature,
     instructions: isDefaultInstructions(level, values.instructions) ? null : values.instructions,
+    max_steps: Number(values.maxSteps),
   };
 }

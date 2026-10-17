@@ -160,7 +160,11 @@ export function renderMessage(message: ViewMessage, ctx: MessageContext): Templa
     aria-busy=${streaming ? "true" : "false"}
   >
     <span class="sr-only">${ctx.t("assistant")}:</span>
-    ${streaming && !message.content ? html`<p class="typing">${ctx.t("typing")}</p>` : nothing}
+    ${
+      streaming && !message.content
+        ? html`<p class="typing">${ctx.t(message.searching ? "searching" : "typing")}</p>`
+        : nothing
+    }
     ${parseMarkdown(message.content, titles).map((block) => renderBlock(block, { message, ctx, titles }))}
     ${
       message.status === "interrupted"

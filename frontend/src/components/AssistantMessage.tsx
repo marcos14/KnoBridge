@@ -23,6 +23,35 @@ interface AssistantMessageProps {
   ticket?: ReactNode;
   /** Someone else's answer seen by an administrator: no ticket offer, the status said in words. */
   readOnly?: boolean;
+  /**
+   * While streaming, the last search the model started (`step` event): "Buscando: <query>"
+   * instead of "respondendo" until the first text arrives.
+   */
+  searching?: { query: string | null } | null;
+  /** Searches made by the finished answer (`steps`); absent, `null` or `0`, nothing is shown. */
+  steps?: number | null;
+  /** The queries the model wrote in those searches (`retrieval`), shown when the count opens. */
+  stepQueries?: readonly string[];
+}
+
+/** "N buscas" of an answer and, when the model searched again, the queries it wrote. */
+function StepsSummary({ steps, queries }: { steps: number; queries: readonly string[] }) {
+  const { t } = useTranslation();
+  const label = t("chat.message.steps", { count: steps });
+  if (queries.length === 0) {
+    return <p className="text-muted-foreground text-xs">{label}</p>;
+  }
+  return (
+    <details className="text-muted-foreground text-xs">
+      <summary className="w-fit cursor-pointer">{label}</summary>
+      <ol aria-label={t("chat.message.stepsQueries")} className="mt-1 list-decimal pl-5">
+        <li>{t("chat.message.stepsQuestion")}</li>
+        {queries.map((query, index) => (
+          <li key={index}>{query}</li>
+        ))}
+      </ol>
+    </details>
+  );
 }
 
 /**
@@ -39,6 +68,9 @@ export function AssistantMessage({
   feedback,
   ticket,
   readOnly = false,
+  searching = null,
+  steps = null,
+  stepQueries = [],
 }: AssistantMessageProps) {
   const { t } = useTranslation();
   const problem =
@@ -54,7 +86,13 @@ export function AssistantMessage({
         <ChatMarkdown content={content} citations={citations} onCitation={onCitation} />
       )}
       {status === "streaming" && content === "" && (
-        <p className="text-muted-foreground text-sm">{t("chat.message.thinking")}</p>
+        <p className="text-muted-foreground text-sm">
+          {searching === null
+            ? t("chat.message.thinking")
+            : searching.query === null
+              ? t("chat.message.searching")
+              : t("chat.message.searchingFor", { query: searching.query })}
+        </p>
       )}
       {citations.length > 0 && (
         <div className="flex flex-col gap-1">
@@ -107,6 +145,7 @@ export function AssistantMessage({
           </ul>
         </div>
       )}
+      {steps !== null && steps > 0 && <StepsSummary steps={steps} queries={stepQueries} />}
       {status === "no_source" && readOnly && (
         <p className="text-muted-foreground text-xs">{t("chat.message.noSource")}</p>
       )}

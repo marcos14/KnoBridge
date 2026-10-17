@@ -7,7 +7,6 @@ import {
   productBody,
   productFormDefaults,
   productFormSchema,
-  DEFAULT_MIN_SIMILARITY,
   parseMinSimilarity,
 } from "./productForm";
 
@@ -41,7 +40,8 @@ describe("productForm", () => {
       noSourceMessage: "",
       active: true,
       collectionIds: [],
-      minSimilarity: "0.35",
+      minSimilarity: "",
+      rerank: true,
       ticketWebhookEnabled: false,
       ticketWebhookUrl: "",
     });
@@ -73,6 +73,18 @@ describe("productForm", () => {
     const product = makeProduct({ rerank: false });
 
     expect(productBody(productFormDefaults(product), product).rerank).toBe(false);
+    expect(productBody({ ...productFormDefaults(product), rerank: true }, product).rerank).toBe(
+      true,
+    );
+  });
+
+  it("test_product_form_reads_a_null_min_similarity_as_blank_and_sends_null", () => {
+    const product = makeProduct({ min_similarity: null });
+
+    const values = productFormDefaults(product);
+
+    expect(values.minSimilarity).toBe("");
+    expect(productBody(values, product).min_similarity).toBeNull();
   });
 
   it("test_product_form_reads_the_webhook_of_a_product", () => {
@@ -141,13 +153,17 @@ describe("productForm", () => {
     expect(result.data?.ticketWebhookUrl).toBe("https://chamados.example.test/kb");
   });
 
-  it("test_product_body_reads_min_similarity_with_comma_or_falls_back", () => {
+  it("test_product_body_reads_min_similarity_with_comma_or_blank_as_the_default", () => {
     const values = productFormDefaults(undefined);
 
     expect(productBody({ ...values, minSimilarity: "0,45" }).min_similarity).toBe(0.45);
-    expect(productBody({ ...values, minSimilarity: "x" }).min_similarity).toBe(
-      DEFAULT_MIN_SIMILARITY,
-    );
+    expect(productBody({ ...values, minSimilarity: " " }).min_similarity).toBeNull();
+  });
+
+  it("test_product_form_schema_accepts_a_blank_min_similarity", () => {
+    const values = { ...productFormDefaults(undefined), name: "Ok", minSimilarity: " " };
+
+    expect(productFormSchema(t).safeParse(values).success).toBe(true);
   });
 
   it("test_product_form_schema_rejects_min_similarity_out_of_range", () => {

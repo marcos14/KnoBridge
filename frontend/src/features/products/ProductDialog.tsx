@@ -45,6 +45,7 @@ import {
   productFormSchema,
   type ProductFormValues,
 } from "./productForm";
+import { RetrievalFields } from "./RetrievalFields";
 import { webhookApiErrorText } from "./ticketWebhook";
 import { TicketWebhookFields } from "./TicketWebhookFields";
 import { TicketWebhookPanel } from "./TicketWebhookPanel";
@@ -61,6 +62,11 @@ interface ProductDialogProps {
   onClosed?: () => void;
   /** Owners and admins generate the webhook secret (a credential); editors only test it. */
   canManageSecret: boolean;
+  /**
+   * Whether the instance has a reranker, for a new product (an edit reads its own
+   * `rerank_available`); `undefined` when no product says it yet.
+   */
+  rerankAvailable?: boolean;
   onSaved: (product: Product) => void;
 }
 
@@ -74,6 +80,7 @@ export function ProductDialog({
   product,
   trigger,
   canManageSecret,
+  rerankAvailable,
   onSaved,
   defaultOpen = false,
   onClosed,
@@ -162,12 +169,10 @@ export function ProductDialog({
               <ToneField control={form.control} />
             </div>
             <CollectionsField control={form.control} workspaceId={workspaceId} />
-            <TextField
+            <RetrievalFields
               control={form.control}
-              name="minSimilarity"
-              inputMode="decimal"
-              label={t("products.form.minSimilarity")}
-              description={t("products.form.minSimilarityHint")}
+              product={product}
+              rerankAvailable={product?.rerank_available ?? rerankAvailable}
             />
             <TextField
               control={form.control}

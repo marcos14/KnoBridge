@@ -93,6 +93,21 @@ describe("renderMessage", () => {
     expect(streaming.querySelector(".typing")?.textContent).toBe("Digitando…");
   });
 
+  it("test_render_message_searching_shows_only_the_generic_text_until_the_answer", () => {
+    const searching = mount(
+      renderMessage(assistant("", { status: "streaming", searching: true }), context()),
+    );
+    const answering = mount(
+      renderMessage(
+        assistant("Abra o caixa.", { status: "streaming", searching: true }),
+        context(),
+      ),
+    );
+
+    expect(searching.querySelector(".typing")?.textContent).toBe("Buscando mais informações…");
+    expect(answering.querySelector(".typing")).toBeNull();
+  });
+
   it("test_render_message_of_the_visitor_is_plain_text", () => {
     const container = mount(
       renderMessage(assistant("**não** é markdown", { role: "user", citations: [] }), context()),

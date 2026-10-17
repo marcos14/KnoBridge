@@ -108,6 +108,13 @@ export interface CitationsEvent {
   citations: Citation[];
 }
 
+/** The model searches again (v0.11); in the widget the query is always null, and never shown. */
+export interface StepEvent {
+  message_id: string;
+  step: number;
+  max_steps: number;
+}
+
 export interface DeltaEvent {
   text: string;
 }
@@ -125,6 +132,7 @@ export interface ErrorEvent {
 }
 
 export type ChatEvent =
+  | { type: "step"; data: StepEvent }
   | { type: "citations"; data: CitationsEvent }
   | { type: "delta"; data: DeltaEvent }
   | { type: "done"; data: DoneEvent }

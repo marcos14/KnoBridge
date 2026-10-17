@@ -6,6 +6,7 @@ import { AssistantMessage } from "@/components/AssistantMessage";
 import { Button } from "@/components/ui/button";
 import type { PendingAnswer } from "@/lib/api/chatStream";
 import type { Citation, Message } from "@/lib/api/conversations";
+import { stepQueries } from "@/lib/answerSteps";
 
 import { isAtEnd, questionBefore, visibleMessages } from "./chatForm";
 import { FeedbackControls } from "./FeedbackControls";
@@ -95,7 +96,7 @@ export function MessageList({
     if (box !== null && atEndRef.current) {
       box.scrollTop = box.scrollHeight;
     }
-  }, [visible.length, pending?.text, pending?.citations.length, pending?.question]);
+  }, [visible.length, pending?.text, pending?.citations.length, pending?.question, pending?.step]);
 
   function resendFor(message: Message) {
     const question = questionBefore(messages, message.id);
@@ -127,6 +128,8 @@ export function MessageList({
                 citations={message.citations}
                 status={message.status}
                 errorCode={message.error_code}
+                steps={message.steps}
+                stepQueries={stepQueries(message.retrieval)}
                 onCitation={onCitation}
                 onResend={resendFor(message)}
                 ticket={
@@ -158,6 +161,9 @@ export function MessageList({
             citations={pending.citations}
             status="streaming"
             errorCode={null}
+            searching={pending.step}
+            // The `done` count shows while the conversation reloads with the saved answer.
+            steps={pending.outcome?.kind === "done" ? pending.outcome.steps : null}
             onCitation={onCitation}
           />
         )}

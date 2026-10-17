@@ -12,6 +12,7 @@ import { type Source, useSource, useTestSource } from "@/lib/api/sources";
 import { isPushSourceKind } from "@/lib/api/tickets";
 
 import { DocumentsSection } from "./DocumentsSection";
+import { DominantFiles } from "./DominantFiles";
 import { type Feedback, FeedbackMessage } from "./Feedback";
 import { RunnerSourceTabs } from "./harness/RunnerSourceTabs";
 import { NextRun } from "./NextRun";
@@ -254,6 +255,12 @@ function SourceHeader({
           </div>
         )}
       </div>
+      <DominantFiles
+        workspaceId={workspaceId}
+        source={source}
+        canManage={canManage}
+        onFeedback={setFeedback}
+      />
       <FeedbackMessage feedback={feedback} />
     </section>
   );

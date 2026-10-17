@@ -75,15 +75,35 @@ function storedNoSourceMessage(message: string | null | undefined): string {
     : message;
 }
 
-/** Stored when the request omits them, like the backend defaults. */
-export const DEFAULT_MIN_SIMILARITY = 0.35;
+/** The floor of `text-embedding-3-small` in the backend's table per embedding model. */
+export const MODEL_MIN_SIMILARITY = 0.35;
+
+/**
+ * `effective_min_similarity` as the backend computes it for the models in `effective`: the
+ * product's own floor, or the model's default when `min_similarity` is `null`.
+ */
+function effectiveFloors(
+  effective: Product["effective_min_similarity"],
+  minSimilarity: number | null,
+): Product["effective_min_similarity"] {
+  return effective.map((item) =>
+    minSimilarity === null
+      ? { ...item, value: MODEL_MIN_SIMILARITY, source: "model" }
+      : { ...item, value: minSimilarity, source: "product" },
+  );
+}
 
 /** What the backend stores for a `POST` body: its defaults for the omitted fields. */
 function storedInput(body: ProductInput): Partial<Product> {
+  const minSimilarity = body.min_similarity ?? null;
   return {
     ...body,
     collection_ids: body.collection_ids ?? [],
-    min_similarity: body.min_similarity ?? DEFAULT_MIN_SIMILARITY,
+    min_similarity: minSimilarity,
+    effective_min_similarity: effectiveFloors(
+      makeProduct().effective_min_similarity,
+      minSimilarity,
+    ),
     no_source_message: storedNoSourceMessage(body.no_source_message),
     ticket_webhook_url: body.ticket_webhook_url ?? null,
   };
@@ -184,9 +204,14 @@ export function productStore(
       if (product === undefined) {
         return apiErrorResponse(404, "not_found");
       }
+      // `min_similarity: null` goes back to the model's default; omitted, it stays.
+      const minSimilarity =
+        body.min_similarity === undefined ? product.min_similarity : body.min_similarity;
       const updated = withWebhookState({
         ...product,
         ...definedChanges(body),
+        min_similarity: minSimilarity,
+        effective_min_similarity: effectiveFloors(product.effective_min_similarity, minSimilarity),
         no_source_message:
           body.no_source_message === undefined
             ? product.no_source_message

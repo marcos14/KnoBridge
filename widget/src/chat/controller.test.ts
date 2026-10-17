@@ -83,6 +83,32 @@ describe("ChatController", () => {
     expect(controller.messages[1]?.status).toBe("completed");
   });
 
+  it("test_controller_step_marks_the_answer_as_searching_until_the_text", async () => {
+    const sse = controlledSse();
+    installFetch({
+      "POST /conversations": created(),
+      "POST /conversations/c1/messages": () => sse.response,
+    });
+    const { controller } = setup();
+    const running = controller.send("Como fecho o caixa?");
+    await vi.waitFor(() => {
+      expect(controller.messages).toHaveLength(2);
+    });
+
+    sse.push("step", { message_id: "a1", step: 2, max_steps: 2, query: null });
+    await vi.waitFor(() => {
+      expect(controller.messages[1]?.searching).toBe(true);
+    });
+    sse.push("citations", { message_id: "a1", user_message_id: "q1", citations: [] });
+    sse.push("delta", { text: "Abra o caixa." });
+    sse.push("done", { message_id: "a1", status: "completed", ticket_requests_enabled: false });
+    sse.close();
+    await running;
+
+    expect(controller.messages[1]?.content).toBe("Abra o caixa.");
+    expect(controller.messages[1]?.status).toBe("completed");
+  });
+
   it("test_controller_send_while_busy_is_ignored", async () => {
     const { calls } = installFetch({
       "POST /conversations": created(),

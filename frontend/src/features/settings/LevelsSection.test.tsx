@@ -13,7 +13,7 @@ import {
   updateLevelFails,
   workspaceLevelsServerError,
 } from "@/test/handlers";
-import { DEFAULT_LEVEL_INSTRUCTIONS } from "@/test/levelFactories";
+import { DEFAULT_LEVEL_INSTRUCTIONS, makeWorkspaceLevel } from "@/test/levelFactories";
 import { renderWithProviders } from "@/test/renderWithProviders";
 import { server } from "@/test/server";
 
@@ -90,6 +90,7 @@ describe("LevelsSection", () => {
           model: "gpt-4.1",
           temperature: 0.7,
           instructions: null,
+          max_steps: 2,
         },
       },
     ]);
@@ -278,6 +279,67 @@ describe("LevelsSection", () => {
     renderWithProviders({ path: PATH });
 
     expect(await screen.findByText("Carregando os níveis…")).toHaveRole("status");
+  });
+
+  it("test_levels_section_shows_the_cost_with_every_search", async () => {
+    await renderLevels();
+
+    const endUser = levelCard("Usuário final");
+    expect(within(endUser).getByText(/US\$\s0,00484 \(até 2 buscas/)).toBeInTheDocument();
+    expect(
+      within(levelForm("Usuário final")).getByRole("combobox", {
+        name: "Máximo de buscas por resposta",
+      }),
+    ).toHaveTextContent("2 buscas");
+    // Without a price there is no maximum cost either.
+    expect(
+      within(levelCard("Suporte")).queryByText("Com todas as buscas:"),
+    ).not.toBeInTheDocument();
+    expect(
+      within(levelForm("Desenvolvimento e produto")).getByRole("combobox", {
+        name: "Máximo de buscas por resposta",
+      }),
+    ).toHaveTextContent("4 buscas");
+  });
+
+  it("test_levels_section_saves_the_max_steps", async () => {
+    const user = userEvent.setup();
+    const { store } = await renderLevels();
+    const form = levelForm("Suporte");
+
+    await choose(user, form, "Máximo de buscas por resposta", "1 busca (sem busca em etapas)");
+    await user.click(within(form).getByRole("button", { name: "Salvar nível" }));
+
+    await within(form).findByText("Nível Suporte atualizado.");
+    expect(store.changes[0]?.body.max_steps).toBe(1);
+    expect(
+      within(form).getByRole("combobox", { name: "Máximo de buscas por resposta" }),
+    ).toHaveTextContent("1 busca (sem busca em etapas)");
+  });
+
+  it("test_levels_section_single_search_hides_the_maximum_cost", async () => {
+    const store = levelStore([
+      makeWorkspaceLevel({ max_steps: 1, estimated_max_cost_per_answer_usd: 0.00256 }),
+    ]);
+    server.use(...store.handlers);
+    renderWithProviders({ path: PATH });
+
+    const form = await screen.findByRole("form", { name: "Usuário final" });
+    expect(within(levelCard("Usuário final")).queryByText("Com todas as buscas:")).toBeNull();
+    expect(form).toBeInTheDocument();
+  });
+
+  it("test_levels_section_warns_when_the_model_has_no_tools", async () => {
+    const store = levelStore([makeWorkspaceLevel({ tools_supported: false })]);
+    server.use(...store.handlers);
+    renderWithProviders({ path: PATH });
+
+    await screen.findByRole("form", { name: "Usuário final" });
+    expect(
+      within(levelCard("Usuário final")).getByText(
+        "O modelo deste nível não aceita busca em etapas; as respostas usam uma busca só.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("test_levels_section_admin_edits_the_levels", async () => {

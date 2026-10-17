@@ -32,7 +32,13 @@ describe("parseChatEvent", () => {
     });
     expect(
       parseChatEvent({ event: "done", data: '{"message_id":"a","status":"no_source"}' }),
-    ).toEqual({ type: "done", messageId: "a", status: "no_source", ticketRequestsEnabled: false });
+    ).toEqual({
+      type: "done",
+      messageId: "a",
+      status: "no_source",
+      ticketRequestsEnabled: false,
+      steps: null,
+    });
     expect(
       parseChatEvent({
         event: "error",
@@ -42,14 +48,30 @@ describe("parseChatEvent", () => {
   });
 
   it("test_parse_chat_event_done_reads_ticket_requests_enabled", () => {
-    const data = '{"message_id":"a","status":"no_source","ticket_requests_enabled":true}';
+    const data = '{"message_id":"a","status":"no_source","ticket_requests_enabled":true,"steps":3}';
 
     expect(parseChatEvent({ event: "done", data })).toEqual({
       type: "done",
       messageId: "a",
       status: "no_source",
       ticketRequestsEnabled: true,
+      steps: 3,
     });
+  });
+
+  it("test_parse_chat_event_reads_step_with_or_without_query", () => {
+    expect(
+      parseChatEvent({
+        event: "step",
+        data: '{"message_id":"a","step":2,"max_steps":3,"query":"tabela do caixa"}',
+      }),
+    ).toEqual({ type: "step", messageId: "a", step: 2, maxSteps: 3, query: "tabela do caixa" });
+    expect(
+      parseChatEvent({
+        event: "step",
+        data: '{"message_id":"a","step":2,"max_steps":2,"query":null}',
+      }),
+    ).toMatchObject({ query: null });
   });
 
   it("test_parse_chat_event_error_without_code_is_chat_failed", () => {
@@ -73,6 +95,7 @@ describe("parseChatEvent", () => {
     ["delta", '{"text":1}'],
     ["citations", '{"message_id":"a","user_message_id":"q"}'],
     ["done", '{"message_id":"a","status":"failed"}'],
+    ["step", '{"message_id":"a","step":"2","max_steps":3}'],
   ])("test_parse_chat_event_rejects_malformed_%s", (name, data) => {
     expect(() => parseChatEvent({ event: name, data })).toThrow(ChatProtocolError);
   });

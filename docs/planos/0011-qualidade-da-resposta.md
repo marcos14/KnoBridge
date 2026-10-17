@@ -60,10 +60,10 @@ fases:
     subfases:
       - id: F3.1
         titulo: Etapas nos níveis, reordenação no produto, etapas visíveis no chat e aviso nas fontes
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-17
-        concluida_em: null
+        concluida_em: 2026-10-17
         commit: null
   - id: F4
     titulo: Avaliação e validação
@@ -75,7 +75,7 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-17
         concluida_em: 2026-10-17
-        commit: null
+        commit: 6c6ea8e
       - id: F4.2
         titulo: E2E da stack, guias e documentação
         status: pendente
@@ -244,6 +244,13 @@ decisoes:
     decisao: "o endereço fixo do painel na rede do compose passa de .10 para .250"
     motivo: "com o reranker a stack passou de nove contêineres e o Docker pode dar o .10 a outro serviço (Address already in use)"
     alternativas: "ip_range para os dinâmicos, que exigiria uma segunda variável ao trocar a sub-rede"
+    adr: null
+  - id: D23
+    data: 2026-10-17
+    por: agente
+    decisao: "na F3.1, a disponibilidade do reranker na criação de produto vem do rerank_available do primeiro produto da página; aplicar a sugestão de exclusão faz PATCH só com exclude_globs, sem segundo botão de sincronizar; o total de buscas aparece a partir de 1"
+    motivo: "não há rota da instância para a disponibilidade e o backend ignora a opção sem reranker; o PATCH parcial é o que indexacao.md descreve; o cabeçalho já tem Sincronizar agora"
+    alternativas: "rota nova de capacidades da instância; botão próprio de sincronizar"
     adr: null
 pendencias_usuario: []
 ---
@@ -502,6 +509,7 @@ Nenhuma.
 - 2026-10-17 — F3.1 iniciada
 - 2026-10-17 — F4.1 iniciada (em paralelo à F3.1)
 - 2026-10-17 — F4.1 concluída: scripts/eval com corpus sintético do Vértice ERP, 30 perguntas com gabarito, run/compare/copy-corpus e testes contra API falsa (264 testes, 99,9%); rodado contra uma stack isolada com o provedor fake: 5 fontes indexadas, aviso gerado/** na fonte de código, nenhum vazamento, limpeza e níveis restaurados; a validação achou e corrigiu dois defeitos do compose (a01bc74 reranker sem memória, c613051 IP do painel)
+- 2026-10-17 — F3.1 concluída: máximo de buscas e custo com todas as buscas nos níveis, Reordenar trechos e limiar em branco = padrão do modelo no produto, Buscando: … e N buscas no chat e em Conversas, arquivos dominantes com Excluir nas fontes, widget com Buscando mais informações…; frontend 1.753 testes (99,9/98,7), widget 186 (100%, 17,9 KiB gzip)
 
 ## 8. Encerramento
 

@@ -462,13 +462,22 @@
       "cost": "Custo estimado por resposta",
       "costValue": "{{value}} (referência: 4.000 tokens de entrada e 600 de saída)",
       "costUnknown": "Sem preço conhecido para este modelo.",
+      "maxCost": "Com todas as buscas",
+      "maxCostValue_one": "{{value}} (1 busca)",
+      "maxCostValue_other": "{{value}} (até {{count}} buscas, cada nova busca com mais 1.500 tokens de entrada)",
+      "maxSteps": "Máximo de buscas por resposta",
+      "maxStepsHint": "Quantas vezes o modelo pode buscar nas fontes, com outras palavras, antes de responder ou de dizer que não sabe. 1 desliga a busca em etapas. Mais buscas acham mais, mas custam mais.",
+      "maxStepsOption_one": "1 busca (sem busca em etapas)",
+      "maxStepsOption_other": "{{count}} buscas",
+      "toolsUnsupported": "O modelo deste nível não aceita busca em etapas; as respostas usam uma busca só.",
       "submit": "Salvar nível",
       "saved": "Nível {{name}} atualizado.",
       "validation": {
         "providerRequired": "Escolha a credencial junto com o modelo.",
         "modelRequired": "Informe o modelo junto com a credencial.",
         "modelInvalid": "O identificador do modelo não pode ter espaços.",
-        "temperatureInvalid": "Informe um número de 0 a 2."
+        "temperatureInvalid": "Informe um número de 0 a 2.",
+        "maxStepsInvalid": "Escolha de 1 a 6 buscas."
       }
     }
   },
@@ -606,7 +615,17 @@
       "goToCollections": "Ir para coleções",
       "noCollections": "Nenhuma coleção selecionada: o produto responderá sempre sem fonte.",
       "minSimilarity": "Similaridade mínima",
-      "minSimilarityHint": "De 0 a 1 (padrão 0,35). Mais alto é mais exigente: abaixo do limiar, o trecho não conta e, sem nenhum, o produto responde \"sem fonte\".",
+      "minSimilarityHint": "De 0 a 1, ou em branco para usar o padrão do modelo de embedding de cada coleção. Mais alto é mais exigente: abaixo do limiar, o trecho não conta e, sem nenhum, o produto responde \"sem fonte\".",
+      "effectiveTitle": "Limiar em uso, pelo que está salvo:",
+      "effectiveItem": "{{model}}: {{value}} ({{source}})",
+      "effectiveSources": {
+        "product": "deste produto",
+        "model": "padrão do modelo",
+        "fallback": "padrão geral, modelo sem padrão próprio"
+      },
+      "rerank": "Reordenar trechos",
+      "rerankHint": "O reranker da instância reordena os trechos encontrados pela relevância para a pergunta antes da resposta: costuma acertar mais, com um pouco mais de demora.",
+      "rerankUnavailable": "Esta instância não tem reranker configurado. A opção fica gravada como está e passa a valer quando houver um.",
       "submit": "Salvar",
       "cancel": "Cancelar",
       "validation": {
@@ -1032,6 +1051,33 @@
       "documentCount": "Documentos indexados: {{count}}",
       "minLevel": "Nível mínimo: {{level}}",
       "minLevelDefault": "{{level}} (padrão do tipo)"
+    },
+    "dominant": {
+      "badge_one": "1 grupo domina o índice",
+      "badge_other": "{{count}} grupos dominam o índice",
+      "title": "Arquivos que dominam o índice",
+      "description": "Na última sincronização, estes arquivos ocuparam uma parte desproporcional dos {{chunks}} trechos da fonte. Arquivos gerados (relatórios, código minificado, snapshots) costumam tomar o lugar de trechos úteis nas respostas.",
+      "tableLabel": "Grupos que dominam o índice da fonte",
+      "columns": {
+        "pattern": "Padrão",
+        "kind": "Tipo",
+        "files": "Arquivos",
+        "chunks": "Trechos",
+        "share": "Do índice",
+        "action": "Sugestão"
+      },
+      "kinds": {
+        "file": "Arquivo",
+        "directory": "Diretório",
+        "known_generated": "Arquivo gerado conhecido"
+      },
+      "exclude": "Excluir",
+      "excludeLabel": "Excluir {{pattern}} da fonte",
+      "suggested": "Excluir da fonte",
+      "excluded": "Já excluído; some na próxima sincronização",
+      "readOnly": "Quem edita a fonte pode excluir estes padrões.",
+      "applied": "{{pattern}} foi para as exclusões de {{name}}. Sincronize a fonte para tirar os trechos do índice.",
+      "computedAt": "Calculado na sincronização de {{when}}."
     },
     "runs": {
       "title": "Execuções",
@@ -2060,6 +2106,12 @@
       "you": "Você",
       "assistant": "Assistente",
       "thinking": "O assistente está respondendo…",
+      "searchingFor": "Buscando: {{query}}",
+      "searching": "Buscando mais informações…",
+      "steps_one": "1 busca",
+      "steps_other": "{{count}} buscas",
+      "stepsQuestion": "A pergunta",
+      "stepsQueries": "Buscas feitas para esta resposta",
       "interrupted": "A resposta foi interrompida antes do fim.",
       "resend": "Reenviar pergunta",
       "openTicket": "Abrir chamado",

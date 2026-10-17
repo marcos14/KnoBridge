@@ -248,6 +248,8 @@ export function sourceStore(initial: Source[] = [makeSource()], options: SourceS
         return apiErrorResponse(403, "forbidden", { required_role: "admin" });
       }
       const minLevel = body.min_level ?? source.min_level;
+      const excludeGlobs = body.exclude_globs ?? source.exclude_globs;
+      const stats = source.index_stats;
       const updated: Source = {
         ...source,
         min_level: minLevel,
@@ -255,7 +257,17 @@ export function sourceStore(initial: Source[] = [makeSource()], options: SourceS
         name: body.name ?? source.name,
         config: body.config ?? source.config,
         include_globs: body.include_globs ?? source.include_globs,
-        exclude_globs: body.exclude_globs ?? source.exclude_globs,
+        exclude_globs: excludeGlobs,
+        // Like the API: suggest only the dominant patterns the globs do not exclude yet.
+        index_stats:
+          stats === null
+            ? null
+            : {
+                ...stats,
+                suggested_exclude_globs: stats.dominant
+                  .map(({ pattern }) => pattern)
+                  .filter((pattern) => !excludeGlobs.includes(pattern)),
+              },
         schedule_cron: body.schedule_cron === undefined ? source.schedule_cron : body.schedule_cron,
         schedule_enabled: body.schedule_enabled ?? source.schedule_enabled,
         active: body.active ?? source.active,

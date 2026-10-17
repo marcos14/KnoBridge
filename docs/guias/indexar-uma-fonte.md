@@ -145,7 +145,7 @@ Um trecho entra quando a similaridade vetorial alcança o limiar (padrão 0,35, 
 
 1. Para usar o OpenRouter também no chat, em **Configurações > Níveis de resposta** escolha a credencial do passo 2 em **Credencial** de cada nível e informe em **Modelo** o identificador do OpenRouter (com o prefixo do fornecedor, ex.: `openai/gpt-4.1-mini`); detalhes em [produtos-e-niveis.md](produtos-e-niveis.md#1-configurar-os-níveis-de-resposta).
 2. Vá em **Produtos** e edite (ou crie) o produto. Em **Coleções**, marque a coleção do passo 3. Um produto pode consultar várias coleções.
-3. Ajuste **Similaridade mínima** (padrão 0,35) com o que você viu no passo 7.
+3. Ajuste **Similaridade mínima** com o que você viu no passo 7. Em branco, vale o padrão do modelo de embedding de cada coleção (0,35 no `text-embedding-3-small`), e a edição do produto mostra o limiar em uso por modelo.
 4. Clique em **Salvar**.
 
 Sem nenhuma coleção marcada, o produto responde sempre "sem fonte".
@@ -165,6 +165,7 @@ Sem nenhuma coleção marcada, o produto responde sempre "sem fonte".
 - **Coleções** mostra, por coleção, a quantidade de fontes, documentos e trechos.
 - A execução da fonte termina **Concluída**, com documentos novos e trechos maiores que zero. Uma segunda sincronização sem mudanças na fonte termina com zero documentos novos e zero tokens.
 - **Testar busca** devolve trechos do material para uma pergunta relacionada e volta vazio para uma sem relação.
+- Se poucos arquivos ou um diretório ocuparem uma parte desproporcional dos trechos (relatórios gerados, código minificado), a lista de fontes mostra o selo "… dominam o índice" e o detalhe da fonte, a seção **Arquivos que dominam o índice**, com a participação de cada grupo e o padrão sugerido. Quem edita a fonte clica em **Excluir** para acrescentar o padrão às exclusões e depois em **Sincronizar agora**: os trechos saem do índice.
 - **Auditoria** (owner/admin) registra a criação da coleção, da fonte e as sincronizações pedidas.
 
 ## Como desfazer

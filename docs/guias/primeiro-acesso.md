@@ -112,7 +112,7 @@ Precisa de papel editor ou acima. O produto é o sistema sobre o qual as pessoas
 
 1. Vá em **Produtos** e clique em **Novo produto**.
 2. Preencha **Nome** (ex.: `ERP`) e marque as **Coleções** em que ele busca, se já houver (sem coleção, ele responde sempre "sem fonte").
-3. Os demais campos têm padrão: idioma `pt-BR`, tom neutro, similaridade mínima 0,35, ativo. **Texto extra** acrescenta instruções do produto às do nível; deixe **Mensagem quando não há fonte** em branco para usar a mensagem padrão.
+3. Os demais campos têm padrão: idioma `pt-BR`, tom neutro, similaridade mínima em branco (o padrão do modelo de embedding de cada coleção), reordenar trechos ligado, ativo. **Texto extra** acrescenta instruções do produto às do nível; deixe **Mensagem quando não há fonte** em branco para usar a mensagem padrão.
 4. Clique em **Salvar**.
 
 ### 9. Conversar

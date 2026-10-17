@@ -1,8 +1,20 @@
 import type { Citation, MessageStatus } from "./conversations";
 import type { SseEvent } from "./sse";
 
-/** Events of the chat stream (`docs/specs/chat-sse.md`): citations, delta*, then done or error. */
+/**
+ * Events of the chat stream (`docs/specs/chat-sse.md`): step*, citations, delta*, then done or
+ * error.
+ */
 export type ChatEvent =
+  | {
+      /** The model searches again (v0.11): one per search after the first one. */
+      type: "step";
+      messageId: string;
+      step: number;
+      maxSteps: number;
+      /** The rephrased query; `null` in the widget channel, never the chunks found. */
+      query: string | null;
+    }
   | { type: "citations"; messageId: string; userMessageId: string; citations: Citation[] }
   | { type: "delta"; text: string }
   | {
@@ -11,6 +23,8 @@ export type ChatEvent =
       status: Extract<MessageStatus, "completed" | "no_source">;
       /** The assistant offers "Abrir chamado" (v0.7; absent, as before it, `false`). */
       ticketRequestsEnabled: boolean;
+      /** Searches made by the answer, the first one included (v0.11; absent, `null`). */
+      steps: number | null;
     }
   | { type: "error"; messageId: string; code: string };
 
@@ -34,6 +48,14 @@ function stringField(data: Record<string, unknown>, field: string): string {
   return value;
 }
 
+function numberField(data: Record<string, unknown>, field: string): number {
+  const value = data[field];
+  if (typeof value !== "number") {
+    throw new ChatProtocolError(`Chat event field "${field}" is not a number`);
+  }
+  return value;
+}
+
 function parseData(event: SseEvent): Record<string, unknown> {
   let data: unknown;
   try {
@@ -53,6 +75,16 @@ function parseData(event: SseEvent): Record<string, unknown> {
  */
 export function parseChatEvent(event: SseEvent): ChatEvent | null {
   switch (event.event) {
+    case "step": {
+      const data = parseData(event);
+      return {
+        type: "step",
+        messageId: stringField(data, "message_id"),
+        step: numberField(data, "step"),
+        maxSteps: numberField(data, "max_steps"),
+        query: typeof data.query === "string" ? data.query : null,
+      };
+    }
     case "citations": {
       const data = parseData(event);
       if (!Array.isArray(data.citations)) {
@@ -78,6 +110,7 @@ export function parseChatEvent(event: SseEvent): ChatEvent | null {
         messageId: stringField(data, "message_id"),
         status,
         ticketRequestsEnabled: data.ticket_requests_enabled === true,
+        steps: typeof data.steps === "number" ? data.steps : null,
       };
     }
     case "error": {

@@ -20,7 +20,6 @@ export const NO_SOURCE_MESSAGE_MAX_LENGTH = 2000;
 export const LANGUAGE_PATTERN = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/;
 export const DEFAULT_LANGUAGE = "pt-BR";
 export const MAX_MIN_SIMILARITY = 1;
-export const DEFAULT_MIN_SIMILARITY = 0.35;
 
 /**
  * Minimum similarity typed as text, with a comma or a dot as decimal separator ("0,45", "0.3");
@@ -45,7 +44,10 @@ export interface ProductFormValues {
   noSourceMessage: string;
   active: boolean;
   collectionIds: string[];
+  /** Blank: the default of each collection's embedding model (`min_similarity: null`). */
   minSimilarity: string;
+  /** Reorder the chunks with the instance's reranker (stored even without one). */
+  rerank: boolean;
   /** Whether the chat offers "Abrir chamado" (off sends `ticket_webhook_url: null`). */
   ticketWebhookEnabled: boolean;
   ticketWebhookUrl: string;
@@ -66,9 +68,12 @@ export function productFormSchema(t: TFunction) {
       noSourceMessage: text(NO_SOURCE_MESSAGE_MAX_LENGTH),
       active: z.boolean(),
       collectionIds: z.array(z.string()),
-      minSimilarity: z.string().refine((value) => parseMinSimilarity(value) !== null, {
-        error: t("products.form.validation.minSimilarityInvalid"),
-      }),
+      minSimilarity: z
+        .string()
+        .refine((value) => value.trim() === "" || parseMinSimilarity(value) !== null, {
+          error: t("products.form.validation.minSimilarityInvalid"),
+        }),
+      rerank: z.boolean(),
       ticketWebhookEnabled: z.boolean(),
       ticketWebhookUrl: text(WEBHOOK_URL_MAX_LENGTH),
     })
@@ -101,7 +106,8 @@ export function productFormDefaults(product: Product | undefined): ProductFormVa
       noSourceMessage: "",
       active: true,
       collectionIds: [],
-      minSimilarity: String(DEFAULT_MIN_SIMILARITY),
+      minSimilarity: "",
+      rerank: true,
       ticketWebhookEnabled: false,
       ticketWebhookUrl: "",
     };
@@ -115,7 +121,8 @@ export function productFormDefaults(product: Product | undefined): ProductFormVa
     noSourceMessage: product.no_source_message,
     active: product.active,
     collectionIds: [...product.collection_ids],
-    minSimilarity: String(product.min_similarity),
+    minSimilarity: product.min_similarity === null ? "" : String(product.min_similarity),
+    rerank: product.rerank,
     ticketWebhookEnabled: product.ticket_webhook_url !== null,
     ticketWebhookUrl: product.ticket_webhook_url ?? "",
   };
@@ -142,8 +149,8 @@ export function productBody(values: ProductFormValues, current?: Product): Produ
     active: values.active,
     // The whole set is sent: on a PATCH it replaces the product's collections.
     collection_ids: values.collectionIds,
-    min_similarity: parseMinSimilarity(values.minSimilarity) ?? DEFAULT_MIN_SIMILARITY,
-    // No field for it yet: an edit keeps the saved option and a new product starts with it on.
-    rerank: current?.rerank ?? true,
+    // Blank (or unreadable, which the schema already refuses) is `null`: the model's default.
+    min_similarity: parseMinSimilarity(values.minSimilarity),
+    rerank: values.rerank,
   };
 }

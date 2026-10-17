@@ -171,6 +171,11 @@ export function SourcesList({ workspaceId, canManage, canManageLevel }: SourcesL
               {item.name}
             </Link>
             {!item.active && <Badge variant="outline">{t("sources.inactive")}</Badge>}
+            {item.dominant_count > 0 && (
+              <Badge variant="outline" className="border-amber-500/50">
+                {t("sources.dominant.badge", { count: item.dominant_count })}
+              </Badge>
+            )}
           </div>
           <span className="text-muted-foreground font-mono text-xs break-all">
             {sourceLocation(item)}

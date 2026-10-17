@@ -14,6 +14,7 @@ export const ptBR = {
   you: "Você",
   assistant: "Assistente",
   typing: "Digitando…",
+  searching: "Buscando mais informações…",
   sources: "Fontes",
   sourceLabel: "Fonte {n}: {title}",
   openSource: "Abrir",

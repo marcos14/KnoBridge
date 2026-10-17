@@ -49,6 +49,10 @@ export interface AnswerScript {
   end?: { status: "completed" | "no_source" } | { error: string };
   /** `ticket_requests_enabled` of the `done` event (v0.7; default `false`). */
   ticketRequestsEnabled?: boolean;
+  /** Queries of the `step` events before `citations` (v0.11; default none). */
+  searches?: string[];
+  /** `steps` of the `done` event (default: the first search plus one per `searches`). */
+  steps?: number;
 }
 
 /** The frames of a whole answer, in the contract's order: citations, deltas, done or error. */
@@ -59,6 +63,8 @@ export function answerFrames({
   deltas = [],
   end = { status: "completed" },
   ticketRequestsEnabled = false,
+  searches = [],
+  steps = 1 + searches.length,
 }: AnswerScript = {}): string[] {
   const final =
     "status" in end
@@ -70,6 +76,7 @@ export function answerFrames({
           output_tokens: null,
           latency_ms: 10,
           ticket_requests_enabled: ticketRequestsEnabled,
+          steps,
         })
       : sseFrame("error", {
           message_id: answerId,
@@ -77,6 +84,14 @@ export function answerFrames({
           error: { code: end.error, message: "Synthetic error.", details: null },
         });
   return [
+    ...searches.map((query, index) =>
+      sseFrame("step", {
+        message_id: answerId,
+        step: index + 2,
+        max_steps: Math.max(steps, searches.length + 1),
+        query,
+      }),
+    ),
     sseFrame("citations", { message_id: answerId, user_message_id: userMessageId, citations }),
     ...deltas.map((text) => sseFrame("delta", { text })),
     final,

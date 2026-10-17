@@ -129,3 +129,74 @@ describe("AssistantMessage sources", () => {
     ).toBeVisible();
   });
 });
+
+function renderSteps(props: Partial<Parameters<typeof AssistantMessage>[0]>) {
+  renderWithProviders({
+    routes: [
+      {
+        path: "/",
+        element: (
+          <AssistantMessage
+            content=""
+            citations={[]}
+            status="streaming"
+            errorCode={null}
+            onCitation={vi.fn()}
+            {...props}
+          />
+        ),
+      },
+    ],
+  });
+}
+
+describe("AssistantMessage searches", () => {
+  it("test_assistant_message_streaming_shows_the_search_in_progress", async () => {
+    renderSteps({ searching: { query: "tabela do caixa" } });
+
+    expect(await screen.findByText("Buscando: tabela do caixa")).toBeVisible();
+    expect(screen.queryByText("O assistente está respondendo…")).not.toBeInTheDocument();
+  });
+
+  it("test_assistant_message_search_without_query_is_generic", async () => {
+    renderSteps({ searching: { query: null } });
+
+    expect(await screen.findByText("Buscando mais informações…")).toBeVisible();
+  });
+
+  it("test_assistant_message_search_gives_way_to_the_text", async () => {
+    renderSteps({ content: "Abra o caixa.", searching: { query: "tabela do caixa" } });
+
+    expect(await screen.findByText("Abra o caixa.")).toBeVisible();
+    expect(screen.queryByText("Buscando: tabela do caixa")).not.toBeInTheDocument();
+  });
+
+  it("test_assistant_message_shows_the_searches_and_their_queries", async () => {
+    const user = userEvent.setup();
+    renderSteps({
+      content: "Feito.",
+      status: "completed",
+      steps: 3,
+      stepQueries: ["tabela do caixa", "fechamento diário"],
+    });
+
+    await user.click(await screen.findByText("3 buscas"));
+
+    const queries = screen.getByRole("list", { name: "Buscas feitas para esta resposta" });
+    expect(queries).toHaveTextContent("A perguntatabela do caixafechamento diário");
+  });
+
+  it("test_assistant_message_single_search_is_a_plain_count", async () => {
+    renderSteps({ content: "Feito.", status: "completed", steps: 1 });
+
+    expect(await screen.findByText("1 busca")).toBeVisible();
+    expect(screen.queryByRole("list")).not.toBeInTheDocument();
+  });
+
+  it("test_assistant_message_without_searches_shows_no_count", async () => {
+    renderSteps({ content: "Feito.", status: "completed", steps: 0 });
+
+    await screen.findByText("Feito.");
+    expect(screen.queryByText(/busca/)).not.toBeInTheDocument();
+  });
+});

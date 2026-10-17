@@ -325,9 +325,10 @@ describe("ProductsPage create", () => {
       ),
     ).not.toBeInTheDocument();
     const minSimilarity = within(dialog).getByLabelText("Similaridade mínima");
-    expect(minSimilarity).toHaveValue("0.35");
-    expect(minSimilarity).toHaveAccessibleDescription(/^De 0 a 1 \(padrão 0,35\)\./);
-    await user.clear(minSimilarity);
+    expect(minSimilarity).toHaveValue("");
+    expect(minSimilarity).toHaveAccessibleDescription(
+      /^De 0 a 1, ou em branco para usar o padrão do modelo de embedding de cada coleção\./,
+    );
     await user.type(minSimilarity, "0,45");
     await user.click(within(dialog).getByRole("checkbox", { name: "Ativo" }));
     await user.click(within(dialog).getByRole("button", { name: "Salvar" }));

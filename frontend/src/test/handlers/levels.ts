@@ -58,6 +58,7 @@ export function levelStore(initial: WorkspaceLevel[] = makeWorkspaceLevels()) {
         provider_kind: provider?.kind ?? null,
         model,
         temperature: body.temperature ?? current.temperature,
+        max_steps: body.max_steps ?? current.max_steps,
         instructions,
         instructions_is_default:
           body.instructions === undefined

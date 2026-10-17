@@ -17,6 +17,23 @@ export function formatUsd(value: number | null, locale: string): string {
   }).format(value);
 }
 
+/** A fraction with exactly `digits` decimal places ("0,35"), such as a similarity floor. */
+export function formatDecimal(value: number, digits: number, locale: string): string {
+  return new Intl.NumberFormat(locale, {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(value);
+}
+
+/** A share from 0 to 1 as a percentage with one decimal place ("23,6%"). */
+export function formatPercent(value: number, locale: string): string {
+  return new Intl.NumberFormat(locale, {
+    style: "percent",
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }).format(value);
+}
+
 /** A whole number with the locale's grouping ("51.000"). */
 export function formatCount(value: number, locale: string): string {
   return new Intl.NumberFormat(locale).format(value);

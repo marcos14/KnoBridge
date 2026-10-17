@@ -14,6 +14,7 @@ import {
   type WorkspaceConversationDetail,
   type WorkspaceMessage,
 } from "@/lib/api/workspaceConversations";
+import { stepQueries } from "@/lib/answerSteps";
 import { formatDateTime } from "@/lib/intl";
 import { levelLabel } from "@/lib/responseLevels";
 
@@ -170,6 +171,8 @@ function ConversationThread({
                   citations={message.citations}
                   status={message.status}
                   errorCode={message.error_code}
+                  steps={message.steps}
+                  stepQueries={stepQueries(message.retrieval)}
                   onCitation={onCitation}
                   feedback={<FeedbackList feedback={message.feedback} />}
                 />

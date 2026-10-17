@@ -8,10 +8,24 @@ import { readSseEvents } from "./sse";
 
 /** How the answer being streamed ended; `null` while it is still arriving. */
 export type ChatOutcome =
-  | { kind: "done"; status: "completed" | "no_source"; ticketRequestsEnabled: boolean }
+  | {
+      kind: "done";
+      status: "completed" | "no_source";
+      ticketRequestsEnabled: boolean;
+      /** Searches made by the answer (v0.11); `null` from a server before it. */
+      steps: number | null;
+    }
   | { kind: "error"; code: string }
   /** Stopped by the user, connection lost or stream cut: the server records `interrupted`. */
   | { kind: "interrupted" };
+
+/** A search the model makes before answering (`step` event of `docs/specs/chat-sse.md`). */
+export interface PendingStep {
+  step: number;
+  maxSteps: number;
+  /** The rephrased query (always present in the panel channel). */
+  query: string | null;
+}
 
 /** The question just sent and its answer as it arrives, until the conversation is reloaded. */
 export interface PendingAnswer {
@@ -20,6 +34,8 @@ export interface PendingAnswer {
   userMessageId: string | null;
   messageId: string | null;
   citations: Citation[];
+  /** The last `step` event: the model is searching again (v0.11); `null` before any. */
+  step: PendingStep | null;
   text: string;
   outcome: ChatOutcome | null;
 }
@@ -47,6 +63,12 @@ export interface ChatStream {
 
 function applyEvent(pending: PendingAnswer, event: ChatEvent): PendingAnswer {
   switch (event.type) {
+    case "step":
+      return {
+        ...pending,
+        messageId: event.messageId,
+        step: { step: event.step, maxSteps: event.maxSteps, query: event.query },
+      };
     case "citations":
       return {
         ...pending,
@@ -63,6 +85,7 @@ function applyEvent(pending: PendingAnswer, event: ChatEvent): PendingAnswer {
           kind: "done",
           status: event.status,
           ticketRequestsEnabled: event.ticketRequestsEnabled,
+          steps: event.steps,
         },
       };
     case "error":
@@ -109,6 +132,7 @@ export function useChatStream(workspaceId: string): ChatStream {
         userMessageId: null,
         messageId: null,
         citations: [],
+        step: null,
         text: "",
         outcome: null,
       });

@@ -29,11 +29,11 @@ O nível de uma pergunta decide três coisas: **as fontes** (só trechos com ní
 Precisa de papel administrador ou acima. Um workspace novo nasce com os três níveis **sem modelo**, e nenhum produto responde num nível sem modelo ("O nível … ainda não foi configurado neste workspace").
 
 1. Vá em **Configurações** e desça até **Níveis de resposta**. Há um cartão por nível.
-2. Em cada cartão, escolha a **Credencial** e informe o **Modelo** (com o `fake`, `fake-chat`; com um provedor real, o identificador exato, como `gpt-4.1-mini`; a caixa sugere os modelos conhecidos do tipo da credencial). Ajuste a **Temperatura** se quiser (padrão 0,2).
+2. Em cada cartão, escolha a **Credencial** e informe o **Modelo** (com o `fake`, `fake-chat`; com um provedor real, o identificador exato, como `gpt-4.1-mini`; a caixa sugere os modelos conhecidos do tipo da credencial). Ajuste a **Temperatura** se quiser (padrão 0,2) e o **Máximo de buscas por resposta** (padrões 2 em Usuário final, 3 em Suporte e 4 em Desenvolvimento e produto): quantas vezes o modelo pode buscar de novo, com outras palavras, antes de responder ou de dizer que não sabe; 1 desliga a busca em etapas.
 3. **Instruções do nível**: o texto padrão do KnoBridge para o nível já vem preenchido e recebe as melhorias das próximas versões enquanto não for editado. Edite para o seu caso; **Restaurar padrão** volta ao texto do KnoBridge ao salvar.
 4. Clique em **Salvar nível**. Aparece "Nível … atualizado." e o selo **Configurado**.
 
-Cada cartão mostra o **Custo estimado por resposta** (referência de 4.000 tokens de entrada e 600 de saída), para comparar um modelo mais barato no usuário final com um mais capaz no desenvolvimento. Modelo sem preço conhecido mostra "Sem preço conhecido para este modelo."; para acrescentar preços, veja `KNOBRIDGE_CHAT_PRICES` em [primeiro-acesso.md](primeiro-acesso.md#10-acompanhar-o-uso-e-os-custos).
+Cada cartão mostra o **Custo estimado por resposta** (referência de 4.000 tokens de entrada e 600 de saída), para comparar um modelo mais barato no usuário final com um mais capaz no desenvolvimento. Com mais de uma busca, aparece também o custo **Com todas as buscas** (cada nova busca soma 1.500 tokens de entrada). Se o modelo do nível recusar a chamada de ferramentas, o cartão avisa "O modelo deste nível não aceita busca em etapas; as respostas usam uma busca só." até você trocar o modelo. No chat, enquanto o modelo busca de novo, a resposta mostra "Buscando: <consulta>" e, no fim, o total de buscas (clique para ver as consultas). Modelo sem preço conhecido mostra "Sem preço conhecido para este modelo."; para acrescentar preços, veja `KNOBRIDGE_CHAT_PRICES` em [primeiro-acesso.md](primeiro-acesso.md#10-acompanhar-o-uso-e-os-custos).
 
 Escolher **Nenhuma (nível desligado)** na credencial desliga o nível: as perguntas nele passam a ser recusadas. Uma credencial em uso por algum nível não pode ser excluída.
 
@@ -45,7 +45,7 @@ Precisa de papel editor ou acima.
 2. Preencha **Nome** (ex.: `ERP`; único no workspace e sem terminar em `:end_user`, `:support` ou `:product_dev`, porque o nome é o `model` da API) e, se quiser, **Descrição**.
 3. Marque as **Coleções** em que o produto busca. Sem coleção, ele responde sempre "sem fonte".
 4. **Texto extra** (opcional): instruções próprias do produto, acrescentadas depois das do nível da conversa (ex.: "Os módulos se chamam Faturamento, Estoque e Financeiro").
-5. Os demais campos têm padrão: idioma `pt-BR`, tom neutro, similaridade mínima 0,35, ativo. **Mensagem quando não há fonte** em branco usa a mensagem padrão.
+5. Os demais campos têm padrão: idioma `pt-BR`, tom neutro, **Similaridade mínima** em branco (o padrão do modelo de embedding de cada coleção; ao editar, o produto mostra o limiar em uso por modelo), **Reordenar trechos** ligado (vale quando a instância tem reranker; sem ele, a opção aparece desabilitada com a explicação), ativo. **Mensagem quando não há fonte** em branco usa a mensagem padrão.
 6. Clique em **Salvar**.
 
 O produto não tem modelo nem temperatura: vêm do nível da conversa. Na lista, **Duplicar** copia a configuração e as coleções (o webhook vai sem segredo); **Excluir** apaga também as conversas do produto (para guardar o histórico, desative). O webhook de "Abrir chamado" fica no próprio produto ([receber-chamados-por-api.md](receber-chamados-por-api.md#9-receber-abrir-chamado-do-chat)).

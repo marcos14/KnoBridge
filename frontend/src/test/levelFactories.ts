@@ -75,12 +75,14 @@ export function makeUnconfiguredLevel(level: ResponseLevel): WorkspaceLevel {
     configured: false,
     price: null,
     estimated_cost_per_answer_usd: null,
+    estimated_max_cost_per_answer_usd: null,
   });
 }
 
 /**
- * The three levels: Usuário final configured, Suporte with edited instructions and a model without
- * price, Desenvolvimento e produto not configured.
+ * The three levels with the default searches (2, 3 and 4): Usuário final configured (US$ 0,00484
+ * with both searches), Suporte with edited instructions and a model without price, Desenvolvimento
+ * e produto not configured.
  */
 export function makeWorkspaceLevels(): WorkspaceLevel[] {
   return [
@@ -93,7 +95,9 @@ export function makeWorkspaceLevels(): WorkspaceLevel[] {
       instructions_is_default: false,
       price: null,
       estimated_cost_per_answer_usd: null,
+      estimated_max_cost_per_answer_usd: null,
+      max_steps: 3,
     }),
-    makeUnconfiguredLevel("product_dev"),
+    { ...makeUnconfiguredLevel("product_dev"), max_steps: 4 },
   ];
 }

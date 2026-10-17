@@ -66,7 +66,7 @@ export function asApiError(error: unknown): ApiError {
 }
 
 const TERMINAL_EVENTS = new Set(["done", "error"]);
-const KNOWN_EVENTS = new Set(["citations", "delta", ...TERMINAL_EVENTS]);
+const KNOWN_EVENTS = new Set(["step", "citations", "delta", ...TERMINAL_EVENTS]);
 
 export class WidgetApi {
   private readonly root: string;

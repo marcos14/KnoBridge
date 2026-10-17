@@ -280,6 +280,8 @@ function ProductsList({
           <ProductDialog
             workspaceId={workspaceId}
             canManageSecret={canManageSecret}
+            // Instance-wide: any product of the page says whether there is a reranker.
+            rerankAvailable={items[0]?.rerank_available}
             trigger={<Button type="button">{t("products.create")}</Button>}
             onSaved={showSaved("products.created")}
           />

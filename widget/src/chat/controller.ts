@@ -33,6 +33,8 @@ export interface ViewMessage {
   question: string | null;
   feedback: Feedback | null;
   ticketRequest: TicketRequest | null;
+  /** The model searches again (a `step` event): "Buscando mais informações…" until text comes. */
+  searching?: boolean;
 }
 
 /** What the controller needs from the element: events on the element and a re-render. */
@@ -215,7 +217,9 @@ export class ChatController {
       const current = await this.ensureConversation(abort.signal);
       conversationId = current.id;
       for await (const event of this.api.send(current.id, current.token, question, abort.signal)) {
-        if (event.type === "citations") {
+        if (event.type === "step") {
+          answer.searching = true;
+        } else if (event.type === "citations") {
           answer.id = event.data.message_id;
           user.id = event.data.user_message_id;
           answer.citations = event.data.citations;
