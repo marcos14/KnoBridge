@@ -287,6 +287,27 @@ decisoes:
     motivo: "Com a D27 nada mais usava required; mantê-lo deixaria o adaptador Anthropic capaz de repetir o 400"
     alternativas: "Manter required sem uso; nova linha no prompt de sistema"
     adr: null
+  - id: D29
+    data: 2026-10-17
+    por: usuario
+    decisao: "Usuário final passa a 1 busca por padrão (Suporte e Desenvolvimento ficam em 3 e 4); workspaces ainda com 2 no Usuário final passam a 1 por migração"
+    motivo: "no ensaio, as buscas extras trouxeram documentos internos da pasta mista e o gpt-4.1-mini piorou de 6 para 4 respostas úteis, enquanto Suporte (11 para 15) e Desenvolvimento (13 para 16) melhoraram"
+    alternativas: "manter 2 e depender só da separação das fontes por público"
+    adr: null
+  - id: D30
+    data: 2026-10-17
+    por: agente
+    decisao: "Busca inicial vazia permite uma única reformulação; se ela também voltar vazia, resposta sem fonte sem nova chamada. Resposta sem nenhum marcador [n] não leva citações e fica com status no_source (oferece abrir chamado)"
+    motivo: "no ensaio, a pergunta sem relação gastou 2 a 3 buscas pagas, e o Desenvolvimento devolveu o texto de sem fonte como completed com uma citação solta; 19 respostas copiaram o texto de sem fonte com citações anexadas"
+    alternativas: "esgotar max_steps (comportamento atual); trocar o texto do modelo pela mensagem padrão"
+    adr: null
+  - id: D31
+    data: 2026-10-17
+    por: usuario
+    decisao: "O resultado de Testar (provedores, fontes, webhook) aparece junto do botão, com ícone e cor, além da mensagem do topo com o mesmo estilo dos alertas"
+    motivo: "no teste do usuário com a chave nova, o botão parecia não ter efeito: o teste volta em menos de um segundo e a mensagem é texto pequeno longe do botão"
+    alternativas: "deixar para o próximo lote"
+    adr: null
 pendencias_usuario:
   - id: P1
     aberta_em: 2026-10-17
@@ -555,6 +576,7 @@ Nenhuma.
 - 2026-10-17 — F4.2 concluída: quality.spec.ts (busca em três etapas com Buscando e 3 buscas, reordenação ligada e desligada no chat e no Testar busca, aviso de relatório gerado de 211 trechos excluído pelo painel), E2E da stack verde duas vezes (10/10 cada), Testar busca com limiar em branco = padrão do modelo e com e sem reranker, KNOBRIDGE_MIN_SIMILARITY_DEFAULTS no compose, guia avaliar-respostas.md, guias, README, CHANGELOG e seções 1 e 12 do AGENTS.md raiz; frontend 1.759 testes (99,9/98,7)
 - 2026-10-17 — F4.3 iniciada; o reranker real se mostrou lento demais em CPU (34 a 96 s por busca) e sem memória com 4 GB: pendência P1 respondida pelo usuário (D25, D26)
 - 2026-10-17 — Correções do ensaio integradas: tool_choice auto/none (D27, D28) e reranker opcional atrás do perfil do compose, desligado por padrão, com produtos novos sem reordenar (D25, ADR 0011, migração 0025); backend 3.302 testes (99,86%), frontend 1.760, E2E da stack 10/10.
+- 2026-10-17 — Ensaio pontuado (busca única, etapas, etapas com reranker e ask do MCP): etapas melhoram Suporte (11 para 15) e Desenvolvimento (13 para 16 de 16) e o ask (9 de 9), pioram o Usuário final na pasta mista (6 para 4); reranker sem ganho de qualidade e 40 a 70 s a mais. Usuário pede as correções D29, D30 e D31 nesta subfase.
 
 ## 8. Encerramento
 
