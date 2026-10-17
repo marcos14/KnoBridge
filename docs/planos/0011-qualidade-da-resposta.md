@@ -24,7 +24,7 @@ fases:
         commit: feb0eb2
   - id: F2
     titulo: Backend
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F2.1
         titulo: Reranker self-host (TEI com bge-reranker-v2-m3) no compose, cliente e opção por produto
@@ -46,7 +46,7 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-17
         concluida_em: 2026-10-17
-        commit: null
+        commit: aee61a7
       - id: F2.4
         titulo: Limiar de similaridade por modelo de embedding e aviso de arquivos gerados
         status: concluida
@@ -56,24 +56,24 @@ fases:
         commit: b070873
   - id: F3
     titulo: Painel
-    status: pendente
+    status: em_execucao
     subfases:
       - id: F3.1
         titulo: Etapas nos níveis, reordenação no produto, etapas visíveis no chat e aviso nas fontes
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-17
         concluida_em: null
         commit: null
   - id: F4
     titulo: Avaliação e validação
-    status: pendente
+    status: em_execucao
     subfases:
       - id: F4.1
         titulo: Conjunto de avaliação sintético com gabarito e roteiro contra a stack
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-17
         concluida_em: null
         commit: null
       - id: F4.2
@@ -478,6 +478,8 @@ Nenhuma.
 - 2026-10-17 — F2.4 concluída: limiar de similaridade por modelo de embedding (0023, produtos com 0,35 passam ao padrão do modelo) e aviso de arquivos que dominam o índice em sources.index_stats; integrada sobre F2.1 e F2.2: backend 3245 passed com 99%, frontend 1711
 - 2026-10-17 — F2.3 iniciada (agente em worktree).
 - 2026-10-17 — F2.3 concluída: busca em etapas com search_sources até max_steps do nível em todos os canais, reformulação com busca vazia, evento step, steps/retrieval na mensagem, chat_searches em Uso e custos, migração 0024; backend 3.303 testes (99%), frontend 1.711
+- 2026-10-17 — F3.1 iniciada
+- 2026-10-17 — F4.1 iniciada (em paralelo à F3.1)
 
 ## 8. Encerramento
 
