@@ -56,7 +56,7 @@ fases:
         commit: b070873
   - id: F3
     titulo: Painel
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F3.1
         titulo: Etapas nos níveis, reordenação no produto, etapas visíveis no chat e aviso nas fontes
@@ -64,7 +64,7 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-17
         concluida_em: 2026-10-17
-        commit: null
+        commit: 5504253
   - id: F4
     titulo: Avaliação e validação
     status: em_execucao
@@ -78,9 +78,9 @@ fases:
         commit: 6c6ea8e
       - id: F4.2
         titulo: E2E da stack, guias e documentação
-        status: pendente
-        agente: null
-        iniciada_em: null
+        status: em_execucao
+        agente: claude-code-worktree
+        iniciada_em: 2026-10-17
         concluida_em: null
         commit: null
       - id: F4.3
@@ -510,6 +510,7 @@ Nenhuma.
 - 2026-10-17 — F4.1 iniciada (em paralelo à F3.1)
 - 2026-10-17 — F4.1 concluída: scripts/eval com corpus sintético do Vértice ERP, 30 perguntas com gabarito, run/compare/copy-corpus e testes contra API falsa (264 testes, 99,9%); rodado contra uma stack isolada com o provedor fake: 5 fontes indexadas, aviso gerado/** na fonte de código, nenhum vazamento, limpeza e níveis restaurados; a validação achou e corrigiu dois defeitos do compose (a01bc74 reranker sem memória, c613051 IP do painel)
 - 2026-10-17 — F3.1 concluída: máximo de buscas e custo com todas as buscas nos níveis, Reordenar trechos e limiar em branco = padrão do modelo no produto, Buscando: … e N buscas no chat e em Conversas, arquivos dominantes com Excluir nas fontes, widget com Buscando mais informações…; frontend 1.753 testes (99,9/98,7), widget 186 (100%, 17,9 KiB gzip)
+- 2026-10-17 — F4.2 iniciada (inclui o Testar busca da coleção com limiar em branco = padrão do modelo, deixado de fora da F3.1)
 
 ## 8. Encerramento
 
