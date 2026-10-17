@@ -92,7 +92,9 @@ def build_search_world(api: ApiEnv, *roles: Role) -> SearchWorld:
     return SearchWorld(workspace_id, users, provider_id, collection_id, source_id)
 
 
-def add_collection(api: ApiEnv, workspace_id: uuid.UUID, provider_id: uuid.UUID) -> uuid.UUID:
+def add_collection(
+    api: ApiEnv, workspace_id: uuid.UUID, provider_id: uuid.UUID, *, model: str = MODEL
+) -> uuid.UUID:
     """Another collection (no source) on the ``fake`` provider of the workspace."""
 
     async def scenario(factory: SessionFactory) -> uuid.UUID:
@@ -102,7 +104,7 @@ def add_collection(api: ApiEnv, workspace_id: uuid.UUID, provider_id: uuid.UUID)
                 name=unique("collection"),
                 description="",
                 credential_id=provider_id,
-                embedding_model=MODEL,
+                embedding_model=model,
             )
             db.add(collection)
             await db.flush()

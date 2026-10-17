@@ -8,7 +8,8 @@ Steps (section 7.4 of ``docs/01-visao-do-projeto.md``; decisions D8 and D12 of p
    the vector, and vectors of different models are never compared.
 3. Vector arm, per pair: top ``candidates`` by cosine distance (``<=>``, the HNSW index with
    ``hnsw.ef_search`` raised for the transaction), only chunks embedded with that model.
-   Candidates below ``min_similarity`` (``1 - distance``) are dropped before fusion.
+   Candidates below ``min_similarity`` (``1 - distance``) are dropped before fusion; with
+   ``min_similarity=None`` the floor is the default of the pair's model (``thresholds.py``).
 4. Full-text arm, one query: ``websearch_to_tsquery`` in ``portuguese`` (stemmed content) OR
    in ``simple`` (identifiers and paths as written), the configurations of ``chunks.tsv``,
    ranked by ``ts_rank_cd``.
@@ -52,14 +53,14 @@ from knobridge.llm.factory import (
 )
 from knobridge.llm.models import ProviderCredential
 from knobridge.retrieval.fusion import ChunkSpan, drop_neighbors, reciprocal_rank_fusion
+from knobridge.retrieval.thresholds import FALLBACK_MIN_SIMILARITY, SimilarityThresholds
 
 DEFAULT_LIMIT = 10
 MAX_LIMIT = 50
-# Default similarity floor of the search route. Assistants get their own (D12, plan 0003 F4.2).
-# Real-data trial (docs/pesquisa/0001-ensaio-minski.md, OpenAI ``text-embedding-3-small``):
-# the top similarity of related questions was 0.364-0.664 and of unrelated ones 0.196-0.300,
-# so 0.35 keeps the related ones and sends the unrelated ones to "no source".
-DEFAULT_MIN_SIMILARITY = 0.35
+# Similarity floor of models outside the table of ``thresholds.py`` (and of every search up to
+# v0.4). Real-data trial (docs/pesquisa/0001-ensaio-minski.md, ``text-embedding-3-small``):
+# the top similarity of related questions was 0.364-0.664 and of unrelated ones 0.196-0.300.
+DEFAULT_MIN_SIMILARITY = FALLBACK_MIN_SIMILARITY
 # Each arm fetches more than ``limit`` so fusion and neighbor removal still fill the result.
 CANDIDATE_FACTOR = 4
 MIN_CANDIDATES = 40
@@ -173,9 +174,12 @@ class SearchService:
         self,
         credentials: ProviderCredentialService,
         factory: EmbeddingProviderFactory = create_embedding_provider,
+        *,
+        thresholds: SimilarityThresholds | None = None,
     ) -> None:
         self._credentials = credentials
         self._factory = factory
+        self._thresholds = SimilarityThresholds() if thresholds is None else thresholds
 
     async def search(
         self,
@@ -185,10 +189,12 @@ class SearchService:
         collection_ids: Sequence[uuid.UUID],
         query: str,
         limit: int = DEFAULT_LIMIT,
-        min_similarity: float = DEFAULT_MIN_SIMILARITY,
+        min_similarity: float | None = None,
         level: ResponseLevel = ResponseLevel.PRODUCT_DEV,
     ) -> list[SearchHit]:
         """The best chunks for ``query`` in the collections, at most ``limit``; may be empty.
+
+        ``min_similarity`` holds for every embedding model; ``None`` uses each model's default.
 
         Only chunks a question at ``level`` may read are candidates: both arms filter
         ``chunks.min_level`` in SQL, before the fusion (never afterwards).
@@ -206,7 +212,8 @@ class SearchService:
         for group in groups:
             vector = await self.embed_query(group.credential, group.model, query)
             found = await self._vector_arm(db, workspace_id, group, vector, candidates, allowed)
-            kept = [item for item in found if item.score >= min_similarity]
+            floor = self._thresholds.resolve(group.model, min_similarity).value
+            kept = [item for item in found if item.score >= floor]
             rankings.append([item.span.chunk_id for item in kept])
             for item in kept:
                 spans[item.span.chunk_id] = item.span

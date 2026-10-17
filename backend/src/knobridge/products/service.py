@@ -31,7 +31,6 @@ from knobridge.core.errors import ConflictError, NotFoundError, ValidationError
 from knobridge.ingestion.models import Collection
 from knobridge.products.listing import ProductFilter, page_products
 from knobridge.products.models import (
-    DEFAULT_MIN_SIMILARITY,
     DEFAULT_NO_SOURCE_MESSAGE,
     NAME_LEVEL_SUFFIX_PATTERN,
     Product,
@@ -68,7 +67,8 @@ class ProductSettings:
     rerank: bool = True
     # Collections the product answers from (no collection: every answer is "no source").
     collection_ids: tuple[uuid.UUID, ...] = ()
-    min_similarity: float = DEFAULT_MIN_SIMILARITY
+    # ``None``: the default of each collection's embedding model (``retrieval/thresholds.py``).
+    min_similarity: float | None = None
     # Already checked against the SSRF rules by the caller; ``None``: ticket requests off.
     ticket_webhook_url: str | None = None
 
@@ -89,6 +89,8 @@ class ProductChanges:
     # Replaces the whole set when given.
     collection_ids: tuple[uuid.UUID, ...] | None = None
     min_similarity: float | None = None
+    # With ``min_similarity`` ``None``, back to the model's default instead of keeping it.
+    min_similarity_given: bool = False
     # Applied only when ``ticket_webhook_url_given`` (``None`` then turns the webhook off).
     ticket_webhook_url: str | None = None
     ticket_webhook_url_given: bool = False
@@ -218,13 +220,17 @@ class ProductService:
             ),
             "active": changes.active,
             "rerank": changes.rerank,
-            "min_similarity": changes.min_similarity,
         }
         fields: list[str] = []
         for attribute, value in wanted.items():
             if value is not None and value != getattr(product, attribute):
                 setattr(product, attribute, value)
                 fields.append(attribute)
+        if (
+            changes.min_similarity is not None or changes.min_similarity_given
+        ) and changes.min_similarity != product.min_similarity:
+            product.min_similarity = changes.min_similarity
+            fields.append("min_similarity")
         if (
             changes.ticket_webhook_url_given
             and changes.ticket_webhook_url != product.ticket_webhook_url

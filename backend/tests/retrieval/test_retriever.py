@@ -39,7 +39,7 @@ async def _assistant(
     space: Space,
     collection_ids: Sequence[uuid.UUID],
     *,
-    min_similarity: float = DEFAULT_MIN_SIMILARITY,
+    min_similarity: float | None = DEFAULT_MIN_SIMILARITY,
     rerank: bool = True,
 ) -> uuid.UUID:
     async with scoped_session(db.factory, workspace_id=space.workspace_id, user_id=None) as s:
@@ -125,6 +125,38 @@ def test_retriever_applies_the_assistant_min_similarity(app_database_url: str) -
     assert tight == ["docs/a.md"]
 
 
+def test_retriever_null_min_similarity_uses_the_model_default(app_database_url: str) -> None:
+    async def scenario(db: Db) -> tuple[list[str], list[str], list[str]]:
+        workspace_id = await db.workspace()
+        gemini = await db.collection(workspace_id, model="google/gemini-embedding-001")
+        openai = await db.collection(
+            workspace_id, credential_id=gemini.credential_id, model="text-embedding-3-small"
+        )
+        for space, prefix in ((gemini, "g"), (openai, "o")):
+            await db.chunks(
+                space,
+                [
+                    ChunkSpec(BOTH, key=f"{prefix}/a.md"),
+                    ChunkSpec(VECTOR_ONLY, key=f"{prefix}/b.md"),
+                ],
+            )
+        on_gemini = await _assistant(db, gemini, [gemini.collection_id], min_similarity=None)
+        on_openai = await _assistant(db, openai, [openai.collection_id], min_similarity=None)
+        explicit = await _assistant(db, gemini, [gemini.collection_id], min_similarity=0.35)
+        return (
+            [s.title for s in await _retrieve(db, gemini, on_gemini)],
+            [s.title for s in await _retrieve(db, openai, on_openai)],
+            [s.title for s in await _retrieve(db, gemini, explicit)],
+        )
+
+    gemini, openai, explicit = run_db(app_database_url, scenario)
+
+    # VECTOR_ONLY (~0.52) is under the Gemini floor (0.60) and over the OpenAI one (0.35).
+    assert gemini == ["g/a.md"]
+    assert openai == ["o/a.md", "o/b.md"]
+    assert explicit == ["g/a.md", "g/b.md"]
+
+
 def test_retriever_without_collections_does_not_embed(app_database_url: str) -> None:
     factory = RecordingEmbeddingFactory()
 
@@ -169,7 +201,7 @@ class _VanishingSearch(SearchService):
         collection_ids: Sequence[uuid.UUID],
         query: str,
         limit: int = DEFAULT_LIMIT,
-        min_similarity: float = DEFAULT_MIN_SIMILARITY,
+        min_similarity: float | None = None,
         level: ResponseLevel = ResponseLevel.PRODUCT_DEV,
     ) -> list[SearchHit]:
         raise CollectionNotFoundError

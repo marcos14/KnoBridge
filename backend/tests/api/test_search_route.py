@@ -305,7 +305,7 @@ class _SpySearch:
         return []
 
 
-def test_search_endpoint_defaults_min_similarity_to_035(api: ApiEnv) -> None:
+def test_search_endpoint_defaults_min_similarity_to_model_default(api: ApiEnv) -> None:
     world = build_search_world(api, Role.OWNER)
     app = cast(FastAPI, api.client.app)
     spy = _SpySearch()
@@ -320,4 +320,5 @@ def test_search_endpoint_defaults_min_similarity_to_035(api: ApiEnv) -> None:
         app.dependency_overrides.pop(get_search_service, None)
 
     assert response.status_code == 200, response.text
-    assert spy.min_similarity == 0.35
+    # ``None``: the search uses the default of the collection's embedding model.
+    assert spy.min_similarity is None

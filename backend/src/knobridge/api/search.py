@@ -24,7 +24,7 @@ from knobridge.core.errors import ValidationError
 from knobridge.ingestion.models import DocumentKind
 from knobridge.levels.level import ResponseLevel
 from knobridge.retrieval.rerank import rerank_hits
-from knobridge.retrieval.search import DEFAULT_LIMIT, DEFAULT_MIN_SIMILARITY, MAX_LIMIT, SearchHit
+from knobridge.retrieval.search import DEFAULT_LIMIT, MAX_LIMIT, SearchHit
 from knobridge.security.csrf import require_csrf
 from knobridge.tenancy.models import Role
 
@@ -57,7 +57,8 @@ class SearchRequest(BaseModel):
     query: Query
     limit: int = Field(default=DEFAULT_LIMIT, ge=1, le=MAX_LIMIT)
     # Floor of ``1 - cosine distance`` for vector candidates; full-text matches always count.
-    min_similarity: float = Field(default=DEFAULT_MIN_SIMILARITY, ge=0, le=1, allow_inf_nan=False)
+    # Omitted or null: the default of the collection's embedding model (``thresholds.py``).
+    min_similarity: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
     # Only the chunks a question at this level may read (``product_dev``: all of them).
     level: ResponseLevel = ResponseLevel.PRODUCT_DEV
     # Reorder with the instance's reranker; null: on when the instance has one. ``true``

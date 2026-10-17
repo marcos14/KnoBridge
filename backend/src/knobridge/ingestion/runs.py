@@ -28,6 +28,7 @@ from knobridge.core.db import scoped_session
 from knobridge.core.errors import NotFoundError
 from knobridge.core.logging import get_logger
 from knobridge.ingestion.connectors import ConnectorFactory
+from knobridge.ingestion.index_stats import index_stats_for
 from knobridge.ingestion.models import (
     RUN_ERROR_MESSAGE_MAX_LENGTH,
     Collection,
@@ -198,6 +199,9 @@ class RunLifecycle:
     ) -> uuid.UUID | None:
         """Close the run with ``status``; only success moves the pending cursor to the source.
 
+        A successful run of a folder or Git source also stores ``sources.index_stats`` (what
+        dominates the index, ``index_stats.py``); other outcomes keep the previous value.
+
         Also sets the estimated cost from the tokens spent (whatever the outcome, they were
         paid for) and drops the run's items. A run already closed is left as it is.
 
@@ -217,6 +221,9 @@ class RunLifecycle:
             next_run: Run | None = None
             if status is RunStatus.SUCCEEDED:
                 source.cursor = run.pending_cursor
+                source.index_stats = await index_stats_for(
+                    db, source, run_id=run.id, computed_at=self._clock.now()
+                )
                 if source.sync_pending and source.active:
                     source.sync_pending = False
                     next_run = Run(

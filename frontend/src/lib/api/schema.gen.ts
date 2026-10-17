@@ -3390,6 +3390,35 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** DominantGroupOut */
+        DominantGroupOut: {
+            /** Chunks */
+            chunks: number;
+            /** Chunks Per File */
+            chunks_per_file: number;
+            /** Files */
+            files: number;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "file" | "directory" | "known_generated";
+            /** Pattern */
+            pattern: string;
+            /** Share */
+            share: number;
+        };
+        /**
+         * EffectiveMinSimilarity
+         * @description The floor that holds for one embedding model of the product's collections.
+         */
+        EffectiveMinSimilarity: {
+            /** Embedding Model */
+            embedding_model: string;
+            source: components["schemas"]["ThresholdSource"];
+            /** Value */
+            value: number;
+        };
         /** FaqEntry */
         FaqEntry: {
             /** Evidencias */
@@ -3764,6 +3793,33 @@ export interface components {
             offset: number;
             /** Total */
             total: number;
+        };
+        /** IndexStatsOut */
+        IndexStatsOut: {
+            /** Chunks */
+            chunks: number;
+            /**
+             * Computed At
+             * Format: date-time
+             */
+            computed_at: string;
+            /** Dominant */
+            dominant: components["schemas"]["DominantGroupOut"][];
+            /** File Chunks */
+            file_chunks: number;
+            /** Files */
+            files: number;
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /** Suggested Exclude Globs */
+            suggested_exclude_globs: string[];
+            /** Top Files */
+            top_files: components["schemas"]["TopFileOut"][];
+            /** Version */
+            version: number;
         };
         /**
          * IngestTokenOut
@@ -4554,6 +4610,8 @@ export interface components {
             created_at: string;
             /** Description */
             description: string;
+            /** Effective Min Similarity */
+            effective_min_similarity: components["schemas"]["EffectiveMinSimilarity"][];
             /**
              * Id
              * Format: uuid
@@ -4564,7 +4622,7 @@ export interface components {
             /** Language */
             language: string;
             /** Min Similarity */
-            min_similarity: number;
+            min_similarity: number | null;
             my_max_level: components["schemas"]["ResponseLevel"];
             /** Name */
             name: string;
@@ -5765,11 +5823,8 @@ export interface components {
              * @default 10
              */
             limit: number;
-            /**
-             * Min Similarity
-             * @default 0.35
-             */
-            min_similarity: number;
+            /** Min Similarity */
+            min_similarity?: number | null;
             /** Query */
             query: string;
             /** Rerank */
@@ -5969,6 +6024,8 @@ export interface components {
             created_at: string;
             /** Document Count */
             document_count: number;
+            /** Dominant Count */
+            dominant_count: number;
             /** Exclude Globs */
             exclude_globs: string[];
             /**
@@ -5978,6 +6035,7 @@ export interface components {
             id: string;
             /** Include Globs */
             include_globs: string[];
+            index_stats: components["schemas"]["IndexStatsOut"] | null;
             kind: components["schemas"]["SourceKind"];
             last_run: components["schemas"]["RunOut"] | null;
             min_level: components["schemas"]["ResponseLevel"];
@@ -6084,6 +6142,11 @@ export interface components {
          * @enum {string}
          */
         Theme: "system" | "light" | "dark";
+        /**
+         * ThresholdSource
+         * @enum {string}
+         */
+        ThresholdSource: "product" | "model" | "fallback";
         /** TicketAttachmentIn */
         TicketAttachmentIn: {
             /** Name */
@@ -6506,6 +6569,15 @@ export interface components {
             token_created_at: string | null;
             /** Token Prefix */
             token_prefix: string | null;
+        };
+        /** TopFileOut */
+        TopFileOut: {
+            /** Chunks */
+            chunks: number;
+            /** Path */
+            path: string;
+            /** Share */
+            share: number;
         };
         /** UpdateUserRequest */
         UpdateUserRequest: {

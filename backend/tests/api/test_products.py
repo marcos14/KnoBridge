@@ -90,6 +90,7 @@ def test_create_product_requires_editor(api: ApiEnv) -> None:
         "rerank_available",
         "collection_ids",
         "min_similarity",
+        "effective_min_similarity",
         "ticket_webhook_url",
         "ticket_webhook_configured",
         "ticket_webhook_secret_created_at",
@@ -105,7 +106,8 @@ def test_create_product_requires_editor(api: ApiEnv) -> None:
     assert body["no_source_message"] == DEFAULT_NO_SOURCE_MESSAGE
     assert body["active"] is True
     assert body["collection_ids"] == []
-    assert body["min_similarity"] == 0.35
+    assert body["min_similarity"] is None
+    assert body["effective_min_similarity"] == []
     assert body["my_max_level"] == "end_user"
     assert _product_events(api, workspace_id) == [
         ("product.created", {"name": "Support", "collection_ids": []})

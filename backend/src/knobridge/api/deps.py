@@ -48,6 +48,7 @@ from knobridge.llm.factory import (
 from knobridge.retrieval.rerank import InstanceReranker, instance_reranker
 from knobridge.retrieval.retriever import HybridRetriever
 from knobridge.retrieval.search import SearchService
+from knobridge.retrieval.thresholds import SimilarityThresholds
 from knobridge.security.passwords import PasswordHasher
 from knobridge.security.sessions import InvalidSessionError
 from knobridge.tenancy.acceptance import InvitationAcceptance
@@ -203,10 +204,20 @@ EmbeddingProviderFactoryDep = Annotated[
 ]
 
 
+def get_similarity_thresholds(settings: SettingsDep) -> SimilarityThresholds:
+    """Default similarity floor per embedding model (``KNOBRIDGE_MIN_SIMILARITY_DEFAULTS``)."""
+    return SimilarityThresholds.from_settings(settings)
+
+
+SimilarityThresholdsDep = Annotated[SimilarityThresholds, Depends(get_similarity_thresholds)]
+
+
 def get_search_service(
-    credentials: ProviderCredentialServiceDep, factory: EmbeddingProviderFactoryDep
+    credentials: ProviderCredentialServiceDep,
+    factory: EmbeddingProviderFactoryDep,
+    thresholds: SimilarityThresholdsDep,
 ) -> SearchService:
-    return SearchService(credentials, factory)
+    return SearchService(credentials, factory, thresholds=thresholds)
 
 
 SearchServiceDep = Annotated[SearchService, Depends(get_search_service)]

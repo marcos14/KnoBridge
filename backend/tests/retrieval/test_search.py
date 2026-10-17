@@ -16,6 +16,7 @@ from fakes.embedding_provider import (
 from knobridge.ingestion.models import DocumentKind
 from knobridge.llm.errors import ProviderRateLimitError
 from knobridge.retrieval.search import CollectionNotFoundError, SearchHit
+from knobridge.retrieval.thresholds import SimilarityThresholds
 
 pytestmark = pytest.mark.integration
 
@@ -142,6 +143,33 @@ def test_min_similarity_drops_weak_matches(app_database_url: str) -> None:
 
     # VECTOR_ONLY shares two of three query words (similarity ~0.52) and lacks "relatório".
     assert _ids(hits) == [both]
+
+
+def test_null_min_similarity_uses_each_model_default(app_database_url: str) -> None:
+    async def scenario(db: Db) -> tuple[list[uuid.UUID], list[SearchHit], list[SearchHit]]:
+        workspace_id = await db.workspace()
+        gemini = await db.collection(workspace_id, model="google/gemini-embedding-001")
+        openai = await db.collection(
+            workspace_id, credential_id=gemini.credential_id, model="text-embedding-3-small"
+        )
+        ids = await db.chunks(gemini, _specs(VECTOR_ONLY, prefix="g"))
+        ids += await db.chunks(openai, _specs(VECTOR_ONLY, prefix="o"))
+        both = [gemini.collection_id, openai.collection_id]
+        by_model = await db.search(workspace_id, both, QUERY, min_similarity=None)
+        overridden = await db.search(
+            workspace_id,
+            both,
+            QUERY,
+            min_similarity=None,
+            thresholds=SimilarityThresholds({"gemini-embedding-001": 0.4}),
+        )
+        return ids, by_model, overridden
+
+    (on_gemini, on_openai), by_model, overridden = run_db(app_database_url, scenario)
+
+    # VECTOR_ONLY (~0.52) is under the Gemini floor (0.60), over the OpenAI one (0.35).
+    assert _ids(by_model) == [on_openai]
+    assert set(_ids(overridden)) == {on_gemini, on_openai}
 
 
 def test_unrelated_question_finds_nothing(app_database_url: str) -> None:

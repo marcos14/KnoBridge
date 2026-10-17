@@ -360,6 +360,9 @@ export function makeProduct(overrides: Partial<Product> = {}): Product {
     rerank_available: false,
     collection_ids: [COLLECTION_ID],
     min_similarity: 0.35,
+    effective_min_similarity: [
+      { embedding_model: "text-embedding-3-small", value: 0.35, source: "product" },
+    ],
     ticket_webhook_url: null,
     ticket_webhook_configured: false,
     ticket_webhook_secret_created_at: null,
@@ -690,6 +693,8 @@ export function makeSource(overrides: Partial<Source> = {}): Source {
       started_at: "2026-10-03T10:05:01Z",
       finished_at: "2026-10-03T10:06:00Z",
     },
+    index_stats: null,
+    dominant_count: 0,
     created_at: "2026-10-03T10:01:00Z",
     updated_at: "2026-10-03T10:01:00Z",
     ...overrides,

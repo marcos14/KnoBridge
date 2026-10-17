@@ -33,6 +33,7 @@ from knobridge.mcp.server import build_server, transport_security
 from knobridge.retrieval.rerank import InstanceReranker, instance_reranker
 from knobridge.retrieval.retriever import HybridRetriever
 from knobridge.retrieval.search import SearchService
+from knobridge.retrieval.thresholds import SimilarityThresholds
 from knobridge.tickets.delivery import TicketWebhookStarter
 from knobridge.tickets.requests import TicketRequestService
 
@@ -57,7 +58,9 @@ def mcp_services(app: FastAPI, settings: Settings) -> McpServices:
     reranker: InstanceReranker | None = (
         overrides[get_reranker]() if get_reranker in overrides else instance_reranker(settings)
     )
-    search = SearchService(credentials, embeddings)
+    search = SearchService(
+        credentials, embeddings, thresholds=SimilarityThresholds.from_settings(settings)
+    )
     return McpServices(
         factory=factory,
         clock=clock,

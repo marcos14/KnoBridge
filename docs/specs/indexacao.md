@@ -369,7 +369,7 @@ Desde a v0.5 (plano 0011, D6, F2.4). A similaridade de cosseno muda de escala co
 - **`KNOBRIDGE_MIN_SIMILARITY_DEFAULTS`** (JSON, ex.: `{"gemini-embedding-001": 0.62}`) sobrescreve ou acrescenta padrões, com a mesma normalização de nome. Valores de 0 a 1; JSON inválido ou fora da faixa impede a subida (erro de settings). Entra no `.env.example`.
 - **Onde vale**: `SearchService.search(..., min_similarity=None)` usa, em cada grupo (credencial, modelo), o padrão do modelo do grupo. Um número explícito vale para todos os grupos, como até a v0.4. O braço textual não usa limiar.
 - **Produto**: `products.min_similarity` nulo (o padrão desde a v0.5) = o padrão do modelo de cada coleção; a API mostra o que vale por modelo em `effective_min_similarity` ([produtos-e-niveis.md](produtos-e-niveis.md#campos)). O `HybridRetriever` e o `search_knowledge` do MCP passam o valor do produto (nulo ou número) para a busca.
-- **Migração `0024`**: `products.min_similarity` passa a aceitar nulo e perde o padrão do banco; os produtos com exatamente 0,35 (o padrão antigo, que ninguém escolheu de propósito na maioria dos casos) ficam nulos. Em coleções OpenAI nada muda; em coleções Gemini, o limiar sobe para o do modelo. O `downgrade` grava 0,35 nos nulos.
+- **Migração `0023`**: `products.min_similarity` passa a aceitar nulo e perde o padrão do banco; os produtos com exatamente 0,35 (o padrão antigo, que ninguém escolheu de propósito na maioria dos casos) ficam nulos. Em coleções OpenAI nada muda; em coleções Gemini, o limiar sobe para o do modelo. O `downgrade` grava 0,35 nos nulos.
 
 ## Reranker
 

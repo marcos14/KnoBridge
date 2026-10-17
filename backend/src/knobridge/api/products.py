@@ -7,7 +7,9 @@ unique per workspace (409 ``product_name_taken``) and cannot end in ``:<level>``
 ``product_name_invalid``). An empty or null ``no_source_message`` stores the default "I don't
 know, shall I open a ticket?" message. ``collection_ids`` are the collections the product
 answers from, all of the same workspace (422 ``product_collection_invalid``). ``min_similarity``
-is the retrieval threshold (0 to 1; omitted or null on create: the default). ``rerank`` (on by
+is the retrieval threshold (0 to 1; null, the default on create and what a ``PATCH`` with null
+restores: the default of each collection's embedding model), and ``effective_min_similarity``
+shows the floor that holds per model (``retrieval/thresholds.py``). ``rerank`` (on by
 default) reorders the searches with the instance's reranker; ``rerank_available`` says whether
 the instance has one.
 ``ticket_webhook_url`` is where ticket requests go (``null``: off), checked against the SSRF
@@ -29,6 +31,7 @@ from pydantic import BaseModel, Field, StringConstraints, model_validator
 from knobridge.api.deps import (
     ClientIpDep,
     RerankerDep,
+    SimilarityThresholdsDep,
     WorkspaceContext,
     WorkspaceContextDep,
     require_role,
@@ -42,7 +45,6 @@ from knobridge.products.duplicate import duplicate_product
 from knobridge.products.listing import ProductFilter, ProductSort
 from knobridge.products.models import (
     DEFAULT_LANGUAGE,
-    DEFAULT_MIN_SIMILARITY,
     MAX_SIMILARITY,
     MIN_SIMILARITY,
     TICKET_WEBHOOK_URL_MAX_LENGTH,
@@ -50,6 +52,12 @@ from knobridge.products.models import (
     ProductTone,
 )
 from knobridge.products.service import ProductChanges, ProductService, ProductSettings
+from knobridge.products.thresholds import effective_thresholds
+from knobridge.retrieval.thresholds import (
+    EffectiveThreshold,
+    SimilarityThresholds,
+    ThresholdSource,
+)
 from knobridge.security.csrf import require_csrf
 from knobridge.tenancy.models import Role
 from knobridge.tenancy.rbac import role_at_least
@@ -138,7 +146,7 @@ class ProductCreate(BaseModel):
     # Reorder the searches with the instance's reranker (no effect without one).
     rerank: bool = True
     collection_ids: CollectionIds = Field(default_factory=lambda: [])
-    # Omitted or null: ``DEFAULT_MIN_SIMILARITY``.
+    # Omitted or null: the default of each collection's embedding model.
     min_similarity: MinSimilarity | None = None
     # ``https`` (``http`` only for an allowlisted development host); null: ticket requests off.
     ticket_webhook_url: WebhookUrl | None = None
@@ -163,6 +171,7 @@ class ProductUpdate(BaseModel):
     rerank: bool | None = None
     # Replaces the whole set when given.
     collection_ids: CollectionIds | None = None
+    # Unlike most fields, null restores the default of each embedding model; omitted keeps it.
     min_similarity: MinSimilarity | None = None
     # Unlike the other fields, null turns the webhook off; omitted keeps it.
     ticket_webhook_url: WebhookUrl | None = None
@@ -173,6 +182,16 @@ class ProductUpdate(BaseModel):
             raise ValueError("Give at least one field to change.")
         _unique(self.collection_ids)
         return self
+
+
+class EffectiveMinSimilarity(BaseModel):
+    """The floor that holds for one embedding model of the product's collections."""
+
+    embedding_model: str
+    value: float
+    # ``product``: the product's own value; ``model``: the default of the model; ``fallback``:
+    # a model outside the table (0.35).
+    source: ThresholdSource
 
 
 class ProductOut(BaseModel):
@@ -189,7 +208,10 @@ class ProductOut(BaseModel):
     # The instance has a reranker (``KNOBRIDGE_RERANKER_URL`` set).
     rerank_available: bool
     collection_ids: list[uuid.UUID]
-    min_similarity: float
+    # Null: the default of each collection's embedding model.
+    min_similarity: float | None
+    # One item per distinct embedding model of the collections, by model name.
+    effective_min_similarity: list[EffectiveMinSimilarity]
     ticket_webhook_url: str | None
     # URL and signing secret set: the chat may send ticket requests.
     ticket_webhook_configured: bool
@@ -213,6 +235,7 @@ def _out(
     collection_ids: list[uuid.UUID],
     my_max_level: ResponseLevel,
     rerank_available: bool,
+    effective: list[EffectiveThreshold],
 ) -> ProductOut:
     return ProductOut(
         id=product.id,
@@ -227,6 +250,12 @@ def _out(
         rerank_available=rerank_available,
         collection_ids=collection_ids,
         min_similarity=product.min_similarity,
+        effective_min_similarity=[
+            EffectiveMinSimilarity(
+                embedding_model=item.embedding_model, value=item.value, source=item.source
+            )
+            for item in effective
+        ],
         ticket_webhook_url=product.ticket_webhook_url,
         ticket_webhook_configured=product.ticket_webhook_configured,
         ticket_webhook_secret_created_at=product.ticket_webhook_secret_created_at,
@@ -246,10 +275,15 @@ async def _outs(
     products: ProductService,
     items: list[Product],
     rerank_available: bool,
+    thresholds: SimilarityThresholds,
 ) -> list[ProductOut]:
-    """The products with their collections and the reader's level (two queries)."""
+    """The products with their collections, the floor per embedding model and the reader's
+    level (three queries)."""
     ids = [item.id for item in items]
     links = await products.collections_of(context.db, context.workspace_id, ids)
+    effective = await effective_thresholds(
+        context.db, workspace_id=context.workspace_id, products=items, thresholds=thresholds
+    )
     user_id = context.current.user.id
     recorded = (
         await recorded_levels(
@@ -258,7 +292,13 @@ async def _outs(
     ).get(user_id, {})
     default = role_default_level(context.role)
     return [
-        _out(item, links.get(item.id, []), recorded.get(item.id, default), rerank_available)
+        _out(
+            item,
+            links.get(item.id, []),
+            recorded.get(item.id, default),
+            rerank_available,
+            effective[item.id],
+        )
         for item in items
     ]
 
@@ -271,6 +311,7 @@ async def list_products(
     context: WorkspaceContextDep,
     products: ProductServiceDep,
     rerank_available: RerankAvailableDep,
+    thresholds: SimilarityThresholdsDep,
     query: SearchQuery = None,
     active: bool | None = None,
     collection_id: uuid.UUID | None = None,
@@ -293,7 +334,7 @@ async def list_products(
         offset=offset,
     )
     return ProductPage(
-        items=await _outs(context, products, items, rerank_available),
+        items=await _outs(context, products, items, rerank_available, thresholds),
         total=total,
         limit=limit,
         offset=offset,
@@ -306,6 +347,7 @@ async def get_product(
     context: WorkspaceContextDep,
     products: ProductServiceDep,
     rerank_available: RerankAvailableDep,
+    thresholds: SimilarityThresholdsDep,
 ) -> ProductOut:
     """One product (404 for viewers when it is inactive)."""
     product = await products.get(
@@ -314,7 +356,7 @@ async def get_product(
         product_id=product_id,
         active_only=_only_active(context),
     )
-    return (await _outs(context, products, [product], rerank_available))[0]
+    return (await _outs(context, products, [product], rerank_available, thresholds))[0]
 
 
 @router.post(
@@ -328,6 +370,7 @@ async def create_product(
     context: EditorContext,
     products: ProductServiceDep,
     rerank_available: RerankAvailableDep,
+    thresholds: SimilarityThresholdsDep,
     validator: DestinationValidatorDep,
     ip: ClientIpDep,
 ) -> ProductOut:
@@ -348,14 +391,12 @@ async def create_product(
             active=body.active,
             rerank=body.rerank,
             collection_ids=tuple(body.collection_ids),
-            min_similarity=(
-                DEFAULT_MIN_SIMILARITY if body.min_similarity is None else body.min_similarity
-            ),
+            min_similarity=body.min_similarity,
             ticket_webhook_url=body.ticket_webhook_url,
         ),
         ip=ip,
     )
-    return (await _outs(context, products, [product], rerank_available))[0]
+    return (await _outs(context, products, [product], rerank_available, thresholds))[0]
 
 
 @router.patch("/{product_id}", dependencies=[Depends(require_csrf)], responses=_SAVE_ERRORS)
@@ -365,6 +406,7 @@ async def update_product(
     context: EditorContext,
     products: ProductServiceDep,
     rerank_available: RerankAvailableDep,
+    thresholds: SimilarityThresholdsDep,
     validator: DestinationValidatorDep,
     ip: ClientIpDep,
 ) -> ProductOut:
@@ -391,12 +433,13 @@ async def update_product(
             rerank=body.rerank,
             collection_ids=None if body.collection_ids is None else tuple(body.collection_ids),
             min_similarity=body.min_similarity,
+            min_similarity_given="min_similarity" in body.model_fields_set,
             ticket_webhook_url=body.ticket_webhook_url,
             ticket_webhook_url_given="ticket_webhook_url" in body.model_fields_set,
         ),
         ip=ip,
     )
-    return (await _outs(context, products, [product], rerank_available))[0]
+    return (await _outs(context, products, [product], rerank_available, thresholds))[0]
 
 
 @router.delete(
@@ -442,6 +485,7 @@ async def duplicate(
     context: EditorContext,
     products: ProductServiceDep,
     rerank_available: RerankAvailableDep,
+    thresholds: SimilarityThresholdsDep,
     ip: ClientIpDep,
     body: ProductDuplicate | None = None,
 ) -> ProductOut:
@@ -455,4 +499,4 @@ async def duplicate(
         name=None if body is None else body.name,
         ip=ip,
     )
-    return (await _outs(context, products, [product], rerank_available))[0]
+    return (await _outs(context, products, [product], rerank_available, thresholds))[0]

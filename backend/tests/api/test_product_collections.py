@@ -5,10 +5,12 @@ collection is deleted."""
 from __future__ import annotations
 
 import uuid
+from typing import cast
 
 import httpx2 as httpx
 import pytest
 from api_support import ApiEnv, run_db
+from fastapi import FastAPI
 from product_support import configure_level, post_product, products_path
 from search_support import SearchWorld, add_collection, build_search_world, delete_collection
 from sqlalchemy import select
@@ -132,7 +134,7 @@ def test_product_min_similarity_range(api: ApiEnv) -> None:
     assert negative.status_code == 422
     assert edge.status_code == 201
     assert edge.json()["min_similarity"] == 1.0
-    assert nulled.json()["min_similarity"] == 0.35
+    assert nulled.json()["min_similarity"] is None
 
 
 def test_deleting_a_collection_unbinds_it(api: ApiEnv) -> None:
@@ -150,7 +152,7 @@ def test_deleting_a_collection_unbinds_it(api: ApiEnv) -> None:
     assert current.json()["collection_ids"] == [str(world.collection_id)]
 
 
-def test_product_created_without_min_similarity_stores_035(api: ApiEnv) -> None:
+def test_product_created_without_min_similarity_stores_null(api: ApiEnv) -> None:
     world = _world(api)
 
     created = _create(api, world.workspace_id)
@@ -162,4 +164,66 @@ def test_product_created_without_min_similarity_stores_035(api: ApiEnv) -> None:
             return await db.scalar(query)
 
     assert created.status_code == 201
-    assert run_db(api.database_url, stored) == 0.35
+    assert run_db(api.database_url, stored) is None
+
+
+def test_product_effective_min_similarity_per_model(api: ApiEnv) -> None:
+    world = _world(api)
+    gemini = add_collection(
+        api, world.workspace_id, world.provider_id, model="google/gemini-embedding-001"
+    )
+    openai = add_collection(
+        api, world.workspace_id, world.provider_id, model="openai/text-embedding-3-small"
+    )
+    ids = [str(world.collection_id), str(gemini), str(openai)]
+
+    default = _create(api, world.workspace_id, collection_ids=ids)
+    explicit = _create(api, world.workspace_id, collection_ids=ids[:2], min_similarity=0.5)
+
+    assert default.json()["min_similarity"] is None
+    assert default.json()["effective_min_similarity"] == [
+        {"embedding_model": "fake-embedding", "value": 0.35, "source": "fallback"},
+        {"embedding_model": "google/gemini-embedding-001", "value": 0.6, "source": "model"},
+        {"embedding_model": "openai/text-embedding-3-small", "value": 0.35, "source": "model"},
+    ]
+    assert explicit.json()["effective_min_similarity"] == [
+        {"embedding_model": "fake-embedding", "value": 0.5, "source": "product"},
+        {"embedding_model": "google/gemini-embedding-001", "value": 0.5, "source": "product"},
+    ]
+
+
+def test_product_patch_null_min_similarity_restores_model_default(api: ApiEnv) -> None:
+    world = _world(api)
+    gemini = add_collection(api, world.workspace_id, world.provider_id, model="gemini-embedding-2")
+    created = _create(api, world.workspace_id, collection_ids=[str(gemini)], min_similarity=0.4)
+    product_id = created.json()["id"]
+
+    kept = _patch(api, world.workspace_id, product_id, {"name": "Renomeado"})
+    restored = _patch(api, world.workspace_id, product_id, {"min_similarity": None})
+    again = _patch(api, world.workspace_id, product_id, {"min_similarity": None})
+
+    assert kept.json()["min_similarity"] == 0.4
+    assert restored.status_code == 200
+    assert restored.json()["min_similarity"] is None
+    assert restored.json()["effective_min_similarity"] == [
+        {"embedding_model": "gemini-embedding-2", "value": 0.57, "source": "model"}
+    ]
+    assert again.status_code == 200
+    assert _updates(api, world.workspace_id) == [["name"], ["min_similarity"]]
+
+
+def test_product_min_similarity_defaults_from_settings(api: ApiEnv) -> None:
+    state = cast(FastAPI, api.client.app).state
+    state.settings = state.settings.model_copy(
+        update={"min_similarity_defaults": {"gemini-embedding-001": 0.62}}
+    )
+    world = _world(api)
+    gemini = add_collection(
+        api, world.workspace_id, world.provider_id, model="google/gemini-embedding-001"
+    )
+
+    created = _create(api, world.workspace_id, collection_ids=[str(gemini)])
+
+    assert created.json()["effective_min_similarity"] == [
+        {"embedding_model": "google/gemini-embedding-001", "value": 0.62, "source": "model"}
+    ]

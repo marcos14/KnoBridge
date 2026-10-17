@@ -10,7 +10,8 @@ it is deactivated; saved even with Temporal down, the worker reconciles it), and
 takes ``query`` (name), ``collection_id``, ``kind``, ``active``, ``min_level``,
 ``last_run_status`` and ``sort``; ``min_level`` (default by kind) is set and changed only by
 owners and admins, and a change recomputes the chunks at once (``ingestion/source_levels.py``);
-``next_run_at`` is its next tick computed from the clock. ``POST .../{id}/test`` answers 200
+``next_run_at`` is its next tick computed from the clock; ``index_stats`` and ``dominant_count``
+tell what dominates the index (``api/index_stats.py``). ``POST .../{id}/test`` answers 200
 ``{ok, error}``;
 ``POST .../{id}/sync`` queues a run and starts the ingestion workflow (202 with the run; 409
 ``sync_already_running`` or ``source_inactive``; 503 ``sync_unavailable`` without Temporal);
@@ -40,6 +41,7 @@ from knobridge.api.deps import (
     WorkspaceContextDep,
     require_role,
 )
+from knobridge.api.index_stats import IndexStatsOut, index_stats_out
 from knobridge.api.listing import SearchQuery
 from knobridge.api.runs import RunOut, run_out
 from knobridge.ingestion.models import RunTrigger
@@ -149,6 +151,10 @@ class SourceOut(BaseModel):
     next_run_at: datetime | None
     document_count: int
     last_run: RunOut | None
+    # What dominates the index after the last successful run (folder and Git sources only).
+    index_stats: IndexStatsOut | None
+    # Items in ``index_stats.dominant`` (0 without statistics), for the list's badge.
+    dominant_count: int
     created_at: datetime
     updated_at: datetime
 
@@ -176,6 +182,7 @@ class SourceTestResult(BaseModel):
 
 def _out(view: SourceView) -> SourceOut:
     source = view.source
+    stats = index_stats_out(source)
     return SourceOut(
         id=source.id,
         collection_id=source.collection_id,
@@ -192,6 +199,8 @@ def _out(view: SourceView) -> SourceOut:
         next_run_at=view.next_run_at,
         document_count=view.document_count,
         last_run=None if view.last_run is None else run_out(view.last_run),
+        index_stats=stats,
+        dominant_count=0 if stats is None else len(stats.dominant),
         created_at=source.created_at,
         updated_at=source.updated_at,
     )

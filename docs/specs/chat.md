@@ -204,7 +204,7 @@ O histórico das próximas perguntas não guarda as rodadas de ferramenta: só a
 
 - `completed`: houve texto final com fontes. `no_source`: nenhuma fonte em nenhuma etapa (com `model`, tokens e custo quando o LLM foi chamado; nulos quando não foi). `failed`: erro do provedor em qualquer rodada (o conteúdo é o texto final que já tinha saído, se houver). `interrupted`: o cliente desconectou (o conteúdo é o que já tinha saído).
 - Sempre gravados no desfecho: `citations` (a lista acumulada; `[]` em `no_source`), `steps`, `retrieval` (abaixo), `input_tokens`, `output_tokens` e `cost_usd` (somas, [Custo e canal por resposta](#custo-e-canal-por-resposta)) e `latency_ms` (do recebimento da pergunta ao fim).
-- **`retrieval`** (JSON, só em respostas; `null` nas perguntas e nas respostas anteriores à migração `0023`):
+- **`retrieval`** (JSON, só em respostas; `null` nas perguntas e nas respostas anteriores à migração `0024`):
 
 ```json
 {
@@ -307,7 +307,7 @@ Desde a v0.3 (D4 e D7 do [plano 0008](../planos/0008-telas-de-uso-e-administraca
 - **`channel`**: `panel` (painel), `api` (API pública, REST própria ou compatível com OpenAI; [api-publica.md](api-publica.md)), `mcp` (ferramenta `ask` do MCP, v0.5; [mcp.md](mcp.md)) ou `widget` (widget embutível, v0.5; [widget.md](widget.md)). Pergunta e resposta levam o canal da requisição. É o mesmo `channel` da conversa, repetido na mensagem para as agregações de [uso-e-custos.md](uso-e-custos.md) não precisarem do join e para canais futuros. Mensagens gravadas antes da migração ficam `panel`.
 - **`cost_usd`**: custo estimado da resposta, pela tabela de preços de chat (`ChatPriceTable`, [uso-e-custos.md](uso-e-custos.md#preços-do-chat)) aplicada a `model`, `input_tokens` e `output_tokens`, com 6 casas. É gravado junto com o desfecho (`completed`, `failed`, `interrupted` e, desde a v0.6, `no_source` depois de etapas), quando o provedor informou os tokens. É `null` em perguntas, em `no_source` sem LLM, quando o modelo não tem preço ou quando faltam tokens. Nunca zero por desconhecimento.
 - **Soma das rodadas** (v0.6): com a [busca em etapas](#busca-em-etapas), uma resposta faz várias chamadas ao LLM. `input_tokens` e `output_tokens` são a soma de todas as chamadas da resposta (inclusive as rodadas de ferramenta, cujo texto é descartado, e a chamada refeita sem ferramentas), e `null` se alguma chamada não informou o respectivo valor. `cost_usd` é a soma do custo de cada chamada, calculado com os tokens dela, e `null` se alguma chamada tiver custo desconhecido. O embedding das consultas e o reranker não entram (o reranker é self-host, sem custo por chamada).
-- **`steps` e `retrieval`** (v0.6): as etapas da resposta e o resumo das buscas ([Desfecho e gravação](#desfecho-e-gravação)). `null` nas perguntas e nas respostas anteriores à migração `0023`.
+- **`steps` e `retrieval`** (v0.6): as etapas da resposta e o resumo das buscas ([Desfecho e gravação](#desfecho-e-gravação)). `null` nas perguntas e nas respostas anteriores à migração `0024`.
 - **`product_id` e `level`** (v0.4): o produto e o nível da conversa, repetidos na mensagem pelo mesmo motivo do `channel` ([uso-e-custos.md](uso-e-custos.md) agrupa e filtra por eles). Pergunta e resposta levam os mesmos valores.
 
 O evento `done` traz `cost_usd` e, desde a v0.6, `steps` ([chat-sse.md](chat-sse.md#done)); a leitura da conversa traz `cost_usd`, `channel` e `steps` em cada mensagem, e `retrieval` na conversa do dono no painel e na visão administrativa. Mudar a tabela de preços não recalcula respostas antigas.

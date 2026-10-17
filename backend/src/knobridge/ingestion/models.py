@@ -168,6 +168,10 @@ class Source(UUIDPrimaryKeyMixin, TimestampMixin, Base):
         CheckConstraint(
             "NOT schedule_enabled OR schedule_cron IS NOT NULL", name="schedule_needs_cron"
         ),
+        CheckConstraint(
+            "index_stats IS NULL OR jsonb_typeof(index_stats) = 'object'",
+            name="index_stats_is_object",
+        ),
         # A runner serves a repository to at most one source of the workspace.
         Index(
             "uq_sources_workspace_id_runner_repository",
@@ -211,6 +215,9 @@ class Source(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     min_level: Mapped[ResponseLevel] = mapped_column(
         str_enum(ResponseLevel, "min_level"), nullable=False, default=_default_min_level
     )
+    # Files and directories that dominate the index, from the last successful run of a folder
+    # or Git source (``index_stats.py``); ``None`` for the other kinds and before that run.
+    index_stats: Mapped[dict[str, JSONValue] | None] = mapped_column(JSONB, nullable=True)
 
     def typed_config(self) -> SourceConfig:
         """The stored config validated against the model of ``kind``."""

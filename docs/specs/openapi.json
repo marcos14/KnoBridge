@@ -2974,6 +2974,72 @@
         "title": "DocumentPage",
         "type": "object"
       },
+      "DominantGroupOut": {
+        "properties": {
+          "chunks": {
+            "title": "Chunks",
+            "type": "integer"
+          },
+          "chunks_per_file": {
+            "title": "Chunks Per File",
+            "type": "number"
+          },
+          "files": {
+            "title": "Files",
+            "type": "integer"
+          },
+          "kind": {
+            "enum": [
+              "file",
+              "directory",
+              "known_generated"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "pattern": {
+            "title": "Pattern",
+            "type": "string"
+          },
+          "share": {
+            "title": "Share",
+            "type": "number"
+          }
+        },
+        "required": [
+          "kind",
+          "pattern",
+          "files",
+          "chunks",
+          "share",
+          "chunks_per_file"
+        ],
+        "title": "DominantGroupOut",
+        "type": "object"
+      },
+      "EffectiveMinSimilarity": {
+        "description": "The floor that holds for one embedding model of the product's collections.",
+        "properties": {
+          "embedding_model": {
+            "title": "Embedding Model",
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/ThresholdSource"
+          },
+          "value": {
+            "title": "Value",
+            "type": "number"
+          }
+        },
+        "required": [
+          "embedding_model",
+          "value",
+          "source"
+        ],
+        "title": "EffectiveMinSimilarity",
+        "type": "object"
+      },
       "FaqEntry": {
         "additionalProperties": false,
         "properties": {
@@ -4040,6 +4106,70 @@
           "offset"
         ],
         "title": "HarnessRejectionPage",
+        "type": "object"
+      },
+      "IndexStatsOut": {
+        "properties": {
+          "chunks": {
+            "title": "Chunks",
+            "type": "integer"
+          },
+          "computed_at": {
+            "format": "date-time",
+            "title": "Computed At",
+            "type": "string"
+          },
+          "dominant": {
+            "items": {
+              "$ref": "#/components/schemas/DominantGroupOut"
+            },
+            "title": "Dominant",
+            "type": "array"
+          },
+          "file_chunks": {
+            "title": "File Chunks",
+            "type": "integer"
+          },
+          "files": {
+            "title": "Files",
+            "type": "integer"
+          },
+          "run_id": {
+            "format": "uuid",
+            "title": "Run Id",
+            "type": "string"
+          },
+          "suggested_exclude_globs": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Suggested Exclude Globs",
+            "type": "array"
+          },
+          "top_files": {
+            "items": {
+              "$ref": "#/components/schemas/TopFileOut"
+            },
+            "title": "Top Files",
+            "type": "array"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version",
+          "computed_at",
+          "run_id",
+          "chunks",
+          "file_chunks",
+          "files",
+          "top_files",
+          "dominant",
+          "suggested_exclude_globs"
+        ],
+        "title": "IndexStatsOut",
         "type": "object"
       },
       "IngestTokenOut": {
@@ -6026,6 +6156,13 @@
             "title": "Description",
             "type": "string"
           },
+          "effective_min_similarity": {
+            "items": {
+              "$ref": "#/components/schemas/EffectiveMinSimilarity"
+            },
+            "title": "Effective Min Similarity",
+            "type": "array"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -6040,8 +6177,15 @@
             "type": "string"
           },
           "min_similarity": {
-            "title": "Min Similarity",
-            "type": "number"
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Similarity"
           },
           "my_max_level": {
             "$ref": "#/components/schemas/ResponseLevel"
@@ -6111,6 +6255,7 @@
           "rerank_available",
           "collection_ids",
           "min_similarity",
+          "effective_min_similarity",
           "ticket_webhook_url",
           "ticket_webhook_configured",
           "ticket_webhook_secret_created_at",
@@ -9428,11 +9573,17 @@
             "type": "integer"
           },
           "min_similarity": {
-            "default": 0.35,
-            "maximum": 1.0,
-            "minimum": 0.0,
-            "title": "Min Similarity",
-            "type": "number"
+            "anyOf": [
+              {
+                "maximum": 1.0,
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Similarity"
           },
           "query": {
             "maxLength": 2000,
@@ -9958,6 +10109,10 @@
             "title": "Document Count",
             "type": "integer"
           },
+          "dominant_count": {
+            "title": "Dominant Count",
+            "type": "integer"
+          },
           "exclude_globs": {
             "items": {
               "type": "string"
@@ -9976,6 +10131,16 @@
             },
             "title": "Include Globs",
             "type": "array"
+          },
+          "index_stats": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IndexStatsOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "kind": {
             "$ref": "#/components/schemas/SourceKind"
@@ -10050,6 +10215,8 @@
           "next_run_at",
           "document_count",
           "last_run",
+          "index_stats",
+          "dominant_count",
           "created_at",
           "updated_at"
         ],
@@ -10302,6 +10469,15 @@
           "dark"
         ],
         "title": "Theme",
+        "type": "string"
+      },
+      "ThresholdSource": {
+        "enum": [
+          "product",
+          "model",
+          "fallback"
+        ],
+        "title": "ThresholdSource",
         "type": "string"
       },
       "TicketAttachmentIn": {
@@ -11555,6 +11731,29 @@
           "token_created_at"
         ],
         "title": "TicketsSummaryOut",
+        "type": "object"
+      },
+      "TopFileOut": {
+        "properties": {
+          "chunks": {
+            "title": "Chunks",
+            "type": "integer"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          },
+          "share": {
+            "title": "Share",
+            "type": "number"
+          }
+        },
+        "required": [
+          "path",
+          "chunks",
+          "share"
+        ],
+        "title": "TopFileOut",
         "type": "object"
       },
       "UpdateUserRequest": {

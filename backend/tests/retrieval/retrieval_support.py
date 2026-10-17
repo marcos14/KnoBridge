@@ -35,6 +35,7 @@ from knobridge.llm.factory import EmbeddingProviderFactory, create_embedding_pro
 from knobridge.llm.fake_embeddings import fake_vector
 from knobridge.llm.models import ProviderKind
 from knobridge.retrieval.search import DEFAULT_MIN_SIMILARITY, SearchHit, SearchService
+from knobridge.retrieval.thresholds import SimilarityThresholds
 from knobridge.tenancy.models import Workspace
 
 SessionFactory = async_sessionmaker[AsyncSession]
@@ -161,13 +162,14 @@ class Db:
         query: str,
         *,
         limit: int = 10,
-        min_similarity: float = DEFAULT_MIN_SIMILARITY,
+        min_similarity: float | None = DEFAULT_MIN_SIMILARITY,
         factory: EmbeddingProviderFactory = create_embedding_provider,
         scope: uuid.UUID | None = None,
         level: ResponseLevel = ResponseLevel.PRODUCT_DEV,
+        thresholds: SimilarityThresholds | None = None,
     ) -> list[SearchHit]:
         """Run the service; ``scope`` opens the session on another workspace (RLS tests)."""
-        service = SearchService(credential_service(), factory)
+        service = SearchService(credential_service(), factory, thresholds=thresholds)
         scope_id = workspace_id if scope is None else scope
         async with scoped_session(self.factory, workspace_id=scope_id, user_id=None) as db:
             return await service.search(

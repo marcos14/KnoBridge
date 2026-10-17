@@ -285,6 +285,32 @@ def test_search_knowledge_collection_deleted_meanwhile_finds_nothing(
     assert structured(result)["results"] == []
 
 
+def test_search_knowledge_passes_the_product_min_similarity(
+    api: ApiEnv, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    world = mcp_world(api)
+    explicit = add_product(api, world, "Estrito")
+    patched = api.client.patch(
+        f"/v1/workspaces/{world.workspace_id}/products/{explicit}",
+        json={"min_similarity": 0.5},
+        headers=api.csrf_headers(),
+    )
+    assert patched.status_code == 200, patched.text
+    key = world_key(api, world)
+    floors: list[object] = []
+
+    async def spy(*_: object, **kwargs: object) -> list[object]:
+        floors.append(kwargs["min_similarity"])
+        return []
+
+    monkeypatch.setattr(SearchService, "search", spy)
+
+    call_tools(api, key, _search(world.product_name), _search("Estrito"))
+
+    # Null (the product's default): the search uses each embedding model's own floor.
+    assert floors == [None, 0.5]
+
+
 def test_search_knowledge_reports_the_embedding_failure(api: ApiEnv) -> None:
     world = mcp_world(api)
     key = world_key(api, world)

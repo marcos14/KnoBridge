@@ -2,7 +2,7 @@
 
 > v1.3 · 2026-10-17 · Em uso (planos 0002 a 0005 e 0008 a 0010; plano 0011 em implementação)
 >
-> **Mudanças da v1.3** (plano 0011, F1.1; [ADR 0010](../adr/0010-busca-em-etapas-e-reranker.md)), em três migrações, na ordem das subfases: `0022` (F2.1), `products.rerank`; `0023` (F2.3), `workspace_levels.max_steps` e `tools_unsupported_model`, `messages.steps` e `messages.retrieval`; `0024` (F2.4), `products.min_similarity` nulo (padrão do modelo de embedding) e `sources.index_stats` ([Migrações](#migrações)).
+> **Mudanças da v1.3** (plano 0011, F1.1; [ADR 0010](../adr/0010-busca-em-etapas-e-reranker.md)), em três migrações, na ordem da integração (decisão D9 do plano): `0022` (F2.1), `products.rerank`; `0023` (F2.4), `products.min_similarity` nulo (padrão do modelo de embedding) e `sources.index_stats`; `0024` (F2.3), `workspace_levels.max_steps` e `tools_unsupported_model`, `messages.steps` e `messages.retrieval` ([Migrações](#migrações)).
 >
 > **Mudanças da v1.2** (plano 0010, F1.1; [ADR 0009](../adr/0009-canais-mcp-e-widget.md)), em duas migrações: `0020` (F3.1), tabelas [`widgets`](#widgets) e [`rate_limit_counters`](#rate_limit_counters), canal `widget`, `conversations.widget_id`, o hash do token do visitante e a identidade assinada, um dono por conversa entre pessoa, chave e widget, e `feedback.user_id` opcional (feedback do visitante); `0021` (F2.2), canal `mcp` em `conversations` e `messages` (conversa da chave) e `ticket_requests.user_id` opcional. A ordem segue a execução do plano (decisão D8).
 >
@@ -53,13 +53,13 @@ Tabelas do Postgres do KnoBridge, criadas pelas migrações em [`backend/migrati
 
 | `0021` | `20261014_0021_mcp_channel.py` | Plano 0010, F2.2: `ck_conversations_channel` e `ck_messages_channel` aceitam `mcp`; `ck_conversations_api_key_when_api` passa a `(channel IN ('api', 'mcp')) = (api_key_id IS NOT NULL)`; `ticket_requests.user_id` deixa de ser `NOT NULL`. O `downgrade` falha se houver conversa ou mensagem `mcp` ou pedido de chamado sem usuário (não apaga dados). |
 
-Previstas no plano 0011 (o nome do arquivo segue a data em que a migração for escrita; a ordem é a das subfases F2.1, F2.3 e F2.4, que rodam nessa sequência):
+Previstas no plano 0011 (o nome do arquivo segue a data em que a migração for escrita; a ordem é a da integração, decisão D9: F2.1, F2.4 e F2.3):
 
 | Revisão | Arquivo | O que faz |
 |---|---|---|
 | `0022` | `20261017_0022_product_rerank.py` | F2.1: `products.rerank` (`boolean NOT NULL DEFAULT true`; os produtos existentes ficam com a reordenação ligada, D3). O `downgrade` remove a coluna. |
-| `0023` | `AAAAMMDD_0023_answer_steps.py` | F2.3: `workspace_levels.max_steps` (`smallint NOT NULL`, `ck_workspace_levels_max_steps_range` de 1 a 6; preenchida por nível: `end_user` 2, `support` 3, `product_dev` 4; sem padrão no banco, o ORM grava o do nível) e `workspace_levels.tools_unsupported_model` (`varchar(200)`, nula); `messages.steps` (`smallint`, nula, `ck_messages_steps_range` de 0 a 6, só em respostas: `ck_messages_steps_only_answers`) e `messages.retrieval` (`jsonb`, nula, só em respostas: `ck_messages_retrieval_only_answers`). As mensagens existentes ficam com os dois nulos. O `downgrade` remove as colunas. |
-| `0024` | `AAAAMMDD_0024_similarity_defaults_and_index_stats.py` | F2.4: `products.min_similarity` deixa de ser `NOT NULL` e perde o padrão do banco (o `CHECK` de 0 a 1 continua, valendo para os não nulos); os produtos com exatamente 0,35 ficam nulos (o padrão do modelo; [indexacao.md](indexacao.md#limiar-por-modelo-de-embedding)); `sources.index_stats` (`jsonb`, nula, `ck_sources_index_stats_is_object` quando presente). O `downgrade` grava 0,35 nos nulos, volta `NOT NULL` com padrão 0,35 e remove `index_stats`. |
+| `0023` | `20261017_0023_similarity_defaults_and_index_stats.py` | F2.4: `products.min_similarity` deixa de ser `NOT NULL` e perde o padrão do banco (o `CHECK` de 0 a 1 continua, valendo para os não nulos); os produtos com exatamente 0,35 ficam nulos (o padrão do modelo; [indexacao.md](indexacao.md#limiar-por-modelo-de-embedding)); `sources.index_stats` (`jsonb`, nula, `ck_sources_index_stats_is_object` quando presente). O `downgrade` grava 0,35 nos nulos, volta `NOT NULL` com padrão 0,35 e remove `index_stats`. |
+| `0024` | `AAAAMMDD_0024_answer_steps.py` | F2.3: `workspace_levels.max_steps` (`smallint NOT NULL`, `ck_workspace_levels_max_steps_range` de 1 a 6; preenchida por nível: `end_user` 2, `support` 3, `product_dev` 4; sem padrão no banco, o ORM grava o do nível) e `workspace_levels.tools_unsupported_model` (`varchar(200)`, nula); `messages.steps` (`smallint`, nula, `ck_messages_steps_range` de 0 a 6, só em respostas: `ck_messages_steps_only_answers`) e `messages.retrieval` (`jsonb`, nula, só em respostas: `ck_messages_retrieval_only_answers`). As mensagens existentes ficam com os dois nulos. O `downgrade` remove as colunas. |
 
 Toda migração tem `downgrade` que desfaz o `upgrade`; o teste `test_migrations_match_orm_models` compara as migrações com os modelos ORM.
 
@@ -163,7 +163,7 @@ erDiagram
         varchar tone "neutral | formal | friendly"
         text no_source_message "nunca vazia"
         boolean active
-        float min_similarity "0 a 1"
+        float min_similarity "0 a 1; nulo = padrão do modelo"
         varchar ticket_webhook_url "nulo = desligado"
         text ticket_webhook_secret_ciphertext "AES-GCM; v1.base64url"
     }
@@ -668,7 +668,7 @@ Um produto do workspace: o sistema sobre o qual as pessoas perguntam (plano 0009
 | `tone` | `varchar(32)` | `neutral`, `formal` ou `friendly` (`ck_products_tone`). |
 | `no_source_message` | `text` | Resposta quando não há fonte (regra 8 do AGENTS.md). Nunca vazia (`ck_products_no_source_message_not_empty`): vazio ou nulo na API grava a mensagem padrão em pt-BR, que diz que não sabe e oferece abrir chamado. |
 | `active` | `boolean` | Padrão `true`. Inativo some para o leitor e não aceita conversa nova nem mensagem. |
-| `min_similarity` | `double precision` | Similaridade mínima (cosseno) para um chunk virar fonte no chat (decisão D12 do plano 0003): entra o chunk que alcança o limiar ou casa a busca textual. De 0 a 1 (`ck_products_min_similarity_range`); padrão 0,35 (migração `0013`), o mesmo da rota "testar busca": no [ensaio com dados reais](../pesquisa/0001-ensaio-minski.md), com `text-embedding-3-small`, a maior similaridade das perguntas relacionadas ficou entre 0,364 e 0,664 e a das sem relação entre 0,196 e 0,300. Desde a `0024` (plano 0011, F2.4): nula = o padrão do modelo de embedding de cada coleção ([indexacao.md](indexacao.md#limiar-por-modelo-de-embedding)), sem padrão no banco; a API grava nulo quando o campo é omitido na criação. |
+| `min_similarity` | `double precision` | Similaridade mínima (cosseno) para um chunk virar fonte no chat (decisão D12 do plano 0003): entra o chunk que alcança o limiar ou casa a busca textual. De 0 a 1 (`ck_products_min_similarity_range`); padrão 0,35 (migração `0013`), o mesmo da rota "testar busca": no [ensaio com dados reais](../pesquisa/0001-ensaio-minski.md), com `text-embedding-3-small`, a maior similaridade das perguntas relacionadas ficou entre 0,364 e 0,664 e a das sem relação entre 0,196 e 0,300. Desde a `0023` (plano 0011, F2.4): nula = o padrão do modelo de embedding de cada coleção ([indexacao.md](indexacao.md#limiar-por-modelo-de-embedding)), sem padrão no banco; a API grava nulo quando o campo é omitido na criação. |
 | `rerank` | `boolean` | `0022` (plano 0011, F2.1): reordenar os trechos pelo reranker da instância ([indexacao.md](indexacao.md#reranker)). `NOT NULL`, padrão `true`. |
 | `ticket_webhook_url` | `varchar(2000)` | Destino dos pedidos de chamado ([chamados.md](chamados.md#abrir-chamado-webhook-de-saída)); nulo = desligado. O banco só exige `http://` ou `https://` (`ck_products_ticket_webhook_url_scheme`); a API exige `https` (salvo os hosts de `KNOBRIDGE_WEBHOOK_ALLOWED_HOSTS`) e aplica as regras de SSRF. |
 | `ticket_webhook_secret_ciphertext` | `text` | Segredo `kbw_` de assinatura cifrado com AES-256-GCM ([ADR 0003](../adr/0003-segredos-cifrados.md)), `info` próprio `knobridge/ticket-webhook-secrets/v1` e dados associados `assistant_ticket_webhook:<workspace_id>:<id>`; nunca o segredo em claro. Nulo até ser gerado. O rótulo `assistant_ticket_webhook` continua nos produtos: o id se preservou na `0018`, então o segredo não foi recifrado (e a migração não precisa da `KNOBRIDGE_SECRET_KEY`). |
@@ -703,8 +703,8 @@ A configuração de cada nível de resposta no workspace ([produtos-e-niveis.md]
 | `model` | `varchar(200)` | Modelo no provedor. `credential_id` e `model` são os dois nulos (nível sem modelo: 409 `level_not_configured`) ou os dois preenchidos (`ck_workspace_levels_model_with_credential`). |
 | `temperature` | `double precision` | De 0 a 2 (`ck_workspace_levels_temperature_range`), padrão 0,2. |
 | `instructions` | `text` | Instruções do nível; nulo = o texto padrão do KnoBridge (`levels/defaults.py`), para o workspace receber as melhorias do padrão. |
-| `max_steps` | `smallint` | `0023` (plano 0011, F2.3): máximo de etapas da [busca em etapas](chat.md#busca-em-etapas), de 1 a 6 (`ck_workspace_levels_max_steps_range`). `NOT NULL`, sem padrão no banco: `create_workspace_levels` grava 2, 3 e 4 (`end_user`, `support`, `product_dev`), e a `0023` preencheu os existentes assim. |
-| `tools_unsupported_model` | `varchar(200)` | `0023`: o modelo que recusou a chamada de ferramentas neste nível ([chat.md](chat.md#modelo-sem-chamada-de-ferramentas)), gravado pela rodada do chat; nulo = não se sabe. Igual a `model`: as respostas usam a busca única. O `PATCH` que muda `credential_id` ou `model` grava nulo. |
+| `max_steps` | `smallint` | `0024` (plano 0011, F2.3): máximo de etapas da [busca em etapas](chat.md#busca-em-etapas), de 1 a 6 (`ck_workspace_levels_max_steps_range`). `NOT NULL`, sem padrão no banco: `create_workspace_levels` grava 2, 3 e 4 (`end_user`, `support`, `product_dev`), e a `0024` preencheu os existentes assim. |
+| `tools_unsupported_model` | `varchar(200)` | `0024`: o modelo que recusou a chamada de ferramentas neste nível ([chat.md](chat.md#modelo-sem-chamada-de-ferramentas)), gravado pela rodada do chat; nulo = não se sabe. Igual a `model`: as respostas usam a busca única. O `PATCH` que muda `credential_id` ou `model` grava nulo. |
 | `created_at`, `updated_at` | `timestamptz` | Relógio do banco. |
 
 Um workspace novo nasce com os três níveis sem modelo. A `0018` deu aos três níveis de cada workspace existente a credencial, o modelo e a temperatura do assistente mais usado (o que mais respondeu com `messages.model` preenchido; empate pelo mais antigo, depois pelo id); sem assistentes, ficaram sem modelo.
@@ -783,10 +783,10 @@ Pergunta ou resposta de uma conversa. RLS forçada, política `messages_workspac
 | `channel` | `varchar(32)` | `panel` ou `api` (`ck_messages_channel`; `mcp` desde a `0021`, `widget` desde a `0020`), o canal da requisição que gravou a mensagem (o mesmo da conversa, repetido para as agregações de [uso-e-custos.md](uso-e-custos.md) não precisarem do join); padrão `panel`, valor das mensagens anteriores à `0017`. |
 | `product_id` | `uuid` | O produto da conversa, repetido como `channel` para as agregações de uso por produto. Sem FK própria: a mensagem já cai junto com a conversa. |
 | `level` | `varchar(32)` | O nível da conversa (`ck_messages_level`), repetido pelo mesmo motivo. |
-| `steps` | `smallint` | `0023` (plano 0011, F2.3): etapas (buscas) da resposta, de 0 a 6 (`ck_messages_steps_range`); só em respostas (`ck_messages_steps_only_answers`: nulo em perguntas). Nulo nas respostas anteriores à migração ([chat.md](chat.md#desfecho-e-gravação)). |
-| `retrieval` | `jsonb` | `0023`: resumo das buscas da resposta (`version`, `tools`, `reranked` e `searches[]` com as consultas das etapas; formato em [chat.md](chat.md#desfecho-e-gravação)); só em respostas (`ck_messages_retrieval_only_answers`). Nulo nas anteriores à migração. Nunca guarda conteúdo de trecho. |
+| `steps` | `smallint` | `0024` (plano 0011, F2.3): etapas (buscas) da resposta, de 0 a 6 (`ck_messages_steps_range`); só em respostas (`ck_messages_steps_only_answers`: nulo em perguntas). Nulo nas respostas anteriores à migração ([chat.md](chat.md#desfecho-e-gravação)). |
+| `retrieval` | `jsonb` | `0024`: resumo das buscas da resposta (`version`, `tools`, `reranked` e `searches[]` com as consultas das etapas; formato em [chat.md](chat.md#desfecho-e-gravação)); só em respostas (`ck_messages_retrieval_only_answers`). Nulo nas anteriores à migração. Nunca guarda conteúdo de trecho. |
 
-Único extra `uq_messages_workspace_id_id`, alvo da FK de `feedback`. Em `messages.input_tokens`, `output_tokens` e `cost_usd`, desde a `0023`, os valores são as somas de todas as chamadas ao LLM da resposta ([chat.md](chat.md#custo-e-canal-por-resposta)).
+Único extra `uq_messages_workspace_id_id`, alvo da FK de `feedback`. Em `messages.input_tokens`, `output_tokens` e `cost_usd`, desde a `0024`, os valores são as somas de todas as chamadas ao LLM da resposta ([chat.md](chat.md#custo-e-canal-por-resposta)).
 
 ### `feedback`
 
@@ -835,7 +835,7 @@ Uma fonte de conteúdo de uma coleção: repositório Git ou pasta local.
 | `active` | `boolean` | Padrão `true`. |
 | `sync_pending` | `boolean` | Padrão `false`. Uma sincronização `harness` foi pedida enquanto outra execução da fonte estava em andamento: a execução que terminar com sucesso o consome e o workflow continua com uma execução nova; abrir uma execução (`queued` → `running`) também o limpa ([indexacao.md](indexacao.md#sincronização-pendente)). |
 | `min_level` | `varchar(32)` | Nível mínimo de pergunta que lê a fonte (`ck_sources_min_level`): padrão pelo tipo, gravado pelo modelo ORM quando omitido (`folder` e `runner`: `end_user`; `tickets`: `support`; `git` e `cards`: `product_dev`); só owner e admin mudam. |
-| `index_stats` | `jsonb` | `0024` (plano 0011, F2.4): estatísticas da última sincronização bem-sucedida de uma fonte `folder` ou `git` (trechos por arquivo, arquivos e diretórios que dominam o índice, globs sugeridos; formato em [indexacao.md](indexacao.md#arquivos-que-dominam-o-índice)), gravadas por `finish_run`. Nula nos outros tipos e antes da primeira sincronização bem-sucedida. Objeto quando presente (`ck_sources_index_stats_is_object`). |
+| `index_stats` | `jsonb` | `0023` (plano 0011, F2.4): estatísticas da última sincronização bem-sucedida de uma fonte `folder` ou `git` (trechos por arquivo, arquivos e diretórios que dominam o índice, globs sugeridos; formato em [indexacao.md](indexacao.md#arquivos-que-dominam-o-índice)), gravadas por `finish_run`. Nula nos outros tipos e antes da primeira sincronização bem-sucedida. Objeto quando presente (`ck_sources_index_stats_is_object`). |
 
 ### `runs`
 

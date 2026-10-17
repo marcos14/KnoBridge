@@ -32,17 +32,14 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column
 
 from knobridge.core.models import Base, TimestampMixin, UUIDPrimaryKeyMixin, str_enum
-from knobridge.retrieval.search import DEFAULT_MIN_SIMILARITY as SEARCH_MIN_SIMILARITY
 
 DEFAULT_LANGUAGE = "pt-BR"
 TICKET_WEBHOOK_URL_MAX_LENGTH = 2000
-# Similarity floor of the chat's retrieval (decision D12 of plan 0003): a chunk only becomes a
-# source when its cosine similarity reaches it or it matches the full-text query. Same value
-# as the search route (0.35), set by the real-data trial (docs/pesquisa/0001-ensaio-minski.md):
-# with ``text-embedding-3-small`` related questions topped 0.364-0.664, unrelated 0.196-0.300.
+# Range of the similarity floor of the chat's retrieval (decision D12 of plan 0003): a chunk
+# only becomes a source when its cosine similarity reaches it or it matches the full-text
+# query. Since migration 0023 the column may be null, the default of each embedding model.
 MIN_SIMILARITY = 0.0
 MAX_SIMILARITY = 1.0
-DEFAULT_MIN_SIMILARITY = SEARCH_MIN_SIMILARITY
 # Answer used when retrieval finds no source (rule 8 of AGENTS.md): never answer without a
 # citation; say so and offer a ticket. User-facing text, hence pt-BR.
 DEFAULT_NO_SOURCE_MESSAGE = (
@@ -102,12 +99,9 @@ class Product(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     rerank: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=True, server_default=text("true")
     )
-    min_similarity: Mapped[float] = mapped_column(
-        Float,
-        nullable=False,
-        default=DEFAULT_MIN_SIMILARITY,
-        server_default=text(str(DEFAULT_MIN_SIMILARITY)),
-    )
+    # ``None`` (the default since migration 0023): the default of each collection's embedding
+    # model (``retrieval/thresholds.py``); a number holds for every collection.
+    min_similarity: Mapped[float | None] = mapped_column(Float, nullable=True)
     # Where a ticket request is sent (docs/specs/chamados.md, "Abrir chamado"); ``None``: off.
     ticket_webhook_url: Mapped[str | None] = mapped_column(
         String(TICKET_WEBHOOK_URL_MAX_LENGTH), nullable=True

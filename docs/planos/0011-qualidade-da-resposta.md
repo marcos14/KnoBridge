@@ -32,7 +32,7 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-17
         concluida_em: 2026-10-13
-        commit: null
+        commit: 43de0ff
       - id: F2.2
         titulo: Chamada de ferramentas nos provedores de LLM (OpenAI, Anthropic, OpenRouter e fake)
         status: concluida
@@ -49,10 +49,10 @@ fases:
         commit: null
       - id: F2.4
         titulo: Limiar de similaridade por modelo de embedding e aviso de arquivos gerados
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-17
-        concluida_em: null
+        concluida_em: 2026-10-13
         commit: null
   - id: F3
     titulo: Painel
@@ -181,6 +181,13 @@ decisoes:
     decisao: "F2.1: HttpReranker valida a resposta do TEI (um item por texto, índices distintos, score finito) e ordena por score com empate pela ordem do RRF; disponibilidade = KNOBRIDGE_RERANKER_URL definida (sem checagem de saúde por busca; a saúde fica em /v1/admin/health com o status novo disabled); Testar busca com rerank nulo = ligado se disponível e true sem reranker = 422 reranker_unavailable; serviço reranker com TEI cpu-1.9.4 e revisão do modelo fixada (953dc6f), mem_limit 4g, healthcheck por curl com start_period 15 min, api e worker não dependem dele; KNOBRIDGE_RERANKER_URL vazia no .env desliga; camada E2E com scripts/fake_reranker.py em python alpine"
     motivo: "spec indexacao.md"
     alternativas: "checar saúde a cada busca"
+    adr: null
+  - id: D14
+    data: 2026-10-13
+    por: agente
+    decisao: "F2.4: limiar efetivo resolvido por grupo (credencial, modelo) em cada busca, número explícito vale para todos; KNOBRIDGE_MIN_SIMILARITY_DEFAULTS sobrescreve a tabela (source model) e modelo fora dela usa o fallback 0,35; PATCH com null volta ao padrão do modelo (campo omitido mantém); uma consulta a mais por página de produtos para effective_min_similarity; suggested_exclude_globs recalculado na resposta contra os exclude_globs atuais; migração 0023 troca 0,35 por nulo e o downgrade devolve 0,35"
+    motivo: "spec indexacao.md e D11"
+    alternativas: "limiar único por produto"
     adr: null
 pendencias_usuario: []
 ---
@@ -433,6 +440,7 @@ Nenhuma.
 - 2026-10-17 — F2.4 iniciada (agente em worktree).
 - 2026-10-13 — F2.2 concluída: chamada de ferramentas nos provedores OpenAI/OpenRouter, Anthropic e fake, com streaming e ToolsUnsupportedError; corpo sem ferramentas idêntico ao de hoje; gates do agente: ruff, pyright e 244 testes direcionados, módulos de llm/ em 100%; orquestrador: ruff, pyright e tests/llm na integração (a suíte inteira roda na próxima integração)
 - 2026-10-13 — F2.1 concluída: reranker self-host (TEI com bge-reranker-v2-m3) no compose, HttpReranker com queda para a ordem do RRF, opção por produto (0022), saúde da instância e reranker falso no E2E; gates do agente: backend 3168 passed + 1 stub corrigido (25/25), 99,85%, scripts 99,81%, frontend 1711; orquestrador: ruff, pyright, 278 testes direcionados e compose nas duas camadas
+- 2026-10-13 — F2.4 concluída: limiar de similaridade por modelo de embedding (0023, produtos com 0,35 passam ao padrão do modelo) e aviso de arquivos que dominam o índice em sources.index_stats; integrada sobre F2.1 e F2.2: backend 3245 passed com 99%, frontend 1711
 
 ## 8. Encerramento
 

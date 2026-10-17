@@ -1,7 +1,8 @@
 """``HybridRetriever``: the chat's production ``Retriever`` (plan 0003 F4.2, plan 0009 F2.2).
 
 Searches only the collections bound to the product (``product_collections``) with the
-product's own ``min_similarity`` (decision D12) and only the chunks a question at the level of
+product's own ``min_similarity`` (decision D12; ``None``: the default of each collection's
+embedding model, ``retrieval/thresholds.py``) and only the chunks a question at the level of
 the conversation may read (the search filters ``chunks.min_level`` in SQL), and turns the hits
 into numbered sources within the context budget (``retrieval.context``). A product without
 collections finds nothing without calling the embedding provider, so the chat answers "no

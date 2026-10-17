@@ -96,6 +96,11 @@ class Settings(BaseSettings):
     # Chat prices in USD per million tokens by model id, as JSON with both prices per model
     # ({"gpt-4.1-mini": {"input": 0.4, "output": 1.6}}); merged over llm/chat_pricing.py.
     chat_prices: dict[str, ChatPrice] = Field(default_factory=dict)
+    # Default similarity floor per embedding model, as JSON ({"gemini-embedding-001": 0.62});
+    # merged over the table of retrieval/thresholds.py (vendor prefix and case ignored).
+    min_similarity_defaults: dict[str, Annotated[float, Field(ge=0, le=1, allow_inf_nan=False)]] = (
+        Field(default_factory=dict)
+    )
     # Folder and local Git sources must live under this directory (checked after resolving
     # symlinks). Docker Compose mounts the host's sources folder here, read-only.
     local_sources_root: Path = Path("/sources")
