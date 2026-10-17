@@ -273,6 +273,13 @@ decisoes:
     motivo: "saber se a reordenação melhora as respostas decide se vale buscar um reranker mais leve"
     alternativas: "só sem reranker"
     adr: null
+  - id: D27
+    data: 2026-10-17
+    por: agente
+    decisao: "com a busca vazia, a rodada oferece search_sources com tool_choice auto e uma instrução para reformular, em vez de tool_choice required; se o modelo responder sem nenhuma fonte, vale a regra 8 (resposta sem fonte, nenhum texto do LLM)"
+    motivo: "os modelos Claude 5.5 recusam tool_choice any/tool (400 pelo OpenRouter, provedores Bedrock e Claude Platform on AWS), e a pergunta sem relação virava erro no ensaio da F4.3; a D10 continua valendo"
+    alternativas: "tentar required e cair para auto no 400 (depende do texto do erro); required só para modelos não Anthropic"
+    adr: null
 pendencias_usuario:
   - id: P1
     aberta_em: 2026-10-17
