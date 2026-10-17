@@ -18,6 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from knobridge.apikeys.auth import ApiKeyIdentity
 from knobridge.conversations.chat import ChatService
 from knobridge.core.clock import Clock
+from knobridge.retrieval.rerank import InstanceReranker
 from knobridge.retrieval.search import SearchService
 from knobridge.tickets.delivery import TicketWebhookStarter
 from knobridge.tickets.requests import TicketRequestService
@@ -26,7 +27,8 @@ from knobridge.tickets.requests import TicketRequestService
 @dataclass(frozen=True)
 class McpServices:
     """The app's services the tools use: sessions, clock, the hybrid search, the chat turn
-    (``ask``), the ticket requests and the starter of their delivery (``open_ticket``)."""
+    (``ask``), the ticket requests, the starter of their delivery (``open_ticket``) and the
+    instance's reranker (``None`` without one) for ``search_knowledge``."""
 
     factory: async_sessionmaker[AsyncSession]
     clock: Clock
@@ -34,6 +36,7 @@ class McpServices:
     chat: ChatService
     tickets: TicketRequestService
     starter: TicketWebhookStarter
+    reranker: InstanceReranker | None = None
 
 
 @dataclass(frozen=True)

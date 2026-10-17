@@ -86,6 +86,8 @@ def test_create_product_requires_editor(api: ApiEnv) -> None:
         "tone",
         "no_source_message",
         "active",
+        "rerank",
+        "rerank_available",
         "collection_ids",
         "min_similarity",
         "ticket_webhook_url",

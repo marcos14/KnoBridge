@@ -97,6 +97,11 @@ class Product(UUIDPrimaryKeyMixin, TimestampMixin, Base):
     active: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=True, server_default=text("true")
     )
+    # Reorder every search of the product with the instance's reranker, when it has one
+    # (docs/specs/indexacao.md, "Reranker"; migration 0022).
+    rerank: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=text("true")
+    )
     min_similarity: Mapped[float] = mapped_column(
         Float,
         nullable=False,

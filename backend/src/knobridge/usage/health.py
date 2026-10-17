@@ -1,10 +1,12 @@
-"""Health of the instance's services for the superadmin: API, database, Temporal and worker.
+"""Health of the instance's services for the superadmin: API, database, Temporal, worker and
+reranker.
 
 The checks run in parallel, each with its own timeout (a timeout is an ``error``). The state is
 always in the body: one ``{status, checked_at, detail}`` per service, with a short detail of
 ours and never the driver's message (failures are logged by exception type only). The worker
 is ``ok`` when something polled its task queue in the last 60 seconds, and ``unknown`` when
-Temporal itself is down.
+Temporal itself is down. The reranker is ``ok`` when its ``/health`` answers 200, and
+``disabled`` when the instance has none (``KNOBRIDGE_RERANKER_URL`` empty).
 """
 
 from __future__ import annotations
@@ -43,6 +45,13 @@ class TemporalProbe(Protocol):
         ...
 
 
+class RerankerProbe(Protocol):
+    async def ready(self) -> bool:
+        """``True`` when the reranker answers its health route with 200; raises when it
+        cannot be reached."""
+        ...
+
+
 type DatabasePing = Callable[[], Awaitable[None]]
 
 
@@ -50,6 +59,7 @@ class ServiceStatus(StrEnum):
     OK = "ok"
     ERROR = "error"
     UNKNOWN = "unknown"
+    DISABLED = "disabled"
 
 
 @dataclass(frozen=True)
@@ -66,6 +76,7 @@ class InstanceHealth:
     database: ServiceCheck
     temporal: ServiceCheck
     worker: ServiceCheck
+    reranker: ServiceCheck
 
 
 class _CheckFailedError(Exception):
@@ -78,6 +89,7 @@ async def instance_health(
     version: str,
     ping: DatabasePing,
     probe: TemporalProbe,
+    reranker: RerankerProbe | None = None,
     check_timeout: float = CHECK_TIMEOUT_SECONDS,
 ) -> InstanceHealth:
     results: dict[str, ServiceCheck] = {}
@@ -100,10 +112,19 @@ async def instance_health(
         if seen is None or clock.now() - seen > WORKER_SEEN_WITHIN:
             raise _CheckFailedError("no worker polling the task queue")
 
+    async def reranker_ready(target: RerankerProbe) -> None:
+        if not await target.ready():
+            # Status other than 200, as while the first start downloads the model.
+            raise _CheckFailedError("reranker not ready")
+
     async with anyio.create_task_group() as group:
         group.start_soon(run, "database", ping, "database unreachable")
         group.start_soon(run, "temporal", probe.check_namespace, "temporal unreachable")
         group.start_soon(run, "worker", worker, "task queue unreadable")
+        if reranker is not None:
+            group.start_soon(
+                run, "reranker", lambda: reranker_ready(reranker), "reranker unreachable"
+            )
     worker_check = results["worker"]
     if results["temporal"].status is not ServiceStatus.OK:
         worker_check = ServiceCheck(ServiceStatus.UNKNOWN, worker_check.checked_at, "temporal down")
@@ -113,4 +134,6 @@ async def instance_health(
         database=results["database"],
         temporal=results["temporal"],
         worker=worker_check,
+        reranker=results.get("reranker")
+        or ServiceCheck(ServiceStatus.DISABLED, clock.now(), "reranker not configured"),
     )

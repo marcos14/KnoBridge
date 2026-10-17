@@ -8,7 +8,8 @@ app's lifespan (a mounted sub-app does not run its own).
 
 The tools get the app's services (``mcp.context.McpServices``) built per request like the
 routes' dependencies, honoring ``app.dependency_overrides`` of the embedding and LLM provider
-factories and of the ticket delivery starter, so tests swap them the same way.
+factories, of the reranker and of the ticket delivery starter, so tests swap them the same
+way.
 """
 
 from __future__ import annotations
@@ -18,7 +19,7 @@ from mcp.server.mcpserver import MCPServer
 from mcp.server.streamable_http_manager import StreamableHTTPASGIApp
 from starlette.routing import Route
 
-from knobridge.api.deps import get_embedding_provider_factory, get_provider_factory
+from knobridge.api.deps import get_embedding_provider_factory, get_provider_factory, get_reranker
 from knobridge.api.ticket_requests import get_ticket_webhook_starter
 from knobridge.conversations.chat import ChatService
 from knobridge.core.crypto import SecretBox
@@ -29,6 +30,7 @@ from knobridge.llm.factory import EmbeddingProviderFactory, ProviderFactory
 from knobridge.mcp.auth import McpEndpoint
 from knobridge.mcp.context import McpServices
 from knobridge.mcp.server import build_server, transport_security
+from knobridge.retrieval.rerank import InstanceReranker, instance_reranker
 from knobridge.retrieval.retriever import HybridRetriever
 from knobridge.retrieval.search import SearchService
 from knobridge.tickets.delivery import TicketWebhookStarter
@@ -52,14 +54,18 @@ def mcp_services(app: FastAPI, settings: Settings) -> McpServices:
         if get_ticket_webhook_starter in overrides
         else app.state.ticket_webhook_starter
     )
+    reranker: InstanceReranker | None = (
+        overrides[get_reranker]() if get_reranker in overrides else instance_reranker(settings)
+    )
     search = SearchService(credentials, embeddings)
     return McpServices(
         factory=factory,
         clock=clock,
         search=search,
+        reranker=reranker,
         chat=ChatService(
             clock=clock,
-            retriever=HybridRetriever(search),
+            retriever=HybridRetriever(search, reranker=reranker),
             provider_factory=providers,
             credentials=credentials,
             session_factory=factory,

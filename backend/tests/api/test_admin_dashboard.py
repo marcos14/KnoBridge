@@ -24,11 +24,14 @@ from usage_support import (
     usage_world,
 )
 
+from fakes.reranker import FakeRerankerProbe
 from fakes.temporal_probe import FakeTemporalProbe
 from knobridge import __version__
-from knobridge.api.admin_dashboard import get_temporal_probe
+from knobridge.api.admin_dashboard import get_reranker_probe, get_temporal_probe
 from knobridge.conversations.models import MessageStatus
+from knobridge.core.settings import Settings
 from knobridge.ingestion.models import RunStatus
+from knobridge.retrieval.rerank import HttpReranker
 from knobridge.tenancy.models import Role, UserStatus, WorkspaceStatus
 
 pytestmark = pytest.mark.integration
@@ -225,6 +228,12 @@ def test_admin_health_all_services_ok(api: ApiEnv, probe: FakeTemporalProbe) -> 
         "database": ok,
         "temporal": ok,
         "worker": ok,
+        "reranker": {
+            "status": "disabled",
+            "checked_at": NOW,
+            "detail": "reranker not configured",
+            "model": None,
+        },
     }
 
 
@@ -265,3 +274,35 @@ def test_get_temporal_probe_reads_app_state(api: ApiEnv) -> None:
     probe = get_temporal_probe(request)  # type: ignore[arg-type]
 
     assert type(probe).__name__ == "LazyTemporalHealthProbe"
+
+
+@pytest.mark.parametrize(
+    ("reranker", "expected"),
+    [
+        (FakeRerankerProbe(), {"status": "ok", "detail": None}),
+        (FakeRerankerProbe(is_ready=False), {"status": "error", "detail": "reranker not ready"}),
+        (
+            FakeRerankerProbe(unavailable=True),
+            {"status": "error", "detail": "reranker unreachable"},
+        ),
+    ],
+    ids=["ok", "not_ready", "unreachable"],
+)
+def test_admin_health_reports_the_reranker(
+    api: ApiEnv, probe: FakeTemporalProbe, reranker: FakeRerankerProbe, expected: dict[str, object]
+) -> None:
+    app = cast(FastAPI, api.client.app)
+    app.dependency_overrides[get_reranker_probe] = lambda: reranker
+    _superadmin(api)
+    try:
+        body = _health(api)
+    finally:
+        app.dependency_overrides.pop(get_reranker_probe, None)
+
+    assert body["reranker"] == {**expected, "checked_at": NOW, "model": "BAAI/bge-reranker-v2-m3"}
+    assert "10.0.0.9" not in str(body)
+
+
+def test_get_reranker_probe_follows_the_settings() -> None:
+    assert get_reranker_probe(Settings(reranker_url=None)) is None
+    assert isinstance(get_reranker_probe(Settings(reranker_url="http://reranker:80")), HttpReranker)

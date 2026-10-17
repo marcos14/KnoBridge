@@ -49,6 +49,7 @@ Todos os comandos rodam a partir da raiz do repositório.
 | `temporal-ui` | `temporalio/ui:2.55.0` | 8080 | `TEMPORAL_UI_PORT` | Interface web do Temporal |
 | `minio` | `pgsty/minio:RELEASE.2026-08-04T00-00-00Z` | 9000 (API S3), 9001 (console) | `MINIO_API_PORT`, `MINIO_CONSOLE_PORT` | Armazenamento de objetos compatível com S3 |
 | `mailpit` | `axllent/mailpit:v1.31.4` | 1025 (SMTP), 8025 (interface web) | `MAILPIT_SMTP_PORT`, `MAILPIT_UI_PORT` | Servidor SMTP de desenvolvimento: recebe os e-mails da API e do worker e os mostra na interface, sem entregar a ninguém |
+| `reranker` | `ghcr.io/huggingface/text-embeddings-inference:cpu-1.9.4` (`RERANKER_IMAGE`) | — (só na rede do compose) | — | Reranker `BAAI/bge-reranker-v2-m3` que reordena os melhores trechos de cada busca ([indexacao.md](../specs/indexacao.md#reranker)). A primeira subida baixa o modelo (cerca de 2,3 GB) para o volume `reranker-models` e o contêiner usa até `RERANKER_MEMORY_LIMIT` (4 GB); a API não espera por ele e, sem ele, busca na ordem de sempre. Para subir sem reranker, deixe `KNOBRIDGE_RERANKER_URL=` vazia no `.env` e suba sem ele (`docker compose up -d --build --wait --scale reranker=0`) |
 | `migrate` | backend (local) | — | — | Roda `alembic upgrade head` uma vez e termina |
 | `api` | backend (local) | 8000 | `API_PORT` | API REST (`knobridge-api`) |
 | `worker` | backend (local) | — | — | Worker Temporal (`knobridge-worker`), fila `knobridge` |
@@ -132,7 +133,8 @@ Rodando o backend fora do Docker (`uv run knobridge-api`), os defaults de `backe
 # Para e remove os contêineres, mantendo os dados (volumes).
 docker compose down
 
-# Remove também os volumes: banco, MinIO e clones de repositórios voltam a ficar vazios
+# Remove também os volumes: banco, MinIO, clones de repositórios e o modelo do reranker
+# (baixado de novo na próxima subida) voltam a ficar vazios
 # (a pasta de fontes do host, deploy/sources/, não é tocada).
 docker compose down -v
 ```

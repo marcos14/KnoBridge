@@ -112,6 +112,10 @@ export function makeInstanceHealth(
     database: check(),
     temporal: check(),
     worker: check(),
+    reranker: {
+      ...check({ status: "disabled", detail: "reranker not configured" }),
+      model: null,
+    },
     ...overrides,
   };
 }

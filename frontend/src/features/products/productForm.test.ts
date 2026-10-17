@@ -64,8 +64,15 @@ describe("productForm", () => {
       active: false,
       collection_ids: [COLLECTION_ID, OTHER_COLLECTION_ID],
       min_similarity: 0.55,
+      rerank: true,
       ticket_webhook_url: null,
     });
+  });
+
+  it("test_product_body_keeps_the_saved_rerank_option", () => {
+    const product = makeProduct({ rerank: false });
+
+    expect(productBody(productFormDefaults(product), product).rerank).toBe(false);
   });
 
   it("test_product_form_reads_the_webhook_of_a_product", () => {

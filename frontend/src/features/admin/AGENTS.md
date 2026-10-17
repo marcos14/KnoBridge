@@ -4,7 +4,7 @@
 
 **Entra aqui**:
 
-- `InstanceDashboardPage.tsx` (`/admin`): contagens de workspaces e usuários, falhas de 7 dias, tabela das falhas recentes e o uso (`InstanceUsagePanel.tsx`: custo, tokens, respostas, aviso de custo parcial pelos `unpriced_*` e os workspaces de maior custo), de `GET /v1/admin/dashboard`; a saúde (`InstanceHealthPanel.tsx`: API, banco, Temporal e worker com selo Funcionando/Com erro/Desconhecido, motivo traduzido e "Verificado há…") vem de `GET /v1/admin/health`, consulta à parte.
+- `InstanceDashboardPage.tsx` (`/admin`): contagens de workspaces e usuários, falhas de 7 dias, tabela das falhas recentes e o uso (`InstanceUsagePanel.tsx`: custo, tokens, respostas, aviso de custo parcial pelos `unpriced_*` e os workspaces de maior custo), de `GET /v1/admin/dashboard`; a saúde (`InstanceHealthPanel.tsx`: API, banco, Temporal e worker com selo Funcionando/Com erro/Desconhecido (o estado `disabled`, do reranker, já tem o selo Desativado), motivo traduzido e "Verificado há…") vem de `GET /v1/admin/health`, consulta à parte.
 - `AdminWorkspacesPage.tsx`: busca, tabela paginada pela API (20 por página; `ADMIN_PAGE_SIZE`), "Criar workspace", "Entrar" (acesso de superadmin nesta sessão, depois abre `/w/:id`; desligado em workspace suspenso), "Renomear" e "Suspender"/"Reativar" com `ConfirmDialog`.
 - `CreateWorkspaceDialog.tsx`: nome, identificador opcional (em branco, o backend gera) e e-mail do proprietário, que recebe o convite; erros da API (`slug_taken`) no `FormAlert` do diálogo.
 - `RenameWorkspaceDialog.tsx`: novo nome (o identificador não muda).

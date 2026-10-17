@@ -356,6 +356,8 @@ export function makeProduct(overrides: Partial<Product> = {}): Product {
     tone: "neutral",
     no_source_message: "Não encontrei isso nas fontes. Quer abrir um chamado?",
     active: true,
+    rerank: true,
+    rerank_available: false,
     collection_ids: [COLLECTION_ID],
     min_similarity: 0.35,
     ticket_webhook_url: null,
@@ -706,6 +708,7 @@ export function makeSearchResult(overrides: Partial<SearchResult> = {}): SearchR
     snippet: "def fechar_caixa(dia):\n    return total(dia)",
     meta: { language: "python", path: "src/caixa.py" },
     scores: { vector: 0.5234, fts: 0.12, fused: 0.032787 },
+    rerank_score: null,
     document: {
       id: "00000000-0000-4000-8000-0000000001e1",
       source_id: SOURCE_ID,

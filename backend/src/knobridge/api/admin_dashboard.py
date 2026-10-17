@@ -16,11 +16,18 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from knobridge import __version__
-from knobridge.api.deps import ClockDep, SuperadminContextDep, require_superadmin
+from knobridge.api.deps import ClockDep, SettingsDep, SuperadminContextDep, require_superadmin
 from knobridge.api.usage import PeriodFrom, PeriodTo, UsageTotalsOut, totals_out
 from knobridge.core.db import get_engine, ping
+from knobridge.retrieval.rerank import HttpReranker
 from knobridge.tenancy.auth import AuthenticatedUser
-from knobridge.usage.health import ServiceCheck, ServiceStatus, TemporalProbe, instance_health
+from knobridge.usage.health import (
+    RerankerProbe,
+    ServiceCheck,
+    ServiceStatus,
+    TemporalProbe,
+    instance_health,
+)
 from knobridge.usage.instance import instance_dashboard
 from knobridge.usage.period import resolve_period
 
@@ -34,6 +41,13 @@ def get_temporal_probe(request: Request) -> TemporalProbe:
     """The lazy probe of ``app.state`` (connects on first use; tests swap it)."""
     probe: TemporalProbe = request.app.state.temporal_probe
     return probe
+
+
+def get_reranker_probe(settings: SettingsDep) -> RerankerProbe | None:
+    """The reranker of ``KNOBRIDGE_RERANKER_URL`` (``None``: disabled; tests swap it)."""
+    if settings.reranker_url is None:
+        return None
+    return HttpReranker(settings.reranker_url)
 
 
 class WorkspaceCounts(BaseModel):
@@ -91,12 +105,18 @@ class ServiceCheckOut(BaseModel):
     detail: str | None
 
 
+class RerankerCheckOut(ServiceCheckOut):
+    # ``KNOBRIDGE_RERANKER_MODEL``; null when the reranker is disabled.
+    model: str | None
+
+
 class InstanceHealthOut(BaseModel):
     version: str
     api: ServiceCheckOut
     database: ServiceCheckOut
     temporal: ServiceCheckOut
     worker: ServiceCheckOut
+    reranker: RerankerCheckOut
 
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -167,19 +187,29 @@ async def get_instance_health(
     clock: ClockDep,
     engine: Annotated[AsyncEngine, Depends(get_engine)],
     probe: Annotated[TemporalProbe, Depends(get_temporal_probe)],
+    reranker: Annotated[RerankerProbe | None, Depends(get_reranker_probe)],
+    settings: SettingsDep,
 ) -> InstanceHealthOut:
-    """API, database, Temporal and worker, checked in parallel (2 s each); always 200."""
+    """API, database, Temporal, worker and reranker, checked in parallel (2 s each); always
+    200."""
 
     async def ping_database() -> None:
         await ping(engine)
 
     health = await instance_health(
-        clock=clock, version=__version__, ping=ping_database, probe=probe
+        clock=clock, version=__version__, ping=ping_database, probe=probe, reranker=reranker
     )
+    check = health.reranker
     return InstanceHealthOut(
         version=health.version,
         api=_check_out(health.api),
         database=_check_out(health.database),
         temporal=_check_out(health.temporal),
         worker=_check_out(health.worker),
+        reranker=RerankerCheckOut(
+            status=check.status,
+            checked_at=check.checked_at,
+            detail=check.detail,
+            model=None if reranker is None else settings.reranker_model,
+        ),
     )

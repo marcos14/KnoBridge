@@ -4113,6 +4113,9 @@
           "database": {
             "$ref": "#/components/schemas/ServiceCheckOut"
           },
+          "reranker": {
+            "$ref": "#/components/schemas/RerankerCheckOut"
+          },
           "temporal": {
             "$ref": "#/components/schemas/ServiceCheckOut"
           },
@@ -4129,7 +4132,8 @@
           "api",
           "database",
           "temporal",
-          "worker"
+          "worker",
+          "reranker"
         ],
         "title": "InstanceHealthOut",
         "type": "object"
@@ -5878,6 +5882,11 @@
             ],
             "title": "No Source Message"
           },
+          "rerank": {
+            "default": true,
+            "title": "Rerank",
+            "type": "boolean"
+          },
           "ticket_webhook_url": {
             "anyOf": [
               {
@@ -6045,6 +6054,14 @@
             "title": "No Source Message",
             "type": "string"
           },
+          "rerank": {
+            "title": "Rerank",
+            "type": "boolean"
+          },
+          "rerank_available": {
+            "title": "Rerank Available",
+            "type": "boolean"
+          },
           "ticket_webhook_configured": {
             "title": "Ticket Webhook Configured",
             "type": "boolean"
@@ -6090,6 +6107,8 @@
           "tone",
           "no_source_message",
           "active",
+          "rerank",
+          "rerank_available",
           "collection_ids",
           "min_similarity",
           "ticket_webhook_url",
@@ -6270,6 +6289,17 @@
               }
             ],
             "title": "No Source Message"
+          },
+          "rerank": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rerank"
           },
           "ticket_webhook_url": {
             "anyOf": [
@@ -7043,6 +7073,48 @@
         ],
         "title": "RejectionBlock",
         "type": "string"
+      },
+      "RerankerCheckOut": {
+        "properties": {
+          "checked_at": {
+            "format": "date-time",
+            "title": "Checked At",
+            "type": "string"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ServiceStatus"
+          }
+        },
+        "required": [
+          "status",
+          "checked_at",
+          "detail",
+          "model"
+        ],
+        "title": "RerankerCheckOut",
+        "type": "object"
       },
       "ResetPasswordRequest": {
         "properties": {
@@ -9367,6 +9439,17 @@
             "minLength": 1,
             "title": "Query",
             "type": "string"
+          },
+          "rerank": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rerank"
           }
         },
         "required": [
@@ -9377,6 +9460,10 @@
       },
       "SearchResponse": {
         "properties": {
+          "reranked": {
+            "title": "Reranked",
+            "type": "boolean"
+          },
           "results": {
             "items": {
               "$ref": "#/components/schemas/SearchResult"
@@ -9386,7 +9473,8 @@
           }
         },
         "required": [
-          "results"
+          "results",
+          "reranked"
         ],
         "title": "SearchResponse",
         "type": "object"
@@ -9432,6 +9520,17 @@
             "title": "Position",
             "type": "integer"
           },
+          "rerank_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rerank Score"
+          },
           "scores": {
             "$ref": "#/components/schemas/SearchScores"
           },
@@ -9472,6 +9571,7 @@
           "snippet",
           "meta",
           "scores",
+          "rerank_score",
           "document"
         ],
         "title": "SearchResult",
@@ -9548,7 +9648,8 @@
         "enum": [
           "ok",
           "error",
-          "unknown"
+          "unknown",
+          "disabled"
         ],
         "title": "ServiceStatus",
         "type": "string"
@@ -13577,7 +13678,7 @@
     },
     "/v1/admin/health": {
       "get": {
-        "description": "API, database, Temporal and worker, checked in parallel (2 s each); always 200.",
+        "description": "API, database, Temporal, worker and reranker, checked in parallel (2 s each); always\n200.",
         "operationId": "get_instance_health_v1_admin_health_get",
         "responses": {
           "200": {
@@ -17331,7 +17432,7 @@
     },
     "/v1/workspaces/{workspace_id}/collections/{collection_id}/search": {
       "post": {
-        "description": "The chunks of the collection that best answer ``query`` at ``level``, best first; may\nbe empty.",
+        "description": "The chunks of the collection that best answer ``query`` at ``level``, best first; may\nbe empty. With the reranker (``rerank`` omitted, null or true), in its order.",
         "operationId": "search_collection_v1_workspaces__workspace_id__collections__collection_id__search_post",
         "parameters": [
           {
@@ -17386,7 +17487,7 @@
             "description": "Workspace or collection not found, or caller is not a member."
           },
           "422": {
-            "description": "Invalid body, or the collection's provider has no embeddings (`provider_embeddings_unsupported`)."
+            "description": "Invalid body, the collection's provider has no embeddings (`provider_embeddings_unsupported`), or `rerank: true` without a reranker in the instance (`reranker_unavailable`)."
           },
           "429": {
             "description": "Provider rate limit (`provider_rate_limited`)."

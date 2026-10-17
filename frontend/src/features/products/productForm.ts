@@ -143,5 +143,7 @@ export function productBody(values: ProductFormValues, current?: Product): Produ
     // The whole set is sent: on a PATCH it replaces the product's collections.
     collection_ids: values.collectionIds,
     min_similarity: parseMinSimilarity(values.minSimilarity) ?? DEFAULT_MIN_SIMILARITY,
+    // No field for it yet: an edit keeps the saved option and a new product starts with it on.
+    rerank: current?.rerank ?? true,
   };
 }

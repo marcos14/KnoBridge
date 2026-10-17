@@ -7,6 +7,7 @@
 - `check_plans.py`: valida o frontmatter de `docs/planos/NNNN-slug.md` contra o [modelo](../docs/planos/0000-modelo.md).
 - `synthetic_tickets/`: gerador determinístico de chamados sintéticos em pt-BR, com gabarito da anonimização, artigos e perguntas (`uv run python -m synthetic_tickets --seed N --tickets 300 --out <pasta fora do repo>`; [AGENTS.md](synthetic_tickets/AGENTS.md)).
 - `webhook_sink.py`: sistema de chamados falso do E2E (só biblioteca padrão): confere a `KnoBridge-Signature` com o segredo recebido em `PUT /secret`, responde `{ticket_id, url}` em `POST /hook` e lista o que chegou em `GET /deliveries` (com a pergunta, o canal e o solicitante de cada pedido assinado). O `docker-compose.e2e.yml` o monta numa imagem Python pequena (serviço `webhook-sink`).
+- `fake_reranker.py`: reranker falso do E2E (só biblioteca padrão), na rota `POST /rerank` do TEI ([indexacao.md](../docs/specs/indexacao.md#e2e-e-testes)): pontua cada texto pela fração das palavras da consulta (minúsculas, sem acento) presentes nele, dá 1,0 ao texto com o marcador `[[rerank-top]]` e devolve `[{index, score}]` da maior para a menor, empate pela ordem de entrada; `GET /health` para o healthcheck. O `docker-compose.e2e.yml` o monta no lugar da imagem do TEI (serviço `reranker`).
 - Outros scripts de checagem ou geração de código usados pela CI ou pelos hooks, cada um com testes em `tests/`.
 
 **Não entra aqui**: código do produto (`backend/`, `frontend/`, `widget/`), infraestrutura (`deploy/`), workflows de CI (`.github/workflows/`), documentação (`docs/`).
@@ -17,7 +18,7 @@
 - Scripts são CLI: escrever no stdout é permitido aqui (problemas um por linha, caminhos com `/`).
 - Caminhos padrão são relativos à raiz do repositório (pai desta pasta), para funcionar de qualquer diretório.
 - Testes montam árvores sintéticas em `tmp_path`; só os testes marcados com `repo` olham o repositório real.
-- `webhook_sink.py` só usa a biblioteca padrão e não importa os outros scripts: o compose de E2E o roda sozinho, montado numa imagem `python` sem dependências.
+- `webhook_sink.py` e `fake_reranker.py` só usam a biblioteca padrão e não importam os outros scripts: o compose de E2E os roda sozinhos, montados numa imagem `python` sem dependências.
 - Dados gerados pelo `synthetic_tickets` ficam fora do repositório; o único exemplo versionado é o JSONL do E2E (`frontend/e2e/stack/fixtures/tickets/`).
 
 **Como testar** (de dentro de `scripts/`):

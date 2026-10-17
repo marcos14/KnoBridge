@@ -2604,7 +2604,8 @@
         "status": {
           "ok": "Funcionando",
           "error": "Com erro",
-          "unknown": "Desconhecido"
+          "unknown": "Desconhecido",
+          "disabled": "Desativado"
         },
         "details": {
           "databaseUnreachable": "O banco de dados não respondeu.",

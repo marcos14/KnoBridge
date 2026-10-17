@@ -81,7 +81,9 @@ def test_search_endpoint_returns_scored_chunks_with_citation(api: ApiEnv) -> Non
         "end_line": 11,
         "snippet": "// O fechamento de caixa exige o relatório Z\nexport function fecharCaixa() {}",
         "meta": CODE.meta,
+        "rerank_score": None,
     }
+    assert response.json()["reranked"] is False
 
 
 def test_search_endpoint_refuses_a_viewer(api: ApiEnv) -> None:
@@ -132,7 +134,7 @@ def test_search_endpoint_returns_empty_for_unrelated_question(api: ApiEnv) -> No
     )
 
     assert response.status_code == 200
-    assert response.json() == {"results": []}
+    assert response.json() == {"results": [], "reranked": False}
 
 
 def test_search_endpoint_applies_limit_and_min_similarity(api: ApiEnv) -> None:

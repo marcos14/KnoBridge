@@ -28,10 +28,10 @@ fases:
     subfases:
       - id: F2.1
         titulo: Reranker self-host (TEI com bge-reranker-v2-m3) no compose, cliente e opção por produto
-        status: em_execucao
+        status: concluida
         agente: claude-code-worktree
         iniciada_em: 2026-10-17
-        concluida_em: null
+        concluida_em: 2026-10-13
         commit: null
       - id: F2.2
         titulo: Chamada de ferramentas nos provedores de LLM (OpenAI, Anthropic, OpenRouter e fake)
@@ -39,7 +39,7 @@ fases:
         agente: claude-code-worktree
         iniciada_em: 2026-10-17
         concluida_em: 2026-10-13
-        commit: null
+        commit: 881b200
       - id: F2.3
         titulo: Rodada de chat em várias etapas em todos os canais, com limite por nível
         status: pendente
@@ -174,6 +174,13 @@ decisoes:
     decisao: "F2.2: ToolChoice como Literal (auto, required, none); OpenAI envia tools sem strict, tool_choice e parallel_tool_calls=false só com ferramentas e abre nova chamada por index ou por id novo (backends do OpenRouter mandam tudo no index 0); Anthropic com input_schema e disable_parallel_tool_use, resultados consecutivos num turno user; ToolsUnsupportedError pelos dois adaptadores via tools_refused, só quando havia ferramentas; o fake roteirizado avança um passo por chamada e ToolCallStep chama a ferramenta mesmo com tool_choice none; os adaptadores não somam custo (cada chamada termina no seu ChatUsage e a rodada soma na F2.3); um assert de tipo em conversations/chat.py até a F2.3 reescrever o laço"
     motivo: "spec chat.md conferida contra os SDKs fixados"
     alternativas: "enum; somar custo no adaptador"
+    adr: null
+  - id: D13
+    data: 2026-10-13
+    por: agente
+    decisao: "F2.1: HttpReranker valida a resposta do TEI (um item por texto, índices distintos, score finito) e ordena por score com empate pela ordem do RRF; disponibilidade = KNOBRIDGE_RERANKER_URL definida (sem checagem de saúde por busca; a saúde fica em /v1/admin/health com o status novo disabled); Testar busca com rerank nulo = ligado se disponível e true sem reranker = 422 reranker_unavailable; serviço reranker com TEI cpu-1.9.4 e revisão do modelo fixada (953dc6f), mem_limit 4g, healthcheck por curl com start_period 15 min, api e worker não dependem dele; KNOBRIDGE_RERANKER_URL vazia no .env desliga; camada E2E com scripts/fake_reranker.py em python alpine"
+    motivo: "spec indexacao.md"
+    alternativas: "checar saúde a cada busca"
     adr: null
 pendencias_usuario: []
 ---
@@ -425,6 +432,7 @@ Nenhuma.
 - 2026-10-17 — F2.2 iniciada (agente em worktree).
 - 2026-10-17 — F2.4 iniciada (agente em worktree).
 - 2026-10-13 — F2.2 concluída: chamada de ferramentas nos provedores OpenAI/OpenRouter, Anthropic e fake, com streaming e ToolsUnsupportedError; corpo sem ferramentas idêntico ao de hoje; gates do agente: ruff, pyright e 244 testes direcionados, módulos de llm/ em 100%; orquestrador: ruff, pyright e tests/llm na integração (a suíte inteira roda na próxima integração)
+- 2026-10-13 — F2.1 concluída: reranker self-host (TEI com bge-reranker-v2-m3) no compose, HttpReranker com queda para a ordem do RRF, opção por produto (0022), saúde da instância e reranker falso no E2E; gates do agente: backend 3168 passed + 1 stub corrigido (25/25), 99,85%, scripts 99,81%, frontend 1711; orquestrador: ruff, pyright, 278 testes direcionados e compose nas duas camadas
 
 ## 8. Encerramento
 

@@ -32,7 +32,11 @@ from sqlalchemy import update
 from fakes.embedding_provider import RecordingEmbeddingFactory
 from fakes.ticket_webhook_starter import FakeTicketWebhookStarter
 from knobridge.api.app import create_app
-from knobridge.api.deps import get_embedding_provider_factory, get_provider_factory
+from knobridge.api.deps import (
+    get_embedding_provider_factory,
+    get_provider_factory,
+    get_reranker,
+)
 from knobridge.api.ticket_requests import get_ticket_webhook_starter
 from knobridge.core.db import system_session
 from knobridge.core.logging import configure_logging
@@ -42,6 +46,7 @@ from knobridge.llm.factory import ProviderFactory
 from knobridge.llm.models import ProviderKind
 from knobridge.llm.provider import LLMProvider
 from knobridge.products.models import Product
+from knobridge.retrieval.rerank import InstanceReranker
 from knobridge.tenancy.models import Role
 from mcp import Client
 
@@ -155,6 +160,7 @@ def run_mcp[T](
     log_stream: TextIO | None = None,
     llm_factory: ProviderFactory | None = None,
     starter: FakeTicketWebhookStarter | None = None,
+    reranker: InstanceReranker | None = None,
 ) -> T:
     """Run ``scenario`` against a second app; ``log_stream`` receives its JSON logs. Without
     ``llm_factory``, asking for an LLM fails the test; ``starter`` replaces the Temporal one
@@ -173,6 +179,8 @@ def run_mcp[T](
         app.dependency_overrides[get_embedding_provider_factory] = lambda: recording
         if starter is not None:
             app.dependency_overrides[get_ticket_webhook_starter] = lambda: starter
+        if reranker is not None:
+            app.dependency_overrides[get_reranker] = lambda: reranker
         async with app.router.lifespan_context(app):
             harness = Harness(app, httpx.AsyncClient(), llm, recording)
             try:
@@ -195,6 +203,7 @@ def call_tools(
     log_stream: TextIO | None = None,
     llm_factory: ProviderFactory | None = None,
     starter: FakeTicketWebhookStarter | None = None,
+    reranker: InstanceReranker | None = None,
 ) -> list[CallToolResult]:
     """Each ``(tool, arguments)`` in order, on one MCP client with ``key``."""
 
@@ -209,6 +218,7 @@ def call_tools(
         log_stream=log_stream,
         llm_factory=llm_factory,
         starter=starter,
+        reranker=reranker,
     )
 
 

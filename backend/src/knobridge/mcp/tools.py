@@ -33,6 +33,7 @@ from knobridge.mcp.schemas import (
 )
 from knobridge.products.models import Product, ProductCollection
 from knobridge.retrieval.context import source_from_hit
+from knobridge.retrieval.rerank import InstanceReranker, rerank_hits
 from knobridge.retrieval.search import CollectionNotFoundError, SearchHit, SearchService
 
 # Rule 8 of AGENTS.md, told to whoever answers from the tool.
@@ -91,25 +92,43 @@ async def product_collections(
 
 
 async def search_knowledge(
-    db: AsyncSession, identity: ApiKeyIdentity, search: SearchService, request: SearchKnowledgeIn
+    db: AsyncSession,
+    identity: ApiKeyIdentity,
+    search: SearchService,
+    request: SearchKnowledgeIn,
+    *,
+    reranker: InstanceReranker | None = None,
 ) -> SearchKnowledgeOut:
+    """The product's best chunks for the query at the level; with the product's ``rerank``
+    option and the instance's ``reranker``, in the cross-encoder's order (``score`` stays the
+    fused score)."""
     product, level = await resolve_product(db, identity, request.product, request.level)
     collection_ids = await product_collections(db, identity.workspace_id, product.id)
+    active = reranker if product.rerank else None
     hits: list[SearchHit] = []
     if collection_ids:
         try:
-            hits = await search.search(
+            found = await search.search(
                 db,
                 workspace_id=identity.workspace_id,
                 collection_ids=collection_ids,
                 query=request.query,
-                limit=request.limit,
+                limit=request.limit if active is None else active.search_limit(request.limit),
                 min_similarity=product.min_similarity,
                 level=level,
             )
         except CollectionNotFoundError:
             # A collection deleted between the two statements: its link is gone too.
-            hits = []
+            found = []
+        outcome = await rerank_hits(
+            active,
+            request.query,
+            found,
+            limit=request.limit,
+            workspace_id=identity.workspace_id,
+            product_id=product.id,
+        )
+        hits = outcome.hits
     results: list[SearchResultOut] = []
     for index, hit in enumerate(hits, start=1):
         source = source_from_hit(hit)

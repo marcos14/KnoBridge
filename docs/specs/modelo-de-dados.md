@@ -57,7 +57,7 @@ Previstas no plano 0011 (o nome do arquivo segue a data em que a migração for 
 
 | Revisão | Arquivo | O que faz |
 |---|---|---|
-| `0022` | `AAAAMMDD_0022_product_rerank.py` | F2.1: `products.rerank` (`boolean NOT NULL DEFAULT true`; os produtos existentes ficam com a reordenação ligada, D3). O `downgrade` remove a coluna. |
+| `0022` | `20261017_0022_product_rerank.py` | F2.1: `products.rerank` (`boolean NOT NULL DEFAULT true`; os produtos existentes ficam com a reordenação ligada, D3). O `downgrade` remove a coluna. |
 | `0023` | `AAAAMMDD_0023_answer_steps.py` | F2.3: `workspace_levels.max_steps` (`smallint NOT NULL`, `ck_workspace_levels_max_steps_range` de 1 a 6; preenchida por nível: `end_user` 2, `support` 3, `product_dev` 4; sem padrão no banco, o ORM grava o do nível) e `workspace_levels.tools_unsupported_model` (`varchar(200)`, nula); `messages.steps` (`smallint`, nula, `ck_messages_steps_range` de 0 a 6, só em respostas: `ck_messages_steps_only_answers`) e `messages.retrieval` (`jsonb`, nula, só em respostas: `ck_messages_retrieval_only_answers`). As mensagens existentes ficam com os dois nulos. O `downgrade` remove as colunas. |
 | `0024` | `AAAAMMDD_0024_similarity_defaults_and_index_stats.py` | F2.4: `products.min_similarity` deixa de ser `NOT NULL` e perde o padrão do banco (o `CHECK` de 0 a 1 continua, valendo para os não nulos); os produtos com exatamente 0,35 ficam nulos (o padrão do modelo; [indexacao.md](indexacao.md#limiar-por-modelo-de-embedding)); `sources.index_stats` (`jsonb`, nula, `ck_sources_index_stats_is_object` quando presente). O `downgrade` grava 0,35 nos nulos, volta `NOT NULL` com padrão 0,35 e remove `index_stats`. |
 

@@ -330,3 +330,55 @@ def test_settings_rejects_widget_identity_clock_skew_out_of_range(
 
     with pytest.raises(ValidationError):
         Settings()
+
+
+def test_settings_reranker_defaults() -> None:
+    settings = Settings()
+
+    assert settings.reranker_url is None
+    assert (settings.reranker_timeout, settings.reranker_candidates) == (10.0, 30)
+    assert (settings.reranker_max_chars, settings.reranker_model) == (
+        2000,
+        "BAAI/bge-reranker-v2-m3",
+    )
+
+
+def test_settings_reads_reranker_variables(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("KNOBRIDGE_RERANKER_URL", " http://reranker:80 ")
+    monkeypatch.setenv("KNOBRIDGE_RERANKER_TIMEOUT", "5")
+    monkeypatch.setenv("KNOBRIDGE_RERANKER_CANDIDATES", "50")
+    monkeypatch.setenv("KNOBRIDGE_RERANKER_MAX_CHARS", "800")
+
+    settings = Settings()
+
+    assert settings.reranker_url == "http://reranker:80"
+    assert (settings.reranker_timeout, settings.reranker_candidates) == (5.0, 50)
+    assert settings.reranker_max_chars == 800
+
+
+def test_settings_empty_reranker_url_means_no_reranker(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("KNOBRIDGE_RERANKER_URL", "  ")
+
+    assert Settings().reranker_url is None
+
+
+@pytest.mark.parametrize(
+    ("name", "value"),
+    [
+        ("KNOBRIDGE_RERANKER_URL", "ftp://reranker"),
+        ("KNOBRIDGE_RERANKER_URL", "reranker:80"),
+        ("KNOBRIDGE_RERANKER_TIMEOUT", "0.5"),
+        ("KNOBRIDGE_RERANKER_TIMEOUT", "61"),
+        ("KNOBRIDGE_RERANKER_CANDIDATES", "9"),
+        ("KNOBRIDGE_RERANKER_CANDIDATES", "101"),
+        ("KNOBRIDGE_RERANKER_MAX_CHARS", "199"),
+        ("KNOBRIDGE_RERANKER_MAX_CHARS", "8001"),
+    ],
+)
+def test_settings_rejects_reranker_values_out_of_range(
+    monkeypatch: pytest.MonkeyPatch, name: str, value: str
+) -> None:
+    monkeypatch.setenv(name, value)
+
+    with pytest.raises(ValidationError):
+        Settings()

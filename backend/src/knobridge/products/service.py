@@ -64,6 +64,8 @@ class ProductSettings:
     # Empty means the default message.
     no_source_message: str
     active: bool
+    # Reorder the searches with the instance's reranker (when it has one).
+    rerank: bool = True
     # Collections the product answers from (no collection: every answer is "no source").
     collection_ids: tuple[uuid.UUID, ...] = ()
     min_similarity: float = DEFAULT_MIN_SIMILARITY
@@ -83,6 +85,7 @@ class ProductChanges:
     tone: ProductTone | None = None
     no_source_message: str | None = None
     active: bool | None = None
+    rerank: bool | None = None
     # Replaces the whole set when given.
     collection_ids: tuple[uuid.UUID, ...] | None = None
     min_similarity: float | None = None
@@ -161,6 +164,7 @@ class ProductService:
             tone=settings.tone,
             no_source_message=no_source_message_or_default(settings.no_source_message),
             active=settings.active,
+            rerank=settings.rerank,
             min_similarity=settings.min_similarity,
             ticket_webhook_url=settings.ticket_webhook_url,
         )
@@ -213,6 +217,7 @@ class ProductService:
                 else no_source_message_or_default(changes.no_source_message)
             ),
             "active": changes.active,
+            "rerank": changes.rerank,
             "min_similarity": changes.min_similarity,
         }
         fields: list[str] = []

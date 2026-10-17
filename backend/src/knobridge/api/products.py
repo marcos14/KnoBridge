@@ -7,7 +7,9 @@ unique per workspace (409 ``product_name_taken``) and cannot end in ``:<level>``
 ``product_name_invalid``). An empty or null ``no_source_message`` stores the default "I don't
 know, shall I open a ticket?" message. ``collection_ids`` are the collections the product
 answers from, all of the same workspace (422 ``product_collection_invalid``). ``min_similarity``
-is the retrieval threshold (0 to 1; omitted or null on create: the default).
+is the retrieval threshold (0 to 1; omitted or null on create: the default). ``rerank`` (on by
+default) reorders the searches with the instance's reranker; ``rerank_available`` says whether
+the instance has one.
 ``ticket_webhook_url`` is where ticket requests go (``null``: off), checked against the SSRF
 rules when saved (422 ``webhook_url_invalid`` or ``webhook_destination_blocked``); its signing
 secret and the test event live in ``api/ticket_webhook.py``. ``my_max_level`` is the reader's
@@ -24,7 +26,13 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query, Request
 from pydantic import BaseModel, Field, StringConstraints, model_validator
 
-from knobridge.api.deps import ClientIpDep, WorkspaceContext, WorkspaceContextDep, require_role
+from knobridge.api.deps import (
+    ClientIpDep,
+    RerankerDep,
+    WorkspaceContext,
+    WorkspaceContextDep,
+    require_role,
+)
 from knobridge.api.listing import SearchQuery
 from knobridge.api.ticket_webhook import DestinationValidatorDep
 from knobridge.levels.defaults import role_default_level
@@ -52,6 +60,14 @@ MAX_LIMIT = 200
 MAX_COLLECTIONS = 100
 
 EditorContext = Annotated[WorkspaceContext, Depends(require_role(Role.EDITOR))]
+
+
+def rerank_available(reranker: RerankerDep) -> bool:
+    """The instance has a reranker, so the products' ``rerank`` option takes effect."""
+    return reranker is not None
+
+
+RerankAvailableDep = Annotated[bool, Depends(rerank_available)]
 
 
 def get_product_service(request: Request) -> ProductService:
@@ -119,6 +135,8 @@ class ProductCreate(BaseModel):
     # Empty or null: the default "no source" message.
     no_source_message: NoSourceMessage | None = None
     active: bool = True
+    # Reorder the searches with the instance's reranker (no effect without one).
+    rerank: bool = True
     collection_ids: CollectionIds = Field(default_factory=lambda: [])
     # Omitted or null: ``DEFAULT_MIN_SIMILARITY``.
     min_similarity: MinSimilarity | None = None
@@ -142,6 +160,7 @@ class ProductUpdate(BaseModel):
     tone: ProductTone | None = None
     no_source_message: NoSourceMessage | None = None
     active: bool | None = None
+    rerank: bool | None = None
     # Replaces the whole set when given.
     collection_ids: CollectionIds | None = None
     min_similarity: MinSimilarity | None = None
@@ -165,6 +184,10 @@ class ProductOut(BaseModel):
     tone: ProductTone
     no_source_message: str
     active: bool
+    # The product's option; the searches are reordered when it and ``rerank_available`` hold.
+    rerank: bool
+    # The instance has a reranker (``KNOBRIDGE_RERANKER_URL`` set).
+    rerank_available: bool
     collection_ids: list[uuid.UUID]
     min_similarity: float
     ticket_webhook_url: str | None
@@ -186,7 +209,10 @@ class ProductPage(BaseModel):
 
 
 def _out(
-    product: Product, collection_ids: list[uuid.UUID], my_max_level: ResponseLevel
+    product: Product,
+    collection_ids: list[uuid.UUID],
+    my_max_level: ResponseLevel,
+    rerank_available: bool,
 ) -> ProductOut:
     return ProductOut(
         id=product.id,
@@ -197,6 +223,8 @@ def _out(
         tone=product.tone,
         no_source_message=product.no_source_message,
         active=product.active,
+        rerank=product.rerank,
+        rerank_available=rerank_available,
         collection_ids=collection_ids,
         min_similarity=product.min_similarity,
         ticket_webhook_url=product.ticket_webhook_url,
@@ -214,7 +242,10 @@ def _only_active(context: WorkspaceContext) -> bool:
 
 
 async def _outs(
-    context: WorkspaceContext, products: ProductService, items: list[Product]
+    context: WorkspaceContext,
+    products: ProductService,
+    items: list[Product],
+    rerank_available: bool,
 ) -> list[ProductOut]:
     """The products with their collections and the reader's level (two queries)."""
     ids = [item.id for item in items]
@@ -226,7 +257,10 @@ async def _outs(
         )
     ).get(user_id, {})
     default = role_default_level(context.role)
-    return [_out(item, links.get(item.id, []), recorded.get(item.id, default)) for item in items]
+    return [
+        _out(item, links.get(item.id, []), recorded.get(item.id, default), rerank_available)
+        for item in items
+    ]
 
 
 router = APIRouter(prefix="/workspaces/{workspace_id}/products", tags=["products"])
@@ -236,6 +270,7 @@ router = APIRouter(prefix="/workspaces/{workspace_id}/products", tags=["products
 async def list_products(
     context: WorkspaceContextDep,
     products: ProductServiceDep,
+    rerank_available: RerankAvailableDep,
     query: SearchQuery = None,
     active: bool | None = None,
     collection_id: uuid.UUID | None = None,
@@ -258,13 +293,19 @@ async def list_products(
         offset=offset,
     )
     return ProductPage(
-        items=await _outs(context, products, items), total=total, limit=limit, offset=offset
+        items=await _outs(context, products, items, rerank_available),
+        total=total,
+        limit=limit,
+        offset=offset,
     )
 
 
 @router.get("/{product_id}", responses=_ERRORS)
 async def get_product(
-    product_id: uuid.UUID, context: WorkspaceContextDep, products: ProductServiceDep
+    product_id: uuid.UUID,
+    context: WorkspaceContextDep,
+    products: ProductServiceDep,
+    rerank_available: RerankAvailableDep,
 ) -> ProductOut:
     """One product (404 for viewers when it is inactive)."""
     product = await products.get(
@@ -273,7 +314,7 @@ async def get_product(
         product_id=product_id,
         active_only=_only_active(context),
     )
-    return (await _outs(context, products, [product]))[0]
+    return (await _outs(context, products, [product], rerank_available))[0]
 
 
 @router.post(
@@ -286,6 +327,7 @@ async def create_product(
     body: ProductCreate,
     context: EditorContext,
     products: ProductServiceDep,
+    rerank_available: RerankAvailableDep,
     validator: DestinationValidatorDep,
     ip: ClientIpDep,
 ) -> ProductOut:
@@ -304,6 +346,7 @@ async def create_product(
             tone=body.tone,
             no_source_message=body.no_source_message or "",
             active=body.active,
+            rerank=body.rerank,
             collection_ids=tuple(body.collection_ids),
             min_similarity=(
                 DEFAULT_MIN_SIMILARITY if body.min_similarity is None else body.min_similarity
@@ -312,7 +355,7 @@ async def create_product(
         ),
         ip=ip,
     )
-    return (await _outs(context, products, [product]))[0]
+    return (await _outs(context, products, [product], rerank_available))[0]
 
 
 @router.patch("/{product_id}", dependencies=[Depends(require_csrf)], responses=_SAVE_ERRORS)
@@ -321,6 +364,7 @@ async def update_product(
     body: ProductUpdate,
     context: EditorContext,
     products: ProductServiceDep,
+    rerank_available: RerankAvailableDep,
     validator: DestinationValidatorDep,
     ip: ClientIpDep,
 ) -> ProductOut:
@@ -344,6 +388,7 @@ async def update_product(
             tone=body.tone,
             no_source_message=no_source_message,
             active=body.active,
+            rerank=body.rerank,
             collection_ids=None if body.collection_ids is None else tuple(body.collection_ids),
             min_similarity=body.min_similarity,
             ticket_webhook_url=body.ticket_webhook_url,
@@ -351,7 +396,7 @@ async def update_product(
         ),
         ip=ip,
     )
-    return (await _outs(context, products, [product]))[0]
+    return (await _outs(context, products, [product], rerank_available))[0]
 
 
 @router.delete(
@@ -396,6 +441,7 @@ async def duplicate(
     product_id: uuid.UUID,
     context: EditorContext,
     products: ProductServiceDep,
+    rerank_available: RerankAvailableDep,
     ip: ClientIpDep,
     body: ProductDuplicate | None = None,
 ) -> ProductOut:
@@ -409,4 +455,4 @@ async def duplicate(
         name=None if body is None else body.name,
         ip=ip,
     )
-    return (await _outs(context, products, [product]))[0]
+    return (await _outs(context, products, [product], rerank_available))[0]

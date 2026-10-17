@@ -53,7 +53,8 @@ export interface paths {
         };
         /**
          * Get Instance Health
-         * @description API, database, Temporal and worker, checked in parallel (2 s each); always 200.
+         * @description API, database, Temporal, worker and reranker, checked in parallel (2 s each); always
+         *     200.
          */
         get: operations["get_instance_health_v1_admin_health_get"];
         put?: never;
@@ -1229,7 +1230,7 @@ export interface paths {
         /**
          * Search Collection
          * @description The chunks of the collection that best answer ``query`` at ``level``, best first; may
-         *     be empty.
+         *     be empty. With the reranker (``rerank`` omitted, null or true), in its order.
          */
         post: operations["search_collection_v1_workspaces__workspace_id__collections__collection_id__search_post"];
         delete?: never;
@@ -3795,6 +3796,7 @@ export interface components {
         InstanceHealthOut: {
             api: components["schemas"]["ServiceCheckOut"];
             database: components["schemas"]["ServiceCheckOut"];
+            reranker: components["schemas"]["RerankerCheckOut"];
             temporal: components["schemas"]["ServiceCheckOut"];
             /** Version */
             version: string;
@@ -4491,6 +4493,11 @@ export interface components {
             name: string;
             /** No Source Message */
             no_source_message?: string | null;
+            /**
+             * Rerank
+             * @default true
+             */
+            rerank: boolean;
             /** Ticket Webhook Url */
             ticket_webhook_url?: string | null;
             /** @default neutral */
@@ -4563,6 +4570,10 @@ export interface components {
             name: string;
             /** No Source Message */
             no_source_message: string;
+            /** Rerank */
+            rerank: boolean;
+            /** Rerank Available */
+            rerank_available: boolean;
             /** Ticket Webhook Configured */
             ticket_webhook_configured: boolean;
             /** Ticket Webhook Secret Created At */
@@ -4626,6 +4637,8 @@ export interface components {
             name?: string | null;
             /** No Source Message */
             no_source_message?: string | null;
+            /** Rerank */
+            rerank?: boolean | null;
             /** Ticket Webhook Url */
             ticket_webhook_url?: string | null;
             tone?: components["schemas"]["ProductTone"] | null;
@@ -4923,6 +4936,19 @@ export interface components {
          * @enum {string}
          */
         RejectionBlock: "regras" | "mensagens" | "fluxo_principal" | "faq" | "objetivo";
+        /** RerankerCheckOut */
+        RerankerCheckOut: {
+            /**
+             * Checked At
+             * Format: date-time
+             */
+            checked_at: string;
+            /** Detail */
+            detail: string | null;
+            /** Model */
+            model: string | null;
+            status: components["schemas"]["ServiceStatus"];
+        };
         /** ResetPasswordRequest */
         ResetPasswordRequest: {
             /** Password */
@@ -5746,9 +5772,13 @@ export interface components {
             min_similarity: number;
             /** Query */
             query: string;
+            /** Rerank */
+            rerank?: boolean | null;
         };
         /** SearchResponse */
         SearchResponse: {
+            /** Reranked */
+            reranked: boolean;
             /** Results */
             results: components["schemas"]["SearchResult"][];
         };
@@ -5770,6 +5800,8 @@ export interface components {
             path: string | null;
             /** Position */
             position: number;
+            /** Rerank Score */
+            rerank_score: number | null;
             scores: components["schemas"]["SearchScores"];
             /** Snippet */
             snippet: string;
@@ -5802,7 +5834,7 @@ export interface components {
          * ServiceStatus
          * @enum {string}
          */
-        ServiceStatus: "ok" | "error" | "unknown";
+        ServiceStatus: "ok" | "error" | "unknown" | "disabled";
         /** SessionOut */
         SessionOut: {
             /**
@@ -10654,7 +10686,7 @@ export interface operations {
                 };
                 content?: never;
             };
-            /** @description Invalid body, or the collection's provider has no embeddings (`provider_embeddings_unsupported`). */
+            /** @description Invalid body, the collection's provider has no embeddings (`provider_embeddings_unsupported`), or `rerank: true` without a reranker in the instance (`reranker_unavailable`). */
             422: {
                 headers: {
                     [name: string]: unknown;

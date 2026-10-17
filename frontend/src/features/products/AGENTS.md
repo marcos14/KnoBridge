@@ -14,7 +14,7 @@
 
 **Convenções locais**:
 
-- Criação e edição enviam todos os campos, menos `ticket_webhook_url` igual à salva (o servidor verifica o destino de novo sempre que recebe a URL); `collection_ids` vai sempre inteiro e, no PATCH, troca o conjunto.
+- Criação e edição enviam todos os campos (o `rerank`, ainda sem campo no formulário, vai como o salvo, ou `true` num produto novo), menos `ticket_webhook_url` igual à salva (o servidor verifica o destino de novo sempre que recebe a URL); `collection_ids` vai sempre inteiro e, no PATCH, troca o conjunto.
 - O segredo do webhook é credencial: só owner e admin geram (`canManageSecret`, de `canManageWorkspace`); nada o guarda fora do estado do painel. Mensagem de "sem fonte" em branco faz o backend gravar a mensagem padrão (que volta preenchida na próxima edição).
 - Excluir apaga as conversas do produto e os níveis dos membros nele; desativar preserva o histórico e bloqueia conversa nova.
 - Erros da API (`product_name_taken`, `product_name_invalid`, `product_collection_invalid`, `level_not_configured`, …) aparecem no `FormAlert` pelo `code`.

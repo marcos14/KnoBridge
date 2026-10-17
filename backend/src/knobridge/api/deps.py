@@ -45,6 +45,7 @@ from knobridge.llm.factory import (
     create_embedding_provider,
     create_provider,
 )
+from knobridge.retrieval.rerank import InstanceReranker, instance_reranker
 from knobridge.retrieval.retriever import HybridRetriever
 from knobridge.retrieval.search import SearchService
 from knobridge.security.passwords import PasswordHasher
@@ -211,9 +212,18 @@ def get_search_service(
 SearchServiceDep = Annotated[SearchService, Depends(get_search_service)]
 
 
-def get_retriever(search: SearchServiceDep) -> Retriever:
-    """Finds the sources of an answer in the assistant's collections (tests override)."""
-    return HybridRetriever(search)
+def get_reranker(settings: SettingsDep) -> InstanceReranker | None:
+    """The instance's reranker (``KNOBRIDGE_RERANKER_URL``), ``None`` without one; tests
+    override it with a fake."""
+    return instance_reranker(settings)
+
+
+RerankerDep = Annotated[InstanceReranker | None, Depends(get_reranker)]
+
+
+def get_retriever(search: SearchServiceDep, reranker: RerankerDep) -> Retriever:
+    """Finds the sources of an answer in the product's collections (tests override)."""
+    return HybridRetriever(search, reranker=reranker)
 
 
 RetrieverDep = Annotated[Retriever, Depends(get_retriever)]

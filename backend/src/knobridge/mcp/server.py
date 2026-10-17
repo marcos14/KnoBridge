@@ -194,7 +194,9 @@ async def _list_products(db: AsyncSession, call: McpCall, _: ListProductsIn) -> 
 async def _search_knowledge(
     db: AsyncSession, call: McpCall, request: SearchKnowledgeIn
 ) -> SearchKnowledgeOut:
-    return await search_knowledge(db, call.identity, call.services.search, request)
+    return await search_knowledge(
+        db, call.identity, call.services.search, request, reranker=call.services.reranker
+    )
 
 
 async def _get_document(db: AsyncSession, call: McpCall, request: GetDocumentIn) -> GetDocumentOut:

@@ -66,6 +66,7 @@ async def duplicate_product(
         tone=original.tone,
         no_source_message=original.no_source_message,
         active=original.active,
+        rerank=original.rerank,
         collection_ids=tuple(links.get(original.id, [])),
         min_similarity=original.min_similarity,
         ticket_webhook_url=original.ticket_webhook_url,

@@ -398,7 +398,7 @@ Desde a v0.5 (plano 0011, D1 a D3, F2.1; [ADR 0010](../adr/0010-busca-em-etapas-
 
 ### Falha e queda para a ordem original
 
-- Timeout (`KNOBRIDGE_RERANKER_TIMEOUT`, padrão 10 s, conexão e leitura), erro de conexão, status diferente de 200, JSON inválido ou resposta inválida levantam `RerankerError` dentro do cliente. Quem chama (`rerank_hits`, junto do `HybridRetriever`) captura, registra o log `reranker_failed` (com `workspace_id`, `product_id`, `error_type`, `candidates` e `duration_ms`; nunca a consulta nem os trechos) e devolve os primeiros candidatos **na ordem do RRF**, cortados no limite, com `reranked = false`. A resposta do chat continua normalmente.
+- Timeout (`KNOBRIDGE_RERANKER_TIMEOUT`, padrão 10 s, conexão e leitura), erro de conexão, status diferente de 200, JSON inválido ou resposta inválida levantam `RerankerError` dentro do cliente. Quem chama (`rerank_hits`, em `retrieval/rerank.py`, usado pelo `HybridRetriever`, pelo `search_knowledge` e pela rota "testar busca") captura, registra o log `reranker_failed` (com `workspace_id`, `product_id`, `error_type`, `candidates` e `duration_ms`; nunca a consulta nem os trechos) e devolve os primeiros candidatos **na ordem do RRF**, cortados no limite, com `reranked = false`. A resposta do chat continua normalmente.
 - Sem novas tentativas: um reranker lento numa pergunta seria lento na repetição.
 - Logs de sucesso: `reranker_finished` com `candidates`, `duration_ms` e `workspace_id`.
 
@@ -413,11 +413,11 @@ Serviço `reranker` no `docker-compose.yml` (D2: sempre ligado, em desenvolvimen
 | Item | Valor |
 |---|---|
 | Imagem | `${RERANKER_IMAGE:-ghcr.io/huggingface/text-embeddings-inference:cpu-1.9.4}` (x86_64; em ARM, `cpu-arm64-1.9.4`) |
-| Comando | `--model-id ${RERANKER_MODEL_ID:-BAAI/bge-reranker-v2-m3} --revision ${RERANKER_MODEL_REVISION} --port 80 --max-client-batch-size 128` (o padrão de `RERANKER_MODEL_REVISION` é o hash do commit atual do repositório do modelo no Hugging Face, fixado pela F2.1, para a subida ser reproduzível) |
+| Comando | `--model-id ${RERANKER_MODEL_ID:-BAAI/bge-reranker-v2-m3} --revision ${RERANKER_MODEL_REVISION} --port 80 --max-client-batch-size 128` (o padrão de `RERANKER_MODEL_REVISION` é `953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e`, o commit do repositório do modelo no Hugging Face em 2026-10-17, fixado na F2.1 para a subida ser reproduzível) |
 | Volume | `reranker-models:/data` (cache do modelo; a primeira subida baixa cerca de 2,3 GB, as seguintes não) |
 | Memória | `mem_limit: ${RERANKER_MEMORY_LIMIT:-4g}` (pesos em fp32 de 568 M parâmetros, cerca de 2,3 GB, mais a execução) |
 | Porta | só na rede do compose (`http://reranker:80`), sem porta no host |
-| Saúde | healthcheck por `GET /health` (o TEI só abre a porta depois de carregar o modelo), `start_period` de 15 min para a primeira subida, intervalo de 10 s. A F2.1 escolhe o comando conforme o que a imagem traz (`curl`, ou um teste de porta no `bash`). |
+| Saúde | healthcheck por `GET /health` (o TEI só abre a porta depois de carregar o modelo), `start_period` de 15 min para a primeira subida, intervalo de 10 s. Comando `curl -fsS http://127.0.0.1:80/health` (a imagem do TEI traz `curl`). |
 | Dependências | `api` e `worker` **não** dependem do `reranker`: a API sobe sem ele (e cai na ordem do RRF até ele ficar saudável); o worker não o usa. `docker compose up --wait` espera o `reranker` ficar saudável. |
 
 Variáveis da API (`settings.py` e `.env.example`, F2.1):

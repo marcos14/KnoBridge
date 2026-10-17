@@ -11,10 +11,12 @@ from retrieval_support import ChunkSpec, Db, Space, credential_service, run_db
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from fakes.embedding_provider import RecordingEmbeddingFactory
+from fakes.reranker import FakeReranker, fake_instance
 from knobridge.conversations.retrieval import RetrievalQuery, Source
 from knobridge.core.db import scoped_session
 from knobridge.levels.level import ResponseLevel
 from knobridge.products.models import Product, ProductCollection, ProductTone
+from knobridge.retrieval.rerank import RerankerError
 from knobridge.retrieval.retriever import HybridRetriever
 from knobridge.retrieval.search import (
     DEFAULT_LIMIT,
@@ -38,6 +40,7 @@ async def _assistant(
     collection_ids: Sequence[uuid.UUID],
     *,
     min_similarity: float = DEFAULT_MIN_SIMILARITY,
+    rerank: bool = True,
 ) -> uuid.UUID:
     async with scoped_session(db.factory, workspace_id=space.workspace_id, user_id=None) as s:
         assistant = Product(
@@ -49,6 +52,7 @@ async def _assistant(
             tone=ProductTone.NEUTRAL,
             no_source_message="Não sei.",
             min_similarity=min_similarity,
+            rerank=rerank,
         )
         s.add(assistant)
         await s.flush()
@@ -179,3 +183,88 @@ def test_retriever_treats_a_vanished_collection_as_no_source(app_database_url: s
         return await _retrieve(db, space, assistant_id, retriever=retriever)
 
     assert run_db(app_database_url, scenario) == ()
+
+
+def _reranking(fake: FakeReranker, *, limit: int = DEFAULT_LIMIT) -> HybridRetriever:
+    return HybridRetriever(
+        SearchService(credential_service()), reranker=fake_instance(fake), limit=limit
+    )
+
+
+def test_retriever_reranks_the_candidates_when_the_product_has_the_option(
+    app_database_url: str,
+) -> None:
+    fake = FakeReranker()
+
+    async def scenario(db: Db) -> Sequence[Source]:
+        space = await db.collection(await db.workspace())
+        await db.chunks(
+            space, [ChunkSpec(BOTH, key="docs/a.md"), ChunkSpec(VECTOR_ONLY, key="docs/b.md")]
+        )
+        assistant_id = await _assistant(db, space, [space.collection_id])
+        # Limit 1: only the reranker's candidates (30) let the second hit reach it.
+        return await _retrieve(db, space, assistant_id, retriever=_reranking(fake, limit=1))
+
+    sources = run_db(app_database_url, scenario)
+
+    assert [source.title for source in sources] == ["docs/b.md"]
+    (call,) = fake.calls
+    assert (call.query, len(call.chunk_ids), call.limit) == (QUERY, 2, 1)
+
+
+def test_retriever_keeps_the_rrf_order_with_the_option_off(app_database_url: str) -> None:
+    fake = FakeReranker()
+
+    async def scenario(db: Db) -> Sequence[Source]:
+        space = await db.collection(await db.workspace())
+        await db.chunks(
+            space, [ChunkSpec(BOTH, key="docs/a.md"), ChunkSpec(VECTOR_ONLY, key="docs/b.md")]
+        )
+        assistant_id = await _assistant(db, space, [space.collection_id], rerank=False)
+        return await _retrieve(db, space, assistant_id, retriever=_reranking(fake))
+
+    sources = run_db(app_database_url, scenario)
+
+    assert [source.title for source in sources] == ["docs/a.md", "docs/b.md"]
+    assert fake.calls == []
+
+
+def test_retriever_keeps_the_rrf_order_when_the_reranker_fails(app_database_url: str) -> None:
+    fake = FakeReranker(error=RerankerError("The reranker answered 503."))
+
+    async def scenario(db: Db) -> Sequence[Source]:
+        space = await db.collection(await db.workspace())
+        await db.chunks(
+            space, [ChunkSpec(BOTH, key="docs/a.md"), ChunkSpec(VECTOR_ONLY, key="docs/b.md")]
+        )
+        assistant_id = await _assistant(db, space, [space.collection_id])
+        return await _retrieve(db, space, assistant_id, retriever=_reranking(fake, limit=1))
+
+    sources = run_db(app_database_url, scenario)
+
+    assert [source.title for source in sources] == ["docs/a.md"]
+    assert len(fake.calls) == 1
+
+
+def test_retriever_reranks_only_the_workspace_hits(app_database_url: str) -> None:
+    fake = FakeReranker()
+
+    async def scenario(db: Db) -> tuple[list[uuid.UUID], list[uuid.UUID], Sequence[Source]]:
+        mine = await db.collection(await db.workspace())
+        other = await db.collection(await db.workspace())
+        own = await db.chunks(
+            mine, [ChunkSpec(BOTH, key="docs/a.md"), ChunkSpec(VECTOR_ONLY, key="docs/b.md")]
+        )
+        foreign = await db.chunks(
+            other, [ChunkSpec(BOTH, key="docs/x.md"), ChunkSpec(VECTOR_ONLY, key="docs/y.md")]
+        )
+        assistant_id = await _assistant(db, mine, [mine.collection_id])
+        sources = await _retrieve(db, mine, assistant_id, retriever=_reranking(fake))
+        return own, foreign, sources
+
+    own, foreign, sources = run_db(app_database_url, scenario)
+
+    (call,) = fake.calls
+    assert sorted(call.chunk_ids) == sorted(str(chunk_id) for chunk_id in own)
+    assert not set(call.chunk_ids) & {str(chunk_id) for chunk_id in foreign}
+    assert [source.title for source in sources] == ["docs/b.md", "docs/a.md"]

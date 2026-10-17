@@ -11,6 +11,7 @@ from datetime import UTC, datetime, timedelta
 import anyio
 import pytest
 
+from fakes.reranker import FakeRerankerProbe
 from fakes.temporal_probe import FakeTemporalProbe
 from knobridge.core.clock import FrozenClock
 from knobridge.usage.health import (
@@ -35,7 +36,11 @@ async def _down() -> None:
 
 
 def _check(
-    probe: FakeTemporalProbe, *, ping: DatabasePing = _ok, check_timeout: float = 2.0
+    probe: FakeTemporalProbe,
+    *,
+    ping: DatabasePing = _ok,
+    check_timeout: float = 2.0,
+    reranker: FakeRerankerProbe | None = None,
 ) -> InstanceHealth:
     async def scenario() -> InstanceHealth:
         return await instance_health(
@@ -43,6 +48,7 @@ def _check(
             version="9.9.9",
             ping=ping,
             probe=probe,
+            reranker=reranker,
             check_timeout=check_timeout,
         )
 
@@ -50,9 +56,32 @@ def _check(
 
 
 def test_health_all_ok_with_a_recent_poller() -> None:
-    health = _check(FakeTemporalProbe(last_seen=NOW - timedelta(seconds=60)))
+    health = _check(
+        FakeTemporalProbe(last_seen=NOW - timedelta(seconds=60)), reranker=FakeRerankerProbe()
+    )
 
-    assert health == InstanceHealth(version="9.9.9", api=OK, database=OK, temporal=OK, worker=OK)
+    assert health == InstanceHealth(
+        version="9.9.9", api=OK, database=OK, temporal=OK, worker=OK, reranker=OK
+    )
+
+
+def test_health_reranker_disabled_without_a_probe() -> None:
+    health = _check(FakeTemporalProbe(last_seen=NOW))
+
+    assert health.reranker == ServiceCheck(ServiceStatus.DISABLED, NOW, "reranker not configured")
+
+
+def test_health_reranker_not_ready_while_loading_the_model() -> None:
+    health = _check(FakeTemporalProbe(last_seen=NOW), reranker=FakeRerankerProbe(is_ready=False))
+
+    assert health.reranker == ServiceCheck(ServiceStatus.ERROR, NOW, "reranker not ready")
+    assert health.database == OK
+
+
+def test_health_reranker_unreachable_without_the_error_message() -> None:
+    health = _check(FakeTemporalProbe(last_seen=NOW), reranker=FakeRerankerProbe(unavailable=True))
+
+    assert health.reranker == ServiceCheck(ServiceStatus.ERROR, NOW, "reranker unreachable")
 
 
 def test_health_database_down_is_an_error_without_the_driver_message() -> None:

@@ -22,6 +22,7 @@ const BADGE_VARIANTS: Record<ServiceStatus, "secondary" | "destructive" | "outli
   ok: "secondary",
   error: "destructive",
   unknown: "outline",
+  disabled: "outline",
 };
 
 /** Health of API, database, Temporal and worker, each with a state badge and the reason. */

@@ -99,7 +99,8 @@ class SearchHit:
 
     ``vector_similarity`` is ``1 - cosine distance`` when the chunk came from the vector arm
     above the threshold; ``fts_rank`` is ``ts_rank_cd`` when it matched the full-text query;
-    ``fused_score`` is its RRF score.
+    ``fused_score`` is its RRF score; ``rerank_score`` is the cross-encoder's score (0 to 1)
+    when the reranker reordered the hits (``retrieval/rerank.py``), ``None`` otherwise.
     """
 
     chunk_id: uuid.UUID
@@ -111,6 +112,7 @@ class SearchHit:
     vector_similarity: float | None
     fts_rank: float | None
     fused_score: float
+    rerank_score: float | None = None
 
     @property
     def path(self) -> str | None:

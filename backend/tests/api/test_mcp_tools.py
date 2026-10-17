@@ -346,7 +346,7 @@ def test_unexpected_failure_is_an_internal_error_logged_by_type(
     world = mcp_world(api)
     key = world_key(api, world)
 
-    async def broken(*_: object) -> None:
+    async def broken(*_: object, **__: object) -> None:
         raise RuntimeError("secret detail")
 
     monkeypatch.setattr("knobridge.mcp.server.search_knowledge", broken)

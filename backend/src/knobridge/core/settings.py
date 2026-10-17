@@ -126,6 +126,23 @@ class Settings(BaseSettings):
     # Clock tolerance, in seconds, of the signed visitor identity (``iat`` and ``exp``).
     widget_identity_clock_skew: int = Field(default=60, ge=0, le=600)
 
+    # Reranker (docs/specs/indexacao.md, "Reranker"; ADR 0010): base URL of the Text Embeddings
+    # Inference server. ``None`` (unset or empty): the instance has no reranker and searches keep
+    # the RRF order. The other values are the timeout of each call (seconds), the candidates sent
+    # after the fusion, the characters sent per text, and the model name shown in the health.
+    reranker_url: str | None = Field(default=None, pattern=r"^https?://[^/\s]+(/\S*)?$")
+    reranker_timeout: float = Field(default=10.0, ge=1, le=60)
+    reranker_candidates: int = Field(default=30, ge=10, le=100)
+    reranker_max_chars: int = Field(default=2000, ge=200, le=8000)
+    reranker_model: str = Field(default="BAAI/bge-reranker-v2-m3", min_length=1)
+
+    @field_validator("reranker_url", mode="before")
+    @classmethod
+    def _empty_url_is_none(cls, value: object) -> object:
+        if isinstance(value, str):
+            return value.strip() or None
+        return value
+
     @field_validator("webhook_allowed_hosts", "mcp_allowed_hosts", mode="before")
     @classmethod
     def _split_hosts(cls, value: object) -> object:
