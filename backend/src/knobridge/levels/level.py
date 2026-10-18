@@ -27,7 +27,8 @@ DEFAULT_TEMPERATURE = 0.2
 MIN_MAX_STEPS = 1
 MAX_MAX_STEPS = 6
 DEFAULT_MAX_STEPS = {
-    ResponseLevel.END_USER: 2,
+    # A single search: extra ones brought internal documents of mixed sources (plan 0011, D29).
+    ResponseLevel.END_USER: 1,
     ResponseLevel.SUPPORT: 3,
     ResponseLevel.PRODUCT_DEV: 4,
 }

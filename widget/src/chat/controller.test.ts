@@ -6,6 +6,7 @@ import {
   answer,
   API,
   apiError,
+  citation,
   controlledSse,
   ANA,
   created,
@@ -107,6 +108,38 @@ describe("ChatController", () => {
 
     expect(controller.messages[1]?.content).toBe("Abra o caixa.");
     expect(controller.messages[1]?.status).toBe("completed");
+  });
+
+  it("test_controller_no_source_done_drops_the_streamed_citations", async () => {
+    const sse = controlledSse();
+    installFetch({
+      "POST /conversations": created(),
+      "POST /conversations/c1/messages": () => sse.response,
+    });
+    const { controller, host } = setup();
+    const running = controller.send("Algo sem relação?");
+    await vi.waitFor(() => {
+      expect(controller.messages).toHaveLength(2);
+    });
+
+    sse.push("citations", { message_id: "a1", user_message_id: "q1", citations: [citation(1)] });
+    sse.push("delta", { text: "Não encontrei isso." });
+    await vi.waitFor(() => {
+      expect(controller.messages[1]?.citations).toHaveLength(1);
+    });
+    sse.push("done", { message_id: "a1", status: "no_source", ticket_requests_enabled: true });
+    sse.close();
+    await running;
+
+    expect(controller.messages[1]?.content).toBe("Não encontrei isso.");
+    expect(controller.messages[1]?.status).toBe("no_source");
+    expect(controller.messages[1]?.citations).toEqual([]);
+    expect(host.emit).toHaveBeenCalledWith("knobridge-answer", {
+      conversationId: "c1",
+      messageId: "a1",
+      status: "no_source",
+      citations: 0,
+    });
   });
 
   it("test_controller_send_while_busy_is_ignored", async () => {

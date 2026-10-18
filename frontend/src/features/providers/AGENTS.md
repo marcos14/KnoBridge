@@ -4,7 +4,7 @@
 
 **Entra aqui**:
 
-- `ProvidersPage.tsx`: `h1`, "Novo provedor", busca (com espera de digitação), filtros, ordenação e paginação no servidor (20 por página), com o estado na query string (`useListSearch`, `ListToolbar`): busca por nome, filtro de tipo e ordenação por nome e datas; vazia, o próximo passo; tabela com nome, tipo, URL base (ou "Padrão do provedor"), chave mascarada (`key_hint`) e as ações "Testar conexão", "Editar" e "Excluir" (com `ConfirmDialog`). Sucesso em `role="status"`, falha no `FormAlert`.
+- `ProvidersPage.tsx`: `h1`, "Novo provedor", busca (com espera de digitação), filtros, ordenação e paginação no servidor (20 por página), com o estado na query string (`useListSearch`, `ListToolbar`): busca por nome, filtro de tipo e ordenação por nome e datas; vazia, o próximo passo; tabela com nome, tipo, URL base (ou "Padrão do provedor"), chave mascarada (`key_hint`) e as ações "Testar conexão", "Editar" e "Excluir" (com `ConfirmDialog`). O resultado de "Testar conexão" aparece na linha do provedor, junto do botão, pelo `TestResult` de `components/` (ícone e cor; `role="status"` no sucesso, `role="alert"` com o motivo na falha, sem tirar o foco do botão; some quando outro teste começa), e a mensagem completa repete no topo sem anúncio (`FormAlert` com `quiet`, decisão D31 do plano 0011). As demais mensagens ficam no topo pelo `FormAlert` (sucesso na variante `success`).
 - `ProviderDialog.tsx`: diálogo de criar/editar com react-hook-form + zod: tipo (travado na edição, o backend não o muda), nome, URL base opcional e chave (campo de senha). Na edição a chave é opcional e a dica mostra só o `key_hint` atual.
 - `providerForm.ts`: schema, valores iniciais e corpos de `POST`/`PATCH` (funções puras, com teste).
 

@@ -14,6 +14,7 @@ from knobridge.conversations.tools import (
     NO_NEW_SOURCES,
     SEARCH_TOOL,
     SourceList,
+    cites_a_source,
     parse_query,
     retrieval_summary,
 )
@@ -97,3 +98,24 @@ def test_prompt_with_steps_adds_the_tool_rules_before_the_language() -> None:
     assert "chamar a ferramenta search_sources até 2 vezes" in with_steps
     assert with_steps.index("search_sources") < with_steps.index("Responda no idioma")
     assert numbered([]) == f"Fontes:\n\n{NO_SOURCES_YET}"
+
+
+@pytest.mark.parametrize(
+    ("text", "count", "expected"),
+    [
+        ("Feche o caixa [1].", 1, True),
+        ("Veja [2] e [3].", 3, True),
+        ("Veja [1, 2].", 2, True),
+        ("Veja [ 4 ; 2 ].", 2, True),
+        ("Sem citação.", 3, False),
+        ("Fonte [4] inexistente.", 3, False),
+        ("Fonte [0].", 3, False),
+        ("Lista [a].", 3, False),
+        ("[1]", 0, False),
+        ("", 2, False),
+    ],
+)
+def test_cites_a_source_needs_a_marker_of_a_listed_source(
+    text: str, count: int, expected: bool
+) -> None:
+    assert cites_a_source(text, count) is expected

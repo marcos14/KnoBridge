@@ -15,10 +15,12 @@ from api_key_support import ask_public, bearer, create_key, start_public_id
 from api_support import ApiEnv
 from chat_support import SOURCES, ChatOverrides, ask, build_world, events, messages, start
 from openai_support import COMPLETIONS, key_world, post_raw, stream_lines
+from product_support import seed_level
 from widget_chat_support import ask_widget, open_conversation, widget_world
 
 from fakes.retriever import StaticRetriever
 from knobridge.conversations.retrieval import Source
+from knobridge.levels.level import ResponseLevel
 from knobridge.llm.errors import ProviderUnavailableError
 from knobridge.llm.fake import ErrorStep, FakeLLMProvider, TextStep, ToolCallStep
 from knobridge.tenancy.models import Role
@@ -132,6 +134,10 @@ def test_openai_stream_error_in_a_search_round_is_a_json_error(
 def test_widget_step_hides_the_query(api: ApiEnv, chat: ChatOverrides) -> None:
     _script(chat)
     ww = widget_world(api)
+    # End users default to a single search (decision D29): the admin raised it.
+    seed_level(
+        api, ww.world.workspace_id, ww.world.provider_id, level=ResponseLevel.END_USER, max_steps=2
+    )
     opened = open_conversation(api, ww.key)
 
     sent = events(ask_widget(api, ww.key, opened))

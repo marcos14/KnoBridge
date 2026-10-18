@@ -1,5 +1,6 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { delay, http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
 import type { Product } from "@/lib/api/products";
@@ -201,7 +202,10 @@ describe("product ticket webhook", () => {
 
     const result = await within(panel(dialog)).findByRole("status");
     expect(result).toHaveTextContent("O destino aceitou a entrega de teste.");
-    expect(result).toHaveTextContent(`Id da entrega: ${makeWebhookTest().delivery_id}`);
+    expect(result).toHaveClass("text-success");
+    expect(
+      within(panel(dialog)).getByText(`Id da entrega: ${makeWebhookTest().delivery_id}`),
+    ).toBeVisible();
     expect(store.webhookTests).toEqual([PRODUCT_ID]);
   });
 
@@ -217,9 +221,39 @@ describe("product ticket webhook", () => {
 
     await user.click(within(panel(dialog)).getByRole("button", { name: "Testar entrega" }));
 
-    expect(await within(panel(dialog)).findByRole("status")).toHaveTextContent(
+    const alert = await within(panel(dialog)).findByRole("alert");
+    expect(alert).toHaveTextContent(
       "A entrega de teste falhou. O destino recusou o envio. O destino respondeu HTTP 500.",
     );
+    expect(alert).toHaveClass("text-destructive");
+  });
+
+  it("test_webhook_test_again_clears_the_previous_result", async () => {
+    let calls = 0;
+    setup("owner", productsWith(CONFIGURED));
+    server.use(
+      http.post(
+        "*/v1/workspaces/:workspaceId/products/:productId/ticket-webhook/test",
+        async () => {
+          calls += 1;
+          if (calls > 1) {
+            await delay("infinite");
+          }
+          return HttpResponse.json(makeWebhookTest());
+        },
+      ),
+    );
+    const { user, dialog } = await openEdit();
+    const button = within(panel(dialog)).getByRole("button", { name: "Testar entrega" });
+    await user.click(button);
+    expect(await within(panel(dialog)).findByRole("status")).toBeVisible();
+
+    await user.click(button);
+
+    expect(
+      await within(panel(dialog)).findByRole("button", { name: "Enviando teste…" }),
+    ).toBeDisabled();
+    expect(within(panel(dialog)).queryByRole("status")).not.toBeInTheDocument();
   });
 
   it("test_webhook_test_refused_by_the_api_is_an_alert", async () => {

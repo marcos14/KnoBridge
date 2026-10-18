@@ -335,7 +335,9 @@ class CompletionStream:
 
     async def _ending(self, done: DoneEvent, citations: Citations) -> list[bytes]:
         frames: list[bytes] = []
-        footer = sources_footer(citations) if self.append_sources else ""
+        # ``no_source`` has no citations, even when an uncited answer was streamed with them.
+        uncited = done.status is MessageStatus.NO_SOURCE
+        footer = sources_footer(citations) if self.append_sources and not uncited else ""
         if footer:
             frames.append(self.frame({"content": footer}))
         extra: dict[str, JsonValue] = {

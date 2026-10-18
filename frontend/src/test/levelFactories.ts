@@ -80,8 +80,8 @@ export function makeUnconfiguredLevel(level: ResponseLevel): WorkspaceLevel {
 }
 
 /**
- * The three levels with the default searches (2, 3 and 4): Usuário final configured (US$ 0,00484
- * with both searches), Suporte with edited instructions and a model without price, Desenvolvimento
+ * The three levels with 2, 3 and 4 searches (Usuário final raised from its default of 1, to show
+ * the cost with every search): Usuário final configured (US$ 0,00484 with both searches), Suporte with edited instructions and a model without price, Desenvolvimento
  * e produto not configured.
  */
 export function makeWorkspaceLevels(): WorkspaceLevel[] {

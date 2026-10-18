@@ -228,6 +228,8 @@ export class ChatController {
           answer.content += event.data.text;
         } else if (event.type === "done") {
           answer.status = event.data.status;
+          // `no_source` has no citations, even after an answer that cited none of them.
+          if (answer.status === "no_source") answer.citations = [];
           this.ticketEnabled = event.data.ticket_requests_enabled;
         } else {
           answer.status = "failed";

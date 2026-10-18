@@ -1,5 +1,6 @@
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { delay, http, HttpResponse } from "msw";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { Role } from "@/lib/api/auth";
@@ -92,8 +93,36 @@ describe("SourceDetail header", () => {
 
     await user.click(screen.getByRole("button", { name: "Testar conexão" }));
 
-    expect(await screen.findByText("A fonte erp-core está acessível.")).toHaveRole("status");
+    // Under the buttons, announced; the message below says it again, quietly.
+    const result = (await screen.findByText("Fonte acessível.")).closest("p");
+    expect(result).toHaveRole("status");
+    expect(result).toHaveClass("text-success");
+    expect(screen.getByText("A fonte erp-core está acessível.")).not.toHaveRole("status");
     expect(store.tested).toEqual([SOURCE_ID]);
+  });
+
+  it("test_source_detail_clears_the_result_when_testing_again", async () => {
+    const user = userEvent.setup();
+    let calls = 0;
+    server.use(
+      http.post("*/v1/workspaces/:workspaceId/sources/:sourceId/test", async () => {
+        calls += 1;
+        if (calls > 1) {
+          await delay("infinite");
+        }
+        return HttpResponse.json({ ok: true, error: null });
+      }),
+      ...sourceStore().handlers,
+    );
+    await renderDetail();
+    await user.click(screen.getByRole("button", { name: "Testar conexão" }));
+    expect(await screen.findByText("Fonte acessível.")).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: "Testar conexão" }));
+
+    expect(await screen.findByRole("button", { name: "Testando…" })).toBeDisabled();
+    expect(screen.queryByText("Fonte acessível.")).not.toBeInTheDocument();
+    expect(screen.queryByText("A fonte erp-core está acessível.")).not.toBeInTheDocument();
   });
 
   it("test_source_detail_reports_failed_connection_test", async () => {
@@ -112,11 +141,15 @@ describe("SourceDetail header", () => {
 
     await user.click(screen.getByRole("button", { name: "Testar conexão" }));
 
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("O caminho está fora da pasta liberada para fontes locais.");
+    expect(alert).toHaveClass("text-destructive");
     expect(
-      await screen.findByText(
+      screen.getByText(
         "A fonte erp-core não respondeu: O caminho está fora da pasta liberada para fontes locais.",
       ),
-    ).toHaveRole("alert");
+    ).not.toHaveRole("alert");
+    expect(screen.getByRole("button", { name: "Testar conexão" })).toHaveFocus();
   });
 
   it("test_source_detail_shows_test_request_failure", async () => {
@@ -126,7 +159,9 @@ describe("SourceDetail header", () => {
 
     await user.click(screen.getByRole("button", { name: "Testar conexão" }));
 
-    expect(await screen.findByText("Você não tem permissão para fazer isso.")).toHaveRole("alert");
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Você não tem permissão para fazer isso.",
+    );
   });
 
   it("test_source_detail_edits_and_syncs", async () => {

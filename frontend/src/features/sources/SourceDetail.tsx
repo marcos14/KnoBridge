@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { translateApiError } from "@/i18n/apiErrors";
 import { isApiErrorCode } from "@/lib/api/client";
 import { type Collection, useCollections } from "@/lib/api/collections";
+import { type TestOutcome, TestResult } from "@/components/TestResult";
 import { type Source, useSource, useTestSource } from "@/lib/api/sources";
 import { isPushSourceKind } from "@/lib/api/tickets";
 
@@ -148,29 +149,37 @@ function SourceHeader({
 }: SourceHeaderProps) {
   const { t } = useTranslation();
   const [feedback, setFeedback] = useState<Feedback>(null);
+  // The last "Testar conexão" result, shown under the buttons.
+  const [tested, setTested] = useState<TestOutcome | null>(null);
   const test = useTestSource(workspaceId);
   const collection = collections.find((item) => item.id === source.collection_id);
   const branch = source.config.branch;
 
   function onTest() {
     setFeedback(null);
+    setTested(null);
+    const failed = (reason: string, message: string) => {
+      setTested({ ok: false, message: reason });
+      setFeedback({ kind: "alert", message, quiet: true });
+    };
     test.mutate(source.id, {
       // `error` is null exactly when `ok` is true.
       onSuccess: ({ error }) => {
-        setFeedback(
-          error === null
-            ? { kind: "status", message: t("sources.testOk", { name: source.name }) }
-            : {
-                kind: "alert",
-                message: t("sources.testFailed", {
-                  name: source.name,
-                  reason: testFailureReason(error, t),
-                }),
-              },
-        );
+        if (error === null) {
+          setTested({ ok: true, message: t("sources.testOkShort") });
+          setFeedback({
+            kind: "status",
+            message: t("sources.testOk", { name: source.name }),
+            quiet: true,
+          });
+          return;
+        }
+        const reason = testFailureReason(error, t);
+        failed(reason, t("sources.testFailed", { name: source.name, reason }));
       },
       onError: (error) => {
-        setFeedback({ kind: "alert", message: translateApiError(error, t) });
+        const reason = translateApiError(error, t);
+        failed(reason, reason);
       },
     });
   }
@@ -225,33 +234,36 @@ function SourceHeader({
           </div>
         </div>
         {canManage && (
-          <div className="flex flex-wrap items-start gap-2">
-            <Button type="button" variant="outline" disabled={test.isPending} onClick={onTest}>
-              {test.isPending ? t("sources.testing") : t("sources.test")}
-            </Button>
-            <SyncButton workspaceId={workspaceId} source={source} onFeedback={setFeedback} />
-            <ReindexButton workspaceId={workspaceId} source={source} onFeedback={setFeedback} />
-            <SourceDialog
-              workspaceId={workspaceId}
-              source={source}
-              collections={collections}
-              canManageLevel={canManageLevel}
-              trigger={
-                <Button
-                  type="button"
-                  variant="outline"
-                  aria-label={t("sources.editLabel", { name: source.name })}
-                >
-                  {t("sources.edit")}
-                </Button>
-              }
-              onSaved={(saved) => {
-                setFeedback({
-                  kind: "status",
-                  message: t("sources.updated", { name: saved.name }),
-                });
-              }}
-            />
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex flex-wrap items-start gap-2">
+              <Button type="button" variant="outline" disabled={test.isPending} onClick={onTest}>
+                {test.isPending ? t("sources.testing") : t("sources.test")}
+              </Button>
+              <SyncButton workspaceId={workspaceId} source={source} onFeedback={setFeedback} />
+              <ReindexButton workspaceId={workspaceId} source={source} onFeedback={setFeedback} />
+              <SourceDialog
+                workspaceId={workspaceId}
+                source={source}
+                collections={collections}
+                canManageLevel={canManageLevel}
+                trigger={
+                  <Button
+                    type="button"
+                    variant="outline"
+                    aria-label={t("sources.editLabel", { name: source.name })}
+                  >
+                    {t("sources.edit")}
+                  </Button>
+                }
+                onSaved={(saved) => {
+                  setFeedback({
+                    kind: "status",
+                    message: t("sources.updated", { name: saved.name }),
+                  });
+                }}
+              />
+            </div>
+            {tested !== null && <TestResult outcome={tested} />}
           </div>
         )}
       </div>

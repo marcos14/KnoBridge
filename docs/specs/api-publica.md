@@ -258,7 +258,7 @@ Resposta 200 com as combinações permitidas à chave, por nome do produto e, de
 
 - `model` ecoa o valor recebido. `created` é o instante da pergunta, em segundos Unix.
 - `knobridge.product_id` e `knobridge.level` (v0.2): o produto e o nível efetivo da resposta (com `model` sem nível, o `max_level` da chave).
-- `knobridge.citations`: a mesma lista do evento `citations` de [chat-sse.md](chat-sse.md#citations). `knobridge.status`: `completed` ou `no_source`.
+- `knobridge.citations`: a mesma lista do evento `citations` de [chat-sse.md](chat-sse.md#citations). `knobridge.status`: `completed` ou `no_source`. Desde a F4.3 do plano 0011 (decisão D30), `no_source` também é a resposta do modelo sem nenhum marcador `[n]`: o conteúdo é o texto dele, `knobridge.citations` vem vazio e não há rodapé de fontes.
 - **Fontes no texto** (`append_sources`, padrão ligado; a visão manda as citações "no texto e num campo extra"): com citações, o conteúdo ganha `\n\nFontes:\n` e uma linha `[n] título (uri)` por citação (sem `(uri)` quando ela é nula). Desligado, o conteúdo é só o texto do LLM. A resposta gravada no KnoBridge nunca inclui esse rodapé.
 - `usage`: os tokens informados pelo provedor, somados em todas as chamadas da resposta (v0.4); em `no_source` sem LLM, `{"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}`; em `no_source` depois de etapas, os tokens das rodadas; quando o provedor não informa, `usage: null`.
 - `knobridge.steps` (v0.4): as etapas da resposta ([chat-sse.md](chat-sse.md#done)).
@@ -268,7 +268,7 @@ Resposta 200 com as combinações permitidas à chave, por nome do produto e, de
 
 1. Primeiro chunk: `choices[0].delta = {"role": "assistant", "content": ""}` e `knobridge = {"conversation_id", "message_id", "product_id", "level", "citations"}` (`product_id` e `level` desde a v0.2) (as citações chegam antes do texto, como no painel).
 2. Um chunk por pedaço do LLM: `choices[0].delta = {"content": "…"}`, `finish_reason: null`. Em `no_source`, um chunk só, com a mensagem de "sem fonte".
-3. Com `append_sources` e citações, um chunk com o rodapé de fontes.
+3. Com `append_sources` e citações, um chunk com o rodapé de fontes; nunca quando a resposta termina `no_source` (desde a F4.3, uma resposta do modelo sem nenhum marcador `[n]` sai com o texto dele e termina `no_source`: o cliente descarta as citações do primeiro chunk).
 4. Chunk final: `delta: {}`, `finish_reason: "stop"`, `knobridge = {"status", "cost_usd", "steps"}` (`steps` desde a v0.4).
 5. Com `stream_options.include_usage: true`, mais um chunk com `choices: []` e `usage` (igual ao sem streaming).
 6. `data: [DONE]`.

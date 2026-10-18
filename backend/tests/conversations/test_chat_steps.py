@@ -156,7 +156,7 @@ def test_two_steps_accumulate_citations_and_sum_the_cost(app_database_url: str) 
 
 def test_n_steps_stop_at_the_level_maximum(app_database_url: str) -> None:
     clock = FrozenClock(START)
-    script = [ToolCallStep("um"), ToolCallStep("dois"), ToolCallStep("tres"), TextStep("Ok [4].")]
+    script = [ToolCallStep("um"), ToolCallStep("dois"), ToolCallStep("tres"), TextStep("Ok [3].")]
     provider = RecordingLLMProvider(FakeLLMProvider(script=script))
 
     async def scenario(factory: SessionFactory) -> tuple[Turn, list[int | None]]:

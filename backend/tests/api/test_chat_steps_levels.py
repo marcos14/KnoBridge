@@ -34,7 +34,10 @@ PASSAGES = (
 
 def _product(api: ApiEnv, world: SearchWorld) -> World:
     for level in ResponseLevel:
-        configure_level(api, world.workspace_id, str(world.provider_id), level=level.value)
+        # End users default to a single search (decision D29): every level searches again here.
+        configure_level(
+            api, world.workspace_id, str(world.provider_id), level=level.value, max_steps=2
+        )
     created = api.client.post(
         f"/v1/workspaces/{world.workspace_id}/products",
         json={"name": "ERP", "collection_ids": [str(world.collection_id)]},

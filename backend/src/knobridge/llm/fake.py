@@ -2,7 +2,9 @@
 
 The same messages always produce the same deltas and usage: no network, clock or randomness.
 The reply echoes the last user message, so a chat screen shows something that clearly
-came from the conversation. Tokens are counted as whitespace-separated words.
+came from the conversation, and ends with `` [1]`` when the messages list a numbered source
+(the chat saves an answer without any citation marker as ``no_source``). Tokens are counted
+as whitespace-separated words.
 
 Tool calls follow a script (``docs/specs/chat.md``, "Fake com roteiro"): one step per call
 given to the constructor (tests), or one ``[[buscar: <query>]]`` marker per call in the last
@@ -36,6 +38,10 @@ REPLY_PREFIX = "Fake reply to:"
 # A word plus the whitespace after it, so the deltas join back into the exact reply.
 _DELTA = re.compile(r"\S+\s*")
 _MARKER = re.compile(r"\[\[buscar:\s*(.*?)\s*\]\]", re.DOTALL)
+# The first numbered source in the chat's sources message or in a search result
+# (``[1] title (uri)``, ``conversations/prompt.py``).
+_FIRST_SOURCE = re.compile(r"^\[1\] ", re.MULTILINE)
+CITATION_SUFFIX = " [1]"
 
 
 @dataclass(frozen=True)
@@ -70,6 +76,14 @@ def _last_user(messages: Sequence[ChatMessage]) -> str:
     )
 
 
+def _lists_a_source(messages: Sequence[ChatMessage]) -> bool:
+    return any(
+        message.role in (ChatRole.SYSTEM, ChatRole.TOOL)
+        and _FIRST_SOURCE.search(message.content) is not None
+        for message in messages
+    )
+
+
 def _calls_made(messages: Sequence[ChatMessage]) -> int:
     return sum(len(message.tool_calls) for message in messages)
 
@@ -95,7 +109,9 @@ class FakeLLMProvider:
     def reply_for(self, messages: Sequence[ChatMessage]) -> str:
         if self._reply is not None:
             return self._reply
-        return f"{REPLY_PREFIX} {_last_user(messages)}".strip()
+        reply = f"{REPLY_PREFIX} {_last_user(messages)}".strip()
+        # Cites the first source when one is listed, as the chat requires (decision D30).
+        return reply + CITATION_SUFFIX if _lists_a_source(messages) else reply
 
     def _next_step(self) -> ScriptStep | None:
         """This call's scripted step; ``None`` past the end of the script."""

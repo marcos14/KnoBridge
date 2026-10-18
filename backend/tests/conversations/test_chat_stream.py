@@ -204,7 +204,7 @@ def test_settle_keeps_finished_answers(app_database_url: str) -> None:
 
 def test_answer_for_deleted_conversation_is_dropped(app_database_url: str) -> None:
     clock = FrozenClock(START)
-    provider = ScriptedLLMProvider(deltas=("ok",))
+    provider = ScriptedLLMProvider(deltas=("ok [1]",))
 
     async def scenario(factory: SessionFactory) -> tuple[list[ChatEvent], RecordingFactory]:
         seeded = await seed(factory, clock)

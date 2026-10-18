@@ -231,7 +231,7 @@ Saída:
 }
 ```
 
-- `status`: `completed` ou `no_source`. Em `no_source`, `citations: []` e `answer` = a mensagem de "sem fonte" do produto; `model` e `cost_usd` nulos quando o LLM não foi chamado e preenchidos quando foi chamado para buscar de novo (v0.2).
+- `status`: `completed` ou `no_source`. Em `no_source`, `citations: []` e `answer` = a mensagem de "sem fonte" do produto ou, desde a F4.3 do plano 0011 (decisão D30), o texto do modelo que não citou nenhuma fonte; `model` e `cost_usd` nulos quando o LLM não foi chamado e preenchidos quando foi chamado para buscar de novo (v0.2).
 - `steps` (v0.2): etapas da resposta ([chat-sse.md](chat-sse.md#done)). As consultas das etapas não saem pelo MCP (ficam na visão administrativa).
 - `citations`: formato de [chat-sse.md](chat-sse.md#citations), as mesmas gravadas na mensagem.
 - `ticket_enabled`: o produto oferece abrir chamado (o mesmo `ticket_requests_enabled` do chat).

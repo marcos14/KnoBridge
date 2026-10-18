@@ -4,8 +4,10 @@ gravação").
 Tokens are the sums over every provider call of the answer (``None`` when one call did not
 report), and the cost is the sum of each call's cost with its own tokens (``None`` when one is
 unknown). Without a source the answer is the product's "no source" message with no citations
-(rule 8), even when the model wrote something. The write only touches a message still
-``streaming``, so it runs once.
+(rule 8), even when the model wrote something. An answer whose text cites none of its sources
+(no ``[n]`` marker) keeps the text already streamed but is saved with no citations and status
+``no_source``, so every channel offers to open a ticket (decision D30). The write only touches
+a message still ``streaming``, so it runs once.
 """
 
 from __future__ import annotations
@@ -20,7 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from knobridge.audit.models import JSONValue
 from knobridge.conversations.models import Message, MessageStatus
 from knobridge.conversations.steps import TurnState
-from knobridge.conversations.tools import ToolsState, retrieval_summary
+from knobridge.conversations.tools import ToolsState, cites_a_source, retrieval_summary
 from knobridge.conversations.turn import PreparedTurn
 from knobridge.core.db import scoped_session
 from knobridge.core.errors import KnoBridgeError
@@ -56,6 +58,16 @@ def tools_state(*, searched: bool, settings: AnswerSettings) -> ToolsState:
     return "unsupported" if settings.tools_unsupported else "offered"
 
 
+def answer_status(state: TurnState) -> MessageStatus:
+    """``completed`` for a final text that cites a source; ``no_source`` when no step found a
+    source or when the text cites none of them (decision D30)."""
+    if not state.answered:
+        return MessageStatus.NO_SOURCE
+    if cites_a_source("".join(state.parts), len(state.sources.items)):
+        return MessageStatus.COMPLETED
+    return MessageStatus.NO_SOURCE
+
+
 def _sum(values: Sequence[int | None]) -> int | None:
     if not values or any(value is None for value in values):
         return None
@@ -81,9 +93,11 @@ def outcome_of(
     """What the rounds of an answer leave to be saved."""
     no_source = status is MessageStatus.NO_SOURCE
     usages = state.usages
+    # Once the answer started (sources and text sent), its text stays, even when uncited.
+    fallback = no_source and not state.started
     return Outcome(
         status=status,
-        content=turn.no_source_message if no_source else "".join(state.parts),
+        content=turn.no_source_message if fallback else "".join(state.parts),
         latency_ms=latency_ms,
         error=error,
         citations=[] if no_source else state.sources.citations(),

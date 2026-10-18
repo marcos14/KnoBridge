@@ -2,7 +2,8 @@
 (``docs/specs/chat.md``, "Busca em etapas").
 
 Pure code (no IO): the tool definition sent to the provider, the validation of the model's
-arguments, the fixed texts of the tool result and ``SourceList``, the numbered sources of one
+arguments, the fixed texts of the tool result, the check for citation markers in an answer
+(``cites_a_source``) and ``SourceList``, the numbered sources of one
 answer (the first search's, then each step's new ones, without repeating a source already
 listed, up to ``MAX_TURN_SOURCES``).
 """
@@ -10,6 +11,7 @@ listed, up to ``MAX_TURN_SOURCES``).
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import timedelta
@@ -82,6 +84,20 @@ def parse_query(arguments: str) -> str | None:
         return None
     query = query.strip()
     return query if 1 <= len(query) <= QUERY_MAX_LENGTH else None
+
+
+# ``[3]``, and the lists some models write, ``[1, 2]`` or ``[1; 2]``.
+_MARKER = re.compile(r"\[\s*(\d+(?:\s*[,;]\s*\d+)*)\s*\]")
+
+
+def cites_a_source(text: str, count: int) -> bool:
+    """Whether ``text`` has a citation marker of one of the ``count`` listed sources. An answer
+    without any is saved without citations, as ``no_source`` (decision D30)."""
+    for match in _MARKER.finditer(text):
+        numbers = re.split(r"\s*[,;]\s*", match.group(1))
+        if any(1 <= int(number) <= count for number in numbers):
+            return True
+    return False
 
 
 def _listed(indexes: Sequence[int]) -> str:

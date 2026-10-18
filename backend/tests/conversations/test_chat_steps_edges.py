@@ -384,7 +384,7 @@ def test_tool_call_after_text_is_ignored(app_database_url: str) -> None:
     assert turn.message.steps == 1
 
 
-def test_blank_round_with_sources_is_a_blank_answer(app_database_url: str) -> None:
+def test_blank_round_with_sources_is_an_uncited_answer(app_database_url: str) -> None:
     clock = FrozenClock(START)
     provider = EventsLLMProvider([[TextDelta(" "), ChatUsage(1, 0)]])
 
@@ -399,7 +399,9 @@ def test_blank_round_with_sources_is_a_blank_answer(app_database_url: str) -> No
         "DeltaEvent",
         "DoneEvent",
     ]
-    assert (turn.message.status, turn.message.content) == (MessageStatus.COMPLETED, " ")
+    # A blank text cites nothing (decision D30): no citations, offered as "no source".
+    assert (turn.message.status, turn.message.content) == (MessageStatus.NO_SOURCE, " ")
+    assert turn.message.citations == []
 
 
 def test_provider_error_in_a_search_round_fails_after_the_steps(app_database_url: str) -> None:

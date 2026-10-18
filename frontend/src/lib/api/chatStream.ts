@@ -81,6 +81,8 @@ function applyEvent(pending: PendingAnswer, event: ChatEvent): PendingAnswer {
     case "done":
       return {
         ...pending,
+        // `no_source` has no citations, even after an answer that cited none of them (D30).
+        citations: event.status === "no_source" ? [] : pending.citations,
         outcome: {
           kind: "done",
           status: event.status,

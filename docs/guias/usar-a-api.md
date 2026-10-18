@@ -96,7 +96,7 @@ curl -s $KNOBRIDGE_URL/v1/conversations/<id>/messages \
 }
 ```
 
-Os marcadores `[1]`, `[2]`… do texto apontam para `citations[].index`. `status` é `completed`, `no_source` (sem fonte: `citations` vazio e o texto é a mensagem de "sem fonte" do produto) ou `failed` (o provedor falhou no meio; o HTTP continua 200, com `error_code` e o texto parcial).
+Os marcadores `[1]`, `[2]`… do texto apontam para `citations[].index`. `status` é `completed`, `no_source` (sem fonte: `citations` vazio e o texto é a mensagem de "sem fonte" do produto ou uma resposta do modelo que não citou nenhuma fonte) ou `failed` (o provedor falhou no meio; o HTTP continua 200, com `error_code` e o texto parcial).
 
 **Perguntar com streaming** (`stream: true`): a resposta é SSE, com os mesmos eventos do chat do painel ([chat-sse.md](../specs/chat-sse.md)): `citations` primeiro, um `delta` por pedaço do texto e `done` (ou `error`) no fim.
 

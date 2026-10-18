@@ -1,6 +1,6 @@
 # Chat em streaming (SSE)
 
-> Rascunho v0.11 · 2026-10-17 · Plano 0002, F4.4 (v0.1; v0.2, F4.5: resposta `streaming` órfã lida como `interrupted`; v0.3, plano 0003 F4.2: campos de localização nas citações e erros do provedor de embedding antes do stream; v0.4, plano 0003 F6.1: autor e data nas citações de commit; v0.5, plano 0004 F2.4: citação de item de conhecimento com confiança e evidências; v0.6, plano 0005 F1.1: citação de chamado, implementada na F2.3; v0.7, plano 0005 F3.2: `ticket_requests_enabled` no `done`; v0.8, plano 0008 F1.1: `cost_usd` no `done`; v0.9, plano 0009 F1.1: produto e nível no `citations`, citação de card; v0.10, plano 0010 F1.1: os mesmos eventos no widget; v0.11, plano 0011 F1.1: evento `step` e `steps` no `done`)
+> Rascunho v0.11 · 2026-10-17 · Plano 0002, F4.4 (v0.1; v0.2, F4.5: resposta `streaming` órfã lida como `interrupted`; v0.3, plano 0003 F4.2: campos de localização nas citações e erros do provedor de embedding antes do stream; v0.4, plano 0003 F6.1: autor e data nas citações de commit; v0.5, plano 0004 F2.4: citação de item de conhecimento com confiança e evidências; v0.6, plano 0005 F1.1: citação de chamado, implementada na F2.3; v0.7, plano 0005 F3.2: `ticket_requests_enabled` no `done`; v0.8, plano 0008 F1.1: `cost_usd` no `done`; v0.9, plano 0009 F1.1: produto e nível no `citations`, citação de card; v0.10, plano 0010 F1.1: os mesmos eventos no widget; v0.11, plano 0011 F1.1: evento `step` e `steps` no `done`; na F4.3, `done` com `no_source` depois de um texto sem citação)
 >
 > **Mudanças da v0.11** (plano 0011, F1.1; implementação na F2.3; [ADR 0010](../adr/0010-busca-em-etapas-e-reranker.md)): com a [busca em etapas](chat.md#busca-em-etapas), o stream pode começar com eventos [`step`](#step), um por busca feita pelo modelo (com a consulta reformulada, nunca com o conteúdo dos trechos), antes do `citations`; o `citations` traz as fontes de todas as etapas; o `done` ganha `steps` e passa a somar tokens e custo de todas as chamadas ao LLM; uma resposta `no_source` depois de etapas tem `model`, tokens e custo. No widget, o `step` vai sem a consulta. Clientes devem ignorar eventos que não conhecem.
 >
@@ -135,7 +135,7 @@ Os campos marcados com v0.3, v0.4, v0.5, v0.6 e v0.9 são aditivos e compatívei
 | Campo | Tipo | Descrição |
 |---|---|---|
 | `message_id` | uuid | Id da mensagem do assistente. |
-| `status` | `completed` ou `no_source` | `completed`: o LLM respondeu com base nas fontes. `no_source`: veja abaixo. |
+| `status` | `completed` ou `no_source` | `completed`: o LLM respondeu com base nas fontes, citando ao menos uma. `no_source`: veja abaixo. Desde a F4.3 do plano 0011 (decisão D30), um `done` com `no_source` pode vir depois de `citations` com fontes e de `delta` com o texto do modelo: o texto não citou nenhuma fonte, e a resposta fica gravada sem citações. O cliente descarta as citações recebidas e trata a resposta como sem fonte (oferece abrir chamado). |
 | `model` | texto ou `null` | Modelo do nível que respondeu; `null` em `no_source` sem LLM (desde a v0.11, preenchido em `no_source` depois de etapas, porque o LLM foi chamado para buscar). |
 | `input_tokens`, `output_tokens` | inteiro ou `null` | Uso informado pelo provedor, somado em todas as chamadas da resposta (v0.11); `null` quando alguma chamada não informa e em `no_source` sem LLM. |
 | `cost_usd` | número ou `null` | Custo estimado em US$ (6 casas) pela tabela de preços de chat, somado em todas as chamadas (v0.11); `null` em `no_source` sem LLM, sem tokens ou com modelo sem preço (v0.8; [chat.md](chat.md#custo-e-canal-por-resposta)). |
@@ -178,7 +178,11 @@ event: done
 data: {"message_id":"…","status":"no_source","model":null,"input_tokens":null,"output_tokens":null,"cost_usd":null,"latency_ms":3,"ticket_requests_enabled":true,"steps":1}
 ```
 
-A mensagem fica gravada com `status: no_source` e `citations: []`. O painel usa esse status para mostrar a oferta de abrir chamado, que usa o webhook de saída do produto quando ele está configurado ([chamados.md](chamados.md#abrir-chamado-webhook-de-saída)).
+A mensagem fica gravada com `status: no_source` e `citations: []`.
+
+**Resposta sem citação** (F4.3, decisão D30; [chat.md](chat.md#regra-de-citações-regra-8-do-agentsmd)): quando há fonte mas o texto final do modelo não tem nenhum marcador `[n]` de uma fonte listada, a sequência é a normal (`citations` com as fontes, `delta` com o texto), mas o `done` vem com `status: no_source`, `model`, tokens e custo; a mensagem fica gravada com o texto do modelo, `status: no_source` e `citations: []`. Nenhum evento novo: quem lê o stream descarta as citações ao receber esse `done`.
+
+O painel usa esse status para mostrar a oferta de abrir chamado, que usa o webhook de saída do produto quando ele está configurado ([chamados.md](chamados.md#abrir-chamado-webhook-de-saída)).
 
 ## No canal widget
 
@@ -196,7 +200,7 @@ Desde a v0.10, a rota de mensagens do widget ([widget.md](widget.md#post-convers
 |---|---|
 | `streaming` | O LLM está respondendo (só enquanto o stream está aberto). Se o processo do servidor morrer no meio do stream, a mensagem ficaria `streaming` para sempre: por isso, uma resposta `streaming` sem atualização há mais de 5 minutos é lida como `interrupted` em `GET .../conversations/{id}` (e nas rotas administrativas), e a próxima pergunta da conversa grava `interrupted` nela antes de seguir. |
 | `completed` | Resposta completa, com citações. |
-| `no_source` | Resposta de "sem fonte": sem chamar o LLM ou, desde a v0.11, depois de etapas que não acharam fonte (sem nenhum texto do modelo). |
+| `no_source` | Resposta de "sem fonte": sem chamar o LLM ou, desde a v0.11, depois de etapas que não acharam fonte (sem nenhum texto do modelo). Desde a F4.3 (D30), também a resposta do modelo sem nenhum marcador `[n]`, com o texto dele e sem citações. |
 | `failed` | Erro do provedor ou do servidor; `error_code` diz qual. |
 | `interrupted` | O cliente desconectou antes do fim; o conteúdo é o que chegou a ser gerado. |
 

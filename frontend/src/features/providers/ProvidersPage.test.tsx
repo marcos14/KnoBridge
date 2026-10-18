@@ -473,10 +473,32 @@ describe("ProvidersPage connection test", () => {
 
     await user.click(screen.getByRole("button", { name: "Testar a conexão com OpenAI Produção" }));
 
-    expect(await screen.findByText("Conexão com OpenAI Produção funcionando.")).toHaveRole(
-      "status",
-    );
+    // Next to the button, in its row, announced; the message on top says it again, quietly.
+    const result = await within(rowOf("OpenAI Produção")).findByRole("status");
+    expect(result).toHaveTextContent("Conexão funcionando.");
+    expect(result).toHaveClass("text-success");
+    const top = screen.getByText("Conexão com OpenAI Produção funcionando.");
+    expect(top).not.toHaveRole("status");
+    expect(top).toHaveClass("text-success");
     expect(store.tested).toEqual([PROVIDER_ID]);
+  });
+
+  it("test_providers_page_clears_the_result_when_testing_again", async () => {
+    const user = userEvent.setup();
+    const store = providerStore(undefined, {
+      testResults: { [OTHER_PROVIDER_ID]: failedTest("provider_auth_failed") },
+    });
+    server.use(...store.handlers);
+    await renderProviders();
+    await user.click(screen.getByRole("button", { name: "Testar a conexão com OpenAI Produção" }));
+    expect(await within(rowOf("OpenAI Produção")).findByRole("status")).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: "Testar a conexão com Anthropic" }));
+
+    const alert = await within(rowOf("Anthropic")).findByRole("alert");
+    expect(alert).toHaveTextContent("O provedor de LLM recusou a chave de API.");
+    expect(within(rowOf("OpenAI Produção")).queryByRole("status")).not.toBeInTheDocument();
+    expect(screen.queryByText("Conexão com OpenAI Produção funcionando.")).not.toBeInTheDocument();
   });
 
   it.each([
@@ -500,11 +522,16 @@ describe("ProvidersPage connection test", () => {
     server.use(...store.handlers);
     await renderProviders();
 
-    await user.click(screen.getByRole("button", { name: "Testar a conexão com OpenAI Produção" }));
+    const button = screen.getByRole("button", { name: "Testar a conexão com OpenAI Produção" });
+    await user.click(button);
 
-    const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent(`A conexão com OpenAI Produção falhou: ${reason}`);
-    expect(alert).toHaveFocus();
+    const alert = await within(rowOf("OpenAI Produção")).findByRole("alert");
+    expect(alert).toHaveTextContent(reason);
+    expect(alert).toHaveClass("text-destructive");
+    expect(screen.getAllByRole("alert")).toHaveLength(1);
+    expect(screen.getByText(`A conexão com OpenAI Produção falhou: ${reason}`)).toBeVisible();
+    // The focus stays on the button: the result next to it is announced.
+    expect(button).toHaveFocus();
   });
 
   it("test_providers_page_shows_api_error_of_connection_test", async () => {
@@ -514,7 +541,7 @@ describe("ProvidersPage connection test", () => {
 
     await user.click(screen.getByRole("button", { name: "Testar a conexão com Anthropic" }));
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
+    expect(await within(rowOf("Anthropic")).findByRole("alert")).toHaveTextContent(
       "Você não tem permissão para fazer isso.",
     );
   });

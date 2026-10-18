@@ -1,8 +1,10 @@
+import type { TFunction } from "i18next";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { CopyButton } from "@/components/CopyButton";
 import { FormAlert } from "@/components/FormAlert";
+import { type TestOutcome, TestResult } from "@/components/TestResult";
 import { Button } from "@/components/ui/button";
 import {
   type Product,
@@ -179,33 +181,30 @@ function TestDelivery({ workspaceId, productId, configured }: TestDeliveryProps)
           {configured ? t("products.webhook.testHint") : t("products.webhook.notConfigured")}
         </span>
       </div>
-      {test.isError && <FormAlert message={webhookApiErrorText(test.error, t)} />}
-      {test.isSuccess && <TestResult result={test.data} />}
+      {/* A new test is pending, not settled: the previous result goes away when it starts. */}
+      {test.isError && (
+        <TestResult outcome={{ ok: false, message: webhookApiErrorText(test.error, t) }} />
+      )}
+      {test.isSuccess && (
+        <>
+          <TestResult outcome={deliveryOutcome(test.data, t)} />
+          <p className="text-muted-foreground text-xs">
+            {t("products.webhook.deliveryId", { id: test.data.delivery_id })}
+          </p>
+        </>
+      )}
     </div>
   );
 }
 
-function TestResult({ result }: { result: TicketWebhookTest }) {
-  const { t } = useTranslation();
-  const outcome =
-    result.ok || result.error === null
-      ? t("products.webhook.testOk")
-      : t("products.webhook.testFailed", {
-          reason: webhookErrorText(result.error.code, result.error.details, t),
-        });
-  return (
-    <div
-      role="status"
-      className={
-        result.ok
-          ? "rounded-md border px-3 py-2 text-sm"
-          : "border-destructive/50 text-destructive rounded-md border px-3 py-2 text-sm"
-      }
-    >
-      <p>{outcome}</p>
-      <p className="text-muted-foreground text-xs">
-        {t("products.webhook.deliveryId", { id: result.delivery_id })}
-      </p>
-    </div>
-  );
+function deliveryOutcome(result: TicketWebhookTest, t: TFunction): TestOutcome {
+  if (result.ok || result.error === null) {
+    return { ok: true, message: t("products.webhook.testOk") };
+  }
+  return {
+    ok: false,
+    message: t("products.webhook.testFailed", {
+      reason: webhookErrorText(result.error.code, result.error.details, t),
+    }),
+  };
 }

@@ -1,6 +1,6 @@
 # ADR 0010 — Busca em etapas e reranker
 
-> Status: aceito · 2026-10-17 · plano 0011 (F1.1) · emendado em 2026-10-17 pelo [ADR 0011](0011-reranker-opcional.md) (reranker opcional, fora do compose padrão, e produtos novos sem reordenação: itens 1 e 3) e pela decisão D27 do plano 0011 (sem chamada de ferramenta forçada: item 6)
+> Status: aceito · 2026-10-17 · plano 0011 (F1.1) · emendado em 2026-10-17 pelo [ADR 0011](0011-reranker-opcional.md) (reranker opcional, fora do compose padrão, e produtos novos sem reordenação: itens 1 e 3) e pelas decisões D27 (sem chamada de ferramenta forçada: item 6), D29 (Usuário final com 1 busca por padrão; os padrões do item 4 passam a 1, 3 e 4) e D30 (busca inicial vazia permite uma reformulação só, e resposta sem marcador `[n]` fica `no_source`) do plano 0011
 
 ## Contexto
 

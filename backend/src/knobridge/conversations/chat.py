@@ -13,10 +13,10 @@ A turn has two phases, so no database transaction stays open while the LLM answe
 2. ``stream`` yields the events of the answer. It runs the rounds of multi-step search
    (``steps.py``) outside any transaction and, at the end, writes the outcome to the
    placeholder in a fresh ``scoped_session`` (``completed``, ``no_source`` when no step found a
-   source, ``failed`` with the error code, or ``interrupted`` when the client went away). That
-   final write is shielded from cancellation and only touches a message still ``streaming``,
-   so it runs once. ``settle`` covers a stream that never started (client gone before the
-   first byte).
+   source or the answer cites none of its sources, ``failed`` with the error code, or
+   ``interrupted`` when the client went away). That final write is shielded from cancellation
+   and only touches a message still ``streaming``, so it runs once. ``settle`` covers a stream
+   that never started (client gone before the first byte).
 """
 
 from __future__ import annotations
@@ -35,6 +35,7 @@ from knobridge.conversations.access import Owner, Reader, check_turn, get_owned_
 from knobridge.conversations.models import Conversation, Message, MessageRole, MessageStatus
 from knobridge.conversations.outcome import (
     Outcome,
+    answer_status,
     interrupted,
     outcome_of,
     save_outcome,
@@ -289,7 +290,13 @@ class ChatService:
                 async with aclosing(loop.run()) as events:
                     async for event in events:
                         yield event
-                status = MessageStatus.COMPLETED if state.answered else MessageStatus.NO_SOURCE
+                status = answer_status(state)
+                if state.answered and status is MessageStatus.NO_SOURCE:
+                    _log.warning(
+                        "chat_answer_without_citations",
+                        workspace_id=str(turn.workspace_id),
+                        conversation_id=str(turn.conversation_id),
+                    )
             except (LLMProviderError, ChatFailedError) as exc:
                 status, error = MessageStatus.FAILED, exc
             except Exception as exc:
@@ -325,7 +332,9 @@ class ChatService:
                 details=error.details,
             )
             return
-        if status is MessageStatus.NO_SOURCE:
+        if status is MessageStatus.NO_SOURCE and not state.started:
+            # No text of the model went out: the "no source" message does. An uncited answer
+            # was already streamed, and ``done`` alone turns it into ``no_source``.
             yield CitationsEvent(
                 turn.message_id, turn.user_message_id, [], turn.product_id, turn.level
             )

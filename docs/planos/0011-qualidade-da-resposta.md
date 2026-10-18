@@ -85,10 +85,10 @@ fases:
         commit: 6c90e43
       - id: F4.3
         titulo: Ensaio no Minski contra a linha de base dos ensaios 0005 e 0006
-        status: em_execucao
+        status: concluida
         agente: orquestrador
         iniciada_em: 2026-10-17
-        concluida_em: null
+        concluida_em: 2026-10-17
         commit: null
 decisoes:
   - id: D1
@@ -577,6 +577,7 @@ Nenhuma.
 - 2026-10-17 — F4.3 iniciada; o reranker real se mostrou lento demais em CPU (34 a 96 s por busca) e sem memória com 4 GB: pendência P1 respondida pelo usuário (D25, D26)
 - 2026-10-17 — Correções do ensaio integradas: tool_choice auto/none (D27, D28) e reranker opcional atrás do perfil do compose, desligado por padrão, com produtos novos sem reordenar (D25, ADR 0011, migração 0025); backend 3.302 testes (99,86%), frontend 1.760, E2E da stack 10/10.
 - 2026-10-17 — Ensaio pontuado (busca única, etapas, etapas com reranker e ask do MCP): etapas melhoram Suporte (11 para 15) e Desenvolvimento (13 para 16 de 16) e o ask (9 de 9), pioram o Usuário final na pasta mista (6 para 4); reranker sem ganho de qualidade e 40 a 70 s a mais. Usuário pede as correções D29, D30 e D31 nesta subfase.
+- 2026-10-17 — F4.3 concluída: ensaio no Minski em busca única, etapas, etapas com reranker e ask do MCP (relatório 0007, cerca de US$ 8,25) e conjunto sintético com LLM real; correções D29 (Usuário final com 1 busca, migração 0026), D30 (uma reformulação com a busca inicial vazia, resposta sem [n] como no_source em todos os canais) e D31 (resultado de Testar junto do botão); backend 3.323 testes (99,86%), frontend 1.768, widget 187, E2E da stack 10/10
 
 ## 8. Encerramento
 

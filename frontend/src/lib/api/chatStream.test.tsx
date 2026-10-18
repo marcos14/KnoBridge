@@ -149,6 +149,38 @@ describe("useChatStream", () => {
     refresh.release();
   });
 
+  it("test_use_chat_stream_drops_the_citations_of_an_uncited_answer", async () => {
+    const source = controlledStream();
+    streamed(source.stream);
+    const { result, refresh } = renderStream();
+    const [citations, delta, done] = answerFrames({
+      citations: [makeCitation()],
+      deltas: ["Não encontrei isso."],
+      end: { status: "no_source" },
+    });
+
+    act(() => {
+      void result.current.send(CONVERSATION_ID, "Algo sem relação?");
+    });
+    act(() => {
+      source.push(`${citations ?? ""}${delta ?? ""}`);
+    });
+    await waitFor(() => {
+      expect(result.current.pending?.citations).toEqual([makeCitation()]);
+    });
+    act(() => {
+      source.push(done ?? "");
+      source.close();
+    });
+
+    await waitFor(() => {
+      expect(result.current.pending?.outcome).toMatchObject({ status: "no_source" });
+    });
+    expect(result.current.pending?.citations).toEqual([]);
+    expect(result.current.pending?.text).toBe("Não encontrei isso.");
+    refresh.release();
+  });
+
   it("test_use_chat_stream_reports_error_event_as_outcome", async () => {
     server.use(
       messagesRespond(() =>

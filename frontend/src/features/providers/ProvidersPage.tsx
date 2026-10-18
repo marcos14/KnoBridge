@@ -5,6 +5,7 @@ import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { DataTable, type DataTableColumn } from "@/components/DataTable";
 import { FormAlert } from "@/components/FormAlert";
 import { ListToolbar } from "@/components/ListToolbar";
+import { type TestOutcome, TestResult } from "@/components/TestResult";
 import { Button } from "@/components/ui/button";
 import { useCurrentWorkspace } from "@/hooks/use-current-workspace";
 import { useListSearch } from "@/hooks/use-list-search";
@@ -32,7 +33,8 @@ const PROVIDER_LIST: ListSearchSpec<"kind", (typeof PROVIDER_SORTS)[number]> = {
   sorts: PROVIDER_SORTS,
 };
 
-type Feedback = { kind: "status" | "alert"; message: string } | null;
+/** The message on top; `quiet` when the same outcome is announced next to "Testar". */
+type Feedback = { kind: "status" | "alert"; message: string; quiet?: boolean } | null;
 
 /**
  * `/w/:workspaceId/providers` (owner, admin or editor): the workspace's LLM provider credentials.
@@ -57,6 +59,8 @@ export function ProvidersPage() {
 function ProvidersList({ workspaceId }: { workspaceId: string }) {
   const { t } = useTranslation();
   const [feedback, setFeedback] = useState<Feedback>(null);
+  // The last "Testar" result, shown next to the button of its row.
+  const [tested, setTested] = useState<{ id: string; outcome: TestOutcome } | null>(null);
   const { search, setQuery, setFilter, setSort, setOffset, clear } = useListSearch(PROVIDER_LIST);
   const providers = useProviderPage(workspaceId, {
     query: search.query === "" ? undefined : search.query,
@@ -79,28 +83,39 @@ function ProvidersList({ workspaceId }: { workspaceId: string }) {
 
   function onTest(provider: Provider) {
     setFeedback(null);
+    setTested(null);
+    const failed = (reason: string, message: string) => {
+      setTested({ id: provider.id, outcome: { ok: false, message: reason } });
+      setFeedback({ kind: "alert", message, quiet: true });
+    };
     test.mutate(provider.id, {
       // `error` is null exactly when `ok` is true.
       onSuccess: ({ error }) => {
         if (error === null) {
-          showStatus(t("providers.testOk", { name: provider.name }));
+          setTested({
+            id: provider.id,
+            outcome: { ok: true, message: t("providers.testOkShort") },
+          });
+          setFeedback({
+            kind: "status",
+            message: t("providers.testOk", { name: provider.name }),
+            quiet: true,
+          });
           return;
         }
-        showAlert(
-          t("providers.testFailed", {
-            name: provider.name,
-            reason: translateApiErrorCode(error.code, t),
-          }),
-        );
+        const reason = translateApiErrorCode(error.code, t);
+        failed(reason, t("providers.testFailed", { name: provider.name, reason }));
       },
       onError: (error) => {
-        showAlert(translateApiError(error, t));
+        const reason = translateApiError(error, t);
+        failed(reason, reason);
       },
     });
   }
 
   function onDelete(provider: Provider) {
     setFeedback(null);
+    setTested(null);
     remove.mutate(provider.id, {
       onSuccess: () => {
         showStatus(t("providers.deleted", { name: provider.name }));
@@ -215,58 +230,61 @@ function ProvidersList({ workspaceId }: { workspaceId: string }) {
       key: "actions",
       header: t("providers.columns.actions"),
       cell: (item) => (
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={busy}
-            aria-label={t("providers.testLabel", { name: item.name })}
-            onClick={() => {
-              onTest(item);
-            }}
-          >
-            {test.isPending && test.variables === item.id
-              ? t("providers.testing")
-              : t("providers.test")}
-          </Button>
-          <ProviderDialog
-            workspaceId={workspaceId}
-            provider={item}
-            trigger={
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={busy}
-                aria-label={t("providers.editLabel", { name: item.name })}
-              >
-                {t("providers.edit")}
-              </Button>
-            }
-            onSaved={(provider) => {
-              showStatus(t("providers.updated", { name: provider.name }));
-            }}
-          />
-          <ConfirmDialog
-            trigger={
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={busy}
-                aria-label={t("providers.deleteLabel", { name: item.name })}
-              >
-                {t("providers.delete")}
-              </Button>
-            }
-            title={t("providers.deleteTitle", { name: item.name })}
-            description={t("providers.deleteDescription")}
-            confirmLabel={t("providers.delete")}
-            onConfirm={() => {
-              onDelete(item);
-            }}
-          />
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={busy}
+              aria-label={t("providers.testLabel", { name: item.name })}
+              onClick={() => {
+                onTest(item);
+              }}
+            >
+              {test.isPending && test.variables === item.id
+                ? t("providers.testing")
+                : t("providers.test")}
+            </Button>
+            <ProviderDialog
+              workspaceId={workspaceId}
+              provider={item}
+              trigger={
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={busy}
+                  aria-label={t("providers.editLabel", { name: item.name })}
+                >
+                  {t("providers.edit")}
+                </Button>
+              }
+              onSaved={(provider) => {
+                showStatus(t("providers.updated", { name: provider.name }));
+              }}
+            />
+            <ConfirmDialog
+              trigger={
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={busy}
+                  aria-label={t("providers.deleteLabel", { name: item.name })}
+                >
+                  {t("providers.delete")}
+                </Button>
+              }
+              title={t("providers.deleteTitle", { name: item.name })}
+              description={t("providers.deleteDescription")}
+              confirmLabel={t("providers.delete")}
+              onConfirm={() => {
+                onDelete(item);
+              }}
+            />
+          </div>
+          {tested?.id === item.id && <TestResult outcome={tested.outcome} />}
         </div>
       ),
     },
@@ -276,13 +294,13 @@ function ProvidersList({ workspaceId }: { workspaceId: string }) {
     <>
       {header}
       {/* Keyed by message: a different failure mounts it again and moves the focus again. */}
-      {feedback?.kind === "alert" && (
-        <FormAlert key={feedback.message} message={feedback.message} />
-      )}
-      {feedback?.kind === "status" && (
-        <p role="status" className="text-sm">
-          {feedback.message}
-        </p>
+      {feedback !== null && (
+        <FormAlert
+          key={feedback.message}
+          message={feedback.message}
+          variant={feedback.kind === "alert" ? "error" : "success"}
+          quiet={feedback.quiet}
+        />
       )}
       {toolbar}
       <DataTable

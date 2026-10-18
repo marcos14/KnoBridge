@@ -517,6 +517,7 @@
     "testLabel": "Testar a conexão com {{name}}",
     "testing": "Testando…",
     "testOk": "Conexão com {{name}} funcionando.",
+    "testOkShort": "Conexão funcionando.",
     "testFailed": "A conexão com {{name}} falhou: {{reason}}",
     "edit": "Editar",
     "editLabel": "Editar {{name}}",
@@ -886,6 +887,7 @@
     "test": "Testar conexão",
     "testing": "Testando…",
     "testOk": "A fonte {{name}} está acessível.",
+    "testOkShort": "Fonte acessível.",
     "testFailed": "A fonte {{name}} não respondeu: {{reason}}",
     "testReasons": {
       "runner_offline": "o runner está offline",

@@ -8,8 +8,10 @@ only spaces) makes it the final answer, a tool call makes it a step and every te
 is dropped. Each step searches in a short session of its own, at the
 conversation's level, and adds the new sources after the ones already listed. Rule 8: without
 any source no text of the model ever reaches the client, and the final round is not even
-called. A model that refuses tool calls on the first round is marked on its level and asked
-again without the tool (the single search).
+called; when the first search found nothing, the model gets a single reformulation round and,
+if that one finds nothing either, the answer ends there (decision D30). A model that refuses
+tool calls on the first round is marked on its level and asked again without the tool (the
+single search).
 
 Runs outside any transaction; ``ChatService`` (``chat.py``) opens and closes the provider and
 saves the outcome from ``TurnState``.
@@ -103,7 +105,8 @@ class TurnState:
     parts: list[str] = field(default_factory=lambda: [])
     # ``citations`` was sent: the answer started.
     started: bool = False
-    # The final round answered with sources (``completed``) or no step found one.
+    # The final round answered with sources (``completed``, or ``no_source`` when the text
+    # cites none of them) or, unset, no step found one.
     answered: bool = False
 
     @classmethod
@@ -185,6 +188,10 @@ class TurnLoop:
             async with aclosing(self._tool(messages, self._round.calls)) as steps:
                 async for event in steps:
                     yield event
+            if not state.sources.items:
+                # An empty first search allows a single reformulation (decision D30): still
+                # nothing, so the answer is "no source" without calling the model again.
+                return
 
     def _late(self) -> bool:
         return self._clock.now() - self._turn.started_at >= TURN_DEADLINE
