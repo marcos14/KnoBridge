@@ -5,10 +5,10 @@ slug: qualidade-da-resposta
 solicitado_por: usuario
 criado_em: 2026-10-17
 atualizado_em: 2026-10-17
-status: em_execucao
+status: concluido
 aprovado_em: 2026-10-17
 aprovado_por: usuario
-concluido_em: null
+concluido_em: 2026-10-17
 branch: plano/0011-qualidade-da-resposta
 fases:
   - id: F1
@@ -67,7 +67,7 @@ fases:
         commit: 5504253
   - id: F4
     titulo: Avaliação e validação
-    status: em_execucao
+    status: concluida
     subfases:
       - id: F4.1
         titulo: Conjunto de avaliação sintético com gabarito e roteiro contra a stack
@@ -89,7 +89,7 @@ fases:
         agente: orquestrador
         iniciada_em: 2026-10-17
         concluida_em: 2026-10-17
-        commit: null
+        commit: 8810a98
 decisoes:
   - id: D1
     data: 2026-10-17
@@ -581,4 +581,39 @@ Nenhuma.
 
 ## 8. Encerramento
 
-A preencher ao concluir.
+**Entregue** ([ADR 0010](../adr/0010-busca-em-etapas-e-reranker.md) e [ADR 0011](../adr/0011-reranker-opcional.md); contratos em [chat.md](../specs/chat.md#busca-em-etapas), [indexacao.md](../specs/indexacao.md#reranker) e [avaliacao.md](../specs/avaliacao.md)):
+- **Busca em etapas** em todos os canais (painel, REST, API compatível com OpenAI, `ask` do MCP e widget):
+  - o modelo do nível chama `search_sources` para buscar de novo com outra formulação, até `max_steps` (padrões 1, 3 e 4; de 1 a 6 em **Configurações**), com o filtro de nível no SQL de cada busca;
+  - com a busca inicial vazia, uma reformulação só; resposta sem nenhum marcador `[n]` fica sem citações e como "sem fonte";
+  - `tool_choice` só `auto` ou `none`, porque os modelos Claude 5.5 recusam a chamada forçada;
+  - evento SSE `step`, "Buscando: …" e "N buscas" no chat, custo somado e buscas em Uso e custos.
+- **Reranker self-host opcional**: TEI de CPU com `bge-reranker-v2-m3` atrás do perfil `reranker` do compose, desligado por padrão, com queda para a ordem do RRF; **Reordenar trechos** por produto (produtos novos desligados) e "Testar busca" com e sem reordenação.
+- **Limiar por modelo de embedding** (0,35 OpenAI, 0,60 e 0,57 Gemini), com o campo do produto em branco como padrão.
+- **Aviso de arquivos que dominam o índice** nas fontes de pasta e Git, com **Excluir** que acrescenta o glob às exclusões.
+- **Conjunto de avaliação sintético** em `scripts/eval/` (corpus do Vértice ERP, 30 perguntas com gabarito, `run`, `compare` e `copy-corpus`).
+- **Painel**: resultado de **Testar** junto do botão em provedores, fontes e webhook.
+- **Migrações** `0022` a `0026`, ensaiadas sobre os dados reais do Minski.
+- **Testes e documentação**: E2E da stack (`quality.spec.ts`), guias [avaliar respostas](../guias/avaliar-respostas.md), [produtos e níveis](../guias/produtos-e-niveis.md), [subir o ambiente](../guias/subir-ambiente.md#reranker) e [indexar uma fonte](../guias/indexar-uma-fonte.md), e o ensaio [0007](../pesquisa/0007-qualidade-da-resposta-no-minski.md).
+
+**Ensaio no Minski**: com etapas, Suporte foi de 11 para 15 respostas úteis em 16 e Desenvolvimento e produto de 13 para 16; o `ask` do MCP foi de 7 para 9 de 9. Cada resposta custa cerca de duas vezes a da busca única. O Usuário final piorou na pasta que mistura manual e documentos internos e ficou com 1 busca por padrão. O reranker mudou as citações sem ganho de qualidade e somou de 40 a 70 s por resposta em CPU. O ensaio custou cerca de US$ 8,25.
+
+**Correções feitas no caminho**, todas com teste:
+- o reranker não cabia nos 4 GB previstos: virou opcional e desligado (D25, D26);
+- os modelos Claude 5.5 recusam `tool_choice` forçado (D27, D28);
+- Usuário final com 1 busca, uma reformulação só com a busca inicial vazia e resposta sem citação como "sem fonte" (D29, D30);
+- o botão **Testar** parecia não fazer nada (D31);
+- o IP fixo do painel no `.250` da sub-rede e `KNOBRIDGE_MIN_SIMILARITY_DEFAULTS` repassada aos contêineres.
+
+**Fora do escopo, com o motivo**:
+- cross-encoder menor em ONNX para o reranker caber em CPU: plano futuro, se a qualidade medida justificar (ADR 0011);
+- perguntas mais difíceis no conjunto sintético, que hoje é fácil demais para medir as etapas (ensaio 0007);
+- comparação OpenAI x Gemini no índice real do Minski e avaliação automática na CI: continuam candidatas nos próximos passos do `AGENTS.md` raiz;
+- separar as fontes do Minski por público, que resolve as falhas do Usuário final: é configuração do ambiente, já recomendada no guia de produtos e níveis.
+
+**Como demonstrar**:
+1. Suba a stack (`docker compose up -d --build --wait`), configure os níveis e um produto ([produtos-e-niveis.md](../guias/produtos-e-niveis.md)).
+2. No **Chat**, em Suporte, faça uma pergunta que pede outra formulação: aparecem "Buscando: …" e "N buscas"; uma pergunta sem relação responde "sem fonte" sem citação.
+3. Em **Fontes**, abra uma fonte com arquivos gerados: aparece o aviso com **Excluir**.
+4. Para o antes e o depois: [avaliar-respostas.md](../guias/avaliar-respostas.md).
+
+Sem stack manual, `frontend/e2e/stack/quality.spec.ts` faz o mesmo caminho com o fake roteirizado e o reranker falso.
